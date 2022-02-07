@@ -1,0 +1,21 @@
+digraph flow {
+	subgraph cluster_farm {
+		label = "Farm"
+		color = black
+		farm_crops [label = "Crops"]
+	}
+	subgraph cluster_factory {
+		label = "Factory"
+		color = black
+		factory_crops [label = "Crops"]
+		factory_food [label = "Food"]
+	}
+	subgraph cluster_market {
+		label = "Market"
+		color = black
+		market_food [label = "Food"]
+	}
+
+	farm_crops -> factory_crops
+	factory_food -> market_food
+}

@@ -1,12 +1,23 @@
-//! Archetypes identify the components that an entity should contain.
+//! An archetype is a kind of entity with a fixed set of (optional) components.
+//!
+//! It is comparable to a class in OOP-based designs.
+//!
+//! # Declaration
+//! Use the [`crate::archetype!`] macro to declare an archetype.
+//!
+//! # Definition
+//! The actual component types of an archetype are specified by
+//! making the component type implement [`crate::component::Simple<A>`] or [`crate::component::Isotope<A>`],
+//! where `A` is the archetype type.
+//! Since Rust allows externally declared types to implement traits
+//! if the trait has a type parameter declared in the current crate,
+//! this means you can add components to archetypes declared in a dependency crate.
+//!
+//! # Registration
+//! Archetypes and components are registered to the world
+//! when a system that uses this archetype-component pair is scheduled.
 
-use crate::Component;
-
-/// An archetype is a type of entities.
+/// An archetype is a kind of entity with a fixed set of (optional) components.
 ///
-/// Archetypes are never constructed. Implementors should be empty enums.
+/// See the [module-level documentation](index.html) for more information.
 pub trait Archetype: 'static {}
-
-/// If an archetype `A` can contain component `C`,
-/// then `A: archetype::Contains<C>`.
-pub trait Contains<C: Component>: Archetype {}

@@ -29,18 +29,13 @@ pub(crate) fn parse_generics(input: &syn::DeriveInput) -> ParsedGenerics {
 
     let where_ = &input.generics.where_clause;
 
-    ParsedGenerics {
-        ident: input.ident.clone(),
-        decl,
-        usage,
-        where_: where_.to_token_stream(),
-    }
+    ParsedGenerics { ident: input.ident.clone(), decl, usage, where_: where_.to_token_stream() }
 }
 
 pub(crate) struct ParsedGenerics {
-    ident: proc_macro2::Ident,
-    pub(crate) decl: proc_macro2::TokenStream,
-    pub(crate) usage: proc_macro2::TokenStream,
+    ident:             proc_macro2::Ident,
+    pub(crate) decl:   proc_macro2::TokenStream,
+    pub(crate) usage:  proc_macro2::TokenStream,
     pub(crate) where_: proc_macro2::TokenStream,
 }
 
@@ -50,12 +45,7 @@ impl ParsedGenerics {
         trait_: TokenStream,
         body: TokenStream,
     ) -> proc_macro2::TokenStream {
-        let Self {
-            ident,
-            decl,
-            usage,
-            where_,
-        } = self;
+        let Self { ident, decl, usage, where_ } = self;
         quote! {
             impl #decl #trait_ for #ident #usage #where_ {
                 #body
@@ -69,12 +59,7 @@ impl ParsedGenerics {
         on: TokenStream,
         body: TokenStream,
     ) -> proc_macro2::TokenStream {
-        let Self {
-            ident,
-            decl,
-            usage,
-            where_,
-        } = self;
+        let Self { ident, decl, usage, where_ } = self;
         let trait_ = trait_(quote!(#ident #usage));
         quote! {
             impl #decl #trait_ for #on #where_ {

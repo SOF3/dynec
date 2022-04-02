@@ -93,7 +93,7 @@ pub enum SimpleInitStrategy<A: Archetype, C: Simple<A>> {
 impl<A: Archetype, C: Simple<A>> SimpleInitStrategy<A, C> {
     /// Constructs an auto-initializing init strategy from a closure.
     pub fn auto(f: &'static impl any::AutoInitFn<A, C>) -> Self {
-        Self::Auto(any::AutoIniter::new(f))
+        Self::Auto(any::AutoIniter { f })
     }
 }
 

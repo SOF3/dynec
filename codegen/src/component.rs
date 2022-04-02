@@ -62,9 +62,10 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
     for archetype in archetypes {
         if let Some((_, discrim)) = isotope {
             let init = match init {
-                Some((_, func)) => quote!({
-                    ::dynec::component::IsotopeInitStrategy::Default(#func)
-                }),
+                Some((_, func)) => {
+                    let func = func.as_fn_ptr(&generics)?;
+                    quote!(::dynec::component::IsotopeInitStrategy::Default(#func))
+                }
                 None => quote!(::dynec::component::IsotopeInitStrategy::None),
             };
 
@@ -78,9 +79,12 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             ));
         } else {
             let init = match init {
-                Some((_, func)) => quote!({
-                    ::dynec::component::SimpleInitStrategy::auto(&(#func))
-                }),
+                Some((_, func)) => {
+                    let func = func.as_fn_ptr(&generics)?;
+                    quote!(::dynec::component::SimpleInitStrategy::Auto(
+                        ::dynec::component::AutoIniter { f: &#func }
+                    ))
+                }
                 None => quote!(::dynec::component::SimpleInitStrategy::None),
             };
 
@@ -143,7 +147,7 @@ enum Arg {
     Isotope(syn::Token![=], syn::Type),
     Required,
     Finalizer,
-    Init(syn::Token![=], Box<syn::Expr>),
+    Init(syn::Token![=], Box<FunctionRefWithArity>),
 }
 
 impl Parse for NamedArg {
@@ -165,12 +169,75 @@ impl Parse for NamedArg {
             "finalizer" => Arg::Finalizer,
             "init" => {
                 let eq: syn::Token![=] = input.parse()?;
-                let expr = input.parse::<syn::Expr>()?;
+                let expr = input.parse::<FunctionRefWithArity>()?;
                 Arg::Init(eq, Box::new(expr))
             }
             _ => return Err(Error::new_spanned(&name, format!("Unknown argument `{}`", name))),
         };
 
         Ok(NamedArg { name, value })
+    }
+}
+
+enum FunctionRefWithArity {
+    Closure(syn::ExprClosure),
+    Fn(syn::Expr, syn::Token![/], syn::LitInt),
+}
+
+impl Parse for FunctionRefWithArity {
+    fn parse(input: ParseStream) -> Result<Self> {
+        if let Ok(closure) = input.parse::<syn::ExprClosure>() {
+            return Ok(FunctionRefWithArity::Closure(closure));
+        }
+
+        if let Ok(bin) = input.parse::<syn::ExprBinary>() {
+            if let (
+                left,
+                syn::BinOp::Div(op),
+                syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Int(arity), .. }),
+            ) = (&*bin.left, bin.op, &*bin.right)
+            {
+                return Ok(FunctionRefWithArity::Fn(left.clone(), op, arity.clone()));
+            }
+        }
+
+        Err(input.error(
+            "expected closure or function reference in the form `path/arity` (e.g. \
+             `Default::default/0`)",
+        ))
+    }
+}
+
+impl FunctionRefWithArity {
+    fn as_fn_ptr(&self, expect_ty: &util::ParsedGenerics) -> Result<TokenStream> {
+        let (expr, arity) = match self {
+            FunctionRefWithArity::Closure(closure) => (
+                {
+                    let args = &closure.inputs;
+                    let body = &closure.body;
+
+                    let &util::ParsedGenerics { ref ident, ref decl, ref usage, ref where_ } =
+                        expect_ty;
+
+                    quote! {{
+                        fn __dynec_closure_fn #decl (#args) -> #ident #usage #where_ {
+                            #body
+                        }
+
+                        __dynec_closure_fn
+                    }}
+                },
+                closure.inputs.len(),
+            ),
+            FunctionRefWithArity::Fn(expr, _, arity) => {
+                (quote!(#expr), arity.base10_parse::<usize>()?)
+            }
+        };
+
+        let args = (0..arity).map(|_| quote!(_));
+
+        Ok(quote! {
+            (#expr as fn(#(#args),*) -> _)
+        })
     }
 }

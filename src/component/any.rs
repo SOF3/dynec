@@ -79,12 +79,7 @@ impl<A: Archetype> Map<A> {
 
 /// Describes how to instantiate a component based on other component types.
 pub struct AutoIniter<A: Archetype, C: component::Simple<A>> {
-    pub(crate) f: &'static dyn AutoInitFn<A, C>,
-}
-
-impl<A: Archetype, C: component::Simple<A>> AutoIniter<A, C> {
-    /// Creates a new [`AutoIniter`] from a function pointer.
-    pub fn new(f: &'static dyn AutoInitFn<A, C>) -> Self { AutoIniter { f } }
+    pub f: &'static dyn AutoInitFn<A, C>,
 }
 
 /// A function used for [`component::SimpleInitStrategy::Auto`].

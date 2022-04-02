@@ -76,7 +76,7 @@ pub mod system;
 pub mod world;
 #[doc(inline)]
 pub use world::World;
-mod util;
+pub mod util;
 
 /// Creates a dynec world from bundles.
 pub fn new<'t>(bundles: impl IntoIterator<Item = &'t dyn world::Bundle> + Copy) -> World {

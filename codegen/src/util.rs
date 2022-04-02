@@ -33,7 +33,7 @@ pub(crate) fn parse_generics(input: &syn::DeriveInput) -> ParsedGenerics {
 }
 
 pub(crate) struct ParsedGenerics {
-    ident:             proc_macro2::Ident,
+    pub(crate) ident:  proc_macro2::Ident,
     pub(crate) decl:   proc_macro2::TokenStream,
     pub(crate) usage:  proc_macro2::TokenStream,
     pub(crate) where_: proc_macro2::TokenStream,

@@ -49,10 +49,13 @@ where
 /// before any posterior system starts executing,
 /// effectively creating a "partition" between the anterior and posterior systems.
 pub trait Partition: sealed::Sealed + 'static {
+    /// Computes the hash of this component.
     fn compute_hash(&self) -> u64;
 
+    /// Checks whether two parttions are equivalent.
     fn equals(&self, other: &dyn Partition) -> bool;
 
+    /// Converts the object to an `Any`.
     fn as_any(&self) -> &dyn std::any::Any;
 }
 
@@ -76,6 +79,18 @@ impl<T: Eq + hash::Hash + 'static> Partition for T {
     }
 
     fn as_any(&self) -> &dyn std::any::Any { self }
+}
+
+pub(crate) struct PartitionWrapper(pub(crate) Box<dyn Partition>);
+
+impl PartialEq for PartitionWrapper {
+    fn eq(&self, other: &Self) -> bool { (&*self.0).equals(&*other.0) }
+}
+
+impl Eq for PartitionWrapper {}
+
+impl hash::Hash for PartitionWrapper {
+    fn hash<H: hash::Hasher>(&self, state: &mut H) { self.0.compute_hash().hash(state); }
 }
 
 mod sealed {

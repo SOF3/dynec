@@ -52,19 +52,4 @@ impl ParsedGenerics {
             }
         }
     }
-
-    pub(crate) fn impl_trait_with(
-        &self,
-        trait_: impl FnOnce(TokenStream) -> TokenStream,
-        on: TokenStream,
-        body: TokenStream,
-    ) -> proc_macro2::TokenStream {
-        let Self { ident, decl, usage, where_ } = self;
-        let trait_ = trait_(quote!(#ident #usage));
-        quote! {
-            impl #decl #trait_ for #on #where_ {
-                #body
-            }
-        }
-    }
 }

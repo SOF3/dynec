@@ -9,6 +9,9 @@ use crate::system;
 /// There may be multiple instances of the same implementor type.
 /// This is meaningful as they may have different states.
 pub trait Spec {
+    /// The debug name of the system.
+    fn debug_name(&self) -> String;
+
     /// Executes the given function on each dependency.
     fn for_each_dependency(&self, f: &mut dyn FnMut(Dependency));
 
@@ -28,17 +31,17 @@ pub trait Spec {
 /// Indicates the dependency of a system.
 pub enum Dependency {
     /// The system must execute before the given partition.
-    Before(TypeId),
+    Before(Box<dyn system::Partition>),
     /// The system must execute after the given partition.
-    After(TypeId),
+    After(Box<dyn system::Partition>),
 }
 
 impl Dependency {
     /// The system must execute before the given partition.
-    pub fn before<P: system::Partition>() -> Self { Self::Before(TypeId::of::<P>()) }
+    pub fn before(p: impl system::Partition) -> Self { Self::Before(Box::new(p)) }
 
     /// The system must execute after the given partition.
-    pub fn after<P: system::Partition>() -> Self { Self::After(TypeId::of::<P>()) }
+    pub fn after(p: impl system::Partition) -> Self { Self::After(Box::new(p)) }
 }
 
 /// Indicates that the system requires a global resource.
@@ -47,6 +50,8 @@ pub struct GlobalRequest {
     pub global:  TypeId,
     /// Whether mutable access is requested.
     pub mutable: bool,
+    /// Whether the resource requires thread safety.
+    pub sync:    bool,
 }
 
 /// Indicates that the system requires a simple component read/write.

@@ -1,3 +1,5 @@
+//! The world stores the states of the game.
+
 use std::any::TypeId;
 use std::collections::BTreeMap;
 
@@ -18,7 +20,7 @@ pub trait Bundle {
 }
 
 /// Identifies an archetype + component type.
-struct ArchComp {
+pub(crate) struct ArchComp {
     arch: TypeId,
     comp: TypeId,
 }
@@ -30,7 +32,7 @@ struct ComponentIdentifier {
 }
 
 /// Describes a simple component type.
-struct SimpleSpec {
+pub(crate) struct SimpleSpec {
     presence:     component::SimplePresence,
     // TODO wrap SimpleInitStrategy in a trait object
     is_finalizer: bool,
@@ -43,7 +45,7 @@ impl SimpleSpec {
 }
 
 /// Describes an isotope component type.
-struct IsotopeSpec {
+pub(crate) struct IsotopeSpec {
     // TODO wrap IsotopeInitStrategy in a trait object
 }
 
@@ -55,6 +57,8 @@ mod builder;
 pub use builder::Builder;
 
 mod storage;
+
+mod scheduler;
 
 pub struct World {
     storages: RwLock<BTreeMap<ComponentIdentifier, storage::Ref>>,

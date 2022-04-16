@@ -65,17 +65,29 @@
 
 pub use dynec_codegen::{archetype, component, components, system, HasRef};
 
+#[macro_use]
+mod test_util;
+
 pub mod archetype;
 #[doc(inline)]
 pub use archetype::Archetype;
+
 pub mod component;
+
 pub mod entity;
 #[doc(inline)]
 pub use entity::Entity;
+
+mod global;
+#[doc(inline)]
+pub use global::Global;
+
 pub mod system;
+
 pub mod world;
 #[doc(inline)]
 pub use world::World;
+
 pub mod util;
 
 /// Creates a dynec world from bundles.
@@ -94,6 +106,3 @@ pub fn new<'t>(bundles: impl IntoIterator<Item = &'t dyn world::Bundle> + Copy) 
 
     world
 }
-
-/// A global state that can be requested by all systems.
-pub trait Global: Sized + 'static {}

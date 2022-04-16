@@ -1,79 +1,12 @@
 use std::collections::{HashMap, VecDeque};
 use std::sync::atomic::{self, AtomicBool};
+use std::sync::Arc;
+use std::thread;
 
+use crossbeam::channel;
 use parking_lot::{Condvar, Mutex, MutexGuard};
 
-fn build_multithread(builder: &super::Builder) -> Scheduler {
-    let send_tasks =
-        (0..builder.send_systems.len()).map(|index| TaskId { class: TaskClass::Send, index });
-    let unsend_tasks =
-        (0..builder.unsend_systems.len()).map(|index| TaskId { class: TaskClass::Unsend, index });
-    let partition_tasks =
-        (0..builder.partitions.len()).map(|index| TaskId { class: TaskClass::Partition, index });
-
-    let mut dependents: HashMap<_, _> = [TASK_SOURCE, TASK_SINK]
-        .into_iter()
-        .chain(send_tasks.clone())
-        .chain(unsend_tasks.clone())
-        .chain(partition_tasks.clone())
-        .map(|task| (task, Vec::new()))
-        .collect();
-
-    for task in send_tasks.clone().chain(unsend_tasks.clone()) {
-        // all systems depend on TASK_SOURCE
-        dependents.get_mut(&task).expect("just inserted").push(TASK_SOURCE);
-        // TASK_SINK depends on all systems
-        dependents.get_mut(&TASK_SINK).expect("just inserted").push(task);
-    }
-
-    for (task, task_dependents) in &builder.dependents {
-        dependents.get_mut(task).expect("unknown task").extend(task_dependents);
-    }
-
-    let mut exclusions: HashMap<_, _> = [TASK_SOURCE, TASK_SINK]
-        .into_iter()
-        .chain(send_tasks.clone())
-        .chain(unsend_tasks.clone())
-        .chain(partition_tasks.clone())
-        .map(|task| (task, Vec::new()))
-        .collect();
-
-    for (comp_ty, tasks) in &builder.components {
-        for (offset, &(task1, ref access1)) in tasks.iter().enumerate() {
-            for &(task2, ref access2) in &tasks[(offset + 1)..] {
-                if access1.conflicts_with(access2) {
-                    exclusions.get_mut(&task1).expect("unknown task").push(task2);
-                    exclusions.get_mut(&task2).expect("unknown task").push(task1);
-                }
-            }
-        }
-    }
-
-    let mut blocker_count_cache: HashMap<_, _> = [TASK_SOURCE, TASK_SINK]
-        .into_iter()
-        .chain(send_tasks)
-        .chain(unsend_tasks)
-        .chain(partition_tasks)
-        .map(|task| (task, 0))
-        .collect();
-    for (dep, vec) in &builder.dependents {
-        for task_dependent in vec {
-            *blocker_count_cache.get_mut(task_dependent).expect("unknown task") += 1;
-        }
-    }
-
-    let graph = Graph { dependents, exclusions, blocker_count_cache };
-
-    let sync_state = SyncState { condvar: Condvar::new(), completed: AtomicBool::new(false) };
-
-    let state = State {
-        blocker_count:         graph.blocker_count_cache.clone(),
-        send_runnable_queue:   VecDeque::new(),
-        unsend_runnable_queue: VecDeque::new(),
-    };
-
-    Scheduler { graph, sync_state, state: Mutex::new(state) }
-}
+use crate::system;
 
 pub(crate) struct Scheduler {
     graph:      Graph,
@@ -81,11 +14,171 @@ pub(crate) struct Scheduler {
     state:      Mutex<State>,
 }
 
-pub(crate) struct Graph {
-    pub(crate) dependents: HashMap<TaskId, Vec<TaskId>>,
-    pub(crate) exclusions: HashMap<TaskId, Vec<TaskId>>,
+impl Scheduler {
+    pub(crate) fn build(builder: super::Builder) -> Scheduler {
+        let send_tasks =
+            (0..builder.send_systems.len()).map(|index| TaskId { class: TaskClass::Send, index });
+        let unsend_tasks = (0..builder.unsend_systems.len())
+            .map(|index| TaskId { class: TaskClass::Unsend, index });
+        let partition_tasks = (0..builder.partitions.len())
+            .map(|index| TaskId { class: TaskClass::Partition, index });
 
+        let mut dependents: HashMap<_, _> = [TASK_SOURCE, TASK_SINK]
+            .into_iter()
+            .chain(send_tasks.clone())
+            .chain(unsend_tasks.clone())
+            .chain(partition_tasks.clone())
+            .map(|task| (task, Vec::new()))
+            .collect();
+
+        for task in send_tasks.clone().chain(unsend_tasks.clone()) {
+            // all systems depend on TASK_SOURCE
+            dependents.get_mut(&task).expect("just inserted").push(TASK_SOURCE);
+            // TASK_SINK depends on all systems
+            dependents.get_mut(&TASK_SINK).expect("just inserted").push(task);
+        }
+
+        for (task, task_dependents) in &builder.dependents {
+            dependents.get_mut(task).expect("unknown task").extend(task_dependents);
+        }
+
+        let mut exclusions: HashMap<_, _> = [TASK_SOURCE, TASK_SINK]
+            .into_iter()
+            .chain(send_tasks.clone())
+            .chain(unsend_tasks.clone())
+            .chain(partition_tasks.clone())
+            .map(|task| (task, Vec::new()))
+            .collect();
+
+        for (comp_ty, tasks) in &builder.components {
+            for (offset, &(task1, ref access1)) in tasks.iter().enumerate() {
+                for &(task2, ref access2) in &tasks[(offset + 1)..] {
+                    if access1.conflicts_with(access2) {
+                        exclusions.get_mut(&task1).expect("unknown task").push(task2);
+                        exclusions.get_mut(&task2).expect("unknown task").push(task1);
+                    }
+                }
+            }
+        }
+
+        let mut blocker_count_cache: HashMap<_, _> = [TASK_SOURCE, TASK_SINK]
+            .into_iter()
+            .chain(send_tasks)
+            .chain(unsend_tasks)
+            .chain(partition_tasks)
+            .map(|task| (task, 0))
+            .collect();
+        for (dep, vec) in &builder.dependents {
+            for task_dependent in vec {
+                *blocker_count_cache.get_mut(task_dependent).expect("unknown task") += 1;
+            }
+        }
+
+        let graph = Graph {
+            dependents,
+            exclusions,
+            blocker_count_cache,
+            send_systems: builder.send_systems.into_iter().map(Mutex::new).collect(),
+        };
+
+        let sync_state = SyncState { condvar: Condvar::new(), completed: AtomicBool::new(false) };
+
+        let state = State {
+            blocker_count:         graph.blocker_count_cache.clone(),
+            send_runnable_queue:   VecDeque::new(),
+            unsend_runnable_queue: VecDeque::new(),
+        };
+
+        Scheduler { graph, sync_state, state: Mutex::new(state) }
+    }
+}
+
+pub(crate) struct ThreadPool {
+    workers: Vec<Worker>,
+}
+
+impl ThreadPool {
+    fn new(size: usize) -> Self { Self { workers: Vec::with_capacity(size) } }
+
+    fn run(&mut self, scheduler: &Arc<Scheduler>) {
+        while self.workers.len() < self.workers.capacity() {
+            self.workers.push(Worker::spawn(Arc::clone(scheduler)));
+        }
+
+        for worker in &self.workers {
+            match worker.wakeup.try_send(WorkerWakeup::StartCycle) {
+                Ok(()) => (),
+                Err(channel::TrySendError::Full(_)) => {
+                    log::warn!("worker thread is more than one cycle off");
+                }
+                Err(channel::TrySendError::Disconnected(_)) => panic!("worker thread panic"),
+            }
+        }
+    }
+}
+
+enum WorkerWakeup {
+    StartCycle,
+    Shutdown,
+}
+
+struct Worker {
+    wakeup: channel::Sender<WorkerWakeup>,
+    jh:     Option<thread::JoinHandle<()>>,
+}
+
+impl Worker {
+    fn spawn(scheduler: Arc<Scheduler>) -> Self {
+        let (wakeup_tx, wakeup_rx) = channel::bounded(1);
+        let jh = thread::spawn(move || {
+            for wakeup in wakeup_rx {
+                match wakeup {
+                    WorkerWakeup::StartCycle => {
+                        let state = &scheduler.state;
+                        let mut state = state.lock();
+                        if let Some(task) = State::steal_task(
+                            &mut state,
+                            false,
+                            &scheduler.graph,
+                            &scheduler.sync_state,
+                        ) {
+                            assert_eq!(task.class, TaskClass::Send);
+                            let system = scheduler
+                                .graph
+                                .send_systems
+                                .get(task.index)
+                                .expect("stole unknown task");
+                            let mut system = system
+                                .try_lock()
+                                .expect("stolen system is locked by another system");
+                            system.run();
+                        }
+                    }
+                    WorkerWakeup::Shutdown => break,
+                }
+            }
+        });
+
+        Self { wakeup: wakeup_tx, jh: Some(jh) }
+    }
+}
+
+impl Drop for Worker {
+    fn drop(&mut self) {
+        self.wakeup.send(WorkerWakeup::Shutdown).expect("worker thread panic");
+        self.jh
+            .take()
+            .expect("JoinHandle is only dropped in the Drop impl")
+            .join()
+            .expect("worker thread panic");
+    }
+}
+
+pub(crate) struct Graph {
+    pub(crate) dependents:          HashMap<TaskId, Vec<TaskId>>,
+    pub(crate) exclusions:          HashMap<TaskId, Vec<TaskId>>,
     pub(crate) blocker_count_cache: HashMap<TaskId, usize>,
+    pub(crate) send_systems:        Vec<Mutex<Box<dyn system::Spec + Send>>>,
 }
 
 impl Graph {
@@ -173,11 +266,12 @@ impl State {
         };
     }
 
-    /// Selects a task and steals it to run.
+    /// Steals a task and updates the runnability constraints.
+    ///
     /// Blocks the thread until a task is available or the iteration is done.
+    /// Returns `None` if the cycle finished.
     fn steal_task(
         this: &mut MutexGuard<'_, Self>,
-        task: TaskId,
         main_thread: bool,
         graph: &Graph,
         sync_state: &SyncState,

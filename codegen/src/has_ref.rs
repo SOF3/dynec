@@ -26,7 +26,7 @@ pub(crate) fn has_ref(input: &mut syn::DeriveInput) -> Result<TokenStream> {
             }
 
             generics.impl_trait(
-                quote!(::dynec::entity::Owner),
+                quote!(::dynec::entity::Referrer),
                 quote! {
                     fn visit<'s, 'f, F: FnMut(&'s mut ::dynec::entity::Raw)>(
                         &'s mut self,
@@ -34,7 +34,7 @@ pub(crate) fn has_ref(input: &mut syn::DeriveInput) -> Result<TokenStream> {
                         visitor: &'f mut F,
                     ) {
                         #(
-                            ::dynec::entity::Owner::visit(
+                            ::dynec::entity::Referrer::visit(
                                 &mut #fields,
                                 ty,
                                 visitor,
@@ -84,7 +84,7 @@ pub(crate) fn has_ref(input: &mut syn::DeriveInput) -> Result<TokenStream> {
                 arms.push(quote! {
                     Self::#variant_ident #pattern => {
                         #(
-                            ::dynec::entity::Owner::visit(
+                            ::dynec::entity::Referrer::visit(
                                 &mut #fields,
                                 ty,
                                 visitor,
@@ -95,7 +95,7 @@ pub(crate) fn has_ref(input: &mut syn::DeriveInput) -> Result<TokenStream> {
             }
 
             generics.impl_trait(
-                quote!(::dynec::entity::Owner),
+                quote!(::dynec::entity::Referrer),
                 quote! {
                     fn visit<'s, 'f, F: FnMut(&'s mut ::dynec::entity::Raw)>(
                         &'s mut self,

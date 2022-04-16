@@ -20,12 +20,14 @@ impl dynec::world::Bundle for Bundle {
 // Normally this should be a `std::time::Instant`, but we use `u64` for mocking.
 type Time = u64;
 
+#[derive(dynec::HasRef)]
 pub struct TimeFunction {
     f: Box<dyn Fn() -> Time>,
 }
 
 impl dynec::Global for TimeFunction {}
 
+#[derive(dynec::HasRef)]
 pub struct Delta {
     pub delta: Time,
 }

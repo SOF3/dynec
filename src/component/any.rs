@@ -120,75 +120,50 @@ macro_rules! impl_auto_init_fn {
     }
 }
 
-impl_auto_init_fn!();
-impl_auto_init_fn!(P1);
-impl_auto_init_fn!(P1, P2);
-impl_auto_init_fn!(P1, P2, P3);
-impl_auto_init_fn!(P1, P2, P3, P4);
-impl_auto_init_fn!(P1, P2, P3, P4, P5);
-impl_auto_init_fn!(P1, P2, P3, P4, P5, P6);
-impl_auto_init_fn!(P1, P2, P3, P4, P5, P6, P7);
-impl_auto_init_fn!(P1, P2, P3, P4, P5, P6, P7, P8);
-impl_auto_init_fn!(P1, P2, P3, P4, P5, P6, P7, P8, P9);
-impl_auto_init_fn!(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10);
-impl_auto_init_fn!(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11);
-impl_auto_init_fn!(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12);
-impl_auto_init_fn!(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13);
-impl_auto_init_fn!(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14);
-impl_auto_init_fn!(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15);
-impl_auto_init_fn!(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16);
-impl_auto_init_fn!(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17);
-impl_auto_init_fn!(P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18);
-impl_auto_init_fn!(
-    P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19
-);
-impl_auto_init_fn!(
-    P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20
-);
-impl_auto_init_fn!(
-    P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20, P21
-);
-impl_auto_init_fn!(
-    P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20, P21,
-    P22
-);
-impl_auto_init_fn!(
-    P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20, P21,
-    P22, P23
-);
-impl_auto_init_fn!(
-    P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20, P21,
-    P22, P23, P24
-);
-impl_auto_init_fn!(
-    P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20, P21,
-    P22, P23, P24, P25
-);
-impl_auto_init_fn!(
-    P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20, P21,
-    P22, P23, P24, P25, P26
-);
-impl_auto_init_fn!(
-    P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20, P21,
-    P22, P23, P24, P25, P26, P27
-);
-impl_auto_init_fn!(
-    P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20, P21,
-    P22, P23, P24, P25, P26, P27, P28
-);
-impl_auto_init_fn!(
-    P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20, P21,
-    P22, P23, P24, P25, P26, P27, P28, P29
-);
-impl_auto_init_fn!(
-    P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20, P21,
-    P22, P23, P24, P25, P26, P27, P28, P29, P30
-);
-impl_auto_init_fn!(
-    P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20, P21,
-    P22, P23, P24, P25, P26, P27, P28, P29, P30, P31
-);
-impl_auto_init_fn!(
+macro_rules! impl_auto_init_fn_accumulate {
+    () => {
+        impl_auto_init_fn!();
+    };
+    ($first:ident $(, $rest:ident)*) => {
+        impl_auto_init_fn_accumulate!($($rest),*);
+        impl_auto_init_fn!($first $(, $rest)*);
+    }
+}
+impl_auto_init_fn_accumulate!(
     P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20, P21,
     P22, P23, P24, P25, P26, P27, P28, P29, P30, P31, P32
 );
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::test_util::*;
+
+    struct Comp1(i32);
+    impl_test_simple_component!(
+        Comp1,
+        presence(Optional),
+        init(None),
+        finalizer(false),
+        entity_refs()
+    );
+
+    #[derive(Debug, PartialEq)]
+    struct Comp2(i32);
+    impl_test_simple_component!(
+        Comp2,
+        presence(Optional),
+        init(None),
+        finalizer(false),
+        entity_refs()
+    );
+
+    #[test]
+    fn test_auto_init_fn() {
+        let auto_fn = (|comp1: &Comp1| Comp2(comp1.0 + 5)) as fn(&_) -> _;
+        let mut map = Map::default();
+        map.insert_simple(Comp1(2));
+        map.insert_simple(AutoInitFn::<TestArch, Comp2>::call(&auto_fn, &map));
+        assert_eq!(map.get_simple::<Comp2>(), Some(&Comp2(7)));
+    }
+}

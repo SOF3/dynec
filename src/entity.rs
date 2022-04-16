@@ -15,6 +15,9 @@ use std::sync::Arc;
 
 use crate::Archetype;
 
+mod permutation;
+pub use permutation::{Permutation, ValidationError};
+
 mod sealed {
     use crate::Archetype;
 
@@ -24,7 +27,7 @@ mod sealed {
 }
 
 /// A raw, untyped entity ID.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Raw(u32);
 
 impl Raw {
@@ -71,7 +74,7 @@ impl<A: Archetype> Clone for Entity<A> {
     }
 }
 
-impl<A: Archetype> Owner for Entity<A> {
+impl<A: Archetype> Referrer for Entity<A> {
     fn visit<'s, 'f, F: FnMut(&'s mut Raw)>(&'s mut self, ty: TypeId, visitor: &'f mut F) {
         if ty == TypeId::of::<A>() {
             visitor(&mut self.id);
@@ -82,7 +85,7 @@ impl<A: Archetype> Owner for Entity<A> {
 /// A weak counted reference to an entity.
 ///
 /// This reference can outlive the entity.
-/// However, it must still be visited in [`Owner::visit`].
+/// However, it must still be visited in [`Referrer::visit`].
 ///
 /// This type additionally stores the generation of an entity
 /// in order to disambiguate new entities that uses the recycled memory.
@@ -119,7 +122,7 @@ impl<A: Archetype> Clone for Weak<A> {
     }
 }
 
-impl<A: Archetype> Owner for Weak<A> {
+impl<A: Archetype> Referrer for Weak<A> {
     fn visit<'s, 'f, F: FnMut(&'s mut Raw)>(&'s mut self, ty: TypeId, visitor: &'f mut F) {
         if ty == TypeId::of::<A>() {
             visitor(&mut self.id);
@@ -131,7 +134,7 @@ impl<A: Archetype> Owner for Weak<A> {
 struct Generation(num::Wrapping<u32>);
 
 /// A type that may own entity references (no matter strong or weak).
-pub trait Owner {
+pub trait Referrer {
     /// Executes the given function for each entity reference.
-    fn visit<'s, 'f, F: FnMut(&'s mut Raw)>(&'s mut self, ty: TypeId, visitor: &'f mut F);
+    fn visit<'s, 'f, F: FnMut(&'s mut Raw)>(&'s mut self, archetype: TypeId, visitor: &'f mut F);
 }

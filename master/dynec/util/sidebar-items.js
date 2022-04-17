@@ -1,0 +1,1 @@
+initSidebarItems({"trait":[["Ref","A generic mutable/immutable reference type."]]});

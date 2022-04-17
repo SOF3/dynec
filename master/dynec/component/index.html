@@ -1,0 +1,62 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="A component is a small data structure that can be attached to an entity."><meta name="keywords" content="rust, rustlang, rust-lang, component"><title>dynec::component - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script src="../../crates.js"></script><script defer src="../../main.js"></script>
+    <noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../dynec/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
+        </a><h2 class="location"></h2>
+    </nav>
+    <nav class="sidebar"><a class="sidebar-logo" href="../../dynec/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
+        </a><h2 class="location"><a href="#">Module component</a></h2><div class="sidebar-elems"><section><div class="block"><ul><li><a href="#structs">Structs</a></li><li><a href="#enums">Enums</a></li><li><a href="#traits">Traits</a></li></ul></div></section><div id="sidebar-vars" data-name="component" data-ty="mod" data-relpath="./"></div><script defer src="./sidebar-items.js"></script></div></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../dynec/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><div class="theme-picker hidden"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="22" height="22" alt="Pick another theme!" src="../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></form></nav></div><section id="main-content" class="content"><div class="main-heading">
+    <h1 class="fqn"><span class="in-band">Module <a href="../index.html">dynec</a>::<wbr><a class="mod" href="#">component</a><button id="copy-path" onclick="copy_path(this)" title="Copy item path to clipboard"><img src="../../clipboard.svg" width="19" height="18" alt="Copy item path"></button></span></h1><span class="out-of-band"><a class="srclink" href="../../src/dynec/component.rs.html#1-240">source</a> · <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span></div><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A component is a small data structure that can be attached to an entity.</p>
+<p>dynec is a statically-archetyped ECS framework.
+Components can only be attached to entities of an archetype <code>A</code>
+where the component type implements <code>Simple&lt;A&gt;</code> or <code>Isotope&lt;A&gt;</code>.</p>
+<h2 id="simple-vs-isotope-components"><a href="#simple-vs-isotope-components">Simple vs Isotope components</a></h2>
+<p>A component type must implement either <a href="trait.Simple.html" title="Simple"><code>Simple</code></a> or <a href="trait.Isotope.html" title="Isotope"><code>Isotope</code></a> to be useful.</p>
+<p>Component types that implement <a href="trait.Simple.html" title="Simple"><code>Simple</code></a> are called simple components.
+There can only be one instance of each simple component type for each entity.
+This means that each entity is effectively a typemap of its simple components.</p>
+<p>Component types that implement <a href="trait.Isotope.html" title="Isotope"><code>Isotope</code></a> are called isotope components.
+For an isotope component type <code>C</code>,
+there can be multiple instances of <code>C</code> stored on the same entity,
+indexed by <a href="trait.Isotope.html#associatedtype.Discrim">its discriminant type</a> <a href="trait.Discrim.html" title="Discrim"><code>Discrim</code></a>.
+You can consider isotope components to be basically simple components with the type <code>Vec&lt;C&gt;</code>,
+except with <a href="#storage">more efficient storage</a>.
+Note that dynec instantiates a new storage for each discriminant,
+so there should be a reasonably small number of distinct discriminants.</p>
+<h2 id="registration"><a href="#registration">Registration</a></h2>
+<p>Archetypes and components are registered to the world
+when a system that uses this archetype-component pair is scheduled.</p>
+<h2 id="storage"><a href="#storage">Storage</a></h2>
+<p>For simple components, components of the same component type and archetype are stored together.</p>
+<p>For isotope components, components of the same component type, same archetype <em>and same
+discriminant</em> are stored together.
+This means each (component type + discriminant) combination is considered as a different
+component type.</p>
+<p>For each storage, the components are either stored in a <code>Vec&lt;MaybeUninit&lt;C&gt;&gt;</code> or a <code>BTreeMap&lt;C&gt;</code>.</p>
+<p>If a simple component is optional and the storage is a <code>Vec&lt;MaybeUninit&lt;C&gt;&gt;</code>,
+its presence in each entity is stored in a bitvec.
+Isotope components are either lazy-initialized or optional,
+so they always use a bitvec to store presence.</p>
+<h2 id="instantiation"><a href="#instantiation">Instantiation</a></h2>
+<p>When an entity is created, its simple components are auto-instantiated based on the <a href="enum.SimpleInitStrategy.html" title="SimpleInitStrategy"><code>SimpleInitStrategy</code></a>
+specified in <a href="trait.Simple.html#associatedconstant.INIT_STRATEGY" title="Simple::INIT_STRATEGY"><code>Simple::INIT_STRATEGY</code></a> if it is absent in the creation args.</p>
+<p>Isotope components are never instantiated on entity creation.</p>
+</div></details><h2 id="structs" class="small-section-header"><a href="#structs">Structs</a></h2>
+<div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.AutoIniter.html" title="dynec::component::AutoIniter struct">AutoIniter</a></div><div class="item-right docblock-short"><p>Describes how to instantiate a component based on other component types.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.IsotopeMap.html" title="dynec::component::IsotopeMap struct">IsotopeMap</a></div><div class="item-right docblock-short"><p>A special type that implements <a href="trait.Retrievable.html" title="Retrievable"><code>Retrievable</code></a> like simple components,
+but exposes a map-like interface to access isotope components,
+as if isotopes were implemented as <code>BTreeMap&lt;C::Discrim, C&gt;</code>.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.Map.html" title="dynec::component::Map struct">Map</a></div><div class="item-right docblock-short"><p>A generic TypeMap of owned simple and isotope components.</p>
+</div></div></div><h2 id="enums" class="small-section-header"><a href="#enums">Enums</a></h2>
+<div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="enum" href="enum.IsotopeInitStrategy.html" title="dynec::component::IsotopeInitStrategy enum">IsotopeInitStrategy</a></div><div class="item-right docblock-short"><p>Describes how an isotope component is auto-initialized.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="enum" href="enum.SimpleInitStrategy.html" title="dynec::component::SimpleInitStrategy enum">SimpleInitStrategy</a></div><div class="item-right docblock-short"><p>Describes how a component is auto-initialized.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="enum" href="enum.SimplePresence.html" title="dynec::component::SimplePresence enum">SimplePresence</a></div><div class="item-right docblock-short"><p>Describes whether a component must be present.</p>
+</div></div></div><h2 id="traits" class="small-section-header"><a href="#traits">Traits</a></h2>
+<div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="trait" href="trait.AutoInitFn.html" title="dynec::component::AutoInitFn trait">AutoInitFn</a></div><div class="item-right docblock-short"><p>A function used for <a href="enum.SimpleInitStrategy.html#variant.Auto" title="component::SimpleInitStrategy::Auto"><code>component::SimpleInitStrategy::Auto</code></a>.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="trait" href="trait.Discrim.html" title="dynec::component::Discrim trait">Discrim</a></div><div class="item-right docblock-short"><p>A discriminant value that distinguishes different isotopes of the same component type.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="trait" href="trait.Isotope.html" title="dynec::component::Isotope trait">Isotope</a></div><div class="item-right docblock-short"><p>An isotope component may have multiple instances per entity.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="trait" href="trait.Must.html" title="dynec::component::Must trait">Must</a></div><div class="item-right docblock-short"><p>Marks that a component type is always present.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="trait" href="trait.Retrievable.html" title="dynec::component::Retrievable trait">Retrievable</a></div><div class="item-right docblock-short"><p>A trait implemented for <a href="trait.Simple.html" title="Simple"><code>Simple</code></a> references an <a href="struct.IsotopeMap.html" title="IsotopeMap"><code>IsotopeMap</code></a>.
+This trait is only used for early constraint checking in types that accept both types,
+and is not really useful by itself.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="trait" href="trait.Simple.html" title="dynec::component::Simple trait">Simple</a></div><div class="item-right docblock-short"><p>A simple component has only one instance per entity.</p>
+</div></div></div></section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (878c7833f 2022-04-16)" ></div>
+</body></html>

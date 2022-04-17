@@ -63,7 +63,9 @@
 #![cfg_attr(debug_assertions, allow(dead_code, unused_variables))]
 #![cfg_attr(doc, warn(missing_docs))]
 
-pub use dynec_codegen::{archetype, component, components, system, HasRef};
+mod macro_docs;
+#[doc(inline)]
+pub use macro_docs::*;
 
 #[macro_use]
 mod test_util;

@@ -26,9 +26,7 @@ pub fn archetype(input: TokenStream) -> TokenStream {
 
 #[proc_macro_attribute]
 pub fn system(args: TokenStream, input: TokenStream) -> TokenStream {
-    system::imp(args.into(), input.into(), false)
-        .unwrap_or_else(|err| err.to_compile_error())
-        .into()
+    system::imp(args.into(), input.into()).unwrap_or_else(|err| err.to_compile_error()).into()
 }
 
 #[proc_macro_derive(HasRef, attributes(has_ref))]

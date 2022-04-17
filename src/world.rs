@@ -79,7 +79,7 @@ mod scheduler;
 
 /// The data structure that stores all states in the game.
 pub struct World {
-    storages: RwLock<BTreeMap<ComponentIdentifier, storage::Ref>>,
+    storages: RwLock<BTreeMap<ComponentIdentifier, storage::Shared>>,
 }
 
 impl World {
@@ -97,3 +97,6 @@ impl World {
         todo!()
     }
 }
+
+#[cfg(test)]
+mod tests;

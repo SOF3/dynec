@@ -75,6 +75,9 @@ impl<A: Archetype> Map<A> {
     pub(crate) fn get_simple<C: component::Simple<A>>(&self) -> Option<&C> {
         self.map.get(&Identifier::simple::<A, C>()).and_then(|c| c.downcast_ref())
     }
+
+    /// Returns the number of components in the map.
+    pub fn len(&self) -> usize { self.map.len() }
 }
 
 /// Describes how to instantiate a component based on other component types.

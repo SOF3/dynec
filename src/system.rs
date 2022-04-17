@@ -13,7 +13,7 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash;
 use std::marker::PhantomData;
 
-use crate::{component, util, Archetype, Global as GlobalTrait};
+use crate::{component, util, Archetype};
 
 /// Provides immutable or mutable access to a simple component in a specific archetype.
 pub struct Simple<A: Archetype, R: util::Ref>
@@ -29,14 +29,6 @@ where
     R::Target: component::Isotope<A>,
 {
     _ph: PhantomData<(A, R)>,
-}
-
-/// Provides immutable or mutable access to a global state.
-pub struct Global<R: util::Ref>
-where
-    R::Target: GlobalTrait,
-{
-    _ph: PhantomData<R>,
 }
 
 /// A partition is a hashable type constructed by system specifications

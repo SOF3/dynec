@@ -7,7 +7,7 @@ use parking_lot::RwLock;
 
 use crate::entity;
 
-pub(crate) type Ref = Arc<RwLock<dyn AnyStorage>>;
+pub(crate) type Shared = Arc<RwLock<dyn AnyStorage>>;
 
 pub(crate) trait AnyStorage {}
 

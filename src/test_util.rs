@@ -14,9 +14,9 @@ macro_rules! impl_test_simple_component {
         }
 
         impl crate::entity::Referrer for $comp {
-            fn visit<'s, 'f, F: FnMut(&'s mut crate::entity::Raw)>(&'s mut self, ty: TypeId, visitor: &'f mut F) {
+            fn visit_each<'s, F: crate::entity::Visitor<'s>>(&'s mut self, archetype: TypeId, visitor: &mut F) {
                 $(
-                    crate::entity::Referrer::visit(&mut self.$entity_ref_fields, ty, visitor);
+                    crate::entity::Referrer::visit_each(&mut self.$entity_ref_fields, archetype, visitor);
                 )*
             }
         }

@@ -28,15 +28,15 @@ pub(crate) fn has_ref(input: &mut syn::DeriveInput) -> Result<TokenStream> {
             generics.impl_trait(
                 quote!(::dynec::entity::Referrer),
                 quote! {
-                    fn visit<'s, 'f, F: FnMut(&'s mut ::dynec::entity::Raw)>(
+                    fn visit_each<'s, F: ::dynec::entity::Visitor<'s>>(
                         &'s mut self,
-                        ty: ::std::any::TypeId,
-                        visitor: &'f mut F,
+                        archetype: ::std::any::TypeId,
+                        visitor: &mut F,
                     ) {
                         #(
-                            ::dynec::entity::Referrer::visit(
+                            ::dynec::entity::Referrer::visit_each(
                                 &mut #fields,
-                                ty,
+                                archetype,
                                 visitor,
                             );
                         )*
@@ -84,9 +84,9 @@ pub(crate) fn has_ref(input: &mut syn::DeriveInput) -> Result<TokenStream> {
                 arms.push(quote! {
                     Self::#variant_ident #pattern => {
                         #(
-                            ::dynec::entity::Referrer::visit(
+                            ::dynec::entity::Referrer::visit_each(
                                 &mut #fields,
-                                ty,
+                                arhcetype,
                                 visitor,
                             );
                         )*
@@ -97,10 +97,10 @@ pub(crate) fn has_ref(input: &mut syn::DeriveInput) -> Result<TokenStream> {
             generics.impl_trait(
                 quote!(::dynec::entity::Referrer),
                 quote! {
-                    fn visit<'s, 'f, F: FnMut(&'s mut ::dynec::entity::Raw)>(
+                    fn visit_each<'s, F: ::dynec::entity::Visitor<'s>>(
                         &'s mut self,
-                        ty: ::std::any::TypeId,
-                        visitor: &'f mut F,
+                        archetype: ::std::any::TypeId,
+                        visitor: &mut F,
                     ) {
                         match self {
                             #(#arms)*

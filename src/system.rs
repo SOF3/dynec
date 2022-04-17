@@ -13,7 +13,7 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash;
 use std::marker::PhantomData;
 
-use crate::{component, util, Archetype, Global};
+use crate::{component, util, Archetype, Global as GlobalTrait};
 
 /// Provides immutable or mutable access to a simple component in a specific archetype.
 pub struct Simple<A: Archetype, R: util::Ref>
@@ -32,9 +32,9 @@ where
 }
 
 /// Provides immutable or mutable access to a global state.
-pub struct Glob<R: util::Ref>
+pub struct Global<R: util::Ref>
 where
-    R::Target: Global,
+    R::Target: GlobalTrait,
 {
     _ph: PhantomData<R>,
 }

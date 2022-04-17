@@ -191,7 +191,7 @@ where
     /// Panics if the discriminant is restricted in the system spec.
     pub fn try_get(
         &self,
-        entity: &dyn entity::Ref<A>,
+        entity: &impl entity::Ref<Archetype = A>,
         discrim: <R::Target as Isotope<A>>::Discrim,
     ) -> Option<&<R::Target as Isotope<A>>::Discrim> {
         todo!()

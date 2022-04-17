@@ -8,7 +8,6 @@
 //!
 //! All strong references to an entity must be dropped before it gets deleted.
 
-use std::any::TypeId;
 use std::marker::PhantomData;
 use std::num;
 use std::sync::Arc;
@@ -16,28 +15,61 @@ use std::sync::Arc;
 use crate::Archetype;
 
 mod permutation;
-pub use permutation::{Permutation, ValidationError};
+pub use permutation::Permutation;
+
+mod referrer;
+pub use referrer::{Referrer, Visitor};
 
 mod sealed {
-    use crate::Archetype;
-
-    pub trait Ref<A: Archetype> {
-        fn id(&self) -> super::Raw;
+    pub trait Ref {
+        fn id(&self) -> Raw;
     }
+
+    /// Sealed-public wrapper for `Raw`.
+    pub struct Raw(pub(super) super::Raw);
+
+    /// Sealed-public wrapper for `&mut Raw`.
+    pub struct RefMutRaw<'s>(pub(super) &'s mut super::Raw);
+}
+
+#[allow(unused_imports)]
+pub(crate) use sealed::Ref as RefId;
+
+/// A trait implemented by all types of entity references.
+pub trait Ref: sealed::Ref {
+    type Archetype: Archetype;
 }
 
 /// A raw, untyped entity ID.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Raw(u32);
+pub(crate) struct Raw(u32);
 
 impl Raw {
     pub(crate) fn usize(self) -> usize { self.0.try_into().expect("usize >= u32") }
+
+    pub(crate) fn into_api<A: Archetype>(self) -> UnclonableRef<A> {
+        UnclonableRef { value: self, _ph: PhantomData }
+    }
 }
 
-/// A trait implemented by all types of entity references.
-pub trait Ref<A: Archetype>: sealed::Ref<A> {}
+/// An unclonable reference to an entity.
+///
+/// This type is not ref-counted.
+/// It is only used as a short-lived pointer passed from the dynec API
+/// for entity references that should not outlive a short scope (e.g. an API callback).
+/// Thus, it is always passed to users as a reference and cannot be cloned.
+#[repr(transparent)]
+pub struct UnclonableRef<A: Archetype> {
+    value: Raw,
+    _ph:   PhantomData<A>,
+}
 
-impl<A: Archetype, T: sealed::Ref<A>> Ref<A> for T {}
+impl<A: Archetype> sealed::Ref for UnclonableRef<A> {
+    fn id(&self) -> sealed::Raw { sealed::Raw(self.value) }
+}
+impl<A: Archetype> Ref for UnclonableRef<A> {
+    type Archetype = A;
+}
 
 /// A counted reference to an entity.
 ///
@@ -55,8 +87,29 @@ pub struct Entity<A: Archetype> {
     rc: Arc<()>,
 }
 
-impl<A: Archetype> sealed::Ref<A> for Entity<A> {
-    fn id(&self) -> Raw { self.id }
+impl<A: Archetype> Entity<A> {
+    /// Allocates a new strong reference to an entity.
+    ///
+    /// This method should only be used when a completely new entity has been created.
+    pub(crate) fn allocate_new(id: Raw) -> Self {
+        Self {
+            id,
+            _ph: PhantomData,
+
+            #[cfg(any(
+                all(debug_assertions, feature = "debug-entity-rc"),
+                all(not(debug_assertions), feature = "release-entity-rc"),
+            ))]
+            rc: Arc::new(()),
+        }
+    }
+}
+
+impl<A: Archetype> sealed::Ref for Entity<A> {
+    fn id(&self) -> sealed::Raw { sealed::Raw(self.id) }
+}
+impl<A: Archetype> Ref for Entity<A> {
+    type Archetype = A;
 }
 
 impl<A: Archetype> Clone for Entity<A> {
@@ -70,14 +123,6 @@ impl<A: Archetype> Clone for Entity<A> {
                 all(not(debug_assertions), feature = "release-entity-rc"),
             ))]
             rc: Arc::clone(&self.rc),
-        }
-    }
-}
-
-impl<A: Archetype> Referrer for Entity<A> {
-    fn visit<'s, 'f, F: FnMut(&'s mut Raw)>(&'s mut self, ty: TypeId, visitor: &'f mut F) {
-        if ty == TypeId::of::<A>() {
-            visitor(&mut self.id);
         }
     }
 }
@@ -102,8 +147,11 @@ pub struct Weak<A: Archetype> {
     rc: Arc<()>,
 }
 
-impl<A: Archetype> sealed::Ref<A> for Weak<A> {
-    fn id(&self) -> Raw { self.id }
+impl<A: Archetype> sealed::Ref for Weak<A> {
+    fn id(&self) -> sealed::Raw { sealed::Raw(self.id) }
+}
+impl<A: Archetype> Ref for Weak<A> {
+    type Archetype = A;
 }
 
 impl<A: Archetype> Clone for Weak<A> {
@@ -122,19 +170,16 @@ impl<A: Archetype> Clone for Weak<A> {
     }
 }
 
-impl<A: Archetype> Referrer for Weak<A> {
-    fn visit<'s, 'f, F: FnMut(&'s mut Raw)>(&'s mut self, ty: TypeId, visitor: &'f mut F) {
-        if ty == TypeId::of::<A>() {
-            visitor(&mut self.id);
-        }
-    }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct Generation(num::Wrapping<u32>);
 
-/// A type that may own entity references (no matter strong or weak).
-pub trait Referrer {
-    /// Executes the given function for each entity reference.
-    fn visit<'s, 'f, F: FnMut(&'s mut Raw)>(&'s mut self, archetype: TypeId, visitor: &'f mut F);
+#[cfg(test)]
+mod tests {
+    use super::{Raw, Ref};
+    use crate::test_util::TestArch;
+
+    // ensure that Ref<Archetype = A> for a fixed `A` must be object-safe.
+    fn test_object_safety() {
+        let _: &dyn Ref<Archetype = TestArch> = &Raw(1).into_api::<TestArch>();
+    }
 }

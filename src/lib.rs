@@ -86,23 +86,8 @@ pub mod system;
 
 pub mod world;
 #[doc(inline)]
+pub use world::new;
+#[doc(inline)]
 pub use world::World;
 
 pub mod util;
-
-/// Creates a dynec world from bundles.
-pub fn new<'t>(bundles: impl IntoIterator<Item = &'t dyn world::Bundle> + Copy) -> World {
-    let mut builder = world::Builder::default();
-
-    for bundle in bundles {
-        bundle.register(&mut builder);
-    }
-
-    let mut world = builder.build();
-
-    for bundle in bundles {
-        bundle.populate(&mut world);
-    }
-
-    world
-}

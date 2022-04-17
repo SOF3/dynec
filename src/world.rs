@@ -19,6 +19,23 @@ pub trait Bundle {
     fn populate(&self, world: &mut World) {}
 }
 
+/// Creates a dynec world from bundles.
+pub fn new<'t>(bundles: impl IntoIterator<Item = &'t dyn Bundle> + Copy) -> World {
+    let mut builder = Builder::default();
+
+    for bundle in bundles {
+        bundle.register(&mut builder);
+    }
+
+    let mut world = builder.build();
+
+    for bundle in bundles {
+        bundle.populate(&mut world);
+    }
+
+    world
+}
+
 /// Identifies an archetype + component type.
 pub(crate) struct ArchComp {
     arch: TypeId,
@@ -67,15 +84,15 @@ pub struct World {
 impl World {
     /// Adds an entity to the world.
     pub fn create<A: Archetype>(&mut self, components: component::Map<A>) -> Entity<A> {
-        self.create_near::<A, entity::Entity<A>>(None, components)
+        self.create_near::<entity::Entity<A>>(None, components)
     }
 
     /// Adds an entity to the world near another entity.
-    pub fn create_near<A: Archetype, E: entity::Ref<A>>(
+    pub fn create_near<E: entity::Ref>(
         &mut self,
         near: Option<E>,
-        components: component::Map<A>,
-    ) -> Entity<A> {
+        components: component::Map<<E as entity::Ref>::Archetype>,
+    ) -> Entity<<E as entity::Ref>::Archetype> {
         todo!()
     }
 }

@@ -15,7 +15,7 @@ pub trait Spec {
     /// Executes the given function on each dependency.
     fn for_each_dependency(&self, f: &mut dyn FnMut(Dependency));
 
-    /// Executes the given function on each global resource request.
+    /// Executes the given function on each global state request.
     fn for_each_global_request(&self, f: &mut dyn FnMut(GlobalRequest));
 
     /// Executes the given function on each simple component read/write request.
@@ -44,9 +44,9 @@ impl Dependency {
     pub fn after(p: impl system::Partition) -> Self { Self::After(Box::new(p)) }
 }
 
-/// Indicates that the system requires a global resource.
+/// Indicates that the system requires a global state.
 pub struct GlobalRequest {
-    /// The type of the global resource.
+    /// The type of the global state.
     pub global:  TypeId,
     /// Whether mutable access is requested.
     pub mutable: bool,

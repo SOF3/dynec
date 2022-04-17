@@ -1,9 +1,14 @@
-/// A generic mutable/immutable reference type
+//! Miscellaneous traits used for exposing type bounds in the API.
+
+/// A generic mutable/immutable reference type.
 pub trait Ref {
+    /// The owned type.
     type Target: ?Sized;
 
+    /// Whether the reference is mutable.
     const MUTABLE: bool;
 
+    /// Converts the reference to a shared reference.
     fn as_ref(&self) -> &Self::Target;
 }
 

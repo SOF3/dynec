@@ -9,7 +9,15 @@ pub trait Referrer {
     fn visit_each<'s, F: Visitor<'s>>(&'s mut self, archetype: TypeId, visitor: &mut F);
 }
 
+/// A value used to visit each entity reference.
+///
+/// This trait shall not be implemented or called by user code.
+/// The only use of this trait is as an opaque wrapper for visitors passed in [`Referrer`]
+/// implementations.
 pub trait Visitor<'s> {
+    /// Visits an entity reference.
+    ///
+    /// This method shall not be called by user code.
     fn visit(&mut self, raw: sealed::RefMutRaw<'s>);
 }
 

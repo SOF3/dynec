@@ -26,10 +26,10 @@ mod sealed {
     }
 
     /// Sealed-public wrapper for `Raw`.
-    pub struct Raw(pub(super) super::Raw);
+    pub struct Raw(pub(crate) super::Raw);
 
     /// Sealed-public wrapper for `&mut Raw`.
-    pub struct RefMutRaw<'s>(pub(super) &'s mut super::Raw);
+    pub struct RefMutRaw<'s>(pub(crate) &'s mut super::Raw);
 }
 
 #[allow(unused_imports)]
@@ -37,6 +37,7 @@ pub(crate) use sealed::Ref as RefId;
 
 /// A trait implemented by all types of entity references.
 pub trait Ref: sealed::Ref {
+    /// The archetype that this entity belongs to.
     type Archetype: Archetype;
 }
 
@@ -130,7 +131,7 @@ impl<A: Archetype> Clone for Entity<A> {
 /// A weak counted reference to an entity.
 ///
 /// This reference can outlive the entity.
-/// However, it must still be visited in [`Referrer::visit`].
+/// However, it must still be visited in [`Referrer::visit_each`].
 ///
 /// This type additionally stores the generation of an entity
 /// in order to disambiguate new entities that uses the recycled memory.

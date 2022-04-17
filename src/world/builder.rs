@@ -30,9 +30,9 @@ pub struct Builder {
     /// Indexes systems that access a global.
     pub(crate) globals:    HashMap<TypeId, Vec<(scheduler::TaskId, bool)>>,
 
-    /// If dependencies[a].contains(b), b runs before a
+    /// If `dependencies[a].contains(b)`, `b` runs before `a`
     pub(crate) dependencies: HashMap<scheduler::TaskId, Vec<scheduler::TaskId>>,
-    /// If dependents[a].contains(b), a runs before b
+    /// If `dependents[a].contains(b)`, `a` runs before `b`
     pub(crate) dependents:   HashMap<scheduler::TaskId, Vec<scheduler::TaskId>>,
 }
 

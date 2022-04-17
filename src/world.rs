@@ -77,6 +77,7 @@ mod storage;
 
 mod scheduler;
 
+/// The data structure that stores all states in the game.
 pub struct World {
     storages: RwLock<BTreeMap<ComponentIdentifier, storage::Ref>>,
 }

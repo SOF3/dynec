@@ -102,6 +102,9 @@
 <span id="97">97</span>
 <span id="98">98</span>
 <span id="99">99</span>
+<span id="100">100</span>
+<span id="101">101</span>
+<span id="102">102</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The world stores the states of the game.</span>
 
 <span class="kw">use</span> <span class="ident">std::any::TypeId</span>;
@@ -183,7 +186,7 @@
 
 <span class="doccomment">/// The data structure that stores all states in the game.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">World</span> {
-    <span class="ident">storages</span>: <span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">ComponentIdentifier</span>, <span class="ident">storage::Ref</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">storages</span>: <span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">ComponentIdentifier</span>, <span class="ident">storage::Shared</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">World</span> {
@@ -201,6 +204,9 @@
         <span class="macro">todo!</span>()
     }
 }
+
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
+<span class="kw">mod</span> <span class="ident">tests</span>;
 </code></pre></div>
 </section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (878c7833f 2022-04-16)" ></div>
 </body></html>

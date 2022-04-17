@@ -38,8 +38,6 @@
 <span id="33">33</span>
 <span id="34">34</span>
 <span id="35">35</span>
-<span id="36">36</span>
-<span id="37">37</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">proc_macro::TokenStream</span>;
 
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">proc_macro</span>;
@@ -68,9 +66,7 @@
 
 <span class="attribute">#[<span class="ident">proc_macro_attribute</span>]</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">system</span>(<span class="ident">args</span>: <span class="ident">TokenStream</span>, <span class="ident">input</span>: <span class="ident">TokenStream</span>) -&gt; <span class="ident">TokenStream</span> {
-    <span class="ident">system::imp</span>(<span class="ident">args</span>.<span class="ident">into</span>(), <span class="ident">input</span>.<span class="ident">into</span>(), <span class="bool-val">false</span>)
-        .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">err</span>.<span class="ident">to_compile_error</span>())
-        .<span class="ident">into</span>()
+    <span class="ident">system::imp</span>(<span class="ident">args</span>.<span class="ident">into</span>(), <span class="ident">input</span>.<span class="ident">into</span>()).<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">err</span>.<span class="ident">to_compile_error</span>()).<span class="ident">into</span>()
 }
 
 <span class="attribute">#[<span class="ident">proc_macro_derive</span>(<span class="ident">HasRef</span>, <span class="ident">attributes</span>(<span class="ident">has_ref</span>))]</span>

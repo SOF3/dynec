@@ -97,14 +97,6 @@
 <span id="92">92</span>
 <span id="93">93</span>
 <span id="94">94</span>
-<span id="95">95</span>
-<span id="96">96</span>
-<span id="97">97</span>
-<span id="98">98</span>
-<span id="99">99</span>
-<span id="100">100</span>
-<span id="101">101</span>
-<span id="102">102</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Systems are actions performed every frame to manipulate entities and components.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! A system can declare mutable or immutable access</span>
@@ -120,7 +112,7 @@
 <span class="kw">use</span> <span class="ident">std::hash</span>;
 <span class="kw">use</span> <span class="ident">std::marker::PhantomData</span>;
 
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">component</span>, <span class="ident">util</span>, <span class="ident">Archetype</span>, <span class="ident">Global</span> <span class="kw">as</span> <span class="ident">GlobalTrait</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">component</span>, <span class="ident">util</span>, <span class="ident">Archetype</span>};
 
 <span class="doccomment">/// Provides immutable or mutable access to a simple component in a specific archetype.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Simple</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span>, <span class="ident">R</span>: <span class="ident">util::Ref</span><span class="op">&gt;</span>
@@ -136,14 +128,6 @@
     <span class="ident">R::Target</span>: <span class="ident">component::Isotope</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>,
 {
     <span class="ident">_ph</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span>(<span class="ident">A</span>, <span class="ident">R</span>)<span class="op">&gt;</span>,
-}
-
-<span class="doccomment">/// Provides immutable or mutable access to a global state.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Global</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">util::Ref</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-    <span class="ident">R::Target</span>: <span class="ident">GlobalTrait</span>,
-{
-    <span class="ident">_ph</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>,
 }
 
 <span class="doccomment">/// A partition is a hashable type constructed by system specifications</span>

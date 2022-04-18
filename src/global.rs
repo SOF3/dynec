@@ -7,7 +7,7 @@ use crate::entity;
 /// A global state may be a transitive owner of entity references.
 /// Thus, all global states must implement [`entity::Referrer`].
 pub trait Global: entity::Referrer + Sized + 'static {
-    /// This method is called during [`crate::world::Builder::build`]
+    /// This method is called during [`world::Builder::build`](crate::world::Builder::build)
     /// if some system requests this type but this type was not provided separately.
     ///
     /// The default implementation panics.

@@ -6,10 +6,10 @@ use crate::util;
 
 pub(crate) fn derive(input: TokenStream) -> Result<TokenStream> {
     let mut input: syn::DeriveInput = syn::parse2(input)?;
-    has_ref(&mut input)
+    entity_ref(&mut input)
 }
 
-pub(crate) fn has_ref(input: &mut syn::DeriveInput) -> Result<TokenStream> {
+pub(crate) fn entity_ref(input: &mut syn::DeriveInput) -> Result<TokenStream> {
     let generics = util::parse_generics(input);
 
     let output = match &mut input.data {
@@ -17,7 +17,7 @@ pub(crate) fn has_ref(input: &mut syn::DeriveInput) -> Result<TokenStream> {
             let mut fields = Vec::new();
 
             for (i, field) in s.fields.iter_mut().enumerate() {
-                if drain_has_ref(&mut field.attrs) {
+                if drain_entity_attr(&mut field.attrs) {
                     fields.push(match &field.ident {
                         Some(ident) => quote!(self.#ident),
                         None => quote!(self.#i),
@@ -54,30 +54,30 @@ pub(crate) fn has_ref(input: &mut syn::DeriveInput) -> Result<TokenStream> {
                     syn::Fields::Unit => (quote!(), Vec::new()),
                     syn::Fields::Unnamed(fields) => {
                         let mut field_names = Vec::new();
-                        let mut has_ref_fields = Vec::new();
+                        let mut entity_fields = Vec::new();
 
                         for (i, field) in fields.unnamed.iter_mut().enumerate() {
                             let field_name = format_ident!("field_{}", i);
                             field_names.push(field_name.clone());
 
-                            if drain_has_ref(&mut field.attrs) {
-                                has_ref_fields.push(field_name);
+                            if drain_entity_attr(&mut field.attrs) {
+                                entity_fields.push(field_name);
                             }
                         }
 
-                        (quote!((#(#field_names),*)), has_ref_fields)
+                        (quote!((#(#field_names),*)), entity_fields)
                     }
                     syn::Fields::Named(fields) => {
-                        let mut has_ref_fields = Vec::new();
+                        let mut entity_fields = Vec::new();
 
                         for field in &mut fields.named {
                             let field_name = field.ident.as_ref().expect("named fields");
-                            if drain_has_ref(&mut field.attrs) {
-                                has_ref_fields.push(field_name.clone());
+                            if drain_entity_attr(&mut field.attrs) {
+                                entity_fields.push(field_name.clone());
                             }
                         }
 
-                        (quote!({ #(#has_ref_fields,)* .. }), has_ref_fields)
+                        (quote!({ #(#entity_fields,)* .. }), entity_fields)
                     }
                 };
 
@@ -117,8 +117,8 @@ pub(crate) fn has_ref(input: &mut syn::DeriveInput) -> Result<TokenStream> {
     Ok(output)
 }
 
-fn drain_has_ref(vec: &mut Vec<syn::Attribute>) -> bool {
-    match vec.iter().position(|attr| attr.path.is_ident("has_ref")) {
+fn drain_entity_attr(vec: &mut Vec<syn::Attribute>) -> bool {
+    match vec.iter().position(|attr| attr.path.is_ident("entity")) {
         Some(index) => {
             vec.remove(index);
             true

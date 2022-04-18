@@ -4,6 +4,8 @@ use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
 use syn::{Error, Result};
 
+use crate::util::{Attr, Named};
+
 pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
     let input: syn::ItemFn = syn::parse2(input)?;
     let ident = &input.sig.ident;
@@ -15,44 +17,10 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
     let mut name = quote!(concat!(module_path!(), "::", stringify!(#ident)));
 
     if !args.is_empty() {
-        enum FnOpt {
-            Before(syn::token::Paren, Punctuated<syn::Expr, syn::Token![,]>),
-            After(syn::token::Paren, Punctuated<syn::Expr, syn::Token![,]>),
-            Name(syn::Token![=], Box<syn::Expr>),
-        }
-
-        impl Parse for NamedOpt<FnOpt> {
-            fn parse(input: ParseStream) -> Result<Self> {
-                let name = input.parse::<syn::Ident>()?;
-                let name_string = name.to_string();
-
-                let opt = match name_string.as_str() {
-                    "before" => {
-                        let inner;
-                        let paren = syn::parenthesized!(inner in input);
-                        FnOpt::Before(paren, Punctuated::parse_terminated(&inner)?)
-                    }
-                    "after" => {
-                        let inner;
-                        let paren = syn::parenthesized!(inner in input);
-                        FnOpt::After(paren, Punctuated::parse_terminated(&inner)?)
-                    }
-                    "name" => {
-                        let eq = input.parse::<syn::Token![=]>()?;
-                        let name = input.parse::<syn::Expr>()?;
-                        FnOpt::Name(eq, Box::new(name))
-                    }
-                    _ => return Err(Error::new_spanned(&name, "Unknown attribute")),
-                };
-
-                Ok(NamedOpt { name, opt })
-            }
-        }
-
         let args = syn::parse2::<Attr<FnOpt>>(args)?;
 
-        for opt in &args.options {
-            match &opt.opt {
+        for named in &args.items {
+            match &named.value {
                 FnOpt::Before(_, inputs) => {
                     for dep in inputs {
                         deps.push(quote!(::dynec::system::spec::Dependency::Before(Box::new(#dep as Box<dyn ::dynec::system::Partition>))));
@@ -84,40 +52,15 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             syn::FnArg::Typed(typed) => typed,
         };
 
-        enum ArgOpt {
-            Param,
-            Local(syn::Token![=], Box<syn::Expr>),
-            Global,
-        }
-
-        impl Parse for NamedOpt<ArgOpt> {
-            fn parse(input: ParseStream) -> Result<Self> {
-                let name = input.parse::<syn::Ident>()?;
-                let name_string = name.to_string();
-
-                let opt = match name_string.as_str() {
-                    "param" => ArgOpt::Param,
-                    "local" => {
-                        let eq = input.parse::<syn::Token![=]>()?;
-                        let default = input.parse::<syn::Expr>()?;
-                        ArgOpt::Local(eq, Box::new(default))
-                    }
-                    "global" => ArgOpt::Global,
-                    _ => return Err(Error::new_spanned(&name, "Unknown attribute")),
-                };
-                Ok(NamedOpt { name, opt })
-            }
-        }
-
         enum ArgType {
             Local { default: Option<Box<syn::Expr>> },
             Global,
         }
 
-        let mut arg_type: Option<NamedOpt<ArgType>> = None;
+        let mut arg_type: Option<Named<ArgType>> = None;
 
         fn set_arg_type(
-            arg_type: &mut Option<NamedOpt<ArgType>>,
+            arg_type: &mut Option<Named<ArgType>>,
             ident: syn::Ident,
             ty: ArgType,
         ) -> Result<()> {
@@ -128,7 +71,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 ));
             }
 
-            *arg_type = Some(NamedOpt { name: ident, opt: ty });
+            *arg_type = Some(Named { name: ident, value: ty });
 
             Ok(())
         }
@@ -137,8 +80,8 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             if attr.path.is_ident("dynec") {
                 let arg_attr = attr.parse_args::<Attr<ArgOpt>>()?;
 
-                for arg in arg_attr.options {
-                    match arg.opt {
+                for arg in arg_attr.items {
+                    match arg.value {
                         ArgOpt::Param => {
                             set_arg_type(
                                 &mut arg_type,
@@ -168,7 +111,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             }
         };
 
-        match arg_type.opt {
+        match arg_type.value {
             ArgType::Local { default } => {
                 let field_name = match &*param.pat {
                     syn::Pat::Ident(ident) => ident.ident.clone(),
@@ -252,21 +195,61 @@ fn extract_type<'t>(
     Ok(ty)
 }
 
-struct Attr<T> {
-    options: Punctuated<NamedOpt<T>, syn::Token![,]>,
+enum FnOpt {
+    Before(syn::token::Paren, Punctuated<syn::Expr, syn::Token![,]>),
+    After(syn::token::Paren, Punctuated<syn::Expr, syn::Token![,]>),
+    Name(syn::Token![=], Box<syn::Expr>),
 }
 
-impl<T> Parse for Attr<T>
-where
-    NamedOpt<T>: Parse,
-{
+impl Parse for Named<FnOpt> {
     fn parse(input: ParseStream) -> Result<Self> {
-        Ok(Attr { options: Punctuated::parse_separated_nonempty(input)? })
+        let name = input.parse::<syn::Ident>()?;
+        let name_string = name.to_string();
+
+        let value = match name_string.as_str() {
+            "before" => {
+                let inner;
+                let paren = syn::parenthesized!(inner in input);
+                FnOpt::Before(paren, Punctuated::parse_terminated(&inner)?)
+            }
+            "after" => {
+                let inner;
+                let paren = syn::parenthesized!(inner in input);
+                FnOpt::After(paren, Punctuated::parse_terminated(&inner)?)
+            }
+            "name" => {
+                let eq = input.parse::<syn::Token![=]>()?;
+                let name = input.parse::<syn::Expr>()?;
+                FnOpt::Name(eq, Box::new(name))
+            }
+            _ => return Err(Error::new_spanned(&name, "Unknown attribute")),
+        };
+
+        Ok(Named { name, value })
     }
 }
 
-struct NamedOpt<T> {
-    #[allow(dead_code)]
-    name: syn::Ident,
-    opt:  T,
+enum ArgOpt {
+    Param,
+    Local(syn::Token![=], Box<syn::Expr>),
+    Global,
+}
+
+impl Parse for Named<ArgOpt> {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let name = input.parse::<syn::Ident>()?;
+        let name_string = name.to_string();
+
+        let value = match name_string.as_str() {
+            "param" => ArgOpt::Param,
+            "local" => {
+                let eq = input.parse::<syn::Token![=]>()?;
+                let default = input.parse::<syn::Expr>()?;
+                ArgOpt::Local(eq, Box::new(default))
+            }
+            "global" => ArgOpt::Global,
+            _ => return Err(Error::new_spanned(&name, "Unknown attribute")),
+        };
+        Ok(Named { name, value })
+    }
 }

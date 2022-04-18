@@ -1,6 +1,9 @@
-use proc_macro2::TokenStream;
+use proc_macro2::{Span, TokenStream};
 use quote::{quote, quote_spanned, ToTokens};
+use syn::parse::{Parse, ParseStream};
+use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
+use syn::{Error, Result};
 
 pub(crate) fn parse_generics(input: &syn::DeriveInput) -> ParsedGenerics {
     let generics = &input.generics;
@@ -52,4 +55,43 @@ impl ParsedGenerics {
             }
         }
     }
+}
+
+pub(crate) struct Attr<T> {
+    pub(crate) items: Punctuated<Named<T>, syn::Token![,]>,
+}
+
+impl<T> Attr<T> {
+    pub(crate) fn find_one<U>(&self, matcher: fn(&T) -> Option<&U>) -> Result<Option<(Span, &U)>> {
+        let mut span: Option<(Span, &U)> = None;
+
+        for item in &self.items {
+            if let Some(t) = matcher(&item.value) {
+                if let Some((prev, _)) = span {
+                    return Err(Error::new(
+                        prev.join(item.name.span()).unwrap_or(prev),
+                        format!("only one `{}` argument is allowed", &item.name),
+                    ));
+                }
+
+                span = Some((item.name.span(), t));
+            }
+        }
+
+        Ok(span)
+    }
+}
+
+impl<T> Parse for Attr<T>
+where
+    Named<T>: Parse,
+{
+    fn parse(input: ParseStream) -> Result<Self> {
+        Ok(Attr { items: Punctuated::parse_terminated(input)? })
+    }
+}
+
+pub(crate) struct Named<T> {
+    pub(crate) name:  syn::Ident,
+    pub(crate) value: T,
 }

@@ -78,6 +78,9 @@ impl<A: Archetype> Map<A> {
 
     /// Returns the number of components in the map.
     pub fn len(&self) -> usize { self.map.len() }
+
+    /// Returns true if the map contains no components.
+    pub fn is_empty(&self) -> bool { self.map.is_empty() }
 }
 
 /// Describes how to instantiate a component based on other component types.

@@ -92,12 +92,12 @@ dynec::archetype! {
 
 /// The `Endpoints` component stores references to the [`Node`] entities that the edge connects.
 /// To support permutation and deletion debugging,
-/// we need to add `#[has_ref]` on all fields that transitively contain a reference.
+/// we need to add `#[entity]` on all fields that transitively contain a reference.
 #[dynec::component(of = Edge, required)]
 pub struct Endpoints {
-    #[has_ref]
+    #[entity]
     from: dynec::Entity<Node>,
-    #[has_ref]
+    #[entity]
     to:   dynec::Entity<Node>,
 }
 

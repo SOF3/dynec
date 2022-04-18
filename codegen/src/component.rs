@@ -1,30 +1,30 @@
-use proc_macro2::{Span, TokenStream};
+use proc_macro2::TokenStream;
 use quote::quote;
 use syn::parse::{Parse, ParseStream};
-use syn::punctuated::Punctuated;
 use syn::{Error, Result};
 
-use crate::{has_ref, util};
+use crate::util::{Attr, Named};
+use crate::{entity_ref, util};
 
 pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
-    let args: Args = syn::parse2(args)?;
+    let args: Attr<FnOpt> = syn::parse2(args)?;
 
     let archetypes: Vec<_> = args
-        .args
+        .items
         .iter()
         .filter_map(|arg| match &arg.value {
-            Arg::Of(_, ty) => Some(ty),
+            FnOpt::Of(_, ty) => Some(ty),
             _ => None,
         })
         .collect();
 
     let isotope = args.find_one(|arg| match arg {
-        Arg::Isotope(_, discrim) => Some(discrim),
+        FnOpt::Isotope(_, discrim) => Some(discrim),
         _ => None,
     })?;
 
     let presence = args.find_one(|arg| match arg {
-        Arg::Required => Some(&()),
+        FnOpt::Required => Some(&()),
         _ => None,
     })?;
     if let (Some((isotope_span, _)), Some((presence_span, _))) = (isotope, presence) {
@@ -39,7 +39,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
     };
 
     let finalizer = args.find_one(|arg| match arg {
-        Arg::Finalizer => Some(&()),
+        FnOpt::Finalizer => Some(&()),
         _ => None,
     })?;
     if let (Some((isotope_span, _)), Some((finalizer_span, _))) = (isotope, finalizer) {
@@ -51,7 +51,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
     let finalizer = finalizer.is_some();
 
     let init = args.find_one(|arg| match arg {
-        Arg::Init(_, func) => Some(func),
+        FnOpt::Init(_, func) => Some(func),
         _ => None,
     })?;
 
@@ -97,52 +97,16 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
     }
 
     let mut mut_input = input;
-    let has_ref = has_ref::has_ref(&mut mut_input)?;
+    let entity_ref = entity_ref::entity_ref(&mut mut_input)?;
 
     Ok(quote! {
         #mut_input
         #output
-        #has_ref
+        #entity_ref
     })
 }
 
-struct Args {
-    args: Punctuated<NamedArg, syn::Token![,]>,
-}
-
-impl Args {
-    fn find_one<T>(&self, matcher: fn(&Arg) -> Option<&T>) -> Result<Option<(Span, &T)>> {
-        let mut span: Option<(Span, &T)> = None;
-
-        for arg in &self.args {
-            if let Some(t) = matcher(&arg.value) {
-                if let Some((prev, _)) = span {
-                    return Err(Error::new(
-                        prev.join(arg.name.span()).unwrap_or(prev),
-                        format!("only one `{}` argument is allowed", &arg.name),
-                    ));
-                }
-
-                span = Some((arg.name.span(), t));
-            }
-        }
-
-        Ok(span)
-    }
-}
-
-impl Parse for Args {
-    fn parse(input: ParseStream) -> Result<Self> {
-        Ok(Args { args: Punctuated::parse_separated_nonempty(input)? })
-    }
-}
-
-struct NamedArg {
-    name:  syn::Ident,
-    value: Arg,
-}
-
-enum Arg {
+enum FnOpt {
     Of(syn::Token![=], syn::Type),
     Isotope(syn::Token![=], syn::Type),
     Required,
@@ -150,7 +114,7 @@ enum Arg {
     Init(syn::Token![=], Box<FunctionRefWithArity>),
 }
 
-impl Parse for NamedArg {
+impl Parse for Named<FnOpt> {
     fn parse(input: ParseStream) -> Result<Self> {
         let name = input.parse::<syn::Ident>()?;
 
@@ -158,27 +122,28 @@ impl Parse for NamedArg {
             "of" => {
                 let eq: syn::Token![=] = input.parse()?;
                 let ty = input.parse::<syn::Type>()?;
-                Arg::Of(eq, ty)
+                FnOpt::Of(eq, ty)
             }
             "isotope" => {
                 let eq: syn::Token![=] = input.parse()?;
                 let ty = input.parse::<syn::Type>()?;
-                Arg::Isotope(eq, ty)
+                FnOpt::Isotope(eq, ty)
             }
-            "required" => Arg::Required,
-            "finalizer" => Arg::Finalizer,
+            "required" => FnOpt::Required,
+            "finalizer" => FnOpt::Finalizer,
             "init" => {
                 let eq: syn::Token![=] = input.parse()?;
                 let expr = input.parse::<FunctionRefWithArity>()?;
-                Arg::Init(eq, Box::new(expr))
+                FnOpt::Init(eq, Box::new(expr))
             }
             _ => return Err(Error::new_spanned(&name, format!("Unknown argument `{}`", name))),
         };
 
-        Ok(NamedArg { name, value })
+        Ok(Named { name, value })
     }
 }
 
+/// Either a closure or a function reference in the form `path / arity` (e.g. `count/1`).
 enum FunctionRefWithArity {
     Closure(syn::ExprClosure),
     Fn(syn::Expr, syn::Token![/], syn::LitInt),

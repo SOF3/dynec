@@ -175,6 +175,9 @@
 <span id="170">170</span>
 <span id="171">171</span>
 <span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Utilties for dynamic dispatch related to components.</span>
 
 <span class="kw">use</span> <span class="ident">std::any</span>::{<span class="self">self</span>, <span class="ident">Any</span>, <span class="ident">TypeId</span>};
@@ -255,6 +258,9 @@
 
     <span class="doccomment">/// Returns the number of components in the map.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">len</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">usize</span> { <span class="self">self</span>.<span class="ident">map</span>.<span class="ident">len</span>() }
+
+    <span class="doccomment">/// Returns true if the map contains no components.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_empty</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> { <span class="self">self</span>.<span class="ident">map</span>.<span class="ident">is_empty</span>() }
 }
 
 <span class="doccomment">/// Describes how to instantiate a component based on other component types.</span>
@@ -348,5 +354,5 @@
     }
 }
 </code></pre></div>
-</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (878c7833f 2022-04-16)" ></div>
+</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (ec77f2524 2022-04-17)" ></div>
 </body></html>

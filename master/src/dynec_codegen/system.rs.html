@@ -258,28 +258,13 @@
 <span id="253">253</span>
 <span id="254">254</span>
 <span id="255">255</span>
-<span id="256">256</span>
-<span id="257">257</span>
-<span id="258">258</span>
-<span id="259">259</span>
-<span id="260">260</span>
-<span id="261">261</span>
-<span id="262">262</span>
-<span id="263">263</span>
-<span id="264">264</span>
-<span id="265">265</span>
-<span id="266">266</span>
-<span id="267">267</span>
-<span id="268">268</span>
-<span id="269">269</span>
-<span id="270">270</span>
-<span id="271">271</span>
-<span id="272">272</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">proc_macro2::TokenStream</span>;
 <span class="kw">use</span> <span class="ident">quote::quote</span>;
 <span class="kw">use</span> <span class="ident">syn::parse</span>::{<span class="ident">Parse</span>, <span class="ident">ParseStream</span>};
 <span class="kw">use</span> <span class="ident">syn::punctuated::Punctuated</span>;
 <span class="kw">use</span> <span class="ident">syn</span>::{<span class="ident">Error</span>, <span class="prelude-ty">Result</span>};
+
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::util</span>::{<span class="ident">Attr</span>, <span class="ident">Named</span>};
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">imp</span>(<span class="ident">args</span>: <span class="ident">TokenStream</span>, <span class="ident">input</span>: <span class="ident">TokenStream</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TokenStream</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">input</span>: <span class="ident">syn::ItemFn</span> <span class="op">=</span> <span class="ident">syn::parse2</span>(<span class="ident">input</span>)<span class="question-mark">?</span>;
@@ -292,44 +277,10 @@
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">name</span> <span class="op">=</span> <span class="macro">quote!</span>(<span class="macro">concat!</span>(<span class="macro">module_path!</span>(), <span class="string">&quot;::&quot;</span>, <span class="macro">stringify!</span>(#<span class="ident">ident</span>)));
 
     <span class="kw">if</span> <span class="op">!</span><span class="ident">args</span>.<span class="ident">is_empty</span>() {
-        <span class="kw">enum</span> <span class="ident">FnOpt</span> {
-            <span class="ident">Before</span>(<span class="ident">syn::token::Paren</span>, <span class="ident">Punctuated</span><span class="op">&lt;</span><span class="ident">syn::Expr</span>, <span class="macro">syn::Token!</span>[,]<span class="op">&gt;</span>),
-            <span class="ident">After</span>(<span class="ident">syn::token::Paren</span>, <span class="ident">Punctuated</span><span class="op">&lt;</span><span class="ident">syn::Expr</span>, <span class="macro">syn::Token!</span>[,]<span class="op">&gt;</span>),
-            <span class="ident">Name</span>(<span class="macro">syn::Token!</span>[<span class="op">=</span>], <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">syn::Expr</span><span class="op">&gt;</span>),
-        }
-
-        <span class="kw">impl</span> <span class="ident">Parse</span> <span class="kw">for</span> <span class="ident">NamedOpt</span><span class="op">&lt;</span><span class="ident">FnOpt</span><span class="op">&gt;</span> {
-            <span class="kw">fn</span> <span class="ident">parse</span>(<span class="ident">input</span>: <span class="ident">ParseStream</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">syn::Ident</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
-                <span class="kw">let</span> <span class="ident">name_string</span> <span class="op">=</span> <span class="ident">name</span>.<span class="ident">to_string</span>();
-
-                <span class="kw">let</span> <span class="ident">opt</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">name_string</span>.<span class="ident">as_str</span>() {
-                    <span class="string">&quot;before&quot;</span> =&gt; {
-                        <span class="kw">let</span> <span class="ident">inner</span>;
-                        <span class="kw">let</span> <span class="ident">paren</span> <span class="op">=</span> <span class="macro">syn::parenthesized!</span>(<span class="ident">inner</span> <span class="kw">in</span> <span class="ident">input</span>);
-                        <span class="ident">FnOpt::Before</span>(<span class="ident">paren</span>, <span class="ident">Punctuated::parse_terminated</span>(<span class="kw-2">&amp;</span><span class="ident">inner</span>)<span class="question-mark">?</span>)
-                    }
-                    <span class="string">&quot;after&quot;</span> =&gt; {
-                        <span class="kw">let</span> <span class="ident">inner</span>;
-                        <span class="kw">let</span> <span class="ident">paren</span> <span class="op">=</span> <span class="macro">syn::parenthesized!</span>(<span class="ident">inner</span> <span class="kw">in</span> <span class="ident">input</span>);
-                        <span class="ident">FnOpt::After</span>(<span class="ident">paren</span>, <span class="ident">Punctuated::parse_terminated</span>(<span class="kw-2">&amp;</span><span class="ident">inner</span>)<span class="question-mark">?</span>)
-                    }
-                    <span class="string">&quot;name&quot;</span> =&gt; {
-                        <span class="kw">let</span> <span class="ident">eq</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">parse</span>::<span class="op">&lt;</span><span class="macro">syn::Token!</span>[<span class="op">=</span>]<span class="op">&gt;</span>()<span class="question-mark">?</span>;
-                        <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">syn::Expr</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
-                        <span class="ident">FnOpt::Name</span>(<span class="ident">eq</span>, <span class="ident">Box::new</span>(<span class="ident">name</span>))
-                    }
-                    <span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::new_spanned</span>(<span class="kw-2">&amp;</span><span class="ident">name</span>, <span class="string">&quot;Unknown attribute&quot;</span>)),
-                };
-
-                <span class="prelude-val">Ok</span>(<span class="ident">NamedOpt</span> { <span class="ident">name</span>, <span class="ident">opt</span> })
-            }
-        }
-
         <span class="kw">let</span> <span class="ident">args</span> <span class="op">=</span> <span class="ident">syn::parse2</span>::<span class="op">&lt;</span><span class="ident">Attr</span><span class="op">&lt;</span><span class="ident">FnOpt</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="ident">args</span>)<span class="question-mark">?</span>;
 
-        <span class="kw">for</span> <span class="ident">opt</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">args</span>.<span class="ident">options</span> {
-            <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">opt</span>.<span class="ident">opt</span> {
+        <span class="kw">for</span> <span class="ident">named</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">args</span>.<span class="ident">items</span> {
+            <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">named</span>.<span class="ident">value</span> {
                 <span class="ident">FnOpt::Before</span>(<span class="kw">_</span>, <span class="ident">inputs</span>) =&gt; {
                     <span class="kw">for</span> <span class="ident">dep</span> <span class="kw">in</span> <span class="ident">inputs</span> {
                         <span class="ident">deps</span>.<span class="ident">push</span>(<span class="macro">quote!</span>(<span class="ident">::dynec::system::spec::Dependency::Before</span>(<span class="ident">Box::new</span>(#<span class="ident">dep</span> <span class="kw">as</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">::dynec::system::Partition</span><span class="op">&gt;</span>))));
@@ -361,40 +312,15 @@
             <span class="ident">syn::FnArg::Typed</span>(<span class="ident">typed</span>) =&gt; <span class="ident">typed</span>,
         };
 
-        <span class="kw">enum</span> <span class="ident">ArgOpt</span> {
-            <span class="ident">Param</span>,
-            <span class="ident">Local</span>(<span class="macro">syn::Token!</span>[<span class="op">=</span>], <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">syn::Expr</span><span class="op">&gt;</span>),
-            <span class="ident">Global</span>,
-        }
-
-        <span class="kw">impl</span> <span class="ident">Parse</span> <span class="kw">for</span> <span class="ident">NamedOpt</span><span class="op">&lt;</span><span class="ident">ArgOpt</span><span class="op">&gt;</span> {
-            <span class="kw">fn</span> <span class="ident">parse</span>(<span class="ident">input</span>: <span class="ident">ParseStream</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">syn::Ident</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
-                <span class="kw">let</span> <span class="ident">name_string</span> <span class="op">=</span> <span class="ident">name</span>.<span class="ident">to_string</span>();
-
-                <span class="kw">let</span> <span class="ident">opt</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">name_string</span>.<span class="ident">as_str</span>() {
-                    <span class="string">&quot;param&quot;</span> =&gt; <span class="ident">ArgOpt::Param</span>,
-                    <span class="string">&quot;local&quot;</span> =&gt; {
-                        <span class="kw">let</span> <span class="ident">eq</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">parse</span>::<span class="op">&lt;</span><span class="macro">syn::Token!</span>[<span class="op">=</span>]<span class="op">&gt;</span>()<span class="question-mark">?</span>;
-                        <span class="kw">let</span> <span class="ident">default</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">syn::Expr</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
-                        <span class="ident">ArgOpt::Local</span>(<span class="ident">eq</span>, <span class="ident">Box::new</span>(<span class="ident">default</span>))
-                    }
-                    <span class="string">&quot;global&quot;</span> =&gt; <span class="ident">ArgOpt::Global</span>,
-                    <span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::new_spanned</span>(<span class="kw-2">&amp;</span><span class="ident">name</span>, <span class="string">&quot;Unknown attribute&quot;</span>)),
-                };
-                <span class="prelude-val">Ok</span>(<span class="ident">NamedOpt</span> { <span class="ident">name</span>, <span class="ident">opt</span> })
-            }
-        }
-
         <span class="kw">enum</span> <span class="ident">ArgType</span> {
             <span class="ident">Local</span> { <span class="ident">default</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="ident">syn::Expr</span><span class="op">&gt;</span><span class="op">&gt;</span> },
             <span class="ident">Global</span>,
         }
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">arg_type</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">NamedOpt</span><span class="op">&lt;</span><span class="ident">ArgType</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="prelude-val">None</span>;
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">arg_type</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Named</span><span class="op">&lt;</span><span class="ident">ArgType</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="prelude-val">None</span>;
 
         <span class="kw">fn</span> <span class="ident">set_arg_type</span>(
-            <span class="ident">arg_type</span>: <span class="kw-2">&amp;mut</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">NamedOpt</span><span class="op">&lt;</span><span class="ident">ArgType</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+            <span class="ident">arg_type</span>: <span class="kw-2">&amp;mut</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Named</span><span class="op">&lt;</span><span class="ident">ArgType</span><span class="op">&gt;</span><span class="op">&gt;</span>,
             <span class="ident">ident</span>: <span class="ident">syn::Ident</span>,
             <span class="ident">ty</span>: <span class="ident">ArgType</span>,
         ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
@@ -405,7 +331,7 @@
                 ));
             }
 
-            <span class="kw-2">*</span><span class="ident">arg_type</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">NamedOpt</span> { <span class="ident">name</span>: <span class="ident">ident</span>, <span class="ident">opt</span>: <span class="ident">ty</span> });
+            <span class="kw-2">*</span><span class="ident">arg_type</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">Named</span> { <span class="ident">name</span>: <span class="ident">ident</span>, <span class="ident">value</span>: <span class="ident">ty</span> });
 
             <span class="prelude-val">Ok</span>(())
         }
@@ -414,8 +340,8 @@
             <span class="kw">if</span> <span class="ident">attr</span>.<span class="ident">path</span>.<span class="ident">is_ident</span>(<span class="string">&quot;dynec&quot;</span>) {
                 <span class="kw">let</span> <span class="ident">arg_attr</span> <span class="op">=</span> <span class="ident">attr</span>.<span class="ident">parse_args</span>::<span class="op">&lt;</span><span class="ident">Attr</span><span class="op">&lt;</span><span class="ident">ArgOpt</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
 
-                <span class="kw">for</span> <span class="ident">arg</span> <span class="kw">in</span> <span class="ident">arg_attr</span>.<span class="ident">options</span> {
-                    <span class="kw">match</span> <span class="ident">arg</span>.<span class="ident">opt</span> {
+                <span class="kw">for</span> <span class="ident">arg</span> <span class="kw">in</span> <span class="ident">arg_attr</span>.<span class="ident">items</span> {
+                    <span class="kw">match</span> <span class="ident">arg</span>.<span class="ident">value</span> {
                         <span class="ident">ArgOpt::Param</span> =&gt; {
                             <span class="ident">set_arg_type</span>(
                                 <span class="kw-2">&amp;mut</span> <span class="ident">arg_type</span>,
@@ -445,7 +371,7 @@
             }
         };
 
-        <span class="kw">match</span> <span class="ident">arg_type</span>.<span class="ident">opt</span> {
+        <span class="kw">match</span> <span class="ident">arg_type</span>.<span class="ident">value</span> {
             <span class="ident">ArgType::Local</span> { <span class="ident">default</span> } =&gt; {
                 <span class="kw">let</span> <span class="ident">field_name</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">param</span>.<span class="ident">pat</span> {
                     <span class="ident">syn::Pat::Ident</span>(<span class="ident">ident</span>) =&gt; <span class="ident">ident</span>.<span class="ident">ident</span>.<span class="ident">clone</span>(),
@@ -529,24 +455,64 @@
     <span class="prelude-val">Ok</span>(<span class="ident">ty</span>)
 }
 
-<span class="kw">struct</span> <span class="ident">Attr</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-    <span class="ident">options</span>: <span class="ident">Punctuated</span><span class="op">&lt;</span><span class="ident">NamedOpt</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="macro">syn::Token!</span>[,]<span class="op">&gt;</span>,
+<span class="kw">enum</span> <span class="ident">FnOpt</span> {
+    <span class="ident">Before</span>(<span class="ident">syn::token::Paren</span>, <span class="ident">Punctuated</span><span class="op">&lt;</span><span class="ident">syn::Expr</span>, <span class="macro">syn::Token!</span>[,]<span class="op">&gt;</span>),
+    <span class="ident">After</span>(<span class="ident">syn::token::Paren</span>, <span class="ident">Punctuated</span><span class="op">&lt;</span><span class="ident">syn::Expr</span>, <span class="macro">syn::Token!</span>[,]<span class="op">&gt;</span>),
+    <span class="ident">Name</span>(<span class="macro">syn::Token!</span>[<span class="op">=</span>], <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">syn::Expr</span><span class="op">&gt;</span>),
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="ident">Parse</span> <span class="kw">for</span> <span class="ident">Attr</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-    <span class="ident">NamedOpt</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>: <span class="ident">Parse</span>,
-{
+<span class="kw">impl</span> <span class="ident">Parse</span> <span class="kw">for</span> <span class="ident">Named</span><span class="op">&lt;</span><span class="ident">FnOpt</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">parse</span>(<span class="ident">input</span>: <span class="ident">ParseStream</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="prelude-val">Ok</span>(<span class="ident">Attr</span> { <span class="ident">options</span>: <span class="ident">Punctuated::parse_separated_nonempty</span>(<span class="ident">input</span>)<span class="question-mark">?</span> })
+        <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">syn::Ident</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">name_string</span> <span class="op">=</span> <span class="ident">name</span>.<span class="ident">to_string</span>();
+
+        <span class="kw">let</span> <span class="ident">value</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">name_string</span>.<span class="ident">as_str</span>() {
+            <span class="string">&quot;before&quot;</span> =&gt; {
+                <span class="kw">let</span> <span class="ident">inner</span>;
+                <span class="kw">let</span> <span class="ident">paren</span> <span class="op">=</span> <span class="macro">syn::parenthesized!</span>(<span class="ident">inner</span> <span class="kw">in</span> <span class="ident">input</span>);
+                <span class="ident">FnOpt::Before</span>(<span class="ident">paren</span>, <span class="ident">Punctuated::parse_terminated</span>(<span class="kw-2">&amp;</span><span class="ident">inner</span>)<span class="question-mark">?</span>)
+            }
+            <span class="string">&quot;after&quot;</span> =&gt; {
+                <span class="kw">let</span> <span class="ident">inner</span>;
+                <span class="kw">let</span> <span class="ident">paren</span> <span class="op">=</span> <span class="macro">syn::parenthesized!</span>(<span class="ident">inner</span> <span class="kw">in</span> <span class="ident">input</span>);
+                <span class="ident">FnOpt::After</span>(<span class="ident">paren</span>, <span class="ident">Punctuated::parse_terminated</span>(<span class="kw-2">&amp;</span><span class="ident">inner</span>)<span class="question-mark">?</span>)
+            }
+            <span class="string">&quot;name&quot;</span> =&gt; {
+                <span class="kw">let</span> <span class="ident">eq</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">parse</span>::<span class="op">&lt;</span><span class="macro">syn::Token!</span>[<span class="op">=</span>]<span class="op">&gt;</span>()<span class="question-mark">?</span>;
+                <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">syn::Expr</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
+                <span class="ident">FnOpt::Name</span>(<span class="ident">eq</span>, <span class="ident">Box::new</span>(<span class="ident">name</span>))
+            }
+            <span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::new_spanned</span>(<span class="kw-2">&amp;</span><span class="ident">name</span>, <span class="string">&quot;Unknown attribute&quot;</span>)),
+        };
+
+        <span class="prelude-val">Ok</span>(<span class="ident">Named</span> { <span class="ident">name</span>, <span class="ident">value</span> })
     }
 }
 
-<span class="kw">struct</span> <span class="ident">NamedOpt</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-    <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
-    <span class="ident">name</span>: <span class="ident">syn::Ident</span>,
-    <span class="ident">opt</span>:  <span class="ident">T</span>,
+<span class="kw">enum</span> <span class="ident">ArgOpt</span> {
+    <span class="ident">Param</span>,
+    <span class="ident">Local</span>(<span class="macro">syn::Token!</span>[<span class="op">=</span>], <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">syn::Expr</span><span class="op">&gt;</span>),
+    <span class="ident">Global</span>,
+}
+
+<span class="kw">impl</span> <span class="ident">Parse</span> <span class="kw">for</span> <span class="ident">Named</span><span class="op">&lt;</span><span class="ident">ArgOpt</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">parse</span>(<span class="ident">input</span>: <span class="ident">ParseStream</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">syn::Ident</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">name_string</span> <span class="op">=</span> <span class="ident">name</span>.<span class="ident">to_string</span>();
+
+        <span class="kw">let</span> <span class="ident">value</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">name_string</span>.<span class="ident">as_str</span>() {
+            <span class="string">&quot;param&quot;</span> =&gt; <span class="ident">ArgOpt::Param</span>,
+            <span class="string">&quot;local&quot;</span> =&gt; {
+                <span class="kw">let</span> <span class="ident">eq</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">parse</span>::<span class="op">&lt;</span><span class="macro">syn::Token!</span>[<span class="op">=</span>]<span class="op">&gt;</span>()<span class="question-mark">?</span>;
+                <span class="kw">let</span> <span class="ident">default</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">syn::Expr</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
+                <span class="ident">ArgOpt::Local</span>(<span class="ident">eq</span>, <span class="ident">Box::new</span>(<span class="ident">default</span>))
+            }
+            <span class="string">&quot;global&quot;</span> =&gt; <span class="ident">ArgOpt::Global</span>,
+            <span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::new_spanned</span>(<span class="kw-2">&amp;</span><span class="ident">name</span>, <span class="string">&quot;Unknown attribute&quot;</span>)),
+        };
+        <span class="prelude-val">Ok</span>(<span class="ident">Named</span> { <span class="ident">name</span>, <span class="ident">value</span> })
+    }
 }
 </code></pre></div>
-</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec_codegen" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (878c7833f 2022-04-16)" ></div>
+</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec_codegen" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (ec77f2524 2022-04-17)" ></div>
 </body></html>

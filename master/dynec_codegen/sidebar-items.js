@@ -1,1 +1,1 @@
-initSidebarItems({"attr":[["component",""],["system",""]],"derive":[["HasRef",""]],"macro":[["archetype",""],["components",""]]});
+initSidebarItems({"attr":[["component",""],["global",""],["system",""]],"derive":[["EntityRef",""]],"macro":[["archetype",""],["components",""]]});

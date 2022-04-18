@@ -38,6 +38,12 @@
 <span id="33">33</span>
 <span id="34">34</span>
 <span id="35">35</span>
+<span id="36">36</span>
+<span id="37">37</span>
+<span id="38">38</span>
+<span id="39">39</span>
+<span id="40">40</span>
+<span id="41">41</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">proc_macro::TokenStream</span>;
 
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">proc_macro</span>;
@@ -45,9 +51,15 @@
 <span class="kw">mod</span> <span class="ident">archetype</span>;
 <span class="kw">mod</span> <span class="ident">component</span>;
 <span class="kw">mod</span> <span class="ident">components</span>;
-<span class="kw">mod</span> <span class="ident">has_ref</span>;
+<span class="kw">mod</span> <span class="ident">entity_ref</span>;
+<span class="kw">mod</span> <span class="ident">global</span>;
 <span class="kw">mod</span> <span class="ident">system</span>;
 <span class="kw">mod</span> <span class="ident">util</span>;
+
+<span class="attribute">#[<span class="ident">proc_macro</span>]</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">archetype</span>(<span class="ident">input</span>: <span class="ident">TokenStream</span>) -&gt; <span class="ident">TokenStream</span> {
+    <span class="ident">archetype::imp</span>(<span class="ident">input</span>.<span class="ident">into</span>()).<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">err</span>.<span class="ident">to_compile_error</span>()).<span class="ident">into</span>()
+}
 
 <span class="attribute">#[<span class="ident">proc_macro_attribute</span>]</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">component</span>(<span class="ident">args</span>: <span class="ident">TokenStream</span>, <span class="ident">input</span>: <span class="ident">TokenStream</span>) -&gt; <span class="ident">TokenStream</span> {
@@ -59,20 +71,20 @@
     <span class="ident">components::imp</span>(<span class="ident">input</span>.<span class="ident">into</span>()).<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">err</span>.<span class="ident">to_compile_error</span>()).<span class="ident">into</span>()
 }
 
-<span class="attribute">#[<span class="ident">proc_macro</span>]</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">archetype</span>(<span class="ident">input</span>: <span class="ident">TokenStream</span>) -&gt; <span class="ident">TokenStream</span> {
-    <span class="ident">archetype::imp</span>(<span class="ident">input</span>.<span class="ident">into</span>()).<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">err</span>.<span class="ident">to_compile_error</span>()).<span class="ident">into</span>()
+<span class="attribute">#[<span class="ident">proc_macro_attribute</span>]</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">global</span>(<span class="ident">args</span>: <span class="ident">TokenStream</span>, <span class="ident">input</span>: <span class="ident">TokenStream</span>) -&gt; <span class="ident">TokenStream</span> {
+    <span class="ident">global::imp</span>(<span class="ident">args</span>.<span class="ident">into</span>(), <span class="ident">input</span>.<span class="ident">into</span>()).<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">err</span>.<span class="ident">to_compile_error</span>()).<span class="ident">into</span>()
+}
+
+<span class="attribute">#[<span class="ident">proc_macro_derive</span>(<span class="ident">EntityRef</span>, <span class="ident">attributes</span>(<span class="ident">entity</span>))]</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">entity_ref</span>(<span class="ident">input</span>: <span class="ident">TokenStream</span>) -&gt; <span class="ident">TokenStream</span> {
+    <span class="ident">entity_ref::derive</span>(<span class="ident">input</span>.<span class="ident">into</span>()).<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">err</span>.<span class="ident">to_compile_error</span>()).<span class="ident">into</span>()
 }
 
 <span class="attribute">#[<span class="ident">proc_macro_attribute</span>]</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">system</span>(<span class="ident">args</span>: <span class="ident">TokenStream</span>, <span class="ident">input</span>: <span class="ident">TokenStream</span>) -&gt; <span class="ident">TokenStream</span> {
     <span class="ident">system::imp</span>(<span class="ident">args</span>.<span class="ident">into</span>(), <span class="ident">input</span>.<span class="ident">into</span>()).<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">err</span>.<span class="ident">to_compile_error</span>()).<span class="ident">into</span>()
 }
-
-<span class="attribute">#[<span class="ident">proc_macro_derive</span>(<span class="ident">HasRef</span>, <span class="ident">attributes</span>(<span class="ident">has_ref</span>))]</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">has_ref</span>(<span class="ident">input</span>: <span class="ident">TokenStream</span>) -&gt; <span class="ident">TokenStream</span> {
-    <span class="ident">has_ref::derive</span>(<span class="ident">input</span>.<span class="ident">into</span>()).<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">err</span>.<span class="ident">to_compile_error</span>()).<span class="ident">into</span>()
-}
 </code></pre></div>
-</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec_codegen" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (878c7833f 2022-04-16)" ></div>
+</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec_codegen" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (ec77f2524 2022-04-17)" ></div>
 </body></html>

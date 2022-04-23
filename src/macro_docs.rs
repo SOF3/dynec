@@ -37,7 +37,10 @@ mod archetype_tests {}
 /// This macro calls [`EntityRef`] implicitly.
 /// Fields that reference entities should be annotated with `#[entity]`.
 ///
-/// # Arguments
+/// # Options
+/// Options are applied behind the attribute name in the form `#[system(...)]`.
+/// Multiple options are separated by commas.
+///
 /// ## `of = $ty`
 /// Implements the applied type as a component of the archetype `$ty`.
 ///
@@ -150,23 +153,75 @@ mod global_tests {}
 /// without any change in the signature.
 /// However it is not recommended to call this function directly in production code.
 ///
-/// # Arguments
+/// # Options
+/// Options are applied behind the attribute name in the form `#[system(...)]`.
+/// Multiple options are separated by commas.
+///
 /// ## `name = $expr`
 /// Sets the [name](crate::system::Spec::debug_name) of the system to `$expr`.
 /// By default, the name is `concat!(module_path!(), "::", $function_identifier)`.
 ///
-/// The `$expr` can read the local states of the system directly.
+/// The `$expr` can read the local and param states of the system directly.
 /// Since the debug name is only used for display purposes,
 /// it is allowed (although confusing to the programmer) to use mutable states in the name.
+/// It is unspecified whether debug messages use the initial debug name or the updated state.
 ///
+/// ## `before($expr1, $expr2, ...)` and `after($expr1, $expr2, ...)`
+/// Indicates that the system must be executed
+/// before/after all [partitions](crate::system::Parttion) given in the expressions.
+///
+/// Similar to `name`, the expressions can read local and param states dirctly.
+/// However, only the expressions are only resolved once before the first run of the system,
+/// so mutating states has no effect on the system schedule.
+///
+/// # Parameters
+/// Each parameter of a system function has a special meaning:
+///
+/// ## Local states
+/// Parameters with the attribute `#[dynec(local = xxx)]` are "local states",
+/// where `xxx` is an expression that evaluates to the initial value of the state.
+///
+/// Local states must take the type `&T` or `&mut T`,
+/// where `T` is the actual stored state.
+/// The mutated state persists for each instance of the system.
+///
+/// Use global states instead if the local state needs to be accessed from multiple systems.
+///
+/// ## Param states
+/// Parameters with the attribute `#[dynec(param)]` are "param states".
+/// The user has to pass initial values for param states in the `.build()` method.
+/// Param states behave identically to local states
+/// except for different definition location of the initial value.
+///
+/// It is typically used to initialize systems with resources that cannot be created statically
+/// (e.g. system canvas resources),
+/// or to schedule multiple systems declared from the same function
+/// (e.g. working on multiple discriminants of an isotope component).
+///
+/// ## Global states
+/// Parameters with the attribute `#[dynec(global)]` are "global states".
+/// Global states are shared scalar data between multiple systems.
+/// See [`Global`](crate::Global) for more information.
+///
+/// Thread-unsafe (non-`Send + Sync`) global states must be declared as
+/// `#[dynec(global(thread_local))]` to indicate that
+/// the global state can only be accessed from the main thread.
+/// As a result, systems that request thread-local global states
+/// will only be scheduled on the main thread.
+///
+/// # Example
 /// ```
 /// use dynec::system;
 ///
 /// #[dynec::global(initial = Title("hello world"))]
 /// struct Title(&'static str);
 ///
+/// #[derive(PartialEq, Eq, Hash)]
+/// struct Foo;
+///
 /// #[system(
 ///     name = format!("simulate[one = {}, two = {}]", counter_one, counter_two),
+///     before(Foo),
 /// )]
 /// fn simulate(
 ///     #[dynec(local = 0)] counter_one: &mut u16,

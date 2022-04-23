@@ -76,8 +76,23 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
         input_types.push(syn::Type::clone(&param.ty));
 
         enum ArgType {
-            Local { default: Option<Box<syn::Expr>> },
-            Global { thread_local: bool },
+            Local {
+                default: Option<Box<syn::Expr>>,
+            },
+            Global {
+                thread_local: bool,
+            },
+            Simple {
+                mutable: bool,
+                arch:    Box<syn::Type>,
+                comp:    Box<syn::Type>,
+            },
+            Isotope {
+                mutable: bool,
+                arch:    Box<syn::Type>,
+                comp:    Box<syn::Type>,
+                expr:    Option<Box<syn::Expr>>,
+            },
         }
 
         let mut arg_type: Option<Named<ArgType>> = None;
@@ -118,23 +133,154 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                         let thread_local = global_opts
                             .find_one(|opt| match opt {
                                 GlobalArgOpt::ThreadLocal => Some(&()),
-                                _ => None,
                             })?
                             .is_some();
                         set_arg_type(&mut arg_type, arg.name, ArgType::Global { thread_local })?;
+                    }
+                    ArgOpt::Simple(_, simple_opts) => {
+                        let mutable = simple_opts
+                            .find_one(|opt| match opt {
+                                SimpleArgOpt::Mutable => Some(&()),
+                                _ => None,
+                            })?
+                            .is_some();
+                        let (_, arch) = simple_opts
+                            .find_one(|opt| match opt {
+                                SimpleArgOpt::Arch(_, ty) => Some(ty),
+                                _ => None,
+                            })?
+                            .ok_or_else(|| {
+                                Error::new_spanned(&arg.name, "Simple arguments must have a type")
+                            })?;
+                        let (_, comp) = simple_opts
+                            .find_one(|opt| match opt {
+                                SimpleArgOpt::Comp(_, ty) => Some(ty),
+                                _ => None,
+                            })?
+                            .ok_or_else(|| {
+                                Error::new_spanned(&arg.name, "Simple arguments must have a type")
+                            })?;
+
+                        set_arg_type(
+                            &mut arg_type,
+                            arg.name,
+                            ArgType::Simple { mutable, arch: arch.clone(), comp: comp.clone() },
+                        )?;
+                    }
+                    ArgOpt::Isotope(_, isotope_opts) => {
+                        let mutable = isotope_opts
+                            .find_one(|opt| match opt {
+                                IsotopeArgOpt::Mutable => Some(&()),
+                                _ => None,
+                            })?
+                            .is_some();
+
+                        let (_, arch) = isotope_opts
+                            .find_one(|opt| match opt {
+                                IsotopeArgOpt::Arch(_, ty) => Some(ty),
+                                _ => None,
+                            })?
+                            .ok_or_else(|| {
+                                Error::new_spanned(&arg.name, "Simple arguments must have a type")
+                            })?;
+                        let (_, comp) = isotope_opts
+                            .find_one(|opt| match opt {
+                                IsotopeArgOpt::Comp(_, ty) => Some(ty),
+                                _ => None,
+                            })?
+                            .ok_or_else(|| {
+                                Error::new_spanned(&arg.name, "Simple arguments must have a type")
+                            })?;
+
+                        let expr = isotope_opts.find_one(|opt| match opt {
+                            IsotopeArgOpt::Discrim(_, expr) => Some(expr),
+                            _ => None,
+                        })?;
+                        let expr = expr.map(|(_, expr)| expr.clone());
+
+                        set_arg_type(
+                            &mut arg_type,
+                            arg.name,
+                            ArgType::Isotope {
+                                mutable,
+                                arch: arch.clone(),
+                                comp: comp.clone(),
+                                expr,
+                            },
+                        )?;
                     }
                 }
             }
         }
 
         let arg_type = match arg_type {
-            Some(arg_type) => arg_type,
+            Some(arg_type) => arg_type.value,
             None => {
-                todo!("detect arg type")
+                let ty = match &*param.ty {
+                    syn::Type::Path(ty) => ty,
+                    _ => {
+                        return Err(Error::new_spanned(
+                            param,
+                            "Cannot infer parameter usage. Spcify with #[dynec(...)].",
+                        ))
+                    }
+                };
+
+                let ty_name = ty.path.segments.last().expect("path segments should be non-empty");
+
+                let isotope = if ty_name.ident == "Simple" {
+                    false
+                } else if ty_name.ident == "Isotope" {
+                    true
+                } else {
+                    return Err(Error::new_spanned(
+                        param,
+                        "Cannot infer parameter usage. Spcify with #[dynec(...)].",
+                    ));
+                };
+                let type_args = match &ty_name.arguments {
+                    syn::PathArguments::AngleBracketed(args) if args.args.len() == 2 => args,
+                    _ => {
+                        return Err(Error::new_spanned(
+                            &param.ty,
+                            "system::Simple and system::Isotope takes two type arguments",
+                        ))
+                    }
+                };
+
+                let arch = match type_args.args.first().expect("type_args.args.len() == 2") {
+                    syn::GenericArgument::Type(ty) => Box::new(ty.clone()),
+                    _ => {
+                        return Err(Error::new_spanned(
+                            &param.ty,
+                            "The first argument of system::Simple and system::Isotope should be \
+                             the archetype",
+                        ))
+                    }
+                };
+                let (mutable, comp) =
+                    match type_args.args.last().expect("type_args.args.len() == 2") {
+                        syn::GenericArgument::Type(syn::Type::Reference(ty)) => {
+                            (ty.mutability.is_some(), ty.elem.clone())
+                        }
+                        _ => {
+                            return Err(Error::new_spanned(
+                                &param.ty,
+                                "The second argument of system::Simple and system::Isotope should \
+                                 be a reference to the component type",
+                            ))
+                        }
+                    };
+
+                if isotope {
+                    ArgType::Isotope { mutable, arch, comp, expr: None }
+                } else {
+                    ArgType::Simple { mutable, arch, comp }
+                }
             }
         };
 
-        match arg_type.value {
+        match arg_type {
             ArgType::Local { default } => {
                 let field_name = match &*param.pat {
                     syn::Pat::Ident(ident) => ident.ident.clone(),
@@ -183,6 +329,8 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                     });
                 });
             }
+            ArgType::Simple { .. } => todo!(),
+            ArgType::Isotope { .. } => todo!(),
         }
     }
 
@@ -305,6 +453,8 @@ enum ArgOpt {
     Param,
     Local(syn::Token![=], Box<syn::Expr>),
     Global(Option<syn::token::Paren>, Attr<GlobalArgOpt>),
+    Simple(Option<syn::token::Paren>, Attr<SimpleArgOpt>),
+    Isotope(Option<syn::token::Paren>, Attr<IsotopeArgOpt>),
 }
 
 impl Parse for Named<ArgOpt> {
@@ -331,6 +481,30 @@ impl Parse for Named<ArgOpt> {
 
                 ArgOpt::Global(paren, opts)
             }
+            "simple" => {
+                let mut paren = None;
+                let mut opts = Attr::default();
+
+                if input.peek(syn::token::Paren) {
+                    let inner;
+                    paren = Some(syn::parenthesized!(inner in input));
+                    opts = inner.parse::<Attr<SimpleArgOpt>>()?;
+                }
+
+                ArgOpt::Simple(paren, opts)
+            }
+            "isotope" => {
+                let mut paren = None;
+                let mut opts = Attr::default();
+
+                if input.peek(syn::token::Paren) {
+                    let inner;
+                    paren = Some(syn::parenthesized!(inner in input));
+                    opts = inner.parse::<Attr<IsotopeArgOpt>>()?;
+                }
+
+                ArgOpt::Isotope(paren, opts)
+            }
             _ => return Err(Error::new_spanned(&name, "Unknown attribute")),
         };
         Ok(Named { name, value })
@@ -349,6 +523,70 @@ impl Parse for Named<GlobalArgOpt> {
         let value = match name_string.as_str() {
             "thread_local" => GlobalArgOpt::ThreadLocal,
             _ => return Err(Error::new_spanned(&name, "Unknown option for #[dynec(global)]")),
+        };
+        Ok(Named { name, value })
+    }
+}
+
+enum SimpleArgOpt {
+    Mutable,
+    Arch(syn::Token![=], Box<syn::Type>),
+    Comp(syn::Token![=], Box<syn::Type>),
+}
+
+impl Parse for Named<SimpleArgOpt> {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let name = input.parse::<syn::Ident>()?;
+        let name_string = name.to_string();
+
+        let value = match name_string.as_str() {
+            "mut" => SimpleArgOpt::Mutable,
+            "arch" => {
+                let eq = input.parse::<syn::Token![=]>()?;
+                let ty = input.parse::<syn::Type>()?;
+                SimpleArgOpt::Arch(eq, Box::new(ty))
+            }
+            "comp" => {
+                let eq = input.parse::<syn::Token![=]>()?;
+                let ty = input.parse::<syn::Type>()?;
+                SimpleArgOpt::Comp(eq, Box::new(ty))
+            }
+            _ => return Err(Error::new_spanned(&name, "Unknown option for #[dynec(simple)]")),
+        };
+        Ok(Named { name, value })
+    }
+}
+
+enum IsotopeArgOpt {
+    Mutable,
+    Arch(syn::Token![=], Box<syn::Type>),
+    Comp(syn::Token![=], Box<syn::Type>),
+    Discrim(syn::Token![=], Box<syn::Expr>),
+}
+
+impl Parse for Named<IsotopeArgOpt> {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let name = input.parse::<syn::Ident>()?;
+        let name_string = name.to_string();
+
+        let value = match name_string.as_str() {
+            "mut" => IsotopeArgOpt::Mutable,
+            "arch" => {
+                let eq = input.parse::<syn::Token![=]>()?;
+                let ty = input.parse::<syn::Type>()?;
+                IsotopeArgOpt::Arch(eq, Box::new(ty))
+            }
+            "comp" => {
+                let eq = input.parse::<syn::Token![=]>()?;
+                let ty = input.parse::<syn::Type>()?;
+                IsotopeArgOpt::Comp(eq, Box::new(ty))
+            }
+            "discrim" => {
+                let eq = input.parse::<syn::Token![=]>()?;
+                let discrim = input.parse::<syn::Expr>()?;
+                IsotopeArgOpt::Discrim(eq, Box::new(discrim))
+            }
+            _ => return Err(Error::new_spanned(&name, "Unknown option for #[dynec(isotope)]")),
         };
         Ok(Named { name, value })
     }

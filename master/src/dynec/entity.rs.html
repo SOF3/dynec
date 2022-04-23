@@ -189,6 +189,9 @@
 <span id="184">184</span>
 <span id="185">185</span>
 <span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
 </pre><pre class="rust"><code><span class="doccomment">//! An entity is a single object that owns components.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Entities are reference-counted in debug mode,</span>
@@ -210,6 +213,9 @@
 
 <span class="kw">mod</span> <span class="ident">referrer</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">referrer</span>::{<span class="ident">Referrer</span>, <span class="ident">Visitor</span>};
+
+<span class="doccomment">/// Re-export of [`dynec::EntityRef`](crate::EntityRef).</span>
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::macro_docs::EntityRef</span> <span class="kw">as</span> <span class="ident">Ref</span>;
 
 <span class="kw">mod</span> <span class="ident">sealed</span> {
     <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Ref</span> {
@@ -376,5 +382,5 @@
     }
 }
 </code></pre></div>
-</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (ec77f2524 2022-04-17)" ></div>
+</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (f4ec0e7cf 2022-04-22)" ></div>
 </body></html>

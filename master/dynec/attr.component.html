@@ -29,9 +29,29 @@ that gets called when the entity was created without this component.
 This initializer should be either a closure with explicit parameter types,
 or a function reference with arity in the form <code>path/arity</code> (e.g. <code>count/1</code>).</p>
 <h2 id="example"><a href="#example">Example</a></h2>
-<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="macro">dynec::archetype!</span>(<span class="ident">Foo</span>);
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">dynec::component</span>;
 
-<span class="attribute">#[<span class="ident">dynec::component</span>(<span class="ident">of</span> <span class="op">=</span> <span class="ident">Foo</span>)]</span>
-<span class="kw">struct</span> <span class="ident">Bar</span>(<span class="ident">i32</span>);</code></pre></div>
-</div></details></section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (ec77f2524 2022-04-17)" ></div>
+<span class="macro">dynec::archetype!</span>(<span class="ident">Foo</span>; <span class="ident">Bar</span>);
+
+<span class="attribute">#[<span class="ident">component</span>(<span class="ident">of</span> <span class="op">=</span> <span class="ident">Foo</span>, <span class="ident">of</span> <span class="op">=</span> <span class="ident">Bar</span>, <span class="ident">init</span> <span class="op">=</span> <span class="op">|</span><span class="op">|</span> <span class="ident">Qux</span>(<span class="number">1</span>), <span class="ident">finalizer</span>)]</span>
+<span class="kw">struct</span> <span class="ident">Qux</span>(<span class="ident">i32</span>);
+
+<span class="macro">static_assertions::assert_impl_all!</span>(<span class="ident">Qux</span>: <span class="ident">component::Simple</span><span class="op">&lt;</span><span class="ident">Foo</span><span class="op">&gt;</span>, <span class="ident">component::Simple</span><span class="op">&lt;</span><span class="ident">Bar</span><span class="op">&gt;</span>);
+<span class="macro">assert!</span>(<span class="macro">matches!</span>(<span class="op">&lt;</span><span class="ident">Qux</span> <span class="kw">as</span> <span class="ident">component::Simple</span><span class="op">&lt;</span><span class="ident">Foo</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::PRESENCE</span>, <span class="ident">component::SimplePresence::Optional</span>));
+<span class="macro">assert!</span>(<span class="op">&lt;</span><span class="ident">Qux</span> <span class="kw">as</span> <span class="ident">component::Simple</span><span class="op">&lt;</span><span class="ident">Bar</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::IS_FINALIZER</span>);
+
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
+<span class="kw">struct</span> <span class="ident">Id</span>(<span class="ident">usize</span>);
+<span class="kw">impl</span> <span class="ident">component::Discrim</span> <span class="kw">for</span> <span class="ident">Id</span> {
+    <span class="kw">fn</span> <span class="ident">from_usize</span>(<span class="ident">usize</span>: <span class="ident">usize</span>) -&gt; <span class="self">Self</span> { <span class="self">Self</span>(<span class="ident">usize</span>) }
+    <span class="kw">fn</span> <span class="ident">to_usize</span>(<span class="self">self</span>) -&gt; <span class="ident">usize</span> { <span class="self">self</span>.<span class="number">0</span> }
+}
+
+<span class="attribute">#[<span class="ident">component</span>(<span class="ident">of</span> <span class="op">=</span> <span class="ident">Foo</span>, <span class="ident">isotope</span> <span class="op">=</span> <span class="ident">Id</span>, <span class="ident">init</span> <span class="op">=</span> <span class="ident">Corge::make</span><span class="op">/</span><span class="number">0</span>)]</span>
+<span class="kw">struct</span> <span class="ident">Corge</span>(<span class="ident">i32</span>);
+
+<span class="kw">impl</span> <span class="ident">Corge</span> {
+    <span class="kw">fn</span> <span class="ident">make</span>() -&gt; <span class="self">Self</span> { <span class="self">Self</span>(<span class="number">1</span>) }
+}</code></pre></div>
+</div></details></section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (f4ec0e7cf 2022-04-22)" ></div>
 </body></html>

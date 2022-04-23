@@ -20,6 +20,9 @@ pub use permutation::Permutation;
 mod referrer;
 pub use referrer::{Referrer, Visitor};
 
+/// Re-export of [`dynec::EntityRef`](crate::EntityRef).
+pub use crate::macro_docs::EntityRef as Ref;
+
 mod sealed {
     pub trait Ref {
         fn id(&self) -> Raw;

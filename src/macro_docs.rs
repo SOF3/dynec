@@ -26,6 +26,10 @@
 /// ```
 #[doc(inline)]
 pub use dynec_codegen::archetype;
+
+#[cfg(test)]
+mod archetype_tests {}
+
 /// Derives a [`component::Simple`](crate::component::Simple)
 /// or [`component::Isotope`](crate::component::Isotope) implementation for the applied type.
 /// This macro does not modify the input other than stripping attributes.
@@ -61,13 +65,37 @@ pub use dynec_codegen::archetype;
 ///
 /// # Example
 /// ```
-/// dynec::archetype!(Foo);
+/// use dynec::component;
 ///
-/// #[dynec::component(of = Foo)]
-/// struct Bar(i32);
+/// dynec::archetype!(Foo; Bar);
+///
+/// #[component(of = Foo, of = Bar, init = || Qux(1), finalizer)]
+/// struct Qux(i32);
+///
+/// static_assertions::assert_impl_all!(Qux: component::Simple<Foo>, component::Simple<Bar>);
+/// assert!(matches!(<Qux as component::Simple<Foo>>::PRESENCE, component::SimplePresence::Optional));
+/// assert!(<Qux as component::Simple<Bar>>::IS_FINALIZER);
+///
+/// #[derive(Debug, Clone, Copy)]
+/// struct Id(usize);
+/// impl component::Discrim for Id {
+///     fn from_usize(usize: usize) -> Self { Self(usize) }
+///     fn to_usize(self) -> usize { self.0 }
+/// }
+///
+/// #[component(of = Foo, isotope = Id, init = Corge::make/0)]
+/// struct Corge(i32);
+///
+/// impl Corge {
+///     fn make() -> Self { Self(1) }
+/// }
 /// ```
 #[doc(inline)]
 pub use dynec_codegen::component;
+
+#[cfg(test)]
+mod component_tests {}
+
 /// Creates a map of components for a given archetype.
 ///
 /// # Example
@@ -78,6 +106,10 @@ pub use dynec_codegen::component;
 /// ```
 #[doc(inline)]
 pub use dynec_codegen::components;
+
+#[cfg(test)]
+mod components_tests {}
+
 /// Derives a [`Global`](crate::Global) implementation for the applied type.
 /// This macro does not modify the input other than stripping attributes.
 ///
@@ -105,13 +137,91 @@ pub use dynec_codegen::components;
 /// ```
 #[doc(inline)]
 pub use dynec_codegen::global;
+
+#[cfg(test)]
+mod global_tests {}
+
 /// Converts a function into a system.
 ///
-/// This macro converts the function into a struct that derefs to a function pointer,
-/// so it is still possible to call the function directly in unit tests.
-/// However it is not recommended to call the converted struct directly in production code.
+/// This macro converts the function into a unit struct with the same name
+/// that implements [`system::Spec`](crate::system::Spec).
+/// The unit struct also derefs to a function pointer,
+/// so it is still possible to call the function directly (mainly useful in unit tests)
+/// without any change in the signature.
+/// However it is not recommended to call this function directly in production code.
+///
+/// # Arguments
+/// ## `name = $expr`
+/// Sets the [name](crate::system::Spec::debug_name) of the system to `$expr`.
+/// By default, the name is `concat!(module_path!(), "::", $function_identifier)`.
+///
+/// The `$expr` can read the local states of the system directly.
+/// Since the debug name is only used for display purposes,
+/// it is allowed (although confusing to the programmer) to use mutable states in the name.
+///
+/// ```
+/// use dynec::system;
+///
+/// #[dynec::global(initial = Title("hello world"))]
+/// struct Title(&'static str);
+///
+/// #[system(
+///     name = format!("simulate[one = {}, two = {}]", counter_one, counter_two),
+/// )]
+/// fn simulate(
+///     #[dynec(local = 0)] counter_one: &mut u16,
+///     #[dynec(param)] counter_two: &mut i64,
+///     #[dynec(global)] title: &mut Title,
+/// ) {
+///     *counter_one += 1u16;
+///     *counter_two += 3i64;
+///
+///     if *counter_two == 5 {
+///         title.0 = "changed";
+///     }
+/// }
+///
+/// {
+///     // We can call the function directly in unit tests.
+///
+///     let mut counter_one = 0u16;
+///     let mut counter_two = 2i64;
+///     let mut title = Title("original");
+///
+///     simulate(&mut counter_one, &mut counter_two, &mut title);
+///
+///     assert_eq!(counter_one, 1u16);
+///     assert_eq!(counter_two, 5i64);
+///     assert_eq!(title.0, "changed");
+/// }
+///
+/// let spec = simulate.build(7i64);
+/// assert_eq!(system::Spec::debug_name(&spec), "simulate[one = 0, two = 7]");
+/// ```
 #[doc(inline)]
 pub use dynec_codegen::system;
+
+#[cfg(test)]
+mod system_tests {
+    #[test]
+    fn test_system_name() {
+        #[super::system(dynec_as(crate))]
+        fn simulate(
+            #[dynec(local = 0)] counter_one: &mut u16,
+            #[dynec(param)] counter_two: &mut i64,
+        ) {
+            *counter_one += 1u16;
+            *counter_two += 3i64;
+        }
+
+        let spec = simulate.build(2i64);
+        {
+            use crate::system::Spec;
+            assert_eq!(spec.debug_name(), "dynec::macro_docs::system_tests::simulate");
+        }
+    }
+}
+
 /// Derives a [`crate::entity::Referrer`] implementation for the type.
 ///
 /// The generated implementation does not visit any fields by default.
@@ -134,3 +244,6 @@ pub use dynec_codegen::system;
 /// ```
 #[doc(inline)]
 pub use dynec_codegen::EntityRef;
+
+#[cfg(test)]
+mod entity_ref_tests {}

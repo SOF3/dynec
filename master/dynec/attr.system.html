@@ -11,20 +11,61 @@ The unit struct also derefs to a function pointer,
 so it is still possible to call the function directly (mainly useful in unit tests)
 without any change in the signature.
 However it is not recommended to call this function directly in production code.</p>
-<h2 id="arguments"><a href="#arguments">Arguments</a></h2><h3 id="name--expr"><a href="#name--expr"><code>name = $expr</code></a></h3>
+<h2 id="options"><a href="#options">Options</a></h2>
+<p>Options are applied behind the attribute name in the form <code>#[system(...)]</code>.
+Multiple options are separated by commas.</p>
+<h3 id="name--expr"><a href="#name--expr"><code>name = $expr</code></a></h3>
 <p>Sets the <a href="system/trait.Spec.html#tymethod.debug_name">name</a> of the system to <code>$expr</code>.
 By default, the name is <code>concat!(module_path!(), &quot;::&quot;, $function_identifier)</code>.</p>
-<p>The <code>$expr</code> can read the local states of the system directly.
+<p>The <code>$expr</code> can read the local and param states of the system directly.
 Since the debug name is only used for display purposes,
-it is allowed (although confusing to the programmer) to use mutable states in the name.</p>
-
+it is allowed (although confusing to the programmer) to use mutable states in the name.
+It is unspecified whether debug messages use the initial debug name or the updated state.</p>
+<h3 id="beforeexpr1-expr2--and-afterexpr1-expr2-"><a href="#beforeexpr1-expr2--and-afterexpr1-expr2-"><code>before($expr1, $expr2, ...)</code> and <code>after($expr1, $expr2, ...)</code></a></h3>
+<p>Indicates that the system must be executed
+before/after all <a href="crate::system::Parttion">partitions</a> given in the expressions.</p>
+<p>Similar to <code>name</code>, the expressions can read local and param states dirctly.
+However, only the expressions are only resolved once before the first run of the system,
+so mutating states has no effect on the system schedule.</p>
+<h2 id="parameters"><a href="#parameters">Parameters</a></h2>
+<p>Each parameter of a system function has a special meaning:</p>
+<h3 id="local-states"><a href="#local-states">Local states</a></h3>
+<p>Parameters with the attribute <code>#[dynec(local = xxx)]</code> are “local states”,
+where <code>xxx</code> is an expression that evaluates to the initial value of the state.</p>
+<p>Local states must take the type <code>&amp;T</code> or <code>&amp;mut T</code>,
+where <code>T</code> is the actual stored state.
+The mutated state persists for each instance of the system.</p>
+<p>Use global states instead if the local state needs to be accessed from multiple systems.</p>
+<h3 id="param-states"><a href="#param-states">Param states</a></h3>
+<p>Parameters with the attribute <code>#[dynec(param)]</code> are “param states”.
+The user has to pass initial values for param states in the <code>.build()</code> method.
+Param states behave identically to local states
+except for different definition location of the initial value.</p>
+<p>It is typically used to initialize systems with resources that cannot be created statically
+(e.g. system canvas resources),
+or to schedule multiple systems declared from the same function
+(e.g. working on multiple discriminants of an isotope component).</p>
+<h3 id="global-states"><a href="#global-states">Global states</a></h3>
+<p>Parameters with the attribute <code>#[dynec(global)]</code> are “global states”.
+Global states are shared scalar data between multiple systems.
+See <a href="trait.Global.html"><code>Global</code></a> for more information.</p>
+<p>Thread-unsafe (non-<code>Send + Sync</code>) global states must be declared as
+<code>#[dynec(global(thread_local))]</code> to indicate that
+the global state can only be accessed from the main thread.
+As a result, systems that request thread-local global states
+will only be scheduled on the main thread.</p>
+<h2 id="example"><a href="#example">Example</a></h2>
 <div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">dynec::system</span>;
 
 <span class="attribute">#[<span class="ident">dynec::global</span>(<span class="ident">initial</span> <span class="op">=</span> <span class="ident">Title</span>(<span class="string">&quot;hello world&quot;</span>))]</span>
 <span class="kw">struct</span> <span class="ident">Title</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span>);
 
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Hash</span>)]</span>
+<span class="kw">struct</span> <span class="ident">Foo</span>;
+
 <span class="attribute">#[<span class="ident">system</span>(
     <span class="ident">name</span> <span class="op">=</span> <span class="macro">format!</span>(<span class="string">&quot;simulate[one = {}, two = {}]&quot;</span>, <span class="ident">counter_one</span>, <span class="ident">counter_two</span>),
+    <span class="ident">before</span>(<span class="ident">Foo</span>),
 )]</span>
 <span class="kw">fn</span> <span class="ident">simulate</span>(
     <span class="attribute">#[<span class="ident">dynec</span>(<span class="ident">local</span> <span class="op">=</span> <span class="number">0</span>)]</span> <span class="ident">counter_one</span>: <span class="kw-2">&amp;mut</span> <span class="ident">u16</span>,

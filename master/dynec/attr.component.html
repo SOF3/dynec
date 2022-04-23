@@ -9,7 +9,10 @@ or <a href="component/trait.Isotope.html"><code>component::Isotope</code></a> im
 This macro does not modify the input other than stripping attributes.</p>
 <p>This macro calls <a href="derive.EntityRef.html" title="EntityRef"><code>EntityRef</code></a> implicitly.
 Fields that reference entities should be annotated with <code>#[entity]</code>.</p>
-<h2 id="arguments"><a href="#arguments">Arguments</a></h2><h3 id="of--ty"><a href="#of--ty"><code>of = $ty</code></a></h3>
+<h2 id="options"><a href="#options">Options</a></h2>
+<p>Options are applied behind the attribute name in the form <code>#[system(...)]</code>.
+Multiple options are separated by commas.</p>
+<h3 id="of--ty"><a href="#of--ty"><code>of = $ty</code></a></h3>
 <p>Implements the applied type as a component of the archetype <code>$ty</code>.</p>
 <h3 id="isotope--ty"><a href="#isotope--ty"><code>isotope = $ty</code></a></h3>
 <p>Indicates that the applied type is an <a href="component/trait.Isotope.html">isotope component</a>

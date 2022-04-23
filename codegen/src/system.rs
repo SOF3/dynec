@@ -91,25 +91,40 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 mutable: bool,
                 arch:    Box<syn::Type>,
                 comp:    Box<syn::Type>,
-                expr:    Option<Box<syn::Expr>>,
+                discrim: Option<Box<syn::Expr>>,
             },
         }
 
-        let mut arg_type: Option<Named<ArgType>> = None;
+        enum MaybeArgType {
+            None,
+            Some(Named<ArgType>),
+            IsotopeDiscrimHint(Named<Box<syn::Expr>>),
+        }
+        impl From<Named<ArgType>> for MaybeArgType {
+            fn from(arg: Named<ArgType>) -> Self { MaybeArgType::Some(arg) }
+        }
+        impl From<Named<Box<syn::Expr>>> for MaybeArgType {
+            fn from(arg: Named<Box<syn::Expr>>) -> Self { MaybeArgType::IsotopeDiscrimHint(arg) }
+        }
 
-        fn set_arg_type(
-            arg_type: &mut Option<Named<ArgType>>,
-            ident: syn::Ident,
-            ty: ArgType,
-        ) -> Result<()> {
-            if let Some(no) = &arg_type {
+        let mut arg_type: MaybeArgType = MaybeArgType::None;
+
+        fn set_arg_type<T>(arg_type: &mut MaybeArgType, ident: syn::Ident, ty: T) -> Result<()>
+        where
+            Named<T>: Into<MaybeArgType>,
+        {
+            if let Some(name) = match arg_type {
+                MaybeArgType::Some(named) => Some(&named.name),
+                MaybeArgType::IsotopeDiscrimHint(named) => Some(&named.name),
+                _ => None,
+            } {
                 return Err(Error::new(
-                    no.name.span().join(ident.span()).unwrap_or_else(|| no.name.span()),
+                    name.span().join(ident.span()).unwrap_or_else(|| name.span()),
                     "Each argument can only have one argument type",
                 ));
             }
 
-            *arg_type = Some(Named { name: ident, value: ty });
+            *arg_type = Named { name: ident, value: ty }.into();
 
             Ok(())
         }
@@ -175,47 +190,58 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                             })?
                             .is_some();
 
-                        let (_, arch) = isotope_opts
-                            .find_one(|opt| match opt {
-                                IsotopeArgOpt::Arch(_, ty) => Some(ty),
-                                _ => None,
-                            })?
-                            .ok_or_else(|| {
-                                Error::new_spanned(&arg.name, "Simple arguments must have a type")
-                            })?;
-                        let (_, comp) = isotope_opts
-                            .find_one(|opt| match opt {
-                                IsotopeArgOpt::Comp(_, ty) => Some(ty),
-                                _ => None,
-                            })?
-                            .ok_or_else(|| {
-                                Error::new_spanned(&arg.name, "Simple arguments must have a type")
-                            })?;
-
-                        let expr = isotope_opts.find_one(|opt| match opt {
-                            IsotopeArgOpt::Discrim(_, expr) => Some(expr),
+                        let discrim = isotope_opts.find_one(|opt| match opt {
+                            IsotopeArgOpt::Discrim(_, discrim) => Some(discrim),
                             _ => None,
                         })?;
-                        let expr = expr.map(|(_, expr)| expr.clone());
 
-                        set_arg_type(
-                            &mut arg_type,
-                            arg.name,
-                            ArgType::Isotope {
-                                mutable,
-                                arch: arch.clone(),
-                                comp: comp.clone(),
-                                expr,
-                            },
-                        )?;
+                        let arch = isotope_opts.find_one(|opt| match opt {
+                            IsotopeArgOpt::Arch(_, ty) => Some(ty),
+                            _ => None,
+                        })?;
+                        let comp = isotope_opts.find_one(|opt| match opt {
+                            IsotopeArgOpt::Comp(_, ty) => Some(ty),
+                            _ => None,
+                        })?;
+
+                        match (arch, comp, discrim, mutable) {
+                            (Some((_, arch)), Some((_, comp)), discrim, mutable) => {
+                                set_arg_type(
+                                    &mut arg_type,
+                                    arg.name,
+                                    ArgType::Isotope {
+                                        mutable,
+                                        arch: arch.clone(),
+                                        comp: comp.clone(),
+                                        discrim: discrim.map(|(_, discrim)| discrim.clone()),
+                                    },
+                                )?;
+                            }
+                            (None, None, Some((_, discrim)), false) => {
+                                set_arg_type(&mut arg_type, arg.name, discrim.clone())?;
+                            }
+                            _ => {
+                                return Err(Error::new_spanned(
+                                    &arg.name,
+                                    "Invalid isotope argument. Either provide only `discrim` or \
+                                     provide `arch` and `comp`.",
+                                ))
+                            }
+                        }
                     }
                 }
             }
         }
 
         let arg_type = match arg_type {
-            Some(arg_type) => arg_type.value,
-            None => {
+            MaybeArgType::Some(arg_type) => arg_type.value,
+            _ => {
+                let isotope_discrim_hint = match arg_type {
+                    MaybeArgType::Some(_) => unreachable!("inside match arm"),
+                    MaybeArgType::IsotopeDiscrimHint(hint) => Some(hint.value),
+                    MaybeArgType::None => None,
+                };
+
                 let ty = match &*param.ty {
                     syn::Type::Path(ty) => ty,
                     _ => {
@@ -238,6 +264,13 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                         "Cannot infer parameter usage. Spcify with #[dynec(...)].",
                     ));
                 };
+                if !isotope && isotope_discrim_hint.is_some() {
+                    return Err(Error::new_spanned(
+                        param,
+                        "`#[dynec(isotope)]` specified but `Simple` used in type. Possibly typo?",
+                    ));
+                }
+
                 let type_args = match &ty_name.arguments {
                     syn::PathArguments::AngleBracketed(args) if args.args.len() == 2 => args,
                     _ => {
@@ -273,7 +306,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                     };
 
                 if isotope {
-                    ArgType::Isotope { mutable, arch, comp, expr: None }
+                    ArgType::Isotope { mutable, arch, comp, discrim: isotope_discrim_hint }
                 } else {
                     ArgType::Simple { mutable, arch, comp }
                 }

@@ -33,12 +33,12 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 FnOpt::DynecAs(_, _) => {} // already handled
                 FnOpt::Before(_, inputs) => {
                     for dep in inputs {
-                        deps.push(quote!(#crate_name::system::spec::Dependency::Before(Box::new(#dep as Box<dyn #crate_name::system::Partition>))));
+                        deps.push(quote!(#crate_name::system::spec::Dependency::Before(Box::new(#dep) as Box<dyn #crate_name::system::Partition>)));
                     }
                 }
                 FnOpt::After(_, inputs) => {
                     for dep in inputs {
-                        deps.push(quote!(#crate_name::system::spec::Dependency::After(Box::new(#dep as Box<dyn #crate_name::system::Partition>))));
+                        deps.push(quote!(#crate_name::system::spec::Dependency::After(Box::new(#dep) as Box<dyn #crate_name::system::Partition>)));
                     }
                 }
                 FnOpt::Name(_, name_expr) => {
@@ -64,6 +64,8 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
     let mut input_types = Vec::new();
 
     let mut global_requests = Vec::new();
+    let mut simple_requests = Vec::new();
+    let mut isotope_requests = Vec::new();
 
     for (param_index, param) in input.sig.inputs.iter_mut().enumerate() {
         let param = match param {
@@ -253,16 +255,17 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 };
 
                 let ty_name = ty.path.segments.last().expect("path segments should be non-empty");
+                let ty_name_string = ty_name.ident.to_string();
 
-                let isotope = if ty_name.ident == "Simple" {
-                    false
-                } else if ty_name.ident == "Isotope" {
-                    true
-                } else {
-                    return Err(Error::new_spanned(
-                        param,
-                        "Cannot infer parameter usage. Spcify with #[dynec(...)].",
-                    ));
+                let isotope = match ty_name_string.as_str() {
+                    "Simple" => false,
+                    "Isotope" => true,
+                    _ => {
+                        return Err(Error::new_spanned(
+                            param,
+                            "Cannot infer parameter usage. Spcify with #[dynec(...)].",
+                        ))
+                    }
                 };
                 if !isotope && isotope_discrim_hint.is_some() {
                     return Err(Error::new_spanned(
@@ -286,8 +289,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                     _ => {
                         return Err(Error::new_spanned(
                             &param.ty,
-                            "The first argument of system::Simple and system::Isotope should be \
-                             the archetype",
+                            "The first argument should be the archetype",
                         ))
                     }
                 };
@@ -355,21 +357,52 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 };
 
                 global_requests.push(quote! {
-                    f(#crate_name::system::spec::GlobalRequest {
+                    #crate_name::system::spec::GlobalRequest {
                         global: ::std::any::TypeId::of::<#param_ty>(),
                         mutable: #mutable,
                         sync: #is_sync,
-                    });
+                    }
                 });
             }
-            ArgType::Simple { .. } => todo!(),
-            ArgType::Isotope { .. } => todo!(),
+            ArgType::Simple { mutable, arch, comp } => {
+                simple_requests.push(quote! {
+                    #crate_name::system::spec::SimpleRequest::new::<#arch, #comp>(#mutable)
+                });
+            }
+            ArgType::Isotope { mutable, arch, comp, discrim } => {
+                let discrim = match discrim {
+                    Some(discrim) => quote!(Some({
+                        let __iter = ::std::iter::IntoIterator::into_iter(#discrim);
+                        let __iter = ::std::iter::Iterator::map(__iter, |d| {
+                            let _: &(<#comp as #crate_name::component::Isotope<#arch>>::Discrim) = &d; // type check
+                            #crate_name::component::Discrim::to_usize(d)
+                        });
+                        ::std::iter::Iterator::collect::<::std::vec::Vec<_>>(__iter)
+                    })),
+                    None => quote!(None),
+                };
+
+                isotope_requests.push(quote! {
+                    #crate_name::system::spec::IsotopeRequest {
+                        archetype: ::std::any::TypeId::of::<#arch>(),
+                        component: ::std::any::TypeId::of::<#comp>(),
+                        discrim: #discrim,
+                        mutable: #mutable,
+                    }
+                });
+            }
         }
     }
 
     let fn_body = &*input.block;
 
     let input_args: Vec<_> = input.sig.inputs.iter().collect();
+
+    let destructure_local_states = quote! {
+        let &Self {
+            #(ref #local_state_field_idents,)*
+        } = self;
+    };
 
     let output = quote! {
         #(#[#other_attrs])*
@@ -409,26 +442,26 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
 
             impl #crate_name::system::Spec for __dynec_local_state {
                 fn debug_name(&self) -> ::std::string::String {
-                    let &Self {
-                        #(ref #local_state_field_idents,)*
-                    } = self;
+                    #destructure_local_states
                     ::std::string::String::from(#name)
                 }
 
                 fn for_each_dependency(&self, f: &mut dyn FnMut(#crate_name::system::spec::Dependency)) {
-                    todo!()
+                    #destructure_local_states
+                    #(f(#deps);)*
                 }
 
                 fn for_each_global_request(&self, f: &mut dyn FnMut(#crate_name::system::spec::GlobalRequest)) {
-                    #(#global_requests)*
+                    #(f(#global_requests);)*
                 }
 
                 fn for_each_simple_request(&self, f: &mut dyn FnMut(#crate_name::system::spec::SimpleRequest)) {
-                    todo!()
+                    #(f(#simple_requests);)*
                 }
 
                 fn for_each_isotope_request(&self, f: &mut dyn FnMut(#crate_name::system::spec::IsotopeRequest)) {
-                    todo!()
+                    #destructure_local_states
+                    #(f(#isotope_requests);)*
                 }
 
                 fn run(&mut self) {

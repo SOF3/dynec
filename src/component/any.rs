@@ -1,9 +1,9 @@
 //! Utilties for dynamic dispatch related to components.
 
 use std::any::{self, Any, TypeId};
-use std::cmp;
 use std::collections::BTreeMap;
 use std::marker::PhantomData;
+use std::{cmp, hash};
 
 use super::Discrim;
 use crate::{component, Archetype};
@@ -18,11 +18,11 @@ pub(crate) struct Identifier {
 }
 
 impl Identifier {
-    fn simple<A: Archetype, C: component::Simple<A>>() -> Self {
+    pub(crate) fn simple<A: Archetype, C: component::Simple<A>>() -> Self {
         Identifier { id: TypeId::of::<C>(), name: any::type_name::<C>(), discrim: None }
     }
 
-    fn isotope<A: Archetype, C: component::Isotope<A>>(discrim: C::Discrim) -> Self {
+    pub(crate) fn isotope<A: Archetype, C: component::Isotope<A>>(discrim: C::Discrim) -> Self {
         Identifier {
             id:      TypeId::of::<C>(),
             name:    any::type_name::<C>(),
@@ -44,6 +44,13 @@ impl PartialOrd for Identifier {
 impl Ord for Identifier {
     fn cmp(&self, other: &Self) -> cmp::Ordering {
         self.id.cmp(&other.id).then_with(|| self.discrim.cmp(&other.discrim))
+    }
+}
+
+impl hash::Hash for Identifier {
+    fn hash<H: hash::Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
+        self.discrim.hash(state)
     }
 }
 

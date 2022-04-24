@@ -5,9 +5,13 @@ use std::sync::Arc;
 use bitvec::prelude::BitVec;
 use parking_lot::RwLock;
 
-use crate::entity;
+use crate::{component, entity, Archetype};
 
 pub(crate) type Shared = Arc<RwLock<dyn AnyStorage>>;
+
+pub(crate) fn shared_simple<A: Archetype, C: component::Simple<A>>() -> Shared {
+    Arc::new(RwLock::new(Storage::<C>::new())) as Shared
+}
 
 pub(crate) trait AnyStorage {}
 
@@ -15,11 +19,19 @@ pub(crate) struct Storage<T> {
     inner: Inner<T>,
 }
 
+impl<T> Storage<T> {
+    pub(crate) fn new() -> Self { Self { inner: Inner::default() } }
+}
+
 impl<T> AnyStorage for Storage<T> {}
 
 enum Inner<T> {
     Map(BTreeMap<entity::Raw, T>),
     Vec(InnerVec<T>),
+}
+
+impl<T> Default for Inner<T> {
+    fn default() -> Self { Inner::Map(BTreeMap::new()) }
 }
 
 impl<T> Inner<T> {
@@ -122,3 +134,5 @@ struct InnerVec<T> {
     presence: BitVec,
     data:     Vec<MaybeUninit<T>>,
 }
+
+pub(crate) trait IsotopeFactory {}

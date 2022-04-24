@@ -63,9 +63,9 @@
 #![cfg_attr(debug_assertions, allow(dead_code, unused_variables))]
 #![cfg_attr(doc, warn(missing_docs))]
 
-mod macro_docs;
+mod macros;
 #[doc(inline)]
-pub use macro_docs::*;
+pub use macros::*;
 
 #[macro_use]
 mod test_util;

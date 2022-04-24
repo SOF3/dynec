@@ -1,10 +1,12 @@
 use std::any::{Any, TypeId};
 use std::collections::{BTreeMap, HashMap};
+use std::sync::Arc;
 
 use indexmap::IndexSet;
+use parking_lot::RwLock;
 
-use super::{scheduler, ArchComp, IsotopeSpec, SimpleSpec};
-use crate::system;
+use super::{scheduler, storage, ArchComp, IsotopeSpec, SimpleSpec};
+use crate::{component, system};
 
 /// This type is used to build a world.
 /// No more systems can be scheduled after the builder is built.
@@ -34,6 +36,9 @@ pub struct Builder {
     pub(crate) dependencies: HashMap<scheduler::TaskId, Vec<scheduler::TaskId>>,
     /// If `dependents[a].contains(b)`, `a` runs before `b`
     pub(crate) dependents:   HashMap<scheduler::TaskId, Vec<scheduler::TaskId>>,
+
+    pub(crate) simple_storages:   HashMap<super::ComponentIdentifier, storage::Shared>,
+    pub(crate) isotope_factories: HashMap<TypeId, Box<dyn storage::IsotopeFactory>>,
 }
 
 impl Builder {
@@ -50,6 +55,18 @@ impl Builder {
             } else {
                 self.unsend_globals.entry(request.global).or_default();
             }
+        });
+
+        system.for_each_simple_request(&mut |request| {
+            let id = super::ComponentIdentifier {
+                arch: request.archetype,
+                comp: component::any::Identifier {
+                    id:      request.component,
+                    name:    "TODO",
+                    discrim: None,
+                },
+            };
+            self.simple_storages.entry(id).or_insert_with(request.storage_builder);
         });
     }
 
@@ -103,5 +120,10 @@ impl Builder {
     }
 
     /// Constructs the world from the builder.
-    pub fn build(self) -> super::World { todo!() }
+    pub fn build(self) -> super::World {
+        super::World {
+            storages:          RwLock::new(self.simple_storages),
+            isotope_factories: self.isotope_factories,
+        }
+    }
 }

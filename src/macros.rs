@@ -168,7 +168,7 @@ mod global_tests {}
 ///
 /// ## `before($expr1, $expr2, ...)` and `after($expr1, $expr2, ...)`
 /// Indicates that the system must be executed
-/// before/after all [partitions](crate::system::Parttion) given in the expressions.
+/// before/after all [partitions](crate::system::Partition) given in the expressions.
 ///
 /// Similar to `name`, the expressions can read local and param states dirctly.
 /// However, only the expressions are only resolved once before the first run of the system,
@@ -209,6 +209,45 @@ mod global_tests {}
 /// As a result, systems that request thread-local global states
 /// will only be scheduled on the main thread.
 ///
+/// ## Simple components
+/// Parameters with the attribute `#[dynec(simple(arch = Type1, comp = Type2))]`
+/// are "simple components".
+/// Alternatively, parameters that do not have a `#[dynec]` attribute
+/// but with a type `impl ReadSimple<Type1, Type2>`/`impl WriteSimple<Type1, Type2>`
+/// are also simple components
+/// (where `Simple` can be qualified by any path, e.g. `system::Simple`).
+/// This requests access to a [simple component](crate::component::Simple) of type `Type2`
+/// from entities of the [archetype](crate::Archetype) `Type1`,
+/// exposed through a type that implements [`system::Simple`](crate::system::Simple).
+///
+/// With the attribute, only read access is permitted by default.
+/// To allow write access, add `mut` to the `simple` option list with the first syntax.
+/// No information is inferred from the type if `#[dync(simple)]`
+///
+/// ## Isotope components
+/// Parameters with the attribute `#[dynec(isotope(arch = Type1, comp = Type2))]`
+/// are "isotope components".
+/// Alternatively, parameters that do not have a `#[dynec]` attribute
+/// but with a type `Isotope<Type1, &Type2>` are also isotope components.
+/// This requests access to an [isotope component](crate::component::Isotope) of type `Type2`
+/// from entities of the [archetype](crate::Archetype) `Type1`,
+/// exposed through a type that implements [`system::Isotope`](crate::system::Isotope).
+///
+/// Only read access is permitted by default.
+/// To allow write access, add `mut` to the `isotope` option list with the first syntax,
+/// or change the component reference to `&mut` with the second syntax.
+///
+/// By default, all discriminants of the isotope component are requested.
+/// To request only particular discriminants,
+/// add `discrim = expr` to the `isotope` option list with the first syntax,
+/// or add the `#[dynec(isotope(discrim = expr))]` with the second syntax,
+/// where `expr` is a value that implements `IntoIterator<Item = Type2::Discrim>`
+/// Note that `arch`, `comp` and `mut` must not be used if the second syntax is intended.
+///
+/// Similar to `name`, the expressions can read local and param states dirctly.
+/// However, only the expressions are only resolved once before the first run of the system,
+/// so mutating states has no effect on the system schedule.
+///
 /// # Example
 /// ```
 /// use dynec::system;
@@ -219,39 +258,74 @@ mod global_tests {}
 /// #[derive(PartialEq, Eq, Hash)]
 /// struct Foo;
 ///
+/// dynec::archetype!(Player);
+///
+/// #[dynec::component(of = Player)]
+/// struct PositionX(f32);
+/// #[dynec::component(of = Player)]
+/// struct PositionY(f32);
+///
+/// #[dynec::component(of = Player)]
+/// struct Direction(f32, f32);
+///
+/// #[derive(Debug, Clone, Copy)]
+/// struct SkillId(usize);
+/// impl dynec::component::Discrim for SkillId {
+///     fn from_usize(id: usize) -> Self { Self(id) }
+///     fn to_usize(self) -> usize { self.0 }
+/// }
+///
+/// #[dynec::component(of = Player, isotope = SkillId, init = || SkillLevel(1))]
+/// struct SkillLevel(u8);
+///
 /// #[system(
-///     name = format!("simulate[one = {}, two = {}]", counter_one, counter_two),
+///     name = format!("simulate[counter = {}, skill_id = {:?}]", counter, skill_id),
 ///     before(Foo),
 /// )]
 /// fn simulate(
-///     #[dynec(local = 0)] counter_one: &mut u16,
-///     #[dynec(param)] counter_two: &mut i64,
+///     #[dynec(local = 0)] counter: &mut u16,
+///     #[dynec(param)] skill_id: &SkillId,
 ///     #[dynec(global)] title: &mut Title,
+///     x: system::Simple<Player, &mut PositionX>,
+///     y: system::Simple<Player, &mut PositionY>,
+///     dir: system::Simple<Player, &Direction>,
+///     #[dynec(isotope(discrim = [*skill_id]))] skill: system::Isotope<Player, &SkillLevel>,
 /// ) {
-///     *counter_one += 1u16;
-///     *counter_two += 3i64;
+///     *counter += 1;
 ///
-///     if *counter_two == 5 {
+///     if *counter == 1 {
 ///         title.0 = "changed";
 ///     }
 /// }
 ///
-/// {
-///     // We can call the function directly in unit tests.
+/// let spec = simulate.build(SkillId(3));
+/// assert_eq!(system::Spec::debug_name(&spec), "simulate[counter = 0, skill_id = SkillId(3)]");
 ///
-///     let mut counter_one = 0u16;
-///     let mut counter_two = 2i64;
+/// {
+///     // We can also call the function directly in unit tests.
+///
+///     let mut counter = 0;
 ///     let mut title = Title("original");
 ///
-///     simulate(&mut counter_one, &mut counter_two, &mut title);
+///     let mut world = dynec::system_test! {
+///         simulate.build(SkillId(2));
+///         _: Player = (
+///             PositionX(0.0),
+///             PositionY(0.0),
+///             Direction(0.5, 0.5),
+///         );
+///         _: Player = (
+///             PositionX(0.5),
+///             PositionY(0.5),
+///             Direction(0.5, 0.5),
+///         );
+///     };
 ///
-///     assert_eq!(counter_one, 1u16);
-///     assert_eq!(counter_two, 5i64);
+///     simulate(&mut counter, &SkillId(2), &mut title, todo!(), todo!(), todo!(), todo!());
+///
+///     assert_eq!(counter, 1);
 ///     assert_eq!(title.0, "changed");
 /// }
-///
-/// let spec = simulate.build(7i64);
-/// assert_eq!(system::Spec::debug_name(&spec), "simulate[one = 0, two = 7]");
 /// ```
 #[doc(inline)]
 pub use dynec_codegen::system;
@@ -272,7 +346,7 @@ mod system_tests {
         let spec = simulate.build(2i64);
         {
             use crate::system::Spec;
-            assert_eq!(spec.debug_name(), "dynec::macro_docs::system_tests::simulate");
+            assert_eq!(spec.debug_name(), "dynec::macros::system_tests::simulate");
         }
     }
 }
@@ -302,3 +376,31 @@ pub use dynec_codegen::EntityRef;
 
 #[cfg(test)]
 mod entity_ref_tests {}
+
+/// Convenience macro that constructs a new world for testing a small number of systems.
+///
+/// See [`system`] for example usage.
+#[macro_export]
+macro_rules! system_test {
+    (
+        $($systems:expr),* ;
+        $(
+            $var:tt : $arch:ty = ($($components:tt)*);
+        )*
+    ) => {{
+        let mut builder = $crate::world::Builder::default();
+        $(
+            builder.schedule(Box::new($systems));
+        )*
+
+        let mut world = builder.build();
+
+        $(
+            let $var = world.create::<$arch>(
+                $crate::components![ $arch => $($components)*]
+            );
+        )*
+
+        world
+    }}
+}

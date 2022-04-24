@@ -15,7 +15,7 @@ use std::marker::PhantomData;
 
 use crate::{component, util, Archetype};
 
-/// Provides immutable or mutable access to a simple component in a specific archetype.
+/// Provides access to a simple component in a specific archetype.
 pub struct Simple<A: Archetype, R: util::Ref>
 where
     R::Target: component::Simple<A>,
@@ -23,7 +23,7 @@ where
     _ph: PhantomData<(A, R)>,
 }
 
-/// Provides immutable or mutable access to an isotope component in a specific archetype.
+/// Provides access to an isotope component in a specific archetype.
 pub struct Isotope<A: Archetype, R: util::Ref>
 where
     R::Target: component::Isotope<A>,

@@ -2,7 +2,8 @@
 
 use std::any::TypeId;
 
-use crate::system;
+use crate::world::storage;
+use crate::{component, system, Archetype};
 
 /// Describes an instance of system.
 ///
@@ -56,15 +57,31 @@ pub struct GlobalRequest {
 
 /// Indicates that the system requires a simple component read/write.
 pub struct SimpleRequest {
+    /// The archetype requested.
+    pub(crate) archetype:       TypeId,
     /// The type of the simple component.
-    pub component: TypeId,
+    pub(crate) component:       TypeId,
     /// Whether mutable access is requested.
-    pub mutable:   bool,
+    pub(crate) mutable:         bool,
+    pub(crate) storage_builder: fn() -> storage::Shared,
+}
+
+impl SimpleRequest {
+    pub fn new<A: Archetype, C: component::Simple<A>>(mutable: bool) -> Self {
+        Self {
+            archetype: TypeId::of::<A>(),
+            component: TypeId::of::<C>(),
+            mutable,
+            storage_builder: || storage::shared_simple::<A, C>(),
+        }
+    }
 }
 
 /// Indicates that the system requires an isotope component read/write.
 pub struct IsotopeRequest {
-    /// The type of the isotope component.
+    /// The archetype requested.
+    pub archetype: TypeId,
+    /// The archetype of the isotope component.
     pub component: TypeId,
     /// If `Some`, only the isotope components of the given discriminants are accessible.
     ///

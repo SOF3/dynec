@@ -1,7 +1,7 @@
 //! The world stores the states of the game.
 
 use std::any::TypeId;
-use std::collections::BTreeMap;
+use std::collections::HashMap;
 
 use parking_lot::RwLock;
 
@@ -43,7 +43,8 @@ pub(crate) struct ArchComp {
 }
 
 /// Identifies an archetype + component type + discriminant.
-struct ComponentIdentifier {
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub(crate) struct ComponentIdentifier {
     arch: TypeId,
     comp: component::any::Identifier,
 }
@@ -73,13 +74,14 @@ impl IsotopeSpec {
 mod builder;
 pub use builder::Builder;
 
-mod storage;
+pub(crate) mod storage;
 
 mod scheduler;
 
 /// The data structure that stores all states in the game.
 pub struct World {
-    storages: RwLock<BTreeMap<ComponentIdentifier, storage::Shared>>,
+    storages:          RwLock<HashMap<ComponentIdentifier, storage::Shared>>,
+    isotope_factories: HashMap<TypeId, Box<dyn storage::IsotopeFactory>>,
 }
 
 impl World {

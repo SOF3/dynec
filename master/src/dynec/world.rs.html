@@ -105,10 +105,12 @@
 <span id="100">100</span>
 <span id="101">101</span>
 <span id="102">102</span>
+<span id="103">103</span>
+<span id="104">104</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The world stores the states of the game.</span>
 
 <span class="kw">use</span> <span class="ident">std::any::TypeId</span>;
-<span class="kw">use</span> <span class="ident">std::collections::BTreeMap</span>;
+<span class="kw">use</span> <span class="ident">std::collections::HashMap</span>;
 
 <span class="kw">use</span> <span class="ident">parking_lot::RwLock</span>;
 
@@ -150,7 +152,8 @@
 }
 
 <span class="doccomment">/// Identifies an archetype + component type + discriminant.</span>
-<span class="kw">struct</span> <span class="ident">ComponentIdentifier</span> {
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Hash</span>)]</span>
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">ComponentIdentifier</span> {
     <span class="ident">arch</span>: <span class="ident">TypeId</span>,
     <span class="ident">comp</span>: <span class="ident">component::any::Identifier</span>,
 }
@@ -180,13 +183,14 @@
 <span class="kw">mod</span> <span class="ident">builder</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">builder::Builder</span>;
 
-<span class="kw">mod</span> <span class="ident">storage</span>;
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod</span> <span class="ident">storage</span>;
 
 <span class="kw">mod</span> <span class="ident">scheduler</span>;
 
 <span class="doccomment">/// The data structure that stores all states in the game.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">World</span> {
-    <span class="ident">storages</span>: <span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">ComponentIdentifier</span>, <span class="ident">storage::Shared</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">storages</span>:          <span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">ComponentIdentifier</span>, <span class="ident">storage::Shared</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">isotope_factories</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">TypeId</span>, <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">storage::IsotopeFactory</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">World</span> {
@@ -208,5 +212,5 @@
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">tests</span>;
 </code></pre></div>
-</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (f4ec0e7cf 2022-04-22)" ></div>
+</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (de1026a67 2022-04-23)" ></div>
 </body></html>

@@ -114,7 +114,7 @@
 
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">component</span>, <span class="ident">util</span>, <span class="ident">Archetype</span>};
 
-<span class="doccomment">/// Provides immutable or mutable access to a simple component in a specific archetype.</span>
+<span class="doccomment">/// Provides access to a simple component in a specific archetype.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Simple</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span>, <span class="ident">R</span>: <span class="ident">util::Ref</span><span class="op">&gt;</span>
 <span class="kw">where</span>
     <span class="ident">R::Target</span>: <span class="ident">component::Simple</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>,
@@ -122,7 +122,7 @@
     <span class="ident">_ph</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span>(<span class="ident">A</span>, <span class="ident">R</span>)<span class="op">&gt;</span>,
 }
 
-<span class="doccomment">/// Provides immutable or mutable access to an isotope component in a specific archetype.</span>
+<span class="doccomment">/// Provides access to an isotope component in a specific archetype.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Isotope</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span>, <span class="ident">R</span>: <span class="ident">util::Ref</span><span class="op">&gt;</span>
 <span class="kw">where</span>
     <span class="ident">R::Target</span>: <span class="ident">component::Isotope</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>,
@@ -192,5 +192,5 @@
 <span class="attribute">#[<span class="ident">doc</span>(<span class="ident">inline</span>)]</span>
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">spec::Spec</span>;
 </code></pre></div>
-</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (f4ec0e7cf 2022-04-22)" ></div>
+</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (de1026a67 2022-04-23)" ></div>
 </body></html>

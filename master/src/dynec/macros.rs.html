@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/macro_docs.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>macro_docs.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script src="../../crates.js"></script><script defer src="../../main.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/macros.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>macros.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script src="../../crates.js"></script><script defer src="../../main.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script>
     <noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../dynec/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
         </a><h2 class="location"></h2>
     </nav>
@@ -307,6 +307,108 @@
 <span id="302">302</span>
 <span id="303">303</span>
 <span id="304">304</span>
+<span id="305">305</span>
+<span id="306">306</span>
+<span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
+<span id="314">314</span>
+<span id="315">315</span>
+<span id="316">316</span>
+<span id="317">317</span>
+<span id="318">318</span>
+<span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
+<span id="322">322</span>
+<span id="323">323</span>
+<span id="324">324</span>
+<span id="325">325</span>
+<span id="326">326</span>
+<span id="327">327</span>
+<span id="328">328</span>
+<span id="329">329</span>
+<span id="330">330</span>
+<span id="331">331</span>
+<span id="332">332</span>
+<span id="333">333</span>
+<span id="334">334</span>
+<span id="335">335</span>
+<span id="336">336</span>
+<span id="337">337</span>
+<span id="338">338</span>
+<span id="339">339</span>
+<span id="340">340</span>
+<span id="341">341</span>
+<span id="342">342</span>
+<span id="343">343</span>
+<span id="344">344</span>
+<span id="345">345</span>
+<span id="346">346</span>
+<span id="347">347</span>
+<span id="348">348</span>
+<span id="349">349</span>
+<span id="350">350</span>
+<span id="351">351</span>
+<span id="352">352</span>
+<span id="353">353</span>
+<span id="354">354</span>
+<span id="355">355</span>
+<span id="356">356</span>
+<span id="357">357</span>
+<span id="358">358</span>
+<span id="359">359</span>
+<span id="360">360</span>
+<span id="361">361</span>
+<span id="362">362</span>
+<span id="363">363</span>
+<span id="364">364</span>
+<span id="365">365</span>
+<span id="366">366</span>
+<span id="367">367</span>
+<span id="368">368</span>
+<span id="369">369</span>
+<span id="370">370</span>
+<span id="371">371</span>
+<span id="372">372</span>
+<span id="373">373</span>
+<span id="374">374</span>
+<span id="375">375</span>
+<span id="376">376</span>
+<span id="377">377</span>
+<span id="378">378</span>
+<span id="379">379</span>
+<span id="380">380</span>
+<span id="381">381</span>
+<span id="382">382</span>
+<span id="383">383</span>
+<span id="384">384</span>
+<span id="385">385</span>
+<span id="386">386</span>
+<span id="387">387</span>
+<span id="388">388</span>
+<span id="389">389</span>
+<span id="390">390</span>
+<span id="391">391</span>
+<span id="392">392</span>
+<span id="393">393</span>
+<span id="394">394</span>
+<span id="395">395</span>
+<span id="396">396</span>
+<span id="397">397</span>
+<span id="398">398</span>
+<span id="399">399</span>
+<span id="400">400</span>
+<span id="401">401</span>
+<span id="402">402</span>
+<span id="403">403</span>
+<span id="404">404</span>
+<span id="405">405</span>
+<span id="406">406</span>
 </pre><pre class="rust"><code><span class="doccomment">/// Declares archetypes.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// # Example</span>
@@ -477,7 +579,7 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// ## `before($expr1, $expr2, ...)` and `after($expr1, $expr2, ...)`</span>
 <span class="doccomment">/// Indicates that the system must be executed</span>
-<span class="doccomment">/// before/after all [partitions](crate::system::Parttion) given in the expressions.</span>
+<span class="doccomment">/// before/after all [partitions](crate::system::Partition) given in the expressions.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// Similar to `name`, the expressions can read local and param states dirctly.</span>
 <span class="doccomment">/// However, only the expressions are only resolved once before the first run of the system,</span>
@@ -518,6 +620,45 @@
 <span class="doccomment">/// As a result, systems that request thread-local global states</span>
 <span class="doccomment">/// will only be scheduled on the main thread.</span>
 <span class="doccomment">///</span>
+<span class="doccomment">/// ## Simple components</span>
+<span class="doccomment">/// Parameters with the attribute `#[dynec(simple(arch = Type1, comp = Type2))]`</span>
+<span class="doccomment">/// are &quot;simple components&quot;.</span>
+<span class="doccomment">/// Alternatively, parameters that do not have a `#[dynec]` attribute</span>
+<span class="doccomment">/// but with a type `impl ReadSimple&lt;Type1, Type2&gt;`/`impl WriteSimple&lt;Type1, Type2&gt;`</span>
+<span class="doccomment">/// are also simple components</span>
+<span class="doccomment">/// (where `Simple` can be qualified by any path, e.g. `system::Simple`).</span>
+<span class="doccomment">/// This requests access to a [simple component](crate::component::Simple) of type `Type2`</span>
+<span class="doccomment">/// from entities of the [archetype](crate::Archetype) `Type1`,</span>
+<span class="doccomment">/// exposed through a type that implements [`system::Simple`](crate::system::Simple).</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// With the attribute, only read access is permitted by default.</span>
+<span class="doccomment">/// To allow write access, add `mut` to the `simple` option list with the first syntax.</span>
+<span class="doccomment">/// No information is inferred from the type if `#[dync(simple)]`</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// ## Isotope components</span>
+<span class="doccomment">/// Parameters with the attribute `#[dynec(isotope(arch = Type1, comp = Type2))]`</span>
+<span class="doccomment">/// are &quot;isotope components&quot;.</span>
+<span class="doccomment">/// Alternatively, parameters that do not have a `#[dynec]` attribute</span>
+<span class="doccomment">/// but with a type `Isotope&lt;Type1, &amp;Type2&gt;` are also isotope components.</span>
+<span class="doccomment">/// This requests access to an [isotope component](crate::component::Isotope) of type `Type2`</span>
+<span class="doccomment">/// from entities of the [archetype](crate::Archetype) `Type1`,</span>
+<span class="doccomment">/// exposed through a type that implements [`system::Isotope`](crate::system::Isotope).</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// Only read access is permitted by default.</span>
+<span class="doccomment">/// To allow write access, add `mut` to the `isotope` option list with the first syntax,</span>
+<span class="doccomment">/// or change the component reference to `&amp;mut` with the second syntax.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// By default, all discriminants of the isotope component are requested.</span>
+<span class="doccomment">/// To request only particular discriminants,</span>
+<span class="doccomment">/// add `discrim = expr` to the `isotope` option list with the first syntax,</span>
+<span class="doccomment">/// or add the `#[dynec(isotope(discrim = expr))]` with the second syntax,</span>
+<span class="doccomment">/// where `expr` is a value that implements `IntoIterator&lt;Item = Type2::Discrim&gt;`</span>
+<span class="doccomment">/// Note that `arch`, `comp` and `mut` must not be used if the second syntax is intended.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// Similar to `name`, the expressions can read local and param states dirctly.</span>
+<span class="doccomment">/// However, only the expressions are only resolved once before the first run of the system,</span>
+<span class="doccomment">/// so mutating states has no effect on the system schedule.</span>
+<span class="doccomment">///</span>
 <span class="doccomment">/// # Example</span>
 <span class="doccomment">/// ```</span>
 <span class="doccomment">/// use dynec::system;</span>
@@ -528,39 +669,74 @@
 <span class="doccomment">/// #[derive(PartialEq, Eq, Hash)]</span>
 <span class="doccomment">/// struct Foo;</span>
 <span class="doccomment">///</span>
+<span class="doccomment">/// dynec::archetype!(Player);</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// #[dynec::component(of = Player)]</span>
+<span class="doccomment">/// struct PositionX(f32);</span>
+<span class="doccomment">/// #[dynec::component(of = Player)]</span>
+<span class="doccomment">/// struct PositionY(f32);</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// #[dynec::component(of = Player)]</span>
+<span class="doccomment">/// struct Direction(f32, f32);</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// #[derive(Debug, Clone, Copy)]</span>
+<span class="doccomment">/// struct SkillId(usize);</span>
+<span class="doccomment">/// impl dynec::component::Discrim for SkillId {</span>
+<span class="doccomment">///     fn from_usize(id: usize) -&gt; Self { Self(id) }</span>
+<span class="doccomment">///     fn to_usize(self) -&gt; usize { self.0 }</span>
+<span class="doccomment">/// }</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// #[dynec::component(of = Player, isotope = SkillId, init = || SkillLevel(1))]</span>
+<span class="doccomment">/// struct SkillLevel(u8);</span>
+<span class="doccomment">///</span>
 <span class="doccomment">/// #[system(</span>
-<span class="doccomment">///     name = format!(&quot;simulate[one = {}, two = {}]&quot;, counter_one, counter_two),</span>
+<span class="doccomment">///     name = format!(&quot;simulate[counter = {}, skill_id = {:?}]&quot;, counter, skill_id),</span>
 <span class="doccomment">///     before(Foo),</span>
 <span class="doccomment">/// )]</span>
 <span class="doccomment">/// fn simulate(</span>
-<span class="doccomment">///     #[dynec(local = 0)] counter_one: &amp;mut u16,</span>
-<span class="doccomment">///     #[dynec(param)] counter_two: &amp;mut i64,</span>
+<span class="doccomment">///     #[dynec(local = 0)] counter: &amp;mut u16,</span>
+<span class="doccomment">///     #[dynec(param)] skill_id: &amp;SkillId,</span>
 <span class="doccomment">///     #[dynec(global)] title: &amp;mut Title,</span>
+<span class="doccomment">///     x: system::Simple&lt;Player, &amp;mut PositionX&gt;,</span>
+<span class="doccomment">///     y: system::Simple&lt;Player, &amp;mut PositionY&gt;,</span>
+<span class="doccomment">///     dir: system::Simple&lt;Player, &amp;Direction&gt;,</span>
+<span class="doccomment">///     #[dynec(isotope(discrim = [*skill_id]))] skill: system::Isotope&lt;Player, &amp;SkillLevel&gt;,</span>
 <span class="doccomment">/// ) {</span>
-<span class="doccomment">///     *counter_one += 1u16;</span>
-<span class="doccomment">///     *counter_two += 3i64;</span>
+<span class="doccomment">///     *counter += 1;</span>
 <span class="doccomment">///</span>
-<span class="doccomment">///     if *counter_two == 5 {</span>
+<span class="doccomment">///     if *counter == 1 {</span>
 <span class="doccomment">///         title.0 = &quot;changed&quot;;</span>
 <span class="doccomment">///     }</span>
 <span class="doccomment">/// }</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// {</span>
-<span class="doccomment">///     // We can call the function directly in unit tests.</span>
+<span class="doccomment">/// let spec = simulate.build(SkillId(3));</span>
+<span class="doccomment">/// assert_eq!(system::Spec::debug_name(&amp;spec), &quot;simulate[counter = 0, skill_id = SkillId(3)]&quot;);</span>
 <span class="doccomment">///</span>
-<span class="doccomment">///     let mut counter_one = 0u16;</span>
-<span class="doccomment">///     let mut counter_two = 2i64;</span>
+<span class="doccomment">/// {</span>
+<span class="doccomment">///     // We can also call the function directly in unit tests.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">///     let mut counter = 0;</span>
 <span class="doccomment">///     let mut title = Title(&quot;original&quot;);</span>
 <span class="doccomment">///</span>
-<span class="doccomment">///     simulate(&amp;mut counter_one, &amp;mut counter_two, &amp;mut title);</span>
+<span class="doccomment">///     let mut world = dynec::system_test! {</span>
+<span class="doccomment">///         simulate.build(SkillId(2));</span>
+<span class="doccomment">///         _: Player = (</span>
+<span class="doccomment">///             PositionX(0.0),</span>
+<span class="doccomment">///             PositionY(0.0),</span>
+<span class="doccomment">///             Direction(0.5, 0.5),</span>
+<span class="doccomment">///         );</span>
+<span class="doccomment">///         _: Player = (</span>
+<span class="doccomment">///             PositionX(0.5),</span>
+<span class="doccomment">///             PositionY(0.5),</span>
+<span class="doccomment">///             Direction(0.5, 0.5),</span>
+<span class="doccomment">///         );</span>
+<span class="doccomment">///     };</span>
 <span class="doccomment">///</span>
-<span class="doccomment">///     assert_eq!(counter_one, 1u16);</span>
-<span class="doccomment">///     assert_eq!(counter_two, 5i64);</span>
+<span class="doccomment">///     simulate(&amp;mut counter, &amp;SkillId(2), &amp;mut title, todo!(), todo!(), todo!(), todo!());</span>
+<span class="doccomment">///</span>
+<span class="doccomment">///     assert_eq!(counter, 1);</span>
 <span class="doccomment">///     assert_eq!(title.0, &quot;changed&quot;);</span>
 <span class="doccomment">/// }</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// let spec = simulate.build(7i64);</span>
-<span class="doccomment">/// assert_eq!(system::Spec::debug_name(&amp;spec), &quot;simulate[one = 0, two = 7]&quot;);</span>
 <span class="doccomment">/// ```</span>
 <span class="attribute">#[<span class="ident">doc</span>(<span class="ident">inline</span>)]</span>
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">dynec_codegen::system</span>;
@@ -581,7 +757,7 @@
         <span class="kw">let</span> <span class="ident">spec</span> <span class="op">=</span> <span class="ident">simulate</span>.<span class="ident">build</span>(<span class="number">2i64</span>);
         {
             <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::system::Spec</span>;
-            <span class="macro">assert_eq!</span>(<span class="ident">spec</span>.<span class="ident">debug_name</span>(), <span class="string">&quot;dynec::macro_docs::system_tests::simulate&quot;</span>);
+            <span class="macro">assert_eq!</span>(<span class="ident">spec</span>.<span class="ident">debug_name</span>(), <span class="string">&quot;dynec::macros::system_tests::simulate&quot;</span>);
         }
     }
 }
@@ -611,6 +787,34 @@
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">entity_ref_tests</span> {}
+
+<span class="doccomment">/// Convenience macro that constructs a new world for testing a small number of systems.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// See [`system`] for example usage.</span>
+<span class="attribute">#[<span class="ident">macro_export</span>]</span>
+<span class="macro">macro_rules!</span> <span class="ident">system_test</span> {
+    (
+        $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">systems</span>:<span class="ident">expr</span>),<span class="op">*</span> ;
+        $(
+            <span class="macro-nonterminal">$</span><span class="macro-nonterminal">var</span>:<span class="ident">tt</span> : <span class="macro-nonterminal">$</span><span class="macro-nonterminal">arch</span>:<span class="ident">ty</span> <span class="op">=</span> ($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">components</span>:<span class="ident">tt</span>)<span class="kw-2">*</span>);
+        )<span class="op">*</span>
+    ) =&gt; {{
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">builder</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">crate::world::Builder::default</span>();
+        $(
+            <span class="ident">builder</span>.<span class="ident">schedule</span>(<span class="ident">Box::new</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">systems</span>));
+        )<span class="op">*</span>
+
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">world</span> <span class="op">=</span> <span class="ident">builder</span>.<span class="ident">build</span>();
+
+        $(
+            <span class="kw">let</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">var</span> <span class="op">=</span> <span class="ident">world</span>.<span class="ident">create</span>::<span class="op">&lt;</span><span class="macro-nonterminal">$</span><span class="macro-nonterminal">arch</span><span class="op">&gt;</span>(
+                <span class="macro-nonterminal">$</span><span class="macro">crate::components!</span>[ <span class="macro-nonterminal">$</span><span class="macro-nonterminal">arch</span> =&gt; $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">components</span>)<span class="kw-2">*</span>]
+            );
+        )<span class="op">*</span>
+
+        <span class="ident">world</span>
+    }}
+}
 </code></pre></div>
-</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (f4ec0e7cf 2022-04-22)" ></div>
+</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (de1026a67 2022-04-23)" ></div>
 </body></html>

@@ -241,8 +241,6 @@
 <span id="236">236</span>
 <span id="237">237</span>
 <span id="238">238</span>
-<span id="239">239</span>
-<span id="240">240</span>
 </pre><pre class="rust"><code><span class="doccomment">//! A component is a small data structure that can be attached to an entity.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! dynec is a statically-archetyped ECS framework.</span>
@@ -302,7 +300,7 @@
     <span class="kw">const</span> <span class="ident">PRESENCE</span>: <span class="ident">SimplePresence</span>;
 
     <span class="doccomment">/// The initialization strategy for this component.</span>
-    <span class="kw">const</span> <span class="ident">INIT_STRATEGY</span>: <span class="ident">SimpleInitStrategy</span><span class="op">&lt;</span><span class="ident">A</span>, <span class="self">Self</span><span class="op">&gt;</span>;
+    <span class="kw">const</span> <span class="ident">INIT_STRATEGY</span>: <span class="ident">SimpleInitStrategy</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>;
 
     <span class="doccomment">/// Override this to `true` if the component is a finalizer.</span>
     <span class="doccomment">///</span>
@@ -327,19 +325,17 @@
 }
 
 <span class="doccomment">/// Describes how a component is auto-initialized.</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">SimpleInitStrategy</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span>, <span class="ident">C</span>: <span class="ident">Simple</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">SimpleInitStrategy</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span><span class="op">&gt;</span> {
     <span class="doccomment">/// The component is not auto-initialized.</span>
     <span class="prelude-val">None</span>,
     <span class="doccomment">/// The component should be auto-initialized using the [`any::AutoIniter`]</span>
     <span class="doccomment">/// if it is not given in the creation args.</span>
-    <span class="ident">Auto</span>(<span class="ident">any::AutoIniter</span><span class="op">&lt;</span><span class="ident">A</span>, <span class="ident">C</span><span class="op">&gt;</span>),
+    <span class="ident">Auto</span>(<span class="ident">any::AutoIniter</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>),
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span>, <span class="ident">C</span>: <span class="ident">Simple</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">SimpleInitStrategy</span><span class="op">&lt;</span><span class="ident">A</span>, <span class="ident">C</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span><span class="op">&gt;</span> <span class="ident">SimpleInitStrategy</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Constructs an auto-initializing init strategy from a closure.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">auto</span>(<span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="kw">impl</span> <span class="ident">any::AutoInitFn</span><span class="op">&lt;</span><span class="ident">A</span>, <span class="ident">C</span><span class="op">&gt;</span>) -&gt; <span class="self">Self</span> {
-        <span class="ident"><span class="self">Self</span>::Auto</span>(<span class="ident">any::AutoIniter</span> { <span class="ident">f</span> })
-    }
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">auto</span>(<span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="kw">impl</span> <span class="ident">any::AutoInitFn</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>) -&gt; <span class="self">Self</span> { <span class="ident"><span class="self">Self</span>::Auto</span>(<span class="ident">any::AutoIniter</span> { <span class="ident">f</span> }) }
 }
 
 <span class="doccomment">/// An isotope component may have multiple instances per entity.</span>

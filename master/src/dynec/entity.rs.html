@@ -214,6 +214,7 @@
 <span id="209">209</span>
 <span id="210">210</span>
 <span id="211">211</span>
+<span id="212">212</span>
 </pre><pre class="rust"><code><span class="doccomment">//! An entity is a single object that owns components.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Entities are reference-counted in debug mode,</span>
@@ -270,6 +271,7 @@
 
 <span class="kw">impl</span> <span class="ident">Raw</span> {
     <span class="doccomment">/// Creates a new raw entity ID for testing.</span>
+    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">testing</span>(<span class="ident">value</span>: <span class="ident">u32</span>) -&gt; <span class="self">Self</span> {
         <span class="ident">Raw</span>(<span class="ident">NonZeroU32::new</span>(<span class="ident">value</span>).<span class="ident">expect</span>(<span class="string">&quot;value is zero&quot;</span>))
     }

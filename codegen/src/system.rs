@@ -383,12 +383,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 };
 
                 isotope_requests.push(quote! {
-                    #crate_name::system::spec::IsotopeRequest {
-                        archetype: ::std::any::TypeId::of::<#arch>(),
-                        component: ::std::any::TypeId::of::<#comp>(),
-                        discrim: #discrim,
-                        mutable: #mutable,
-                    }
+                    #crate_name::system::spec::IsotopeRequest::new::<#arch, #comp>(#discrim, #mutable)
                 });
             }
         }

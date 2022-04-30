@@ -136,7 +136,10 @@ mod components_tests {}
 /// #[dynec::global]
 /// struct Qux(i32);
 ///
-/// todo!("Verify that this test case panics when `Qux` is used in a system without init")
+/// todo!(
+///     "Verify that this test case panics upon world build if `Qux` is used in a system and the \
+///          global is not initialized"
+/// )
 /// ```
 #[doc(inline)]
 pub use dynec_codegen::global;
@@ -321,7 +324,15 @@ mod global_tests {}
 ///         );
 ///     };
 ///
-///     simulate(&mut counter, &SkillId(2), &mut title, todo!(), todo!(), todo!(), todo!());
+///     simulate(
+///         &mut counter,
+///         &SkillId(2),
+///         &mut title,
+///         todo!("component access logic"),
+///         todo!("component access logic"),
+///         todo!("component access logic"),
+///         todo!("component access logic"),
+///     );
 ///
 ///     assert_eq!(counter, 1);
 ///     assert_eq!(title.0, "changed");

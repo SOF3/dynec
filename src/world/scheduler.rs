@@ -1,12 +1,39 @@
+use std::any::{Any, TypeId};
 use std::collections::{HashMap, VecDeque};
 use std::sync::atomic::{self, AtomicBool};
 use std::sync::Arc;
 use std::thread;
 
 use crossbeam::channel;
+use indexmap::IndexSet;
 use parking_lot::{Condvar, Mutex, MutexGuard};
 
 use crate::system;
+
+#[derive(Default)]
+pub(crate) struct Builder {
+    /// Systems that can be scheduled to other threads.
+    pub(crate) send_systems:   Vec<Box<dyn system::Spec + Send>>,
+    /// Systems that must be scheduled to the main thread.
+    pub(crate) unsend_systems: Vec<Box<dyn system::Spec>>,
+
+    /// Global states that can be concurrently accessed by systems on other threads.
+    pub(crate) send_globals:   HashMap<TypeId, Option<Box<dyn Any + Send>>>,
+    /// Global states that must be accessed on the main thread.
+    pub(crate) unsend_globals: HashMap<TypeId, Option<Box<dyn Any>>>,
+
+    pub(crate) partitions: IndexSet<system::PartitionWrapper>,
+
+    /// Indexes systems that access a component.
+    pub(crate) components: HashMap<TypeId, Vec<(TaskId, ComponentAccess)>>,
+    /// Indexes systems that access a global.
+    pub(crate) globals:    HashMap<TypeId, Vec<(TaskId, bool)>>,
+
+    /// If `dependencies[a].contains(b)`, `b` runs before `a`
+    pub(crate) dependencies: HashMap<TaskId, Vec<TaskId>>,
+    /// If `dependents[a].contains(b)`, `a` runs before `b`
+    pub(crate) dependents:   HashMap<TaskId, Vec<TaskId>>,
+}
 
 pub(crate) struct Scheduler {
     graph:      Graph,
@@ -15,7 +42,7 @@ pub(crate) struct Scheduler {
 }
 
 impl Scheduler {
-    pub(crate) fn build(builder: super::Builder) -> Scheduler {
+    pub(crate) fn build(builder: Builder) -> Scheduler {
         let send_tasks =
             (0..builder.send_systems.len()).map(|index| TaskId { class: TaskClass::Send, index });
         let unsend_tasks = (0..builder.unsend_systems.len())

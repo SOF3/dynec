@@ -10,9 +10,13 @@
 
 use std::marker::PhantomData;
 use std::num;
+use std::num::NonZeroU32;
 use std::sync::Arc;
 
 use crate::Archetype;
+
+mod ealloc;
+pub(crate) use ealloc::Ealloc;
 
 mod permutation;
 pub use permutation::Permutation;
@@ -46,14 +50,32 @@ pub trait Ref: sealed::Ref {
 
 /// A raw, untyped entity ID.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub(crate) struct Raw(u32);
+pub(crate) struct Raw(NonZeroU32);
 
 impl Raw {
-    pub(crate) fn usize(self) -> usize { self.0.try_into().expect("usize >= u32") }
+    /// Creates a new raw entity ID for testing.
+    pub(crate) fn testing(value: u32) -> Self {
+        Raw(NonZeroU32::new(value).expect("value is zero"))
+    }
+
+    pub(crate) fn usize(self) -> usize { self.0.get().try_into().expect("usize >= u32") }
 
     pub(crate) fn into_api<A: Archetype>(self) -> UnclonableRef<A> {
         UnclonableRef { value: self, _ph: PhantomData }
     }
+
+    /// Computes this ID plus one
+    ///
+    /// This is only used in entity allocator.
+    fn increment(self) -> Self {
+        // TODO: allow customizing the integer type in the archetype in the future.
+        Raw(NonZeroU32::new(self.0.get() + 1).expect("Too many entities"))
+    }
+
+    /// Creates the default, smallest value of `Raw`.
+    ///
+    /// This is only used in entity allocator.
+    fn smallest() -> Self { Raw(NonZeroU32::new(1).expect("1 != 0")) }
 }
 
 /// An unclonable reference to an entity.
@@ -92,10 +114,10 @@ pub struct Entity<A: Archetype> {
 }
 
 impl<A: Archetype> Entity<A> {
-    /// Allocates a new strong reference to an entity.
+    /// Creates a new strong reference to an entity.
     ///
     /// This method should only be used when a completely new entity has been created.
-    pub(crate) fn allocate_new(id: Raw) -> Self {
+    pub(crate) fn new_allocated(id: Raw) -> Self {
         Self {
             id,
             _ph: PhantomData,
@@ -184,6 +206,6 @@ mod tests {
 
     // ensure that Ref<Archetype = A> for a fixed `A` must be object-safe.
     fn test_object_safety() {
-        let _: &dyn Ref<Archetype = TestArch> = &Raw(1).into_api::<TestArch>();
+        let _: &dyn Ref<Archetype = TestArch> = &Raw::testing(1).into_api::<TestArch>();
     }
 }

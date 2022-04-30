@@ -2,10 +2,17 @@
 
 use std::any::TypeId;
 use std::collections::HashMap;
-
-use parking_lot::RwLock;
+use std::sync::Arc;
 
 use crate::{component, entity, Archetype, Entity};
+
+mod builder;
+pub use builder::Builder;
+
+pub(crate) mod storage;
+pub(crate) mod typed;
+
+mod scheduler;
 
 /// A bundle encapsulates the systems and resources for a specific feature.
 /// This can be used by library crates to expose their features as a single API.
@@ -42,13 +49,6 @@ pub(crate) struct ArchComp {
     comp: TypeId,
 }
 
-/// Identifies an archetype + component type + discriminant.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub(crate) struct ComponentIdentifier {
-    arch: TypeId,
-    comp: component::any::Identifier,
-}
-
 /// Describes a simple component type.
 pub(crate) struct SimpleSpec {
     presence:     component::SimplePresence,
@@ -62,26 +62,9 @@ impl SimpleSpec {
     }
 }
 
-/// Describes an isotope component type.
-pub(crate) struct IsotopeSpec {
-    // TODO wrap IsotopeInitStrategy in a trait object
-}
-
-impl IsotopeSpec {
-    fn of<A: Archetype, C: component::Isotope<A>>() -> Self { Self {} }
-}
-
-mod builder;
-pub use builder::Builder;
-
-pub(crate) mod storage;
-
-mod scheduler;
-
 /// The data structure that stores all states in the game.
 pub struct World {
-    storages:          RwLock<HashMap<ComponentIdentifier, storage::Shared>>,
-    isotope_factories: HashMap<TypeId, Box<dyn storage::IsotopeFactory>>,
+    archetypes: HashMap<TypeId, Box<dyn typed::AnyTyped>>,
 }
 
 impl World {
@@ -94,9 +77,27 @@ impl World {
     pub fn create_near<E: entity::Ref>(
         &mut self,
         near: Option<E>,
-        components: component::Map<<E as entity::Ref>::Archetype>,
+        mut components: component::Map<<E as entity::Ref>::Archetype>,
     ) -> Entity<<E as entity::Ref>::Archetype> {
-        todo!()
+        let typed = self
+            .archetypes
+            .get_mut(&TypeId::of::<E::Archetype>())
+            .expect("Attempt to create entity of an archetype not used in any systems");
+        let typed: &mut typed::Typed<E::Archetype> =
+            typed.as_any_mut().downcast_mut().expect("Typed archetype mismatch");
+
+        let id = match near {
+            Some(hint) => typed.ealloc.allocate_near(hint.id().0),
+            None => typed.ealloc.allocate(),
+        };
+
+        for (id, storage) in &mut typed.simple_storages {
+            let storage = Arc::get_mut(storage).expect("storage arc was leaked");
+            let storage = storage.get_mut();
+            storage.init_extract_components(&mut components);
+        }
+
+        Entity::new_allocated(id)
     }
 }
 

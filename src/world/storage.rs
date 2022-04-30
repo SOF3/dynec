@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::marker::PhantomData;
 use std::mem::{self, MaybeUninit};
 use std::sync::Arc;
 
@@ -7,23 +8,31 @@ use parking_lot::RwLock;
 
 use crate::{component, entity, Archetype};
 
-pub(crate) type Shared = Arc<RwLock<dyn AnyStorage>>;
+pub(crate) type SharedSimple<A> = Arc<RwLock<dyn AnySimpleStorage<A>>>;
 
-pub(crate) fn shared_simple<A: Archetype, C: component::Simple<A>>() -> Shared {
-    Arc::new(RwLock::new(Storage::<C>::new())) as Shared
+pub(crate) fn shared_simple<A: Archetype, C: component::Simple<A>>() -> SharedSimple<A> {
+    Arc::new(RwLock::new(Storage::<A, C>::new()))
 }
 
-pub(crate) trait AnyStorage {}
-
-pub(crate) struct Storage<T> {
-    inner: Inner<T>,
+pub(crate) trait AnySimpleStorage<A: Archetype> {
+    fn init_populate_components(&self);
+    fn init_extract_components(&mut self, components: &mut component::Map<A>);
 }
 
-impl<T> Storage<T> {
-    pub(crate) fn new() -> Self { Self { inner: Inner::default() } }
+pub(crate) struct Storage<A: Archetype, C> {
+    inner: Inner<C>,
+    _ph:   PhantomData<A>,
 }
 
-impl<T> AnyStorage for Storage<T> {}
+impl<A: Archetype, C> Storage<A, C> {
+    pub(crate) fn new() -> Self { Self { inner: Inner::default(), _ph: PhantomData } }
+}
+
+impl<A: Archetype, C: component::Simple<A>> AnySimpleStorage<A> for Storage<A, C> {
+    fn init_populate_components(&self) { todo!() }
+
+    fn init_extract_components(&mut self, components: &mut component::Map<A>) { todo!() }
+}
 
 enum Inner<T> {
     Map(BTreeMap<entity::Raw, T>),
@@ -135,4 +144,15 @@ struct InnerVec<T> {
     data:     Vec<MaybeUninit<T>>,
 }
 
-pub(crate) trait IsotopeFactory {}
+pub(crate) trait AnyIsotopeFactory<A: Archetype> {}
+
+struct IsotopeFactory<A: Archetype, C: component::Isotope<A>> {
+    _ph: PhantomData<(A, C)>,
+}
+
+impl<A: Archetype, C: component::Isotope<A>> AnyIsotopeFactory<A> for IsotopeFactory<A, C> {}
+
+pub(crate) fn isotope_factory<A: Archetype, C: component::Isotope<A>>(
+) -> Box<dyn AnyIsotopeFactory<A>> {
+    Box::new(IsotopeFactory::<A, C> { _ph: PhantomData }) as Box<dyn AnyIsotopeFactory<A>>
+}

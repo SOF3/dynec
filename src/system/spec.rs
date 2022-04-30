@@ -1,8 +1,8 @@
 //! Specifies the requirements for a system.
 
-use std::any::TypeId;
+use std::any::{Any, TypeId};
 
-use crate::world::storage;
+use crate::world::{self, storage};
 use crate::{component, system, Archetype};
 
 /// Describes an instance of system.
@@ -58,35 +58,64 @@ pub struct GlobalRequest {
 /// Indicates that the system requires a simple component read/write.
 pub struct SimpleRequest {
     /// The archetype requested.
-    pub(crate) archetype:       TypeId,
+    pub(crate) archetype:       ArchetypeDescriptor,
     /// The type of the simple component.
     pub(crate) component:       TypeId,
+    /// Builder for the storage. Must be `Box<storage::SharedSimple<A>>`.
+    pub(crate) storage_builder: fn() -> Box<dyn Any>,
     /// Whether mutable access is requested.
     pub(crate) mutable:         bool,
-    pub(crate) storage_builder: fn() -> storage::Shared,
 }
 
 impl SimpleRequest {
     pub fn new<A: Archetype, C: component::Simple<A>>(mutable: bool) -> Self {
         Self {
-            archetype: TypeId::of::<A>(),
+            archetype: ArchetypeDescriptor::of::<A>(),
             component: TypeId::of::<C>(),
             mutable,
-            storage_builder: || storage::shared_simple::<A, C>(),
+            storage_builder: || Box::new(storage::shared_simple::<A, C>()),
         }
+    }
+}
+
+pub(crate) struct ArchetypeDescriptor {
+    pub(crate) id:      TypeId,
+    pub(crate) builder: fn() -> Box<dyn world::typed::AnyBuilder>,
+}
+
+impl ArchetypeDescriptor {
+    fn of<A: Archetype>() -> Self {
+        Self { id: TypeId::of::<A>(), builder: || Box::new(world::typed::builder::<A>()) }
     }
 }
 
 /// Indicates that the system requires an isotope component read/write.
 pub struct IsotopeRequest {
     /// The archetype requested.
-    pub archetype: TypeId,
+    pub(crate) archetype:       ArchetypeDescriptor,
     /// The archetype of the isotope component.
-    pub component: TypeId,
+    pub(crate) component:       TypeId,
+    /// Builder for the IsotopeFactory. Must be `Box<Box<dyn storage::AnyIsotopeFactory<A>>>`.
+    pub(crate) factory_builder: fn() -> Box<dyn Any>,
     /// If `Some`, only the isotope components of the given discriminants are accessible.
     ///
     /// This will not lead to creation of the discriminant storages.
-    pub discrim:   Option<Vec<usize>>,
+    pub(crate) discrim:         Option<Vec<usize>>,
     /// Whether mutable access is requested.
-    pub mutable:   bool,
+    pub(crate) mutable:         bool,
+}
+
+impl IsotopeRequest {
+    pub fn new<A: Archetype, C: component::Isotope<A>>(
+        discrim: Option<Vec<usize>>,
+        mutable: bool,
+    ) -> Self {
+        Self {
+            archetype: ArchetypeDescriptor::of::<A>(),
+            component: TypeId::of::<C>(),
+            discrim,
+            mutable,
+            factory_builder: || Box::new(storage::isotope_factory::<A, C>()),
+        }
+    }
 }

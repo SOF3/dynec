@@ -21,6 +21,9 @@ Fields that reference entities should be annotated with <code>#[entity]</code>.<
 <div class='information'><div class='tooltip should_panic'>ⓘ</div></div><div class="example-wrap"><pre class="rust rust-example-rendered should_panic"><code><span class="attribute">#[<span class="ident">dynec::global</span>]</span>
 <span class="kw">struct</span> <span class="ident">Qux</span>(<span class="ident">i32</span>);
 
-<span class="macro">todo!</span>(<span class="string">&quot;Verify that this test case panics when `Qux` is used in a system without init&quot;</span>)</code></pre></div>
-</div></details></section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (de1026a67 2022-04-23)" ></div>
+<span class="macro">todo!</span>(
+    <span class="string">&quot;Verify that this test case panics upon world build if `Qux` is used in a system and the \
+         global is not initialized&quot;</span>
+)</code></pre></div>
+</div></details></section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (a707f4010 2022-04-29)" ></div>
 </body></html>

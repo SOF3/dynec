@@ -95,11 +95,40 @@
 <span id="90">90</span>
 <span id="91">91</span>
 <span id="92">92</span>
+<span id="93">93</span>
+<span id="94">94</span>
+<span id="95">95</span>
+<span id="96">96</span>
+<span id="97">97</span>
+<span id="98">98</span>
+<span id="99">99</span>
+<span id="100">100</span>
+<span id="101">101</span>
+<span id="102">102</span>
+<span id="103">103</span>
+<span id="104">104</span>
+<span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Specifies the requirements for a system.</span>
 
-<span class="kw">use</span> <span class="ident">std::any::TypeId</span>;
+<span class="kw">use</span> <span class="ident">std::any</span>::{<span class="ident">Any</span>, <span class="ident">TypeId</span>};
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::world::storage</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::world</span>::{<span class="self">self</span>, <span class="ident">storage</span>};
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">component</span>, <span class="ident">system</span>, <span class="ident">Archetype</span>};
 
 <span class="doccomment">/// Describes an instance of system.</span>
@@ -155,38 +184,67 @@
 <span class="doccomment">/// Indicates that the system requires a simple component read/write.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SimpleRequest</span> {
     <span class="doccomment">/// The archetype requested.</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">archetype</span>:       <span class="ident">TypeId</span>,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">archetype</span>:       <span class="ident">ArchetypeDescriptor</span>,
     <span class="doccomment">/// The type of the simple component.</span>
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">component</span>:       <span class="ident">TypeId</span>,
+    <span class="doccomment">/// Builder for the storage. Must be `Box&lt;storage::SharedSimple&lt;A&gt;&gt;`.</span>
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">storage_builder</span>: <span class="kw">fn</span>() -&gt; <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Any</span><span class="op">&gt;</span>,
     <span class="doccomment">/// Whether mutable access is requested.</span>
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">mutable</span>:         <span class="ident">bool</span>,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">storage_builder</span>: <span class="kw">fn</span>() -&gt; <span class="ident">storage::Shared</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">SimpleRequest</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span>, <span class="ident">C</span>: <span class="ident">component::Simple</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="ident">mutable</span>: <span class="ident">bool</span>) -&gt; <span class="self">Self</span> {
         <span class="self">Self</span> {
-            <span class="ident">archetype</span>: <span class="ident">TypeId::of</span>::<span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>(),
+            <span class="ident">archetype</span>: <span class="ident">ArchetypeDescriptor::of</span>::<span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>(),
             <span class="ident">component</span>: <span class="ident">TypeId::of</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(),
             <span class="ident">mutable</span>,
-            <span class="ident">storage_builder</span>: <span class="op">|</span><span class="op">|</span> <span class="ident">storage::shared_simple</span>::<span class="op">&lt;</span><span class="ident">A</span>, <span class="ident">C</span><span class="op">&gt;</span>(),
+            <span class="ident">storage_builder</span>: <span class="op">|</span><span class="op">|</span> <span class="ident">Box::new</span>(<span class="ident">storage::shared_simple</span>::<span class="op">&lt;</span><span class="ident">A</span>, <span class="ident">C</span><span class="op">&gt;</span>()),
         }
+    }
+}
+
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">ArchetypeDescriptor</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">id</span>:      <span class="ident">TypeId</span>,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">builder</span>: <span class="kw">fn</span>() -&gt; <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">world::typed::AnyBuilder</span><span class="op">&gt;</span>,
+}
+
+<span class="kw">impl</span> <span class="ident">ArchetypeDescriptor</span> {
+    <span class="kw">fn</span> <span class="ident">of</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span><span class="op">&gt;</span>() -&gt; <span class="self">Self</span> {
+        <span class="self">Self</span> { <span class="ident">id</span>: <span class="ident">TypeId::of</span>::<span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>(), <span class="ident">builder</span>: <span class="op">|</span><span class="op">|</span> <span class="ident">Box::new</span>(<span class="ident">world::typed::builder</span>::<span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>()) }
     }
 }
 
 <span class="doccomment">/// Indicates that the system requires an isotope component read/write.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">IsotopeRequest</span> {
     <span class="doccomment">/// The archetype requested.</span>
-    <span class="kw">pub</span> <span class="ident">archetype</span>: <span class="ident">TypeId</span>,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">archetype</span>:       <span class="ident">ArchetypeDescriptor</span>,
     <span class="doccomment">/// The archetype of the isotope component.</span>
-    <span class="kw">pub</span> <span class="ident">component</span>: <span class="ident">TypeId</span>,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">component</span>:       <span class="ident">TypeId</span>,
+    <span class="doccomment">/// Builder for the IsotopeFactory. Must be `Box&lt;Box&lt;dyn storage::AnyIsotopeFactory&lt;A&gt;&gt;&gt;`.</span>
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">factory_builder</span>: <span class="kw">fn</span>() -&gt; <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Any</span><span class="op">&gt;</span>,
     <span class="doccomment">/// If `Some`, only the isotope components of the given discriminants are accessible.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// This will not lead to creation of the discriminant storages.</span>
-    <span class="kw">pub</span> <span class="ident">discrim</span>:   <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">discrim</span>:         <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span><span class="op">&gt;</span>,
     <span class="doccomment">/// Whether mutable access is requested.</span>
-    <span class="kw">pub</span> <span class="ident">mutable</span>:   <span class="ident">bool</span>,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">mutable</span>:         <span class="ident">bool</span>,
+}
+
+<span class="kw">impl</span> <span class="ident">IsotopeRequest</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span>, <span class="ident">C</span>: <span class="ident">component::Isotope</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span><span class="op">&gt;</span>(
+        <span class="ident">discrim</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+        <span class="ident">mutable</span>: <span class="ident">bool</span>,
+    ) -&gt; <span class="self">Self</span> {
+        <span class="self">Self</span> {
+            <span class="ident">archetype</span>: <span class="ident">ArchetypeDescriptor::of</span>::<span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>(),
+            <span class="ident">component</span>: <span class="ident">TypeId::of</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(),
+            <span class="ident">discrim</span>,
+            <span class="ident">mutable</span>,
+            <span class="ident">factory_builder</span>: <span class="op">|</span><span class="op">|</span> <span class="ident">Box::new</span>(<span class="ident">storage::isotope_factory</span>::<span class="op">&lt;</span><span class="ident">A</span>, <span class="ident">C</span><span class="op">&gt;</span>()),
+        }
+    }
 }
 </code></pre></div>
-</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (de1026a67 2022-04-23)" ></div>
+</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (a707f4010 2022-04-29)" ></div>
 </body></html>

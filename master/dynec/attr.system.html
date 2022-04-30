@@ -159,10 +159,18 @@ so mutating states has no effect on the system schedule.</p>
         );
     };
 
-    <span class="ident">simulate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">counter</span>, <span class="kw-2">&amp;</span><span class="ident">SkillId</span>(<span class="number">2</span>), <span class="kw-2">&amp;mut</span> <span class="ident">title</span>, <span class="macro">todo!</span>(), <span class="macro">todo!</span>(), <span class="macro">todo!</span>(), <span class="macro">todo!</span>());
+    <span class="ident">simulate</span>(
+        <span class="kw-2">&amp;mut</span> <span class="ident">counter</span>,
+        <span class="kw-2">&amp;</span><span class="ident">SkillId</span>(<span class="number">2</span>),
+        <span class="kw-2">&amp;mut</span> <span class="ident">title</span>,
+        <span class="macro">todo!</span>(<span class="string">&quot;component access logic&quot;</span>),
+        <span class="macro">todo!</span>(<span class="string">&quot;component access logic&quot;</span>),
+        <span class="macro">todo!</span>(<span class="string">&quot;component access logic&quot;</span>),
+        <span class="macro">todo!</span>(<span class="string">&quot;component access logic&quot;</span>),
+    );
 
     <span class="macro">assert_eq!</span>(<span class="ident">counter</span>, <span class="number">1</span>);
     <span class="macro">assert_eq!</span>(<span class="ident">title</span>.<span class="number">0</span>, <span class="string">&quot;changed&quot;</span>);
 }</code></pre></div>
-</div></details></section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (de1026a67 2022-04-23)" ></div>
+</div></details></section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (a707f4010 2022-04-29)" ></div>
 </body></html>

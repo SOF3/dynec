@@ -356,15 +356,69 @@
 <span id="351">351</span>
 <span id="352">352</span>
 <span id="353">353</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::collections</span>::{<span class="ident">HashMap</span>, <span class="ident">VecDeque</span>};
+<span id="354">354</span>
+<span id="355">355</span>
+<span id="356">356</span>
+<span id="357">357</span>
+<span id="358">358</span>
+<span id="359">359</span>
+<span id="360">360</span>
+<span id="361">361</span>
+<span id="362">362</span>
+<span id="363">363</span>
+<span id="364">364</span>
+<span id="365">365</span>
+<span id="366">366</span>
+<span id="367">367</span>
+<span id="368">368</span>
+<span id="369">369</span>
+<span id="370">370</span>
+<span id="371">371</span>
+<span id="372">372</span>
+<span id="373">373</span>
+<span id="374">374</span>
+<span id="375">375</span>
+<span id="376">376</span>
+<span id="377">377</span>
+<span id="378">378</span>
+<span id="379">379</span>
+<span id="380">380</span>
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::any</span>::{<span class="ident">Any</span>, <span class="ident">TypeId</span>};
+<span class="kw">use</span> <span class="ident">std::collections</span>::{<span class="ident">HashMap</span>, <span class="ident">VecDeque</span>};
 <span class="kw">use</span> <span class="ident">std::sync::atomic</span>::{<span class="self">self</span>, <span class="ident">AtomicBool</span>};
 <span class="kw">use</span> <span class="ident">std::sync::Arc</span>;
 <span class="kw">use</span> <span class="ident">std::thread</span>;
 
 <span class="kw">use</span> <span class="ident">crossbeam::channel</span>;
+<span class="kw">use</span> <span class="ident">indexmap::IndexSet</span>;
 <span class="kw">use</span> <span class="ident">parking_lot</span>::{<span class="ident">Condvar</span>, <span class="ident">Mutex</span>, <span class="ident">MutexGuard</span>};
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::system</span>;
+
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>)]</span>
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">Builder</span> {
+    <span class="doccomment">/// Systems that can be scheduled to other threads.</span>
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">send_systems</span>:   <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">system::Spec</span> <span class="op">+</span> <span class="ident">Send</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// Systems that must be scheduled to the main thread.</span>
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">unsend_systems</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">system::Spec</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+
+    <span class="doccomment">/// Global states that can be concurrently accessed by systems on other threads.</span>
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">send_globals</span>:   <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">TypeId</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Any</span> <span class="op">+</span> <span class="ident">Send</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// Global states that must be accessed on the main thread.</span>
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">unsend_globals</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">TypeId</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Any</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">partitions</span>: <span class="ident">IndexSet</span><span class="op">&lt;</span><span class="ident">system::PartitionWrapper</span><span class="op">&gt;</span>,
+
+    <span class="doccomment">/// Indexes systems that access a component.</span>
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">components</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">TypeId</span>, <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">TaskId</span>, <span class="ident">ComponentAccess</span>)<span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// Indexes systems that access a global.</span>
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">globals</span>:    <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">TypeId</span>, <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">TaskId</span>, <span class="ident">bool</span>)<span class="op">&gt;</span><span class="op">&gt;</span>,
+
+    <span class="doccomment">/// If `dependencies[a].contains(b)`, `b` runs before `a`</span>
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">dependencies</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">TaskId</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TaskId</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// If `dependents[a].contains(b)`, `a` runs before `b`</span>
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">dependents</span>:   <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">TaskId</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TaskId</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+}
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">Scheduler</span> {
     <span class="ident">graph</span>:      <span class="ident">Graph</span>,
@@ -373,7 +427,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Scheduler</span> {
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">build</span>(<span class="ident">builder</span>: <span class="ident"><span class="kw">super</span>::Builder</span>) -&gt; <span class="ident">Scheduler</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">build</span>(<span class="ident">builder</span>: <span class="ident">Builder</span>) -&gt; <span class="ident">Scheduler</span> {
         <span class="kw">let</span> <span class="ident">send_tasks</span> <span class="op">=</span>
             (<span class="number">0</span>..<span class="ident">builder</span>.<span class="ident">send_systems</span>.<span class="ident">len</span>()).<span class="ident">map</span>(<span class="op">|</span><span class="ident">index</span><span class="op">|</span> <span class="ident">TaskId</span> { <span class="ident">class</span>: <span class="ident">TaskClass::Send</span>, <span class="ident">index</span> });
         <span class="kw">let</span> <span class="ident">unsend_tasks</span> <span class="op">=</span> (<span class="number">0</span>..<span class="ident">builder</span>.<span class="ident">unsend_systems</span>.<span class="ident">len</span>())
@@ -710,5 +764,5 @@
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const</span> <span class="ident">TASK_SOURCE</span>: <span class="ident">TaskId</span> <span class="op">=</span> <span class="ident">TaskId</span> { <span class="ident">class</span>: <span class="ident">TaskClass::Endpoint</span>, <span class="ident">index</span>: <span class="number">0</span> };
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const</span> <span class="ident">TASK_SINK</span>: <span class="ident">TaskId</span> <span class="op">=</span> <span class="ident">TaskId</span> { <span class="ident">class</span>: <span class="ident">TaskClass::Endpoint</span>, <span class="ident">index</span>: <span class="number">1</span> };
 </code></pre></div>
-</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (de1026a67 2022-04-23)" ></div>
+</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (a707f4010 2022-04-29)" ></div>
 </body></html>

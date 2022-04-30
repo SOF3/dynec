@@ -657,11 +657,6 @@
 <span id="652">652</span>
 <span id="653">653</span>
 <span id="654">654</span>
-<span id="655">655</span>
-<span id="656">656</span>
-<span id="657">657</span>
-<span id="658">658</span>
-<span id="659">659</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">proc_macro2::TokenStream</span>;
 <span class="kw">use</span> <span class="ident">quote::quote</span>;
 <span class="kw">use</span> <span class="ident">syn::parse</span>::{<span class="ident">Parse</span>, <span class="ident">ParseStream</span>};
@@ -1047,12 +1042,7 @@
                 };
 
                 <span class="ident">isotope_requests</span>.<span class="ident">push</span>(<span class="macro">quote!</span> {
-                    #<span class="ident">crate_name::system::spec::IsotopeRequest</span> {
-                        <span class="ident">archetype</span>: <span class="ident">::std::any::TypeId::of</span>::<span class="op">&lt;</span>#<span class="ident">arch</span><span class="op">&gt;</span>(),
-                        <span class="ident">component</span>: <span class="ident">::std::any::TypeId::of</span>::<span class="op">&lt;</span>#<span class="ident">comp</span><span class="op">&gt;</span>(),
-                        <span class="ident">discrim</span>: #<span class="ident">discrim</span>,
-                        <span class="ident">mutable</span>: #<span class="ident">mutable</span>,
-                    }
+                    #<span class="ident">crate_name::system::spec::IsotopeRequest::new</span>::<span class="op">&lt;</span>#<span class="ident">arch</span>, #<span class="ident">comp</span><span class="op">&gt;</span>(#<span class="ident">discrim</span>, #<span class="ident">mutable</span>)
                 });
             }
         }
@@ -1322,5 +1312,5 @@
     }
 }
 </code></pre></div>
-</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec_codegen" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (de1026a67 2022-04-23)" ></div>
+</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec_codegen" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (a707f4010 2022-04-29)" ></div>
 </body></html>

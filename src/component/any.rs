@@ -83,6 +83,13 @@ impl<A: Archetype> Map<A> {
         self.map.get(&Identifier::simple::<A, C>()).and_then(|c| c.downcast_ref())
     }
 
+    /// Gets a simple component from the map.
+    pub(crate) fn remove_simple<C: component::Simple<A>>(&mut self) -> Option<C> {
+        let comp = self.map.remove(&Identifier::simple::<A, C>())?;
+        let comp = comp.downcast::<C>().expect("TypeId mismatch");
+        Some(*comp)
+    }
+
     /// Returns the number of components in the map.
     pub fn len(&self) -> usize { self.map.len() }
 
@@ -91,43 +98,44 @@ impl<A: Archetype> Map<A> {
 }
 
 /// Describes how to instantiate a component based on other component types.
-pub struct AutoIniter<A: Archetype, C: component::Simple<A>> {
+pub struct AutoIniter<A: Archetype> {
     /// The component function.
-    pub f: &'static dyn AutoInitFn<A, C>,
+    pub f: &'static dyn AutoInitFn<A>,
 }
 
 /// A function used for [`component::SimpleInitStrategy::Auto`].
 ///
 /// This trait is blanket-implemented for all functions that take up to 32 simple component
 /// parameters.
-pub trait AutoInitFn<A: Archetype, C: component::Simple<A>>: 'static {
+pub trait AutoInitFn<A: Archetype>: 'static {
     /// Calls the underlying function, extracting the arguments.
-    fn call(&self, map: &Map<A>) -> C;
+    fn populate(&self, map: &mut Map<A>);
 
     /// Returns the component types required by this function.
-    fn for_each_dep(&self, f: &mut dyn FnMut(TypeId));
+    fn deps(&self) -> Vec<(TypeId, component::SimpleInitStrategy<A>)>;
 }
+
+pub struct ComponentDescriptor {}
 
 macro_rules! impl_auto_init_fn {
     ($($deps:ident),* $(,)?) => {
         impl<
             A: Archetype, C: component::Simple<A>,
             $($deps: component::Simple<A>,)*
-        > AutoInitFn<A, C> for fn(
+        > AutoInitFn<A> for fn(
             $(&$deps,)*
         ) -> C {
-            fn call(&self, map: &Map<A>) -> C {
-                (self)(
+            fn populate(&self, map: &mut Map<A>) {
+                let populate = (self)(
                     $(map.get_simple::<$deps>().expect("Incorrect dependency sorting"),)*
-                )
+                );
+                map.insert_simple(populate);
             }
 
-            fn for_each_dep(&self, f: &mut dyn FnMut(TypeId)) {
-                for item in [
-                    $(TypeId::of::<$deps>(),)*
-                ] {
-                    f(item);
-                }
+            fn deps(&self) -> Vec<(TypeId, component::SimpleInitStrategy<A>)> {
+                vec![
+                    $((TypeId::of::<$deps>(), <$deps as component::Simple<A>>::INIT_STRATEGY),)*
+                ]
             }
         }
     }
@@ -137,14 +145,15 @@ macro_rules! impl_auto_init_fn_accumulate {
     () => {
         impl_auto_init_fn!();
     };
-    ($first:ident $(, $rest:ident)*) => {
+    ($first:ident $(, $rest:ident)* $(,)?) => {
         impl_auto_init_fn_accumulate!($($rest),*);
         impl_auto_init_fn!($first $(, $rest)*);
     }
 }
 impl_auto_init_fn_accumulate!(
-    P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20, P21,
-    P22, P23, P24, P25, P26, P27, P28, P29, P30, P31, P32
+    P1, P2, P3,
+    P4, /* P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20, P21,
+         * P22, P23, P24, P25, P26, P27, P28, P29, P30, P31, P32 */
 );
 
 #[cfg(test)]

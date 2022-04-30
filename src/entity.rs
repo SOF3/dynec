@@ -54,6 +54,7 @@ pub(crate) struct Raw(NonZeroU32);
 
 impl Raw {
     /// Creates a new raw entity ID for testing.
+    #[cfg(test)]
     pub(crate) fn testing(value: u32) -> Self {
         Raw(NonZeroU32::new(value).expect("value is zero"))
     }

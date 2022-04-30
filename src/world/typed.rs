@@ -1,5 +1,6 @@
 use std::any::{self, Any, TypeId};
-use std::collections::HashMap;
+use std::collections::{hash_map, HashMap};
+use std::sync::Arc;
 
 use parking_lot::RwLock;
 
@@ -40,15 +41,102 @@ impl<A: Archetype> AnyBuilder for Builder<A> {
         todo!()
     }
 
-    fn build(self: Box<Self>) -> Box<dyn AnyTyped> {
+    fn build(mut self: Box<Self>) -> Box<dyn AnyTyped> {
+        let populators = toposort_populators(&mut self.simple_storages);
+
         Box::new(Typed::<A> {
-            ealloc:            entity::Ealloc::default(),
-            simple_storages:   self.simple_storages,
-            isotope_storages:  RwLock::new(HashMap::new()),
+            ealloc: entity::Ealloc::default(),
+            simple_storages: self.simple_storages,
+            isotope_storages: RwLock::new(HashMap::new()),
             isotope_factories: self.isotope_factories,
+            populators,
         })
     }
 }
+
+fn toposort_populators<A: Archetype>(
+    storages: &mut HashMap<TypeId, storage::SharedSimple<A>>,
+) -> Vec<Box<dyn Fn(&mut component::Map<A>)>> {
+    let mut populators = Vec::new();
+
+    struct Request<A: Archetype> {
+        dep_count: usize,
+        populator: Box<dyn Fn(&mut component::Map<A>)>,
+    }
+
+    let mut unprocessed = Vec::new();
+    for (&ty, storage) in storages {
+        let storage =
+            Arc::get_mut(storage).expect("builder should own unique reference to storages");
+        let storage = storage.get_mut();
+        match storage.init_strategy() {
+            component::SimpleInitStrategy::None => continue, /* direct requirement, does not affect population */
+            component::SimpleInitStrategy::Auto(initer) => unprocessed.push((ty, initer.f)),
+        };
+    }
+
+    let mut requests = HashMap::<TypeId, Request<A>>::new();
+    let mut dependents_map = HashMap::<TypeId, Vec<TypeId>>::new(); // all values here must also have an entry in requests before popping
+    let mut heads = Vec::<TypeId>::new(); // all entries here must also have an entry in requests
+
+    while let Some((ty, desc)) = unprocessed.pop() {
+        let deps = desc.deps();
+
+        let mut dep_count = 0;
+
+        for (dep_ty, dep_strategy) in deps {
+            dependents_map.entry(dep_ty).or_default().push(ty); // ty is pushed to unprocessed, which will fill requests later
+            match dep_strategy {
+                // required dependency, does not affect population
+                component::SimpleInitStrategy::None => continue,
+                // push to unprocessed again to recurse
+                component::SimpleInitStrategy::Auto(initer) => {
+                    dep_count += 1;
+                    unprocessed.push((ty, initer.f));
+                }
+            }
+        }
+
+        let new = if let hash_map::Entry::Vacant(entry) = requests.entry(ty) {
+            entry.insert(Request { dep_count, populator: Box::new(|map| desc.populate(map)) });
+            true
+        } else {
+            false
+        };
+
+        if dep_count == 0 {
+            heads.push(ty); // requests.entry(ty) inserted above
+        }
+    }
+
+    while let Some(head) = heads.pop() {
+        let request = requests.remove(&head).expect("type is in heads but not in requests");
+        assert_eq!(request.dep_count, 0);
+        populators.push(request.populator);
+
+        if let Some(dependents) = dependents_map.get(&head) {
+            for &dependent in dependents {
+                let request = requests
+                    .get_mut(&dependent)
+                    .expect("type is a value in dependents_map but not in requests");
+                request.dep_count -= 1;
+                if request.dep_count == 0 {
+                    heads.push(dependent); // requests.get_mut(&dependent) returned Some
+                }
+            }
+        }
+    }
+
+    if !requests.is_empty() {
+        panic!(
+            "Cyclic dependency detected for component initializers of {}",
+            any::type_name::<A>()
+        );
+    }
+
+    populators
+}
+// TODO unit test toposort_populators
 
 #[derive(Default)]
 pub(crate) struct Typed<A: Archetype> {
@@ -57,6 +145,34 @@ pub(crate) struct Typed<A: Archetype> {
     pub(crate) isotope_storages:
         RwLock<HashMap<component::any::Identifier, storage::SharedSimple<A>>>,
     pub(crate) isotope_factories: HashMap<TypeId, Box<dyn storage::AnyIsotopeFactory<A>>>,
+    pub(crate) populators:        Vec<Box<dyn Fn(&mut component::Map<A>)>>,
+}
+
+impl<A: Archetype> Typed<A> {
+    pub(crate) fn create_near(
+        &mut self,
+        near: Option<entity::Raw>,
+        mut components: component::Map<A>,
+    ) -> entity::Raw {
+        let id = match near {
+            Some(hint) => self.ealloc.allocate_near(hint),
+            None => self.ealloc.allocate(),
+        };
+
+        for populate in &self.populators {
+            populate(&mut components);
+        }
+
+        for storage in self.simple_storages.values_mut() {
+            let storage = Arc::get_mut(storage).expect("storage arc was leaked");
+            let storage = storage.get_mut();
+            storage.init_with(id, &mut components);
+        }
+
+        // TODO extract isotope components
+
+        id
+    }
 }
 
 pub(crate) trait AnyTyped {

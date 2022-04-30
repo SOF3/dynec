@@ -57,7 +57,7 @@ pub trait Simple<A: Archetype>: entity::Referrer + Sized + 'static {
     const PRESENCE: SimplePresence;
 
     /// The initialization strategy for this component.
-    const INIT_STRATEGY: SimpleInitStrategy<A, Self>;
+    const INIT_STRATEGY: SimpleInitStrategy<A>;
 
     /// Override this to `true` if the component is a finalizer.
     ///
@@ -82,19 +82,17 @@ pub enum SimplePresence {
 }
 
 /// Describes how a component is auto-initialized.
-pub enum SimpleInitStrategy<A: Archetype, C: Simple<A>> {
+pub enum SimpleInitStrategy<A: Archetype> {
     /// The component is not auto-initialized.
     None,
     /// The component should be auto-initialized using the [`any::AutoIniter`]
     /// if it is not given in the creation args.
-    Auto(any::AutoIniter<A, C>),
+    Auto(any::AutoIniter<A>),
 }
 
-impl<A: Archetype, C: Simple<A>> SimpleInitStrategy<A, C> {
+impl<A: Archetype> SimpleInitStrategy<A> {
     /// Constructs an auto-initializing init strategy from a closure.
-    pub fn auto(f: &'static impl any::AutoInitFn<A, C>) -> Self {
-        Self::Auto(any::AutoIniter { f })
-    }
+    pub fn auto(f: &'static impl any::AutoInitFn<A>) -> Self { Self::Auto(any::AutoIniter { f }) }
 }
 
 /// An isotope component may have multiple instances per entity.

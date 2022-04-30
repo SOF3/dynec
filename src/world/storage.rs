@@ -11,27 +11,39 @@ use crate::{component, entity, Archetype};
 pub(crate) type SharedSimple<A> = Arc<RwLock<dyn AnySimpleStorage<A>>>;
 
 pub(crate) fn shared_simple<A: Archetype, C: component::Simple<A>>() -> SharedSimple<A> {
-    Arc::new(RwLock::new(Storage::<A, C>::new()))
+    Arc::new(RwLock::new(Storage::<A, C>::new_simple()))
 }
 
 pub(crate) trait AnySimpleStorage<A: Archetype> {
-    fn init_populate_components(&self);
-    fn init_extract_components(&mut self, components: &mut component::Map<A>);
+    fn init_strategy(&self) -> component::SimpleInitStrategy<A>;
+
+    fn init_with(&mut self, entity: entity::Raw, components: &mut component::Map<A>);
 }
 
-pub(crate) struct Storage<A: Archetype, C> {
-    inner: Inner<C>,
-    _ph:   PhantomData<A>,
+pub(crate) struct Storage<A: Archetype, C: 'static> {
+    inner:       Inner<C>,
+    lazy_initer: LazyIniter<C>,
+    _ph:         PhantomData<A>,
 }
 
-impl<A: Archetype, C> Storage<A, C> {
-    pub(crate) fn new() -> Self { Self { inner: Inner::default(), _ph: PhantomData } }
+impl<A: Archetype, C: component::Simple<A>> Storage<A, C> {
+    pub(crate) fn new_simple() -> Self {
+        Self {
+            inner:       Inner::default(),
+            lazy_initer: LazyIniter::Simple,
+            _ph:         PhantomData,
+        }
+    }
 }
 
 impl<A: Archetype, C: component::Simple<A>> AnySimpleStorage<A> for Storage<A, C> {
-    fn init_populate_components(&self) { todo!() }
+    fn init_strategy(&self) -> component::SimpleInitStrategy<A> { C::INIT_STRATEGY }
 
-    fn init_extract_components(&mut self, components: &mut component::Map<A>) { todo!() }
+    fn init_with(&mut self, entity: entity::Raw, components: &mut component::Map<A>) {
+        if let Some(comp) = components.remove_simple::<C>() {
+            self.inner.insert(entity, comp);
+        }
+    }
 }
 
 enum Inner<T> {
@@ -142,6 +154,12 @@ impl<T> Inner<T> {
 struct InnerVec<T> {
     presence: BitVec,
     data:     Vec<MaybeUninit<T>>,
+}
+
+enum LazyIniter<C: 'static> {
+    // Simple components are not lazy-initialized.
+    Simple,
+    Isotope { c: C },
 }
 
 pub(crate) trait AnyIsotopeFactory<A: Archetype> {}

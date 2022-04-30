@@ -1,8 +1,7 @@
 //! The world stores the states of the game.
 
-use std::any::TypeId;
+use std::any::{self, TypeId};
 use std::collections::HashMap;
-use std::sync::Arc;
 
 use crate::{component, entity, Archetype, Entity};
 
@@ -68,6 +67,26 @@ pub struct World {
 }
 
 impl World {
+    fn archetype<A: Archetype>(&self) -> &typed::Typed<A> {
+        match self.archetypes.get(&TypeId::of::<A>()) {
+            Some(typed) => typed.as_any().downcast_ref().expect("TypeId mismatch"),
+            None => panic!(
+                "The archetype {} cannot be used because it is not used in any systems",
+                any::type_name::<A>()
+            ),
+        }
+    }
+
+    fn archetype_mut<A: Archetype>(&mut self) -> &mut typed::Typed<A> {
+        match self.archetypes.get_mut(&TypeId::of::<A>()) {
+            Some(typed) => typed.as_any_mut().downcast_mut().expect("TypeId mismatch"),
+            None => panic!(
+                "The archetype {} cannot be used because it is not used in any systems",
+                any::type_name::<A>()
+            ),
+        }
+    }
+
     /// Adds an entity to the world.
     pub fn create<A: Archetype>(&mut self, components: component::Map<A>) -> Entity<A> {
         self.create_near::<entity::Entity<A>>(None, components)
@@ -77,26 +96,10 @@ impl World {
     pub fn create_near<E: entity::Ref>(
         &mut self,
         near: Option<E>,
-        mut components: component::Map<<E as entity::Ref>::Archetype>,
+        components: component::Map<<E as entity::Ref>::Archetype>,
     ) -> Entity<<E as entity::Ref>::Archetype> {
-        let typed = self
-            .archetypes
-            .get_mut(&TypeId::of::<E::Archetype>())
-            .expect("Attempt to create entity of an archetype not used in any systems");
-        let typed: &mut typed::Typed<E::Archetype> =
-            typed.as_any_mut().downcast_mut().expect("Typed archetype mismatch");
-
-        let id = match near {
-            Some(hint) => typed.ealloc.allocate_near(hint.id().0),
-            None => typed.ealloc.allocate(),
-        };
-
-        for (id, storage) in &mut typed.simple_storages {
-            let storage = Arc::get_mut(storage).expect("storage arc was leaked");
-            let storage = storage.get_mut();
-            storage.init_extract_components(&mut components);
-        }
-
+        let typed = self.archetype_mut::<E::Archetype>();
+        let id = typed.create_near(near.map(|raw| raw.id().0), components);
         Entity::new_allocated(id)
     }
 }

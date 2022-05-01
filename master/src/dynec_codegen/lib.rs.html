@@ -49,8 +49,8 @@
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">proc_macro</span>;
 
 <span class="kw">mod</span> <span class="ident">archetype</span>;
-<span class="kw">mod</span> <span class="ident">component</span>;
-<span class="kw">mod</span> <span class="ident">components</span>;
+<span class="kw">mod</span> <span class="ident">comp</span>;
+<span class="kw">mod</span> <span class="ident">comps</span>;
 <span class="kw">mod</span> <span class="ident">entity_ref</span>;
 <span class="kw">mod</span> <span class="ident">global</span>;
 <span class="kw">mod</span> <span class="ident">system</span>;
@@ -62,13 +62,13 @@
 }
 
 <span class="attribute">#[<span class="ident">proc_macro_attribute</span>]</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">component</span>(<span class="ident">args</span>: <span class="ident">TokenStream</span>, <span class="ident">input</span>: <span class="ident">TokenStream</span>) -&gt; <span class="ident">TokenStream</span> {
-    <span class="ident">component::imp</span>(<span class="ident">args</span>.<span class="ident">into</span>(), <span class="ident">input</span>.<span class="ident">into</span>()).<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">err</span>.<span class="ident">to_compile_error</span>()).<span class="ident">into</span>()
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">comp</span>(<span class="ident">args</span>: <span class="ident">TokenStream</span>, <span class="ident">input</span>: <span class="ident">TokenStream</span>) -&gt; <span class="ident">TokenStream</span> {
+    <span class="ident">comp::imp</span>(<span class="ident">args</span>.<span class="ident">into</span>(), <span class="ident">input</span>.<span class="ident">into</span>()).<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">err</span>.<span class="ident">to_compile_error</span>()).<span class="ident">into</span>()
 }
 
 <span class="attribute">#[<span class="ident">proc_macro</span>]</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">components</span>(<span class="ident">input</span>: <span class="ident">TokenStream</span>) -&gt; <span class="ident">TokenStream</span> {
-    <span class="ident">components::imp</span>(<span class="ident">input</span>.<span class="ident">into</span>()).<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">err</span>.<span class="ident">to_compile_error</span>()).<span class="ident">into</span>()
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">comps</span>(<span class="ident">input</span>: <span class="ident">TokenStream</span>) -&gt; <span class="ident">TokenStream</span> {
+    <span class="ident">comps::imp</span>(<span class="ident">input</span>.<span class="ident">into</span>()).<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">err</span>.<span class="ident">to_compile_error</span>()).<span class="ident">into</span>()
 }
 
 <span class="attribute">#[<span class="ident">proc_macro_attribute</span>]</span>

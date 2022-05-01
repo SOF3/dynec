@@ -463,8 +463,8 @@
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">archetype_tests</span> {}
 
-<span class="doccomment">/// Derives a [`component::Simple`](crate::component::Simple)</span>
-<span class="doccomment">/// or [`component::Isotope`](crate::component::Isotope) implementation for the applied type.</span>
+<span class="doccomment">/// Derives a [`comp::Simple`](crate::comp::Simple)</span>
+<span class="doccomment">/// or [`comp::Isotope`](crate::comp::Isotope) implementation for the applied type.</span>
 <span class="doccomment">/// This macro does not modify the input other than stripping attributes.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// This macro calls [`EntityRef`] implicitly.</span>
@@ -478,20 +478,20 @@
 <span class="doccomment">/// Implements the applied type as a component of the archetype `$ty`.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// ## `isotope = $ty`</span>
-<span class="doccomment">/// Indicates that the applied type is an [isotope component](crate::component::Isotope)</span>
-<span class="doccomment">/// with [discriminant](crate::component::Isotope::Discrim) of type `$ty`.</span>
+<span class="doccomment">/// Indicates that the applied type is an [isotope component](crate::comp::Isotope)</span>
+<span class="doccomment">/// with [discriminant](crate::comp::Isotope::Discrim) of type `$ty`.</span>
 <span class="doccomment">/// Indicates that the type is an isotope component (with discriminant type</span>
 <span class="doccomment">/// `$ty`) instead of a simple component.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// ## `required`</span>
-<span class="doccomment">/// Indicates that the component must be [present](crate::component::SimplePresence)</span>
+<span class="doccomment">/// Indicates that the component must be [present](crate::comp::SimplePresence)</span>
 <span class="doccomment">/// for an entity of its archetype any time as long as the entity is created andnot destroyed.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// This argument is exclusive with `isotope`,</span>
 <span class="doccomment">/// because isotopes are always unset for an unknown discriminant.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// ## `finalizer`</span>
-<span class="doccomment">/// Indicates that the component is a [finalizer](crate::component::Simple::IS_FINALIZER).</span>
+<span class="doccomment">/// Indicates that the component is a [finalizer](crate::comp::Simple::IS_FINALIZER).</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// ## `init`</span>
 <span class="doccomment">/// Provides an initializer for the component</span>
@@ -501,25 +501,25 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// # Example</span>
 <span class="doccomment">/// ```</span>
-<span class="doccomment">/// use dynec::component;</span>
+<span class="doccomment">/// use dynec::comp;</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// dynec::archetype!(Foo; Bar);</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// #[component(of = Foo, of = Bar, init = || Qux(1), finalizer)]</span>
+<span class="doccomment">/// #[comp(of = Foo, of = Bar, init = || Qux(1), finalizer)]</span>
 <span class="doccomment">/// struct Qux(i32);</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// static_assertions::assert_impl_all!(Qux: component::Simple&lt;Foo&gt;, component::Simple&lt;Bar&gt;);</span>
-<span class="doccomment">/// assert!(matches!(&lt;Qux as component::Simple&lt;Foo&gt;&gt;::PRESENCE, component::SimplePresence::Optional));</span>
-<span class="doccomment">/// assert!(&lt;Qux as component::Simple&lt;Bar&gt;&gt;::IS_FINALIZER);</span>
+<span class="doccomment">/// static_assertions::assert_impl_all!(Qux: comp::Simple&lt;Foo&gt;, comp::Simple&lt;Bar&gt;);</span>
+<span class="doccomment">/// assert!(matches!(&lt;Qux as comp::Simple&lt;Foo&gt;&gt;::PRESENCE, comp::SimplePresence::Optional));</span>
+<span class="doccomment">/// assert!(&lt;Qux as comp::Simple&lt;Bar&gt;&gt;::IS_FINALIZER);</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// #[derive(Debug, Clone, Copy)]</span>
 <span class="doccomment">/// struct Id(usize);</span>
-<span class="doccomment">/// impl component::Discrim for Id {</span>
+<span class="doccomment">/// impl comp::Discrim for Id {</span>
 <span class="doccomment">///     fn from_usize(usize: usize) -&gt; Self { Self(usize) }</span>
 <span class="doccomment">///     fn to_usize(self) -&gt; usize { self.0 }</span>
 <span class="doccomment">/// }</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// #[component(of = Foo, isotope = Id, init = Corge::make/0)]</span>
+<span class="doccomment">/// #[comp(of = Foo, isotope = Id, init = Corge::make/0)]</span>
 <span class="doccomment">/// struct Corge(i32);</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// impl Corge {</span>
@@ -527,34 +527,34 @@
 <span class="doccomment">/// }</span>
 <span class="doccomment">/// ```</span>
 <span class="attribute">#[<span class="ident">doc</span>(<span class="ident">inline</span>)]</span>
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">dynec_codegen::component</span>;
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">dynec_codegen::comp</span>;
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-<span class="kw">mod</span> <span class="ident">component_tests</span> {}
+<span class="kw">mod</span> <span class="ident">comp_tests</span> {}
 
 <span class="doccomment">/// Creates a map of components for a given archetype.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// # Example</span>
 <span class="doccomment">/// ```</span>
 <span class="doccomment">/// dynec::archetype!(Foo);</span>
-<span class="doccomment">/// let empty = dynec::components![Foo =&gt;];</span>
+<span class="doccomment">/// let empty = dynec::comps![Foo =&gt;];</span>
 <span class="doccomment">/// assert_eq!(empty.len(), 0);</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// #[dynec::component(of = Foo)]</span>
+<span class="doccomment">/// #[dynec::comp(of = Foo)]</span>
 <span class="doccomment">/// struct Comp1;</span>
-<span class="doccomment">/// #[dynec::component(of = Foo)]</span>
+<span class="doccomment">/// #[dynec::comp(of = Foo)]</span>
 <span class="doccomment">/// struct Comp2(i32);</span>
-<span class="doccomment">/// #[dynec::component(of = Foo)]</span>
+<span class="doccomment">/// #[dynec::comp(of = Foo)]</span>
 <span class="doccomment">/// struct Comp3{ value: i32 };</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// let empty = dynec::components![Foo =&gt; Comp1, Comp2(2), Comp3{ value: 3 }];</span>
+<span class="doccomment">/// let empty = dynec::comps![Foo =&gt; Comp1, Comp2(2), Comp3{ value: 3 }];</span>
 <span class="doccomment">/// assert_eq!(empty.len(), 3);</span>
 <span class="doccomment">/// ```</span>
 <span class="attribute">#[<span class="ident">doc</span>(<span class="ident">inline</span>)]</span>
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">dynec_codegen::components</span>;
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">dynec_codegen::comps</span>;
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-<span class="kw">mod</span> <span class="ident">components_tests</span> {}
+<span class="kw">mod</span> <span class="ident">comps_tests</span> {}
 
 <span class="doccomment">/// Derives a [`Global`](crate::Global) implementation for the applied type.</span>
 <span class="doccomment">/// This macro does not modify the input other than stripping attributes.</span>
@@ -662,7 +662,7 @@
 <span class="doccomment">/// but with a type `impl ReadSimple&lt;Type1, Type2&gt;`/`impl WriteSimple&lt;Type1, Type2&gt;`</span>
 <span class="doccomment">/// are also simple components</span>
 <span class="doccomment">/// (where `Simple` can be qualified by any path, e.g. `system::Simple`).</span>
-<span class="doccomment">/// This requests access to a [simple component](crate::component::Simple) of type `Type2`</span>
+<span class="doccomment">/// This requests access to a [simple component](crate::comp::Simple) of type `Type2`</span>
 <span class="doccomment">/// from entities of the [archetype](crate::Archetype) `Type1`,</span>
 <span class="doccomment">/// exposed through a type that implements [`system::Simple`](crate::system::Simple).</span>
 <span class="doccomment">///</span>
@@ -675,7 +675,7 @@
 <span class="doccomment">/// are &quot;isotope components&quot;.</span>
 <span class="doccomment">/// Alternatively, parameters that do not have a `#[dynec]` attribute</span>
 <span class="doccomment">/// but with a type `Isotope&lt;Type1, &amp;Type2&gt;` are also isotope components.</span>
-<span class="doccomment">/// This requests access to an [isotope component](crate::component::Isotope) of type `Type2`</span>
+<span class="doccomment">/// This requests access to an [isotope component](crate::comp::Isotope) of type `Type2`</span>
 <span class="doccomment">/// from entities of the [archetype](crate::Archetype) `Type1`,</span>
 <span class="doccomment">/// exposed through a type that implements [`system::Isotope`](crate::system::Isotope).</span>
 <span class="doccomment">///</span>
@@ -707,22 +707,22 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// dynec::archetype!(Player);</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// #[dynec::component(of = Player)]</span>
+<span class="doccomment">/// #[dynec::comp(of = Player)]</span>
 <span class="doccomment">/// struct PositionX(f32);</span>
-<span class="doccomment">/// #[dynec::component(of = Player)]</span>
+<span class="doccomment">/// #[dynec::comp(of = Player)]</span>
 <span class="doccomment">/// struct PositionY(f32);</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// #[dynec::component(of = Player)]</span>
+<span class="doccomment">/// #[dynec::comp(of = Player)]</span>
 <span class="doccomment">/// struct Direction(f32, f32);</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// #[derive(Debug, Clone, Copy)]</span>
 <span class="doccomment">/// struct SkillId(usize);</span>
-<span class="doccomment">/// impl dynec::component::Discrim for SkillId {</span>
+<span class="doccomment">/// impl dynec::comp::Discrim for SkillId {</span>
 <span class="doccomment">///     fn from_usize(id: usize) -&gt; Self { Self(id) }</span>
 <span class="doccomment">///     fn to_usize(self) -&gt; usize { self.0 }</span>
 <span class="doccomment">/// }</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// #[dynec::component(of = Player, isotope = SkillId, init = || SkillLevel(1))]</span>
+<span class="doccomment">/// #[dynec::comp(of = Player, isotope = SkillId, init = || SkillLevel(1))]</span>
 <span class="doccomment">/// struct SkillLevel(u8);</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// #[system(</span>
@@ -812,7 +812,7 @@
 <span class="doccomment">/// Add the `#[entity]` attribute to fields that implement `[crate::entity::Referrer]`,</span>
 <span class="doccomment">/// then the generated implementation will delegate to these fields.</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// This derive macro is automatically called in [`component`] and [`global`].</span>
+<span class="doccomment">/// This derive macro is automatically called in [`comp`] and [`global`].</span>
 <span class="doccomment">/// It should only be called explicitly if the type is not a component or global,</span>
 <span class="doccomment">/// e.g. if it is a type included in a [``]</span>
 <span class="doccomment">///</span>
@@ -852,7 +852,7 @@
 
         $(
             <span class="kw">let</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">var</span> <span class="op">=</span> <span class="ident">world</span>.<span class="ident">create</span>::<span class="op">&lt;</span><span class="macro-nonterminal">$</span><span class="macro-nonterminal">arch</span><span class="op">&gt;</span>(
-                <span class="macro-nonterminal">$</span><span class="macro">crate::components!</span>[ <span class="macro-nonterminal">$</span><span class="macro-nonterminal">arch</span> =&gt; $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">components</span>)<span class="kw-2">*</span>]
+                <span class="macro-nonterminal">$</span><span class="macro">crate::comps!</span>[ <span class="macro-nonterminal">$</span><span class="macro-nonterminal">arch</span> =&gt; $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">components</span>)<span class="kw-2">*</span>]
             );
         )<span class="op">*</span>
 

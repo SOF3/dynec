@@ -13,7 +13,7 @@
 <p>The generated implementation does not visit any fields by default.
 Add the <code>#[entity]</code> attribute to fields that implement <code>[crate::entity::Referrer]</code>,
 then the generated implementation will delegate to these fields.</p>
-<p>This derive macro is automatically called in <a href="attr.component.html" title="component"><code>component</code></a> and <a href="attr.global.html" title="global"><code>global</code></a>.
+<p>This derive macro is automatically called in <a href="attr.comp.html" title="comp"><code>comp</code></a> and <a href="attr.global.html" title="global"><code>global</code></a>.
 It should only be called explicitly if the type is not a component or global,
 e.g. if it is a type included in a [``]</p>
 <h2 id="example"><a href="#example">Example</a></h2>

@@ -35,7 +35,7 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Definition</span>
 <span class="doccomment">//! The actual component types of an archetype are specified by</span>
-<span class="doccomment">//! making the component type implement [`crate::component::Simple&lt;A&gt;`] or [`crate::component::Isotope&lt;A&gt;`],</span>
+<span class="doccomment">//! making the component type implement [`crate::comp::Simple&lt;A&gt;`] or [`crate::comp::Isotope&lt;A&gt;`],</span>
 <span class="doccomment">//! where `A` is the archetype type.</span>
 <span class="doccomment">//! Since Rust allows externally declared types to implement traits</span>
 <span class="doccomment">//! if the trait has a type parameter declared in the current crate,</span>
@@ -47,7 +47,7 @@
 
 <span class="doccomment">/// An archetype is a kind of entity with a fixed set of (optional) components.</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// See the [module-level documentation](index.html) for more information.</span>
+<span class="doccomment">/// See the [module-level documentation](mod@crate::archetype) for more information.</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Archetype</span>: <span class="lifetime">&#39;static</span> {}
 </code></pre></div>
 </section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (7c4b47696 2022-04-30)" ></div>

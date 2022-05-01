@@ -61,7 +61,7 @@ Alternatively, parameters that do not have a <code>#[dynec]</code> attribute
 but with a type <code>impl ReadSimple&lt;Type1, Type2&gt;</code>/<code>impl WriteSimple&lt;Type1, Type2&gt;</code>
 are also simple components
 (where <code>Simple</code> can be qualified by any path, e.g. <code>system::Simple</code>).
-This requests access to a <a href="component/trait.Simple.html">simple component</a> of type <code>Type2</code>
+This requests access to a <a href="comp/trait.Simple.html">simple component</a> of type <code>Type2</code>
 from entities of the <a href="trait.Archetype.html">archetype</a> <code>Type1</code>,
 exposed through a type that implements <a href="system/struct.Simple.html"><code>system::Simple</code></a>.</p>
 <p>With the attribute, only read access is permitted by default.
@@ -72,7 +72,7 @@ No information is inferred from the type if <code>#[dync(simple)]</code></p>
 are “isotope components”.
 Alternatively, parameters that do not have a <code>#[dynec]</code> attribute
 but with a type <code>Isotope&lt;Type1, &amp;Type2&gt;</code> are also isotope components.
-This requests access to an <a href="component/trait.Isotope.html">isotope component</a> of type <code>Type2</code>
+This requests access to an <a href="comp/trait.Isotope.html">isotope component</a> of type <code>Type2</code>
 from entities of the <a href="trait.Archetype.html">archetype</a> <code>Type1</code>,
 exposed through a type that implements <a href="system/struct.Isotope.html"><code>system::Isotope</code></a>.</p>
 <p>Only read access is permitted by default.
@@ -98,22 +98,22 @@ so mutating states has no effect on the system schedule.</p>
 
 <span class="macro">dynec::archetype!</span>(<span class="ident">Player</span>);
 
-<span class="attribute">#[<span class="ident">dynec::component</span>(<span class="ident">of</span> <span class="op">=</span> <span class="ident">Player</span>)]</span>
+<span class="attribute">#[<span class="ident">dynec::comp</span>(<span class="ident">of</span> <span class="op">=</span> <span class="ident">Player</span>)]</span>
 <span class="kw">struct</span> <span class="ident">PositionX</span>(<span class="ident">f32</span>);
-<span class="attribute">#[<span class="ident">dynec::component</span>(<span class="ident">of</span> <span class="op">=</span> <span class="ident">Player</span>)]</span>
+<span class="attribute">#[<span class="ident">dynec::comp</span>(<span class="ident">of</span> <span class="op">=</span> <span class="ident">Player</span>)]</span>
 <span class="kw">struct</span> <span class="ident">PositionY</span>(<span class="ident">f32</span>);
 
-<span class="attribute">#[<span class="ident">dynec::component</span>(<span class="ident">of</span> <span class="op">=</span> <span class="ident">Player</span>)]</span>
+<span class="attribute">#[<span class="ident">dynec::comp</span>(<span class="ident">of</span> <span class="op">=</span> <span class="ident">Player</span>)]</span>
 <span class="kw">struct</span> <span class="ident">Direction</span>(<span class="ident">f32</span>, <span class="ident">f32</span>);
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
 <span class="kw">struct</span> <span class="ident">SkillId</span>(<span class="ident">usize</span>);
-<span class="kw">impl</span> <span class="ident">dynec::component::Discrim</span> <span class="kw">for</span> <span class="ident">SkillId</span> {
+<span class="kw">impl</span> <span class="ident">dynec::comp::Discrim</span> <span class="kw">for</span> <span class="ident">SkillId</span> {
     <span class="kw">fn</span> <span class="ident">from_usize</span>(<span class="ident">id</span>: <span class="ident">usize</span>) -&gt; <span class="self">Self</span> { <span class="self">Self</span>(<span class="ident">id</span>) }
     <span class="kw">fn</span> <span class="ident">to_usize</span>(<span class="self">self</span>) -&gt; <span class="ident">usize</span> { <span class="self">self</span>.<span class="number">0</span> }
 }
 
-<span class="attribute">#[<span class="ident">dynec::component</span>(<span class="ident">of</span> <span class="op">=</span> <span class="ident">Player</span>, <span class="ident">isotope</span> <span class="op">=</span> <span class="ident">SkillId</span>, <span class="ident">init</span> <span class="op">=</span> <span class="op">|</span><span class="op">|</span> <span class="ident">SkillLevel</span>(<span class="number">1</span>))]</span>
+<span class="attribute">#[<span class="ident">dynec::comp</span>(<span class="ident">of</span> <span class="op">=</span> <span class="ident">Player</span>, <span class="ident">isotope</span> <span class="op">=</span> <span class="ident">SkillId</span>, <span class="ident">init</span> <span class="op">=</span> <span class="op">|</span><span class="op">|</span> <span class="ident">SkillLevel</span>(<span class="number">1</span>))]</span>
 <span class="kw">struct</span> <span class="ident">SkillLevel</span>(<span class="ident">u8</span>);
 
 <span class="attribute">#[<span class="ident">system</span>(

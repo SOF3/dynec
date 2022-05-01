@@ -129,7 +129,7 @@
 
 <span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">scheduler</span>, <span class="ident">typed</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::system::spec</span>;
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">component</span>, <span class="ident">system</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">comp</span>, <span class="ident">system</span>};
 
 <span class="doccomment">/// This type is used to build a world.</span>
 <span class="doccomment">/// No more systems can be scheduled after the builder is built.</span>
@@ -165,12 +165,12 @@
 
         <span class="ident">system</span>.<span class="ident">for_each_simple_request</span>(<span class="kw-2">&amp;mut</span> <span class="op">|</span><span class="ident">request</span><span class="op">|</span> {
             <span class="kw">let</span> <span class="ident">builder</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">archetype</span>(<span class="ident">request</span>.<span class="ident">archetype</span>);
-            <span class="ident">builder</span>.<span class="ident">add_simple_storage_if_missing</span>(<span class="ident">request</span>.<span class="ident">component</span>, <span class="ident">request</span>.<span class="ident">storage_builder</span>);
+            <span class="ident">builder</span>.<span class="ident">add_simple_storage_if_missing</span>(<span class="ident">request</span>.<span class="ident">comp</span>, <span class="ident">request</span>.<span class="ident">storage_builder</span>);
         });
 
         <span class="ident">system</span>.<span class="ident">for_each_isotope_request</span>(<span class="kw-2">&amp;mut</span> <span class="op">|</span><span class="ident">request</span><span class="op">|</span> {
             <span class="kw">let</span> <span class="ident">builder</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">archetype</span>(<span class="ident">request</span>.<span class="ident">archetype</span>);
-            <span class="ident">builder</span>.<span class="ident">add_isotope_factory_if_missing</span>(<span class="ident">request</span>.<span class="ident">component</span>, <span class="ident">request</span>.<span class="ident">factory_builder</span>);
+            <span class="ident">builder</span>.<span class="ident">add_isotope_factory_if_missing</span>(<span class="ident">request</span>.<span class="ident">comp</span>, <span class="ident">request</span>.<span class="ident">factory_builder</span>);
         });
     }
 
@@ -243,7 +243,7 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Hash</span>)]</span>
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">ComponentIdentifier</span> {
     <span class="ident">arch</span>: <span class="ident">TypeId</span>,
-    <span class="ident">comp</span>: <span class="ident">component::any::Identifier</span>,
+    <span class="ident">comp</span>: <span class="ident">comp::any::Identifier</span>,
 }
 </code></pre></div>
 </section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (7c4b47696 2022-04-30)" ></div>

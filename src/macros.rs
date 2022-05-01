@@ -30,8 +30,8 @@ pub use dynec_codegen::archetype;
 #[cfg(test)]
 mod archetype_tests {}
 
-/// Derives a [`component::Simple`](crate::component::Simple)
-/// or [`component::Isotope`](crate::component::Isotope) implementation for the applied type.
+/// Derives a [`comp::Simple`](crate::comp::Simple)
+/// or [`comp::Isotope`](crate::comp::Isotope) implementation for the applied type.
 /// This macro does not modify the input other than stripping attributes.
 ///
 /// This macro calls [`EntityRef`] implicitly.
@@ -45,20 +45,20 @@ mod archetype_tests {}
 /// Implements the applied type as a component of the archetype `$ty`.
 ///
 /// ## `isotope = $ty`
-/// Indicates that the applied type is an [isotope component](crate::component::Isotope)
-/// with [discriminant](crate::component::Isotope::Discrim) of type `$ty`.
+/// Indicates that the applied type is an [isotope component](crate::comp::Isotope)
+/// with [discriminant](crate::comp::Isotope::Discrim) of type `$ty`.
 /// Indicates that the type is an isotope component (with discriminant type
 /// `$ty`) instead of a simple component.
 ///
 /// ## `required`
-/// Indicates that the component must be [present](crate::component::SimplePresence)
+/// Indicates that the component must be [present](crate::comp::SimplePresence)
 /// for an entity of its archetype any time as long as the entity is created andnot destroyed.
 ///
 /// This argument is exclusive with `isotope`,
 /// because isotopes are always unset for an unknown discriminant.
 ///
 /// ## `finalizer`
-/// Indicates that the component is a [finalizer](crate::component::Simple::IS_FINALIZER).
+/// Indicates that the component is a [finalizer](crate::comp::Simple::IS_FINALIZER).
 ///
 /// ## `init`
 /// Provides an initializer for the component
@@ -68,25 +68,25 @@ mod archetype_tests {}
 ///
 /// # Example
 /// ```
-/// use dynec::component;
+/// use dynec::comp;
 ///
 /// dynec::archetype!(Foo; Bar);
 ///
-/// #[component(of = Foo, of = Bar, init = || Qux(1), finalizer)]
+/// #[comp(of = Foo, of = Bar, init = || Qux(1), finalizer)]
 /// struct Qux(i32);
 ///
-/// static_assertions::assert_impl_all!(Qux: component::Simple<Foo>, component::Simple<Bar>);
-/// assert!(matches!(<Qux as component::Simple<Foo>>::PRESENCE, component::SimplePresence::Optional));
-/// assert!(<Qux as component::Simple<Bar>>::IS_FINALIZER);
+/// static_assertions::assert_impl_all!(Qux: comp::Simple<Foo>, comp::Simple<Bar>);
+/// assert!(matches!(<Qux as comp::Simple<Foo>>::PRESENCE, comp::SimplePresence::Optional));
+/// assert!(<Qux as comp::Simple<Bar>>::IS_FINALIZER);
 ///
 /// #[derive(Debug, Clone, Copy)]
 /// struct Id(usize);
-/// impl component::Discrim for Id {
+/// impl comp::Discrim for Id {
 ///     fn from_usize(usize: usize) -> Self { Self(usize) }
 ///     fn to_usize(self) -> usize { self.0 }
 /// }
 ///
-/// #[component(of = Foo, isotope = Id, init = Corge::make/0)]
+/// #[comp(of = Foo, isotope = Id, init = Corge::make/0)]
 /// struct Corge(i32);
 ///
 /// impl Corge {
@@ -94,34 +94,34 @@ mod archetype_tests {}
 /// }
 /// ```
 #[doc(inline)]
-pub use dynec_codegen::component;
+pub use dynec_codegen::comp;
 
 #[cfg(test)]
-mod component_tests {}
+mod comp_tests {}
 
 /// Creates a map of components for a given archetype.
 ///
 /// # Example
 /// ```
 /// dynec::archetype!(Foo);
-/// let empty = dynec::components![Foo =>];
+/// let empty = dynec::comps![Foo =>];
 /// assert_eq!(empty.len(), 0);
 ///
-/// #[dynec::component(of = Foo)]
+/// #[dynec::comp(of = Foo)]
 /// struct Comp1;
-/// #[dynec::component(of = Foo)]
+/// #[dynec::comp(of = Foo)]
 /// struct Comp2(i32);
-/// #[dynec::component(of = Foo)]
+/// #[dynec::comp(of = Foo)]
 /// struct Comp3{ value: i32 };
 ///
-/// let empty = dynec::components![Foo => Comp1, Comp2(2), Comp3{ value: 3 }];
+/// let empty = dynec::comps![Foo => Comp1, Comp2(2), Comp3{ value: 3 }];
 /// assert_eq!(empty.len(), 3);
 /// ```
 #[doc(inline)]
-pub use dynec_codegen::components;
+pub use dynec_codegen::comps;
 
 #[cfg(test)]
-mod components_tests {}
+mod comps_tests {}
 
 /// Derives a [`Global`](crate::Global) implementation for the applied type.
 /// This macro does not modify the input other than stripping attributes.
@@ -229,7 +229,7 @@ mod global_tests {}
 /// but with a type `impl ReadSimple<Type1, Type2>`/`impl WriteSimple<Type1, Type2>`
 /// are also simple components
 /// (where `Simple` can be qualified by any path, e.g. `system::Simple`).
-/// This requests access to a [simple component](crate::component::Simple) of type `Type2`
+/// This requests access to a [simple component](crate::comp::Simple) of type `Type2`
 /// from entities of the [archetype](crate::Archetype) `Type1`,
 /// exposed through a type that implements [`system::Simple`](crate::system::Simple).
 ///
@@ -242,7 +242,7 @@ mod global_tests {}
 /// are "isotope components".
 /// Alternatively, parameters that do not have a `#[dynec]` attribute
 /// but with a type `Isotope<Type1, &Type2>` are also isotope components.
-/// This requests access to an [isotope component](crate::component::Isotope) of type `Type2`
+/// This requests access to an [isotope component](crate::comp::Isotope) of type `Type2`
 /// from entities of the [archetype](crate::Archetype) `Type1`,
 /// exposed through a type that implements [`system::Isotope`](crate::system::Isotope).
 ///
@@ -274,22 +274,22 @@ mod global_tests {}
 ///
 /// dynec::archetype!(Player);
 ///
-/// #[dynec::component(of = Player)]
+/// #[dynec::comp(of = Player)]
 /// struct PositionX(f32);
-/// #[dynec::component(of = Player)]
+/// #[dynec::comp(of = Player)]
 /// struct PositionY(f32);
 ///
-/// #[dynec::component(of = Player)]
+/// #[dynec::comp(of = Player)]
 /// struct Direction(f32, f32);
 ///
 /// #[derive(Debug, Clone, Copy)]
 /// struct SkillId(usize);
-/// impl dynec::component::Discrim for SkillId {
+/// impl dynec::comp::Discrim for SkillId {
 ///     fn from_usize(id: usize) -> Self { Self(id) }
 ///     fn to_usize(self) -> usize { self.0 }
 /// }
 ///
-/// #[dynec::component(of = Player, isotope = SkillId, init = || SkillLevel(1))]
+/// #[dynec::comp(of = Player, isotope = SkillId, init = || SkillLevel(1))]
 /// struct SkillLevel(u8);
 ///
 /// #[system(
@@ -379,7 +379,7 @@ mod system_tests {
 /// Add the `#[entity]` attribute to fields that implement `[crate::entity::Referrer]`,
 /// then the generated implementation will delegate to these fields.
 ///
-/// This derive macro is automatically called in [`component`] and [`global`].
+/// This derive macro is automatically called in [`comp`] and [`global`].
 /// It should only be called explicitly if the type is not a component or global,
 /// e.g. if it is a type included in a [``]
 ///
@@ -419,7 +419,7 @@ macro_rules! system_test {
 
         $(
             let $var = world.create::<$arch>(
-                $crate::components![ $arch => $($components)*]
+                $crate::comps![ $arch => $($components)*]
             );
         )*
 

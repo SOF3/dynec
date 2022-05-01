@@ -51,7 +51,7 @@ use crate::{entity, util, Archetype};
 
 /// A simple component has only one instance per entity.
 ///
-/// See the [module-level documentation](index.html) for more information.
+/// See the [module-level documentation](mod@crate::comp) for more information.
 pub trait Simple<A: Archetype>: entity::Referrer + Sized + 'static {
     /// The presence constraint of this component.
     const PRESENCE: SimplePresence;
@@ -97,7 +97,7 @@ impl<A: Archetype> SimpleInitStrategy<A> {
 
 /// An isotope component may have multiple instances per entity.
 ///
-/// See the [module-level documentation](index.html) for more information.
+/// See the [module-level documentation](mod@crate::comp) for more information.
 pub trait Isotope<A: Archetype>: entity::Referrer + Sized + 'static {
     /// The discriminant type.
     type Discrim: Discrim;

@@ -5,7 +5,7 @@ use std::sync::Arc;
 use parking_lot::RwLock;
 
 use super::storage;
-use crate::{component, entity, Archetype};
+use crate::{comp, entity, Archetype};
 
 pub(crate) trait AnyBuilder {
     fn add_simple_storage_if_missing(&mut self, component: TypeId, shared: fn() -> Box<dyn Any>);
@@ -56,12 +56,12 @@ impl<A: Archetype> AnyBuilder for Builder<A> {
 
 fn toposort_populators<A: Archetype>(
     storages: &mut HashMap<TypeId, storage::SharedSimple<A>>,
-) -> Vec<Box<dyn Fn(&mut component::Map<A>)>> {
+) -> Vec<Box<dyn Fn(&mut comp::Map<A>)>> {
     let mut populators = Vec::new();
 
     struct Request<A: Archetype> {
         dep_count: usize,
-        populator: Box<dyn Fn(&mut component::Map<A>)>,
+        populator: Box<dyn Fn(&mut comp::Map<A>)>,
     }
 
     let mut unprocessed = Vec::new();
@@ -70,8 +70,8 @@ fn toposort_populators<A: Archetype>(
             Arc::get_mut(storage).expect("builder should own unique reference to storages");
         let storage = storage.get_mut();
         match storage.init_strategy() {
-            component::SimpleInitStrategy::None => continue, /* direct requirement, does not affect population */
-            component::SimpleInitStrategy::Auto(initer) => unprocessed.push((ty, initer.f)),
+            comp::SimpleInitStrategy::None => continue, /* direct requirement, does not affect population */
+            comp::SimpleInitStrategy::Auto(initer) => unprocessed.push((ty, initer.f)),
         };
     }
 
@@ -92,9 +92,9 @@ fn toposort_populators<A: Archetype>(
             dependents_map.entry(dep_ty).or_default().push(ty); // ty is pushed to unprocessed, which will fill requests later
             match dep_strategy {
                 // required dependency, does not affect population
-                component::SimpleInitStrategy::None => continue,
+                comp::SimpleInitStrategy::None => continue,
                 // push to unprocessed again to recurse
-                component::SimpleInitStrategy::Auto(initer) => {
+                comp::SimpleInitStrategy::Auto(initer) => {
                     request.dep_count += 1;
                     unprocessed.push((dep_ty, initer.f));
                 }
@@ -139,17 +139,16 @@ fn toposort_populators<A: Archetype>(
 pub(crate) struct Typed<A: Archetype> {
     pub(crate) ealloc:            entity::Ealloc,
     pub(crate) simple_storages:   HashMap<TypeId, storage::SharedSimple<A>>,
-    pub(crate) isotope_storages:
-        RwLock<HashMap<component::any::Identifier, storage::SharedSimple<A>>>,
+    pub(crate) isotope_storages:  RwLock<HashMap<comp::any::Identifier, storage::SharedSimple<A>>>,
     pub(crate) isotope_factories: HashMap<TypeId, Box<dyn storage::AnyIsotopeFactory<A>>>,
-    pub(crate) populators:        Vec<Box<dyn Fn(&mut component::Map<A>)>>,
+    pub(crate) populators:        Vec<Box<dyn Fn(&mut comp::Map<A>)>>,
 }
 
 impl<A: Archetype> Typed<A> {
     pub(crate) fn create_near(
         &mut self,
         near: Option<entity::Raw>,
-        mut components: component::Map<A>,
+        mut components: comp::Map<A>,
     ) -> entity::Raw {
         let id = match near {
             Some(hint) => self.ealloc.allocate_near(hint),

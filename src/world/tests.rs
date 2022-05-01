@@ -1,30 +1,30 @@
-use crate::{component, system, world, Archetype};
+use crate::{comp, system, world, Archetype};
 
 enum TestArch {}
 impl Archetype for TestArch {}
 
-#[component(dynec_as(crate), of = TestArch)]
+#[comp(dynec_as(crate), of = TestArch)]
 struct Comp1(i32);
 
-#[component(dynec_as(crate), of = TestArch, init = init_comp2/1)]
+#[comp(dynec_as(crate), of = TestArch, init = init_comp2/1)]
 struct Comp2(i32);
 fn init_comp2(c1: &Comp1) -> Comp2 { Comp2(c1.0 + 2) }
 
-#[component(
+#[comp(
     dynec_as(crate),
     of = TestArch,
     init = |c1: &Comp1, c2: &Comp2| Comp3(c1.0 * 3, c2.0 * 5),
 )]
 struct Comp3(i32, i32);
 
-#[component(
+#[comp(
     dynec_as(crate),
     of = TestArch,
     init = |c1: &Comp1, c2: &Comp2| Comp4(c1.0 * 7, c2.0 * 8),
 )]
 struct Comp4(i32, i32);
 
-#[component(dynec_as(crate), of = TestArch, required)]
+#[comp(dynec_as(crate), of = TestArch, required)]
 struct Comp5(i32);
 
 #[system(dynec_as(crate))]
@@ -54,7 +54,7 @@ macro_rules! make_world {
 #[test]
 fn test_dependencies_successful() {
     let mut world = make_world!(system_with_comp3_comp4_comp5.build());
-    world.create::<TestArch>(crate::components![@(crate) TestArch => Comp1(1), Comp5(1)]);
+    world.create::<TestArch>(crate::comps![@(crate) TestArch => Comp1(1), Comp5(1)]);
 }
 
 #[test]
@@ -63,7 +63,7 @@ fn test_dependencies_successful() {
                            `dynec::world::tests::Comp5`")]
 fn test_dependencies_missing_required_simple() {
     let mut world = make_world!(system_with_comp3_comp4_comp5.build());
-    world.create::<TestArch>(crate::components![@(crate) TestArch => Comp1(1)]);
+    world.create::<TestArch>(crate::comps![@(crate) TestArch => Comp1(1)]);
 }
 
 #[test]
@@ -73,5 +73,5 @@ fn test_dependencies_missing_required_simple() {
                            `dynec::world::tests::Comp2`")]
 fn test_dependencies_missing_required_dep() {
     let mut world = make_world!(system_with_comp3_comp4_comp5.build());
-    world.create::<TestArch>(crate::components![@(crate) TestArch => Comp5(1)]);
+    world.create::<TestArch>(crate::comps![@(crate) TestArch => Comp5(1)]);
 }

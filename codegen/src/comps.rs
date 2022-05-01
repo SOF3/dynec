@@ -24,7 +24,7 @@ pub(crate) fn imp(input: TokenStream) -> Result<TokenStream> {
     });
 
     let output = quote! {{
-        let mut __dynec_map = #crate_name::component::Map::<#archetype>::default();
+        let mut __dynec_map = #crate_name::comp::Map::<#archetype>::default();
         #(#components)*
         __dynec_map
     }};

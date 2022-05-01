@@ -7,18 +7,18 @@ use std::sync::Arc;
 use bitvec::prelude::BitVec;
 use parking_lot::RwLock;
 
-use crate::{component, entity, Archetype};
+use crate::{comp, entity, Archetype};
 
 pub(crate) type SharedSimple<A> = Arc<RwLock<dyn AnySimpleStorage<A>>>;
 
-pub(crate) fn shared_simple<A: Archetype, C: component::Simple<A>>() -> SharedSimple<A> {
+pub(crate) fn shared_simple<A: Archetype, C: comp::Simple<A>>() -> SharedSimple<A> {
     Arc::new(RwLock::new(Storage::<A, C>::new_simple()))
 }
 
 pub(crate) trait AnySimpleStorage<A: Archetype> {
-    fn init_strategy(&self) -> component::SimpleInitStrategy<A>;
+    fn init_strategy(&self) -> comp::SimpleInitStrategy<A>;
 
-    fn init_with(&mut self, entity: entity::Raw, components: &mut component::Map<A>);
+    fn init_with(&mut self, entity: entity::Raw, components: &mut comp::Map<A>);
 }
 
 pub(crate) struct Storage<A: Archetype, C: 'static> {
@@ -27,7 +27,7 @@ pub(crate) struct Storage<A: Archetype, C: 'static> {
     _ph:         PhantomData<A>,
 }
 
-impl<A: Archetype, C: component::Simple<A>> Storage<A, C> {
+impl<A: Archetype, C: comp::Simple<A>> Storage<A, C> {
     pub(crate) fn new_simple() -> Self {
         Self {
             inner:       Inner::default(),
@@ -37,13 +37,13 @@ impl<A: Archetype, C: component::Simple<A>> Storage<A, C> {
     }
 }
 
-impl<A: Archetype, C: component::Simple<A>> AnySimpleStorage<A> for Storage<A, C> {
-    fn init_strategy(&self) -> component::SimpleInitStrategy<A> { C::INIT_STRATEGY }
+impl<A: Archetype, C: comp::Simple<A>> AnySimpleStorage<A> for Storage<A, C> {
+    fn init_strategy(&self) -> comp::SimpleInitStrategy<A> { C::INIT_STRATEGY }
 
-    fn init_with(&mut self, entity: entity::Raw, components: &mut component::Map<A>) {
+    fn init_with(&mut self, entity: entity::Raw, components: &mut comp::Map<A>) {
         if let Some(comp) = components.remove_simple::<C>() {
             self.inner.insert(entity, comp);
-        } else if let component::SimplePresence::Required = C::PRESENCE {
+        } else if let comp::SimplePresence::Required = C::PRESENCE {
             panic!(
                 "Cannot create an entity of type `{}` without explicitly passing a component of \
                  type `{}`",
@@ -172,13 +172,13 @@ enum LazyIniter<C: 'static> {
 
 pub(crate) trait AnyIsotopeFactory<A: Archetype> {}
 
-struct IsotopeFactory<A: Archetype, C: component::Isotope<A>> {
+struct IsotopeFactory<A: Archetype, C: comp::Isotope<A>> {
     _ph: PhantomData<(A, C)>,
 }
 
-impl<A: Archetype, C: component::Isotope<A>> AnyIsotopeFactory<A> for IsotopeFactory<A, C> {}
+impl<A: Archetype, C: comp::Isotope<A>> AnyIsotopeFactory<A> for IsotopeFactory<A, C> {}
 
-pub(crate) fn isotope_factory<A: Archetype, C: component::Isotope<A>>(
-) -> Box<dyn AnyIsotopeFactory<A>> {
+pub(crate) fn isotope_factory<A: Archetype, C: comp::Isotope<A>>() -> Box<dyn AnyIsotopeFactory<A>>
+{
     Box::new(IsotopeFactory::<A, C> { _ph: PhantomData }) as Box<dyn AnyIsotopeFactory<A>>
 }

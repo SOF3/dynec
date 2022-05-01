@@ -374,8 +374,8 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                     Some(discrim) => quote!(Some({
                         let __iter = ::std::iter::IntoIterator::into_iter(#discrim);
                         let __iter = ::std::iter::Iterator::map(__iter, |d| {
-                            let _: &(<#comp as #crate_name::component::Isotope<#arch>>::Discrim) = &d; // type check
-                            #crate_name::component::Discrim::to_usize(d)
+                            let _: &(<#comp as #crate_name::comp::Isotope<#arch>>::Discrim) = &d; // type check
+                            #crate_name::comp::Discrim::to_usize(d)
                         });
                         ::std::iter::Iterator::collect::<::std::vec::Vec<_>>(__iter)
                     })),

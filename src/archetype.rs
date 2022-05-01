@@ -7,7 +7,7 @@
 //!
 //! # Definition
 //! The actual component types of an archetype are specified by
-//! making the component type implement [`crate::component::Simple<A>`] or [`crate::component::Isotope<A>`],
+//! making the component type implement [`crate::comp::Simple<A>`] or [`crate::comp::Isotope<A>`],
 //! where `A` is the archetype type.
 //! Since Rust allows externally declared types to implement traits
 //! if the trait has a type parameter declared in the current crate,
@@ -19,5 +19,5 @@
 
 /// An archetype is a kind of entity with a fixed set of (optional) components.
 ///
-/// See the [module-level documentation](index.html) for more information.
+/// See the [module-level documentation](mod@crate::archetype) for more information.
 pub trait Archetype: 'static {}

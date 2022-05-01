@@ -3,8 +3,8 @@ use proc_macro::TokenStream;
 extern crate proc_macro;
 
 mod archetype;
-mod component;
-mod components;
+mod comp;
+mod comps;
 mod entity_ref;
 mod global;
 mod system;
@@ -16,13 +16,13 @@ pub fn archetype(input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_attribute]
-pub fn component(args: TokenStream, input: TokenStream) -> TokenStream {
-    component::imp(args.into(), input.into()).unwrap_or_else(|err| err.to_compile_error()).into()
+pub fn comp(args: TokenStream, input: TokenStream) -> TokenStream {
+    comp::imp(args.into(), input.into()).unwrap_or_else(|err| err.to_compile_error()).into()
 }
 
 #[proc_macro]
-pub fn components(input: TokenStream) -> TokenStream {
-    components::imp(input.into()).unwrap_or_else(|err| err.to_compile_error()).into()
+pub fn comps(input: TokenStream) -> TokenStream {
+    comps::imp(input.into()).unwrap_or_else(|err| err.to_compile_error()).into()
 }
 
 #[proc_macro_attribute]

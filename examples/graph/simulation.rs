@@ -15,7 +15,7 @@ impl dynec::world::Bundle for Bundle {
     fn populate(&self, world: &mut dynec::World) {
         // First, we populate the world with entities with archetype `Node`.
         // Note that no components from the `render` crate are specified here.
-        let farm = world.create::<Node>(dynec::components![ Node =>
+        let farm = world.create::<Node>(dynec::comps![ Node =>
             // The `Node` archetype has a single-component of type `Position`.
             Position([0.0, 0.0]),
 
@@ -34,23 +34,23 @@ impl dynec::world::Bundle for Bundle {
         // This hint is useless during world initialization
         // because there are no gaps where the hint is effective for,
         // so entities are always allocated in the same order they are created.
-        let factory = world.create::<Node>(dynec::components![ Node =>
+        let factory = world.create::<Node>(dynec::comps![ Node =>
             Position([0.0, 1.0]),
             @[(CROPS, Capacity(100)), (FOOD, Capacity(100))],
             @[(FOOD, Volume(100))],
         ]);
-        let market = world.create::<Node>(dynec::components![ Node =>
+        let market = world.create::<Node>(dynec::comps![ Node =>
             Position([1.0, 2.0]),
             @[(FOOD, Capacity(200))],
         ]);
 
         // Then, we populate the world with entities with archetype `Edge`.
-        world.create::<Edge>(dynec::components![ Edge =>
+        world.create::<Edge>(dynec::comps![ Edge =>
             Endpoints{from: farm, to: factory.clone()},
             Power(1.),
             @[(CROPS, Flow(10))],
         ]);
-        world.create::<Edge>(dynec::components![ Edge =>
+        world.create::<Edge>(dynec::comps![ Edge =>
             Endpoints{from: factory, to: market},
             Power(2.),
             @[(CROPS, Flow(10))],
@@ -69,8 +69,8 @@ dynec::archetype! {
 ///
 /// The `required` argument specifies that the component must be provided during initialization.
 /// Alternatively, you can use `optional` which specifies a component does not necessarily exist,
-/// or `auto` which populates the component automatically if it implements the `dynec::component::Auto` trait.
-#[dynec::component(of = Node, required)]
+/// or `auto` which populates the component automatically if it implements the `dynec::comp::Auto` trait.
+#[dynec::comp(of = Node, required)]
 pub struct Position(pub [f32; 2]);
 
 /// To define a multi-component, we add a `multi(Discrim)` argument to the attribute:
@@ -78,11 +78,11 @@ pub struct Position(pub [f32; 2]);
 /// Multi-components do not have the `required`/`optional`/`auto` argument,
 /// because they are all `[]` by default.
 /// To put it another way, they are all `optional` on each discriminant.
-#[dynec::component(of = Node, isotope = ItemType, init = Default::default/0)]
+#[dynec::comp(of = Node, isotope = ItemType, init = Default::default/0)]
 #[derive(Default)]
 pub struct Capacity(pub u32);
 
-#[dynec::component(of = Node, isotope = ItemType, init = || Volume(0))]
+#[dynec::comp(of = Node, isotope = ItemType, init = || Volume(0))]
 pub struct Volume(pub u32);
 
 dynec::archetype! {
@@ -93,7 +93,7 @@ dynec::archetype! {
 /// The `Endpoints` component stores references to the [`Node`] entities that the edge connects.
 /// To support permutation and deletion debugging,
 /// we need to add `#[entity]` on all fields that transitively contain a reference.
-#[dynec::component(of = Edge, required)]
+#[dynec::comp(of = Edge, required)]
 pub struct Endpoints {
     #[entity]
     from: dynec::Entity<Node>,
@@ -101,9 +101,9 @@ pub struct Endpoints {
     to:   dynec::Entity<Node>,
 }
 
-#[dynec::component(of = Edge, required)]
+#[dynec::comp(of = Edge, required)]
 pub struct Power(pub f64);
-#[dynec::component(of = Edge, isotope = ItemType)]
+#[dynec::comp(of = Edge, isotope = ItemType)]
 pub struct Flow(pub u32);
 
 /// Identifies a type of item.
@@ -112,7 +112,7 @@ pub struct Flow(pub u32);
 #[derive(Clone, Copy)]
 pub struct ItemType(usize);
 
-impl dynec::component::Discrim for ItemType {
+impl dynec::comp::Discrim for ItemType {
     fn from_usize(usize: usize) -> Self { Self(usize) }
     fn to_usize(self) -> usize { self.0 }
 }

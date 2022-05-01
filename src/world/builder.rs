@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use super::{scheduler, typed};
 use crate::system::spec;
-use crate::{component, system};
+use crate::{comp, system};
 
 /// This type is used to build a world.
 /// No more systems can be scheduled after the builder is built.
@@ -39,12 +39,12 @@ impl Builder {
 
         system.for_each_simple_request(&mut |request| {
             let builder = self.archetype(request.archetype);
-            builder.add_simple_storage_if_missing(request.component, request.storage_builder);
+            builder.add_simple_storage_if_missing(request.comp, request.storage_builder);
         });
 
         system.for_each_isotope_request(&mut |request| {
             let builder = self.archetype(request.archetype);
-            builder.add_isotope_factory_if_missing(request.component, request.factory_builder);
+            builder.add_isotope_factory_if_missing(request.comp, request.factory_builder);
         });
     }
 
@@ -117,5 +117,5 @@ pub(crate) struct UndiscrimComponentIdentifier {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) struct ComponentIdentifier {
     arch: TypeId,
-    comp: component::any::Identifier,
+    comp: comp::any::Identifier,
 }

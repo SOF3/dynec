@@ -34,7 +34,7 @@ impl dynec::world::Bundle for Bundle {
 /// the extra components we want to create.
 /// Instead, we use `auto` here,
 /// which allows dynamic generation of the component values from the initial components.
-#[dynec::component(of = simulation::Node, of = simulation::Edge, init = || RenderColor { color: [0.0, 0.0, 0.0] })]
+#[dynec::comp(of = simulation::Node, of = simulation::Edge, init = || RenderColor { color: [0.0, 0.0, 0.0] })]
 struct RenderColor {
     color: [f32; 3],
 }

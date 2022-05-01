@@ -59,7 +59,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
 
 enum FnOpt {
     DynecAs(syn::token::Paren, TokenStream),
-    Initial(Option<(syn::Token![=], syn::Expr)>),
+    Initial(Option<(syn::Token![=], Box<syn::Expr>)>),
 }
 
 impl Parse for Named<FnOpt> {
@@ -77,7 +77,7 @@ impl Parse for Named<FnOpt> {
                 let value = if input.peek(syn::Token![=]) {
                     let eq: syn::Token![=] = input.parse()?;
                     let expr = input.parse::<syn::Expr>()?;
-                    Some((eq, expr))
+                    Some((eq, Box::new(expr)))
                 } else {
                     None
                 };

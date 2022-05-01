@@ -3,7 +3,7 @@
 use std::any::{self, TypeId};
 use std::collections::HashMap;
 
-use crate::{component, entity, Archetype, Entity};
+use crate::{comp, entity, Archetype, Entity};
 
 mod builder;
 pub use builder::Builder;
@@ -50,13 +50,13 @@ pub(crate) struct ArchComp {
 
 /// Describes a simple component type.
 pub(crate) struct SimpleSpec {
-    presence:     component::SimplePresence,
+    presence:     comp::SimplePresence,
     // TODO wrap SimpleInitStrategy in a trait object
     is_finalizer: bool,
 }
 
 impl SimpleSpec {
-    fn of<A: Archetype, C: component::Simple<A>>() -> Self {
+    fn of<A: Archetype, C: comp::Simple<A>>() -> Self {
         Self { presence: C::PRESENCE, is_finalizer: C::IS_FINALIZER }
     }
 }
@@ -88,7 +88,7 @@ impl World {
     }
 
     /// Adds an entity to the world.
-    pub fn create<A: Archetype>(&mut self, components: component::Map<A>) -> Entity<A> {
+    pub fn create<A: Archetype>(&mut self, components: comp::Map<A>) -> Entity<A> {
         self.create_near::<entity::Entity<A>>(None, components)
     }
 
@@ -96,7 +96,7 @@ impl World {
     pub fn create_near<E: entity::Ref>(
         &mut self,
         near: Option<E>,
-        components: component::Map<<E as entity::Ref>::Archetype>,
+        components: comp::Map<<E as entity::Ref>::Archetype>,
     ) -> Entity<<E as entity::Ref>::Archetype> {
         let typed = self.archetype_mut::<E::Archetype>();
         let id = typed.create_near(near.map(|raw| raw.id().0), components);

@@ -13,12 +13,12 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash;
 use std::marker::PhantomData;
 
-use crate::{component, util, Archetype};
+use crate::{comp, util, Archetype};
 
 /// Provides access to a simple component in a specific archetype.
 pub struct Simple<A: Archetype, R: util::Ref>
 where
-    R::Target: component::Simple<A>,
+    R::Target: comp::Simple<A>,
 {
     _ph: PhantomData<(A, R)>,
 }
@@ -26,7 +26,7 @@ where
 /// Provides access to an isotope component in a specific archetype.
 pub struct Isotope<A: Archetype, R: util::Ref>
 where
-    R::Target: component::Isotope<A>,
+    R::Target: comp::Isotope<A>,
 {
     _ph: PhantomData<(A, R)>,
 }

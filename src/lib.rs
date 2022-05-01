@@ -74,7 +74,7 @@ pub mod archetype;
 #[doc(inline)]
 pub use archetype::Archetype;
 
-pub mod component;
+pub mod comp;
 
 pub mod entity;
 #[doc(inline)]

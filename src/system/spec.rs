@@ -3,7 +3,7 @@
 use std::any::{Any, TypeId};
 
 use crate::world::{self, storage};
-use crate::{component, system, Archetype};
+use crate::{comp, system, Archetype};
 
 /// Describes an instance of system.
 ///
@@ -60,7 +60,7 @@ pub struct SimpleRequest {
     /// The archetype requested.
     pub(crate) archetype:       ArchetypeDescriptor,
     /// The type of the simple component.
-    pub(crate) component:       TypeId,
+    pub(crate) comp:            TypeId,
     /// Builder for the storage. Must be `Box<storage::SharedSimple<A>>`.
     pub(crate) storage_builder: fn() -> Box<dyn Any>,
     /// Whether mutable access is requested.
@@ -69,10 +69,10 @@ pub struct SimpleRequest {
 
 impl SimpleRequest {
     /// Creates a new simple component request with types known at compile time.
-    pub fn new<A: Archetype, C: component::Simple<A>>(mutable: bool) -> Self {
+    pub fn new<A: Archetype, C: comp::Simple<A>>(mutable: bool) -> Self {
         Self {
             archetype: ArchetypeDescriptor::of::<A>(),
-            component: TypeId::of::<C>(),
+            comp: TypeId::of::<C>(),
             mutable,
             storage_builder: || Box::new(storage::shared_simple::<A, C>()),
         }
@@ -95,7 +95,7 @@ pub struct IsotopeRequest {
     /// The archetype requested.
     pub(crate) archetype:       ArchetypeDescriptor,
     /// The archetype of the isotope component.
-    pub(crate) component:       TypeId,
+    pub(crate) comp:            TypeId,
     /// Builder for the IsotopeFactory. Must be `Box<Box<dyn storage::AnyIsotopeFactory<A>>>`.
     pub(crate) factory_builder: fn() -> Box<dyn Any>,
     /// If `Some`, only the isotope components of the given discriminants are accessible.
@@ -108,13 +108,13 @@ pub struct IsotopeRequest {
 
 impl IsotopeRequest {
     /// Creates a new isotope component request with types known at compile time.
-    pub fn new<A: Archetype, C: component::Isotope<A>>(
+    pub fn new<A: Archetype, C: comp::Isotope<A>>(
         discrim: Option<Vec<usize>>,
         mutable: bool,
     ) -> Self {
         Self {
             archetype: ArchetypeDescriptor::of::<A>(),
-            component: TypeId::of::<C>(),
+            comp: TypeId::of::<C>(),
             discrim,
             mutable,
             factory_builder: || Box::new(storage::isotope_factory::<A, C>()),

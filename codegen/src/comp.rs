@@ -43,8 +43,8 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
         ));
     }
     let presence = match presence {
-        Some(_) => quote!(#crate_name::component::SimplePresence::Required),
-        None => quote!(#crate_name::component::SimplePresence::Optional),
+        Some(_) => quote!(#crate_name::comp::SimplePresence::Required),
+        None => quote!(#crate_name::comp::SimplePresence::Optional),
     };
 
     let finalizer = args.find_one(|arg| match arg {
@@ -73,35 +73,35 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             let init = match init {
                 Some((_, func)) => {
                     let func = func.as_fn_ptr(&generics)?;
-                    quote!(#crate_name::component::IsotopeInitStrategy::Default(#func))
+                    quote!(#crate_name::comp::IsotopeInitStrategy::Default(#func))
                 }
-                None => quote!(#crate_name::component::IsotopeInitStrategy::None),
+                None => quote!(#crate_name::comp::IsotopeInitStrategy::None),
             };
 
             output.extend(generics.impl_trait(
-                quote!(#crate_name::component::Isotope<#archetype>),
+                quote!(#crate_name::comp::Isotope<#archetype>),
                 quote! {
                     type Discrim = #discrim;
 
-                    const INIT_STRATEGY: #crate_name::component::IsotopeInitStrategy<Self> = #init;
+                    const INIT_STRATEGY: #crate_name::comp::IsotopeInitStrategy<Self> = #init;
                 },
             ));
         } else {
             let init = match init {
                 Some((_, func)) => {
                     let func = func.as_fn_ptr(&generics)?;
-                    quote!(#crate_name::component::SimpleInitStrategy::Auto(
-                        #crate_name::component::AutoIniter { f: &#func }
+                    quote!(#crate_name::comp::SimpleInitStrategy::Auto(
+                        #crate_name::comp::AutoIniter { f: &#func }
                     ))
                 }
-                None => quote!(#crate_name::component::SimpleInitStrategy::None),
+                None => quote!(#crate_name::comp::SimpleInitStrategy::None),
             };
 
             output.extend(generics.impl_trait(
-                quote!(#crate_name::component::Simple<#archetype>),
+                quote!(#crate_name::comp::Simple<#archetype>),
                 quote! {
-                    const PRESENCE: #crate_name::component::SimplePresence = #presence;
-                    const INIT_STRATEGY: #crate_name::component::SimpleInitStrategy<#archetype> = #init;
+                    const PRESENCE: #crate_name::comp::SimplePresence = #presence;
+                    const INIT_STRATEGY: #crate_name::comp::SimpleInitStrategy<#archetype> = #init;
                     const IS_FINALIZER: bool = #finalizer;
                 },
             ));

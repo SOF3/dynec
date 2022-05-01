@@ -6,7 +6,7 @@ use std::marker::PhantomData;
 use std::{cmp, hash};
 
 use super::Discrim;
-use crate::{component, Archetype};
+use crate::{comp, Archetype};
 
 /// Identifies a generic simple or discriminated isotope component type.
 #[derive(Debug, Clone, Copy)]
@@ -18,11 +18,11 @@ pub(crate) struct Identifier {
 }
 
 impl Identifier {
-    pub(crate) fn simple<A: Archetype, C: component::Simple<A>>() -> Self {
+    pub(crate) fn simple<A: Archetype, C: comp::Simple<A>>() -> Self {
         Identifier { id: TypeId::of::<C>(), name: any::type_name::<C>(), discrim: None }
     }
 
-    pub(crate) fn isotope<A: Archetype, C: component::Isotope<A>>(discrim: C::Discrim) -> Self {
+    pub(crate) fn isotope<A: Archetype, C: comp::Isotope<A>>(discrim: C::Discrim) -> Self {
         Identifier {
             id:      TypeId::of::<C>(),
             name:    any::type_name::<C>(),
@@ -69,31 +69,31 @@ impl<A: Archetype> Default for Map<A> {
 
 impl<A: Archetype> Map<A> {
     /// Inserts a simple component into the map.
-    pub fn insert_simple<C: component::Simple<A>>(&mut self, component: C) {
-        let prev = self.map.insert(Identifier::simple::<A, C>(), Box::new(component));
+    pub fn insert_simple<C: comp::Simple<A>>(&mut self, comp: C) {
+        let prev = self.map.insert(Identifier::simple::<A, C>(), Box::new(comp));
         if prev.is_some() {
-            panic!("Cannot insert the same simple component into the same component::Map twice");
+            panic!("Cannot insert the same simple component into the same comp::Map twice");
         }
     }
 
     /// Inserts an isotope component into the map.
-    pub fn insert_isotope<C: component::Isotope<A>>(&mut self, discrim: C::Discrim, component: C) {
-        let prev = self.map.insert(Identifier::isotope::<A, C>(discrim), Box::new(component));
+    pub fn insert_isotope<C: comp::Isotope<A>>(&mut self, discrim: C::Discrim, comp: C) {
+        let prev = self.map.insert(Identifier::isotope::<A, C>(discrim), Box::new(comp));
         if prev.is_some() {
             panic!(
                 "Cannot insert the same isotope component with the same discriminant into the \
-                 same component::Map twice"
+                 same comp::Map twice"
             );
         }
     }
 
     /// Gets a simple component from the map.
-    pub(crate) fn get_simple<C: component::Simple<A>>(&self) -> Option<&C> {
+    pub(crate) fn get_simple<C: comp::Simple<A>>(&self) -> Option<&C> {
         self.map.get(&Identifier::simple::<A, C>()).and_then(|c| c.downcast_ref())
     }
 
     /// Gets a simple component from the map.
-    pub(crate) fn remove_simple<C: component::Simple<A>>(&mut self) -> Option<C> {
+    pub(crate) fn remove_simple<C: comp::Simple<A>>(&mut self) -> Option<C> {
         let comp = self.map.remove(&Identifier::simple::<A, C>())?;
         let comp = comp.downcast::<C>().expect("TypeId mismatch");
         Some(*comp)
@@ -112,7 +112,7 @@ pub struct AutoIniter<A: Archetype> {
     pub f: &'static dyn AutoInitFn<A>,
 }
 
-/// A function used for [`component::SimpleInitStrategy::Auto`].
+/// A function used for [`comp::SimpleInitStrategy::Auto`].
 ///
 /// This trait is blanket-implemented for all functions that take up to 32 simple component
 /// parameters.
@@ -121,7 +121,7 @@ pub trait AutoInitFn<A: Archetype>: 'static {
     fn populate(&self, map: &mut Map<A>);
 
     /// Returns the component types required by this function.
-    fn deps(&self) -> Vec<(TypeId, component::SimpleInitStrategy<A>)>;
+    fn deps(&self) -> Vec<(TypeId, comp::SimpleInitStrategy<A>)>;
 }
 
 pub struct ComponentDescriptor {}
@@ -129,8 +129,8 @@ pub struct ComponentDescriptor {}
 macro_rules! impl_auto_init_fn {
     ($($deps:ident),* $(,)?) => {
         impl<
-            A: Archetype, C: component::Simple<A>,
-            $($deps: component::Simple<A>,)*
+            A: Archetype, C: comp::Simple<A>,
+            $($deps: comp::Simple<A>,)*
         > AutoInitFn<A> for fn(
             $(&$deps,)*
         ) -> C {
@@ -151,9 +151,9 @@ macro_rules! impl_auto_init_fn {
                 map.insert_simple(populate);
             }
 
-            fn deps(&self) -> Vec<(TypeId, component::SimpleInitStrategy<A>)> {
+            fn deps(&self) -> Vec<(TypeId, comp::SimpleInitStrategy<A>)> {
                 vec![
-                    $((TypeId::of::<$deps>(), <$deps as component::Simple<A>>::INIT_STRATEGY),)*
+                    $((TypeId::of::<$deps>(), <$deps as comp::Simple<A>>::INIT_STRATEGY),)*
                 ]
             }
         }
@@ -179,11 +179,11 @@ mod test {
     use super::*;
     use crate::TestArch;
 
-    #[component(dynec_as(crate), of = TestArch)]
+    #[comp(dynec_as(crate), of = TestArch)]
     struct Comp1(i32);
 
     #[derive(Debug, PartialEq)]
-    #[component(dynec_as(crate), of = TestArch)]
+    #[comp(dynec_as(crate), of = TestArch)]
     struct Comp2(i32);
 
     #[test]

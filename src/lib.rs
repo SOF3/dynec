@@ -1,5 +1,8 @@
 //! An opinionated ECS framework.
 //!
+//! [![CI](https://github.com/SOF3/dynec/actions/workflows/ci.yml/badge.svg)](https://github.com/SOF3/dynec/actions/workflows/ci.yml)
+//! [![codecov](https://codecov.io/gh/SOF3/dynec/branch/master/graph/badge.svg?token=WAU2FOLHVW)](https://codecov.io/gh/SOF3/dynec)
+//!
 //! # Design goals (i.e. opinions)
 //! ## Leverage type checker
 //! The design goal of dynec is to leverage compile-time type checking

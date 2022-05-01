@@ -148,7 +148,7 @@ mod components_tests {}
 ///
 /// todo!(
 ///     "Verify that this test case panics upon world build if `Qux` is used in a system and the \
-///          global is not initialized"
+///      global is not initialized"
 /// )
 /// ```
 #[doc(inline)]

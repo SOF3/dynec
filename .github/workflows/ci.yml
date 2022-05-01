@@ -18,11 +18,12 @@ jobs:
           submodules: true
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
+          toolchain: stable
           profile: default
           default: true
           components: rustfmt
       - run: cargo fmt --all -- --check
+      - run: make README.md && git diff --exit-code
   lint:
     name: clippy lint
     runs-on: ubuntu-latest

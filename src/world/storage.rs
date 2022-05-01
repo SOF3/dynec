@@ -45,7 +45,8 @@ impl<A: Archetype, C: component::Simple<A>> AnySimpleStorage<A> for Storage<A, C
             self.inner.insert(entity, comp);
         } else if let component::SimplePresence::Required = C::PRESENCE {
             panic!(
-                "Cannot create an entity of type {} without giving a component of type {}",
+                "Cannot create an entity of type `{}` without explicitly passing a component of \
+                 type `{}`",
                 any::type_name::<A>(),
                 any::type_name::<C>(),
             );

@@ -140,9 +140,10 @@ macro_rules! impl_auto_init_fn {
                         match map.get_simple::<$deps>() {
                             Some(comp) => comp,
                             None => panic!(
-                                "Cannot initialize entity of type {} without explicitly passing a component of type {}",
+                                "Cannot create an entity of type `{}` without explicitly passing a component of type `{}`, which is required for `{}`",
                                 any::type_name::<A>(),
                                 any::type_name::<$deps>(),
+                                any::type_name::<C>(),
                             ),
                         },
                     )*

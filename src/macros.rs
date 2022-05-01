@@ -262,7 +262,8 @@ mod global_tests {}
 /// so mutating states has no effect on the system schedule.
 ///
 /// # Example
-/// ```
+/// ```no_run
+/// # // TODO remove no_run here
 /// use dynec::system;
 ///
 /// #[dynec::global(initial = Title("hello world"))]

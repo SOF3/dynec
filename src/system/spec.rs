@@ -68,6 +68,7 @@ pub struct SimpleRequest {
 }
 
 impl SimpleRequest {
+    /// Creates a new simple component request with types known at compile time.
     pub fn new<A: Archetype, C: component::Simple<A>>(mutable: bool) -> Self {
         Self {
             archetype: ArchetypeDescriptor::of::<A>(),
@@ -106,6 +107,7 @@ pub struct IsotopeRequest {
 }
 
 impl IsotopeRequest {
+    /// Creates a new isotope component request with types known at compile time.
     pub fn new<A: Archetype, C: component::Isotope<A>>(
         discrim: Option<Vec<usize>>,
         mutable: bool,

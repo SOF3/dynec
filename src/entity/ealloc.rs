@@ -28,7 +28,7 @@ impl Ealloc {
 
     /// Allocates an entity ID.
     pub(crate) fn allocate_near(&mut self, hint: entity::Raw) -> entity::Raw {
-        let mut left = self.recycled.range(..hint);
+        let mut left = self.recycled.range(..hint).rev();
         let mut right = self.recycled.range(hint..);
 
         let selected = match (left.next(), right.next()) {
@@ -41,7 +41,7 @@ impl Ealloc {
                 let right_int = right.0.get();
                 let right_delta = right_int - hint_int;
 
-                Some(if left_delta < right_delta { left } else { right })
+                Some(if left_delta <= right_delta { left } else { right })
             }
             (Some(left), None) => Some(left),
             (None, Some(right)) => Some(right),
@@ -73,5 +73,69 @@ impl Ealloc {
         if !new {
             panic!("An entity is freed more than once");
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Ealloc;
+
+    #[test]
+    fn test_realloc_freed() {
+        let mut ealloc = Ealloc::default();
+        let r1 = ealloc.allocate();
+        let r2 = ealloc.allocate();
+        let r3 = ealloc.allocate();
+
+        assert_eq!(r1.0.get(), 1);
+        assert_eq!(r2.0.get(), 2);
+        assert_eq!(r3.0.get(), 3);
+
+        ealloc.free(r2);
+
+        let r4 = ealloc.allocate();
+        let r5 = ealloc.allocate();
+
+        assert_eq!(r4.0.get(), 2);
+        assert_eq!(r5.0.get(), 4);
+
+        ealloc.free(r3);
+        ealloc.free(r5);
+
+        let r6 = ealloc.allocate();
+        let r7 = ealloc.allocate();
+        let r8 = ealloc.allocate();
+
+        assert_eq!(r6.0.get(), 3);
+        assert_eq!(r7.0.get(), 4);
+        assert_eq!(r8.0.get(), 5);
+    }
+
+    #[test]
+    fn test_realloc_near() {
+        let mut ealloc = Ealloc::default();
+
+        let r1 = ealloc.allocate();
+        let r2 = ealloc.allocate();
+        let r3 = ealloc.allocate();
+        let r4 = ealloc.allocate();
+
+        ealloc.free(r2);
+        ealloc.free(r3);
+
+        let r5 = ealloc.allocate_near(r4);
+        let r6 = ealloc.allocate_near(r4);
+
+        assert_eq!(r5.0.get(), 3);
+        assert_eq!(r6.0.get(), 2);
+
+        ealloc.free(r5);
+        ealloc.free(r6);
+
+        let r7 = ealloc.allocate_near(r1);
+        let r8 = ealloc.allocate_near(r1);
+
+        assert_eq!(r7.0.get(), 2);
+        assert_eq!(r8.0.get(), 3);
     }
 }

@@ -9,6 +9,15 @@ use crate::{entity_ref, util};
 pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
     let args: Attr<FnOpt> = syn::parse2(args)?;
 
+    let crate_name = if let Some((_, ts)) = args.find_one(|opt| match opt {
+        FnOpt::DynecAs(_, ts) => Some(ts),
+        _ => None,
+    })? {
+        ts.clone()
+    } else {
+        quote!(::dynec)
+    };
+
     let archetypes: Vec<_> = args
         .items
         .iter()
@@ -34,8 +43,8 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
         ));
     }
     let presence = match presence {
-        Some(_) => quote!(::dynec::component::SimplePresence::Required),
-        None => quote!(::dynec::component::SimplePresence::Optional),
+        Some(_) => quote!(#crate_name::component::SimplePresence::Required),
+        None => quote!(#crate_name::component::SimplePresence::Optional),
     };
 
     let finalizer = args.find_one(|arg| match arg {
@@ -64,40 +73,43 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             let init = match init {
                 Some((_, func)) => {
                     let func = func.as_fn_ptr(&generics)?;
-                    quote!(::dynec::component::IsotopeInitStrategy::Default(#func))
+                    quote!(#crate_name::component::IsotopeInitStrategy::Default(#func))
                 }
-                None => quote!(::dynec::component::IsotopeInitStrategy::None),
+                None => quote!(#crate_name::component::IsotopeInitStrategy::None),
             };
 
             output.extend(generics.impl_trait(
-                quote!(::dynec::component::Isotope<#archetype>),
+                quote!(#crate_name::component::Isotope<#archetype>),
                 quote! {
                     type Discrim = #discrim;
 
-                    const INIT_STRATEGY: ::dynec::component::IsotopeInitStrategy<Self> = #init;
+                    const INIT_STRATEGY: #crate_name::component::IsotopeInitStrategy<Self> = #init;
                 },
             ));
         } else {
             let init = match init {
                 Some((_, func)) => {
                     let func = func.as_fn_ptr(&generics)?;
-                    quote!(::dynec::component::SimpleInitStrategy::Auto(
-                        ::dynec::component::AutoIniter { f: &#func }
+                    quote!(#crate_name::component::SimpleInitStrategy::Auto(
+                        #crate_name::component::AutoIniter { f: &#func }
                     ))
                 }
-                None => quote!(::dynec::component::SimpleInitStrategy::None),
+                None => quote!(#crate_name::component::SimpleInitStrategy::None),
             };
 
-            output.extend(generics.impl_trait(quote!(::dynec::component::Simple<#archetype>), quote! {
-                const PRESENCE: ::dynec::component::SimplePresence = #presence;
-                const INIT_STRATEGY: ::dynec::component::SimpleInitStrategy<#archetype, Self> = #init;
-                const IS_FINALIZER: bool = #finalizer;
-            }));
+            output.extend(generics.impl_trait(
+                quote!(#crate_name::component::Simple<#archetype>),
+                quote! {
+                    const PRESENCE: #crate_name::component::SimplePresence = #presence;
+                    const INIT_STRATEGY: #crate_name::component::SimpleInitStrategy<#archetype> = #init;
+                    const IS_FINALIZER: bool = #finalizer;
+                },
+            ));
         }
     }
 
     let mut mut_input = input;
-    let entity_ref = entity_ref::entity_ref(&mut mut_input)?;
+    let entity_ref = entity_ref::entity_ref(&mut mut_input, crate_name)?;
 
     Ok(quote! {
         #mut_input
@@ -107,6 +119,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
 }
 
 enum FnOpt {
+    DynecAs(syn::token::Paren, TokenStream),
     Of(syn::Token![=], syn::Type),
     Isotope(syn::Token![=], syn::Type),
     Required,
@@ -119,6 +132,12 @@ impl Parse for Named<FnOpt> {
         let name = input.parse::<syn::Ident>()?;
 
         let value = match name.to_string().as_str() {
+            "dynec_as" => {
+                let inner;
+                let paren = syn::parenthesized!(inner in input);
+                let args = inner.parse()?;
+                FnOpt::DynecAs(paren, args)
+            }
             "of" => {
                 let eq: syn::Token![=] = input.parse()?;
                 let ty = input.parse::<syn::Type>()?;
@@ -199,7 +218,7 @@ impl FunctionRefWithArity {
             }
         };
 
-        let args = (0..arity).map(|_| quote!(_));
+        let args = (0..arity).map(|_| quote!(&_));
 
         Ok(quote! {
             (#expr as fn(#(#args),*) -> _)

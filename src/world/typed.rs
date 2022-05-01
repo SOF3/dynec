@@ -82,7 +82,11 @@ fn toposort_populators<A: Archetype>(
     while let Some((ty, desc)) = unprocessed.pop() {
         let deps = desc.deps();
 
-        let mut dep_count = 0;
+        let request = if let hash_map::Entry::Vacant(entry) = requests.entry(ty) {
+            entry.insert(Request { dep_count: 0, populator: Box::new(|map| desc.populate(map)) })
+        } else {
+            continue;
+        };
 
         for (dep_ty, dep_strategy) in deps {
             dependents_map.entry(dep_ty).or_default().push(ty); // ty is pushed to unprocessed, which will fill requests later
@@ -91,20 +95,13 @@ fn toposort_populators<A: Archetype>(
                 component::SimpleInitStrategy::None => continue,
                 // push to unprocessed again to recurse
                 component::SimpleInitStrategy::Auto(initer) => {
-                    dep_count += 1;
-                    unprocessed.push((ty, initer.f));
+                    request.dep_count += 1;
+                    unprocessed.push((dep_ty, initer.f));
                 }
             }
         }
 
-        let new = if let hash_map::Entry::Vacant(entry) = requests.entry(ty) {
-            entry.insert(Request { dep_count, populator: Box::new(|map| desc.populate(map)) });
-            true
-        } else {
-            false
-        };
-
-        if dep_count == 0 {
+        if request.dep_count == 0 {
             heads.push(ty); // requests.entry(ty) inserted above
         }
     }

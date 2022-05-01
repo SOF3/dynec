@@ -203,7 +203,7 @@ struct Generation(num::Wrapping<u32>);
 #[cfg(test)]
 mod tests {
     use super::{Raw, Ref};
-    use crate::test_util::TestArch;
+    use crate::TestArch;
 
     // ensure that Ref<Archetype = A> for a fixed `A` must be object-safe.
     fn test_object_safety() {

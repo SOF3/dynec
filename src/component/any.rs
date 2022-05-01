@@ -70,12 +70,21 @@ impl<A: Archetype> Default for Map<A> {
 impl<A: Archetype> Map<A> {
     /// Inserts a simple component into the map.
     pub fn insert_simple<C: component::Simple<A>>(&mut self, component: C) {
-        self.map.insert(Identifier::simple::<A, C>(), Box::new(component));
+        let prev = self.map.insert(Identifier::simple::<A, C>(), Box::new(component));
+        if prev.is_some() {
+            panic!("Cannot insert the same simple component into the same component::Map twice");
+        }
     }
 
     /// Inserts an isotope component into the map.
     pub fn insert_isotope<C: component::Isotope<A>>(&mut self, discrim: C::Discrim, component: C) {
-        self.map.insert(Identifier::isotope::<A, C>(discrim), Box::new(component));
+        let prev = self.map.insert(Identifier::isotope::<A, C>(discrim), Box::new(component));
+        if prev.is_some() {
+            panic!(
+                "Cannot insert the same isotope component with the same discriminant into the \
+                 same component::Map twice"
+            );
+        }
     }
 
     /// Gets a simple component from the map.
@@ -127,7 +136,16 @@ macro_rules! impl_auto_init_fn {
         ) -> C {
             fn populate(&self, map: &mut Map<A>) {
                 let populate = (self)(
-                    $(map.get_simple::<$deps>().expect("Incorrect dependency sorting"),)*
+                    $(
+                        match map.get_simple::<$deps>() {
+                            Some(comp) => comp,
+                            None => panic!(
+                                "Cannot initialize entity of type {} without explicitly passing a component of type {}",
+                                any::type_name::<A>(),
+                                any::type_name::<$deps>(),
+                            ),
+                        },
+                    )*
                 );
                 map.insert_simple(populate);
             }
@@ -151,41 +169,28 @@ macro_rules! impl_auto_init_fn_accumulate {
     }
 }
 impl_auto_init_fn_accumulate!(
-    P1, P2, P3,
-    P4, /* P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20, P21,
-         * P22, P23, P24, P25, P26, P27, P28, P29, P30, P31, P32 */
+    P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20, P21,
+    P22, P23, P24, P25, P26, P27, P28, P29, P30, P31, P32,
 );
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::test_util::*;
+    use crate::TestArch;
 
+    #[component(dynec_as(crate), of = TestArch)]
     struct Comp1(i32);
-    impl_test_simple_component!(
-        Comp1,
-        presence(Optional),
-        init(None),
-        finalizer(false),
-        entity_refs()
-    );
 
     #[derive(Debug, PartialEq)]
+    #[component(dynec_as(crate), of = TestArch)]
     struct Comp2(i32);
-    impl_test_simple_component!(
-        Comp2,
-        presence(Optional),
-        init(None),
-        finalizer(false),
-        entity_refs()
-    );
 
     #[test]
     fn test_auto_init_fn() {
         let auto_fn = (|comp1: &Comp1| Comp2(comp1.0 + 5)) as fn(&_) -> _;
         let mut map = Map::default();
         map.insert_simple(Comp1(2));
-        map.insert_simple(AutoInitFn::<TestArch, Comp2>::call(&auto_fn, &map));
+        AutoInitFn::<TestArch>::populate(&auto_fn, &mut map);
         assert_eq!(map.get_simple::<Comp2>(), Some(&Comp2(7)));
     }
 }

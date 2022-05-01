@@ -5,7 +5,12 @@ use syn::punctuated::Punctuated;
 use syn::Result;
 
 pub(crate) fn imp(input: TokenStream) -> Result<TokenStream> {
-    let Input { archetype, components, .. } = syn::parse2(input)?;
+    let Input { dynec_as, archetype, components, .. } = syn::parse2(input)?;
+
+    let crate_name = match dynec_as {
+        Some(ts) => ts,
+        None => quote!(::dynec),
+    };
 
     let components = components.iter().map(|component| match component {
         Component::Simple(expr) => quote! {
@@ -18,14 +23,17 @@ pub(crate) fn imp(input: TokenStream) -> Result<TokenStream> {
         },
     });
 
-    Ok(quote! {{
-        let mut __dynec_map = ::dynec::component::Map::<#archetype>::default();
+    let output = quote! {{
+        let mut __dynec_map = #crate_name::component::Map::<#archetype>::default();
         #(#components)*
         __dynec_map
-    }})
+    }};
+
+    Ok(output)
 }
 
 struct Input {
+    dynec_as:   Option<TokenStream>,
     archetype:  syn::Type,
     _arrow:     syn::Token![=>],
     components: Punctuated<Component, syn::Token![,]>,
@@ -33,11 +41,21 @@ struct Input {
 
 impl Parse for Input {
     fn parse(input: ParseStream) -> Result<Self> {
+        let mut dynec_as = None;
+
+        while input.peek(syn::Token![@]) {
+            input.parse::<syn::Token![@]>()?;
+            let inner;
+            syn::parenthesized!(inner in input);
+            let args = inner.parse()?;
+            dynec_as = Some(args);
+        }
+
         let archetype = input.parse()?;
         let arrow = input.parse()?;
         let components = Punctuated::parse_terminated(input)?;
 
-        Ok(Self { archetype, _arrow: arrow, components })
+        Ok(Self { dynec_as, archetype, _arrow: arrow, components })
     }
 }
 

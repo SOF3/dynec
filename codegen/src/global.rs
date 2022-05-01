@@ -12,11 +12,21 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
     let input: syn::DeriveInput = syn::parse2(input)?;
     let ident = &input.ident;
 
+    let mut crate_name = quote!(::dynec);
+
     if !args.is_empty() {
         let args: Attr<FnOpt> = syn::parse2(args)?;
 
+        if let Some((_, ts)) = args.find_one(|opt| match opt {
+            FnOpt::DynecAs(_, ts) => Some(ts),
+            _ => None,
+        })? {
+            crate_name = ts.clone();
+        }
+
         if let Some((_, value)) = args.find_one(|opt| match opt {
             FnOpt::Initial(value) => Some(value),
+            _ => None,
         })? {
             let value = match value {
                 Some((_, value)) => quote!(#value),
@@ -32,13 +42,13 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
     }
 
     let global_impl = quote! {
-        impl ::dynec::Global for #ident {
+        impl #crate_name::Global for #ident {
             #initial
         }
     };
 
     let mut mut_input = input;
-    let entity_ref = entity_ref::entity_ref(&mut mut_input)?;
+    let entity_ref = entity_ref::entity_ref(&mut mut_input, crate_name)?;
 
     Ok(quote! {
         #mut_input
@@ -48,6 +58,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
 }
 
 enum FnOpt {
+    DynecAs(syn::token::Paren, TokenStream),
     Initial(Option<(syn::Token![=], syn::Expr)>),
 }
 
@@ -56,6 +67,12 @@ impl Parse for Named<FnOpt> {
         let name = input.parse::<syn::Ident>()?;
 
         let value = match name.to_string().as_str() {
+            "dynec_as" => {
+                let inner;
+                let paren = syn::parenthesized!(inner in input);
+                let args = inner.parse()?;
+                FnOpt::DynecAs(paren, args)
+            }
             "initial" => {
                 let value = if input.peek(syn::Token![=]) {
                     let eq: syn::Token![=] = input.parse()?;

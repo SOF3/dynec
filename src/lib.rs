@@ -67,9 +67,6 @@ mod macros;
 #[doc(inline)]
 pub use macros::*;
 
-#[macro_use]
-mod test_util;
-
 pub mod archetype;
 #[doc(inline)]
 pub use archetype::Archetype;
@@ -93,3 +90,9 @@ pub use world::new;
 pub use world::World;
 
 pub mod util;
+
+#[cfg(test)]
+enum TestArch {}
+
+#[cfg(test)]
+impl Archetype for TestArch {}

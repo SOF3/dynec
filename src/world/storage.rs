@@ -1,3 +1,4 @@
+use std::any;
 use std::collections::BTreeMap;
 use std::marker::PhantomData;
 use std::mem::{self, MaybeUninit};
@@ -42,6 +43,12 @@ impl<A: Archetype, C: component::Simple<A>> AnySimpleStorage<A> for Storage<A, C
     fn init_with(&mut self, entity: entity::Raw, components: &mut component::Map<A>) {
         if let Some(comp) = components.remove_simple::<C>() {
             self.inner.insert(entity, comp);
+        } else if let component::SimplePresence::Required = C::PRESENCE {
+            panic!(
+                "Cannot create an entity of type {} without giving a component of type {}",
+                any::type_name::<A>(),
+                any::type_name::<C>(),
+            );
         }
     }
 }

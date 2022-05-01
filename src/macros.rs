@@ -106,6 +106,16 @@ mod component_tests {}
 /// dynec::archetype!(Foo);
 /// let empty = dynec::components![Foo =>];
 /// assert_eq!(empty.len(), 0);
+///
+/// #[dynec::component(of = Foo)]
+/// struct Comp1;
+/// #[dynec::component(of = Foo)]
+/// struct Comp2(i32);
+/// #[dynec::component(of = Foo)]
+/// struct Comp3{ value: i32 };
+///
+/// let empty = dynec::components![Foo => Comp1, Comp2(2), Comp3{ value: 3 }];
+/// assert_eq!(empty.len(), 3);
 /// ```
 #[doc(inline)]
 pub use dynec_codegen::components;

@@ -98,8 +98,8 @@ mod tests {
     use std::collections::HashMap;
 
     use super::Permutation;
-    use crate::entity::{self, RefId};
-    use crate::test_util::TestArch;
+    use crate::entity::RefId;
+    use crate::{entity, TestArch};
 
     #[test]
     fn test_from_comparator() {

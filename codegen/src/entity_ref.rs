@@ -6,10 +6,13 @@ use crate::util;
 
 pub(crate) fn derive(input: TokenStream) -> Result<TokenStream> {
     let mut input: syn::DeriveInput = syn::parse2(input)?;
-    entity_ref(&mut input)
+    entity_ref(&mut input, quote!(::dynec))
 }
 
-pub(crate) fn entity_ref(input: &mut syn::DeriveInput) -> Result<TokenStream> {
+pub(crate) fn entity_ref(
+    input: &mut syn::DeriveInput,
+    crate_name: TokenStream,
+) -> Result<TokenStream> {
     let generics = util::parse_generics(input);
 
     let output = match &mut input.data {
@@ -26,15 +29,15 @@ pub(crate) fn entity_ref(input: &mut syn::DeriveInput) -> Result<TokenStream> {
             }
 
             generics.impl_trait(
-                quote!(::dynec::entity::Referrer),
+                quote!(#crate_name::entity::Referrer),
                 quote! {
-                    fn visit_each<'s, F: ::dynec::entity::Visitor<'s>>(
+                    fn visit_each<'s, F: #crate_name::entity::Visitor<'s>>(
                         &'s mut self,
                         archetype: ::std::any::TypeId,
                         visitor: &mut F,
                     ) {
                         #(
-                            ::dynec::entity::Referrer::visit_each(
+                            #crate_name::entity::Referrer::visit_each(
                                 &mut #fields,
                                 archetype,
                                 visitor,
@@ -84,7 +87,7 @@ pub(crate) fn entity_ref(input: &mut syn::DeriveInput) -> Result<TokenStream> {
                 arms.push(quote! {
                     Self::#variant_ident #pattern => {
                         #(
-                            ::dynec::entity::Referrer::visit_each(
+                            #crate_name::entity::Referrer::visit_each(
                                 &mut #fields,
                                 arhcetype,
                                 visitor,
@@ -95,9 +98,9 @@ pub(crate) fn entity_ref(input: &mut syn::DeriveInput) -> Result<TokenStream> {
             }
 
             generics.impl_trait(
-                quote!(::dynec::entity::Referrer),
+                quote!(#crate_name::entity::Referrer),
                 quote! {
-                    fn visit_each<'s, F: ::dynec::entity::Visitor<'s>>(
+                    fn visit_each<'s, F: #crate_name::entity::Visitor<'s>>(
                         &'s mut self,
                         archetype: ::std::any::TypeId,
                         visitor: &mut F,

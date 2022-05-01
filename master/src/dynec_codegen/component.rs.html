@@ -211,6 +211,25 @@
 <span id="206">206</span>
 <span id="207">207</span>
 <span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">proc_macro2::TokenStream</span>;
 <span class="kw">use</span> <span class="ident">quote::quote</span>;
 <span class="kw">use</span> <span class="ident">syn::parse</span>::{<span class="ident">Parse</span>, <span class="ident">ParseStream</span>};
@@ -221,6 +240,15 @@
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">imp</span>(<span class="ident">args</span>: <span class="ident">TokenStream</span>, <span class="ident">input</span>: <span class="ident">TokenStream</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TokenStream</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">args</span>: <span class="ident">Attr</span><span class="op">&lt;</span><span class="ident">FnOpt</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">syn::parse2</span>(<span class="ident">args</span>)<span class="question-mark">?</span>;
+
+    <span class="kw">let</span> <span class="ident">crate_name</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="kw">_</span>, <span class="ident">ts</span>)) <span class="op">=</span> <span class="ident">args</span>.<span class="ident">find_one</span>(<span class="op">|</span><span class="ident">opt</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">opt</span> {
+        <span class="ident">FnOpt::DynecAs</span>(<span class="kw">_</span>, <span class="ident">ts</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">ts</span>),
+        <span class="kw">_</span> =&gt; <span class="prelude-val">None</span>,
+    })<span class="question-mark">?</span> {
+        <span class="ident">ts</span>.<span class="ident">clone</span>()
+    } <span class="kw">else</span> {
+        <span class="macro">quote!</span>(<span class="ident">::dynec</span>)
+    };
 
     <span class="kw">let</span> <span class="ident">archetypes</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">args</span>
         .<span class="ident">items</span>
@@ -247,8 +275,8 @@
         ));
     }
     <span class="kw">let</span> <span class="ident">presence</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">presence</span> {
-        <span class="prelude-val">Some</span>(<span class="kw">_</span>) =&gt; <span class="macro">quote!</span>(<span class="ident">::dynec::component::SimplePresence::Required</span>),
-        <span class="prelude-val">None</span> =&gt; <span class="macro">quote!</span>(<span class="ident">::dynec::component::SimplePresence::Optional</span>),
+        <span class="prelude-val">Some</span>(<span class="kw">_</span>) =&gt; <span class="macro">quote!</span>(#<span class="ident">crate_name::component::SimplePresence::Required</span>),
+        <span class="prelude-val">None</span> =&gt; <span class="macro">quote!</span>(#<span class="ident">crate_name::component::SimplePresence::Optional</span>),
     };
 
     <span class="kw">let</span> <span class="ident">finalizer</span> <span class="op">=</span> <span class="ident">args</span>.<span class="ident">find_one</span>(<span class="op">|</span><span class="ident">arg</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">arg</span> {
@@ -277,40 +305,43 @@
             <span class="kw">let</span> <span class="ident">init</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">init</span> {
                 <span class="prelude-val">Some</span>((<span class="kw">_</span>, <span class="ident">func</span>)) =&gt; {
                     <span class="kw">let</span> <span class="ident">func</span> <span class="op">=</span> <span class="ident">func</span>.<span class="ident">as_fn_ptr</span>(<span class="kw-2">&amp;</span><span class="ident">generics</span>)<span class="question-mark">?</span>;
-                    <span class="macro">quote!</span>(<span class="ident">::dynec::component::IsotopeInitStrategy::Default</span>(#<span class="ident">func</span>))
+                    <span class="macro">quote!</span>(#<span class="ident">crate_name::component::IsotopeInitStrategy::Default</span>(#<span class="ident">func</span>))
                 }
-                <span class="prelude-val">None</span> =&gt; <span class="macro">quote!</span>(<span class="ident">::dynec::component::IsotopeInitStrategy::None</span>),
+                <span class="prelude-val">None</span> =&gt; <span class="macro">quote!</span>(#<span class="ident">crate_name::component::IsotopeInitStrategy::None</span>),
             };
 
             <span class="ident">output</span>.<span class="ident">extend</span>(<span class="ident">generics</span>.<span class="ident">impl_trait</span>(
-                <span class="macro">quote!</span>(<span class="ident">::dynec::component::Isotope</span><span class="op">&lt;</span>#<span class="ident">archetype</span><span class="op">&gt;</span>),
+                <span class="macro">quote!</span>(#<span class="ident">crate_name::component::Isotope</span><span class="op">&lt;</span>#<span class="ident">archetype</span><span class="op">&gt;</span>),
                 <span class="macro">quote!</span> {
                     <span class="kw">type</span> <span class="ident">Discrim</span> <span class="op">=</span> #<span class="ident">discrim</span>;
 
-                    <span class="kw">const</span> <span class="ident">INIT_STRATEGY</span>: <span class="ident">::dynec::component::IsotopeInitStrategy</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> <span class="op">=</span> #<span class="ident">init</span>;
+                    <span class="kw">const</span> <span class="ident">INIT_STRATEGY</span>: #<span class="ident">crate_name::component::IsotopeInitStrategy</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> <span class="op">=</span> #<span class="ident">init</span>;
                 },
             ));
         } <span class="kw">else</span> {
             <span class="kw">let</span> <span class="ident">init</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">init</span> {
                 <span class="prelude-val">Some</span>((<span class="kw">_</span>, <span class="ident">func</span>)) =&gt; {
                     <span class="kw">let</span> <span class="ident">func</span> <span class="op">=</span> <span class="ident">func</span>.<span class="ident">as_fn_ptr</span>(<span class="kw-2">&amp;</span><span class="ident">generics</span>)<span class="question-mark">?</span>;
-                    <span class="macro">quote!</span>(<span class="ident">::dynec::component::SimpleInitStrategy::Auto</span>(
-                        <span class="ident">::dynec::component::AutoIniter</span> { <span class="ident">f</span>: <span class="kw-2">&amp;</span>#<span class="ident">func</span> }
+                    <span class="macro">quote!</span>(#<span class="ident">crate_name::component::SimpleInitStrategy::Auto</span>(
+                        #<span class="ident">crate_name::component::AutoIniter</span> { <span class="ident">f</span>: <span class="kw-2">&amp;</span>#<span class="ident">func</span> }
                     ))
                 }
-                <span class="prelude-val">None</span> =&gt; <span class="macro">quote!</span>(<span class="ident">::dynec::component::SimpleInitStrategy::None</span>),
+                <span class="prelude-val">None</span> =&gt; <span class="macro">quote!</span>(#<span class="ident">crate_name::component::SimpleInitStrategy::None</span>),
             };
 
-            <span class="ident">output</span>.<span class="ident">extend</span>(<span class="ident">generics</span>.<span class="ident">impl_trait</span>(<span class="macro">quote!</span>(<span class="ident">::dynec::component::Simple</span><span class="op">&lt;</span>#<span class="ident">archetype</span><span class="op">&gt;</span>), <span class="macro">quote!</span> {
-                <span class="kw">const</span> <span class="ident">PRESENCE</span>: <span class="ident">::dynec::component::SimplePresence</span> <span class="op">=</span> #<span class="ident">presence</span>;
-                <span class="kw">const</span> <span class="ident">INIT_STRATEGY</span>: <span class="ident">::dynec::component::SimpleInitStrategy</span><span class="op">&lt;</span>#<span class="ident">archetype</span>, <span class="self">Self</span><span class="op">&gt;</span> <span class="op">=</span> #<span class="ident">init</span>;
-                <span class="kw">const</span> <span class="ident">IS_FINALIZER</span>: <span class="ident">bool</span> <span class="op">=</span> #<span class="ident">finalizer</span>;
-            }));
+            <span class="ident">output</span>.<span class="ident">extend</span>(<span class="ident">generics</span>.<span class="ident">impl_trait</span>(
+                <span class="macro">quote!</span>(#<span class="ident">crate_name::component::Simple</span><span class="op">&lt;</span>#<span class="ident">archetype</span><span class="op">&gt;</span>),
+                <span class="macro">quote!</span> {
+                    <span class="kw">const</span> <span class="ident">PRESENCE</span>: #<span class="ident">crate_name::component::SimplePresence</span> <span class="op">=</span> #<span class="ident">presence</span>;
+                    <span class="kw">const</span> <span class="ident">INIT_STRATEGY</span>: #<span class="ident">crate_name::component::SimpleInitStrategy</span><span class="op">&lt;</span>#<span class="ident">archetype</span><span class="op">&gt;</span> <span class="op">=</span> #<span class="ident">init</span>;
+                    <span class="kw">const</span> <span class="ident">IS_FINALIZER</span>: <span class="ident">bool</span> <span class="op">=</span> #<span class="ident">finalizer</span>;
+                },
+            ));
         }
     }
 
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">mut_input</span> <span class="op">=</span> <span class="ident">input</span>;
-    <span class="kw">let</span> <span class="ident">entity_ref</span> <span class="op">=</span> <span class="ident">entity_ref::entity_ref</span>(<span class="kw-2">&amp;mut</span> <span class="ident">mut_input</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">entity_ref</span> <span class="op">=</span> <span class="ident">entity_ref::entity_ref</span>(<span class="kw-2">&amp;mut</span> <span class="ident">mut_input</span>, <span class="ident">crate_name</span>)<span class="question-mark">?</span>;
 
     <span class="prelude-val">Ok</span>(<span class="macro">quote!</span> {
         #<span class="ident">mut_input</span>
@@ -320,6 +351,7 @@
 }
 
 <span class="kw">enum</span> <span class="ident">FnOpt</span> {
+    <span class="ident">DynecAs</span>(<span class="ident">syn::token::Paren</span>, <span class="ident">TokenStream</span>),
     <span class="ident">Of</span>(<span class="macro">syn::Token!</span>[<span class="op">=</span>], <span class="ident">syn::Type</span>),
     <span class="ident">Isotope</span>(<span class="macro">syn::Token!</span>[<span class="op">=</span>], <span class="ident">syn::Type</span>),
     <span class="ident">Required</span>,
@@ -332,6 +364,12 @@
         <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">syn::Ident</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
 
         <span class="kw">let</span> <span class="ident">value</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">name</span>.<span class="ident">to_string</span>().<span class="ident">as_str</span>() {
+            <span class="string">&quot;dynec_as&quot;</span> =&gt; {
+                <span class="kw">let</span> <span class="ident">inner</span>;
+                <span class="kw">let</span> <span class="ident">paren</span> <span class="op">=</span> <span class="macro">syn::parenthesized!</span>(<span class="ident">inner</span> <span class="kw">in</span> <span class="ident">input</span>);
+                <span class="kw">let</span> <span class="ident">args</span> <span class="op">=</span> <span class="ident">inner</span>.<span class="ident">parse</span>()<span class="question-mark">?</span>;
+                <span class="ident">FnOpt::DynecAs</span>(<span class="ident">paren</span>, <span class="ident">args</span>)
+            }
             <span class="string">&quot;of&quot;</span> =&gt; {
                 <span class="kw">let</span> <span class="ident">eq</span>: <span class="macro">syn::Token!</span>[<span class="op">=</span>] <span class="op">=</span> <span class="ident">input</span>.<span class="ident">parse</span>()<span class="question-mark">?</span>;
                 <span class="kw">let</span> <span class="ident">ty</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">syn::Type</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
@@ -412,7 +450,7 @@
             }
         };
 
-        <span class="kw">let</span> <span class="ident">args</span> <span class="op">=</span> (<span class="number">0</span>..<span class="ident">arity</span>).<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="macro">quote!</span>(<span class="kw">_</span>));
+        <span class="kw">let</span> <span class="ident">args</span> <span class="op">=</span> (<span class="number">0</span>..<span class="ident">arity</span>).<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="macro">quote!</span>(<span class="kw-2">&amp;</span><span class="kw">_</span>));
 
         <span class="prelude-val">Ok</span>(<span class="macro">quote!</span> {
             (#<span class="ident">expr</span> <span class="kw">as</span> <span class="kw">fn</span>(#(#<span class="ident">args</span>),<span class="kw-2">*</span>) -&gt; <span class="kw">_</span>)
@@ -420,5 +458,5 @@
     }
 }
 </code></pre></div>
-</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec_codegen" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (a707f4010 2022-04-29)" ></div>
+</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec_codegen" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (7c4b47696 2022-04-30)" ></div>
 </body></html>

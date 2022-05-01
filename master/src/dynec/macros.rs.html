@@ -420,6 +420,16 @@
 <span id="415">415</span>
 <span id="416">416</span>
 <span id="417">417</span>
+<span id="418">418</span>
+<span id="419">419</span>
+<span id="420">420</span>
+<span id="421">421</span>
+<span id="422">422</span>
+<span id="423">423</span>
+<span id="424">424</span>
+<span id="425">425</span>
+<span id="426">426</span>
+<span id="427">427</span>
 </pre><pre class="rust"><code><span class="doccomment">/// Declares archetypes.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// # Example</span>
@@ -528,6 +538,16 @@
 <span class="doccomment">/// dynec::archetype!(Foo);</span>
 <span class="doccomment">/// let empty = dynec::components![Foo =&gt;];</span>
 <span class="doccomment">/// assert_eq!(empty.len(), 0);</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// #[dynec::component(of = Foo)]</span>
+<span class="doccomment">/// struct Comp1;</span>
+<span class="doccomment">/// #[dynec::component(of = Foo)]</span>
+<span class="doccomment">/// struct Comp2(i32);</span>
+<span class="doccomment">/// #[dynec::component(of = Foo)]</span>
+<span class="doccomment">/// struct Comp3{ value: i32 };</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// let empty = dynec::components![Foo =&gt; Comp1, Comp2(2), Comp3{ value: 3 }];</span>
+<span class="doccomment">/// assert_eq!(empty.len(), 3);</span>
 <span class="doccomment">/// ```</span>
 <span class="attribute">#[<span class="ident">doc</span>(<span class="ident">inline</span>)]</span>
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">dynec_codegen::components</span>;
@@ -838,5 +858,5 @@
     }}
 }
 </code></pre></div>
-</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (a707f4010 2022-04-29)" ></div>
+</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (7c4b47696 2022-04-30)" ></div>
 </body></html>

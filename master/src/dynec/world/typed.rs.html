@@ -187,9 +187,6 @@
 <span id="182">182</span>
 <span id="183">183</span>
 <span id="184">184</span>
-<span id="185">185</span>
-<span id="186">186</span>
-<span id="187">187</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::any</span>::{<span class="self">self</span>, <span class="ident">Any</span>, <span class="ident">TypeId</span>};
 <span class="kw">use</span> <span class="ident">std::collections</span>::{<span class="ident">hash_map</span>, <span class="ident">HashMap</span>};
 <span class="kw">use</span> <span class="ident">std::sync::Arc</span>;
@@ -274,7 +271,11 @@
     <span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="ident">ty</span>, <span class="ident">desc</span>)) <span class="op">=</span> <span class="ident">unprocessed</span>.<span class="ident">pop</span>() {
         <span class="kw">let</span> <span class="ident">deps</span> <span class="op">=</span> <span class="ident">desc</span>.<span class="ident">deps</span>();
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dep_count</span> <span class="op">=</span> <span class="number">0</span>;
+        <span class="kw">let</span> <span class="ident">request</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="ident">hash_map::Entry::Vacant</span>(<span class="ident">entry</span>) <span class="op">=</span> <span class="ident">requests</span>.<span class="ident">entry</span>(<span class="ident">ty</span>) {
+            <span class="ident">entry</span>.<span class="ident">insert</span>(<span class="ident">Request</span> { <span class="ident">dep_count</span>: <span class="number">0</span>, <span class="ident">populator</span>: <span class="ident">Box::new</span>(<span class="op">|</span><span class="ident">map</span><span class="op">|</span> <span class="ident">desc</span>.<span class="ident">populate</span>(<span class="ident">map</span>)) })
+        } <span class="kw">else</span> {
+            <span class="kw">continue</span>;
+        };
 
         <span class="kw">for</span> (<span class="ident">dep_ty</span>, <span class="ident">dep_strategy</span>) <span class="kw">in</span> <span class="ident">deps</span> {
             <span class="ident">dependents_map</span>.<span class="ident">entry</span>(<span class="ident">dep_ty</span>).<span class="ident">or_default</span>().<span class="ident">push</span>(<span class="ident">ty</span>); <span class="comment">// ty is pushed to unprocessed, which will fill requests later</span>
@@ -283,20 +284,13 @@
                 <span class="ident">component::SimpleInitStrategy::None</span> =&gt; <span class="kw">continue</span>,
                 <span class="comment">// push to unprocessed again to recurse</span>
                 <span class="ident">component::SimpleInitStrategy::Auto</span>(<span class="ident">initer</span>) =&gt; {
-                    <span class="ident">dep_count</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
-                    <span class="ident">unprocessed</span>.<span class="ident">push</span>((<span class="ident">ty</span>, <span class="ident">initer</span>.<span class="ident">f</span>));
+                    <span class="ident">request</span>.<span class="ident">dep_count</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+                    <span class="ident">unprocessed</span>.<span class="ident">push</span>((<span class="ident">dep_ty</span>, <span class="ident">initer</span>.<span class="ident">f</span>));
                 }
             }
         }
 
-        <span class="kw">let</span> <span class="ident">new</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="ident">hash_map::Entry::Vacant</span>(<span class="ident">entry</span>) <span class="op">=</span> <span class="ident">requests</span>.<span class="ident">entry</span>(<span class="ident">ty</span>) {
-            <span class="ident">entry</span>.<span class="ident">insert</span>(<span class="ident">Request</span> { <span class="ident">dep_count</span>, <span class="ident">populator</span>: <span class="ident">Box::new</span>(<span class="op">|</span><span class="ident">map</span><span class="op">|</span> <span class="ident">desc</span>.<span class="ident">populate</span>(<span class="ident">map</span>)) });
-            <span class="bool-val">true</span>
-        } <span class="kw">else</span> {
-            <span class="bool-val">false</span>
-        };
-
-        <span class="kw">if</span> <span class="ident">dep_count</span> <span class="op">==</span> <span class="number">0</span> {
+        <span class="kw">if</span> <span class="ident">request</span>.<span class="ident">dep_count</span> <span class="op">==</span> <span class="number">0</span> {
             <span class="ident">heads</span>.<span class="ident">push</span>(<span class="ident">ty</span>); <span class="comment">// requests.entry(ty) inserted above</span>
         }
     }
@@ -378,5 +372,5 @@
     <span class="kw">fn</span> <span class="ident">as_any_mut</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut</span> <span class="kw">dyn</span> <span class="ident">Any</span> { <span class="self">self</span> }
 }
 </code></pre></div>
-</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (a707f4010 2022-04-29)" ></div>
+</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (7c4b47696 2022-04-30)" ></div>
 </body></html>

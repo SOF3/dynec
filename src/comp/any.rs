@@ -111,7 +111,7 @@ pub struct AutoIniter<A: Archetype> {
 ///
 /// This trait is blanket-implemented for all functions that take up to 32 simple component
 /// parameters.
-pub trait AutoInitFn<A: Archetype>: 'static {
+pub trait AutoInitFn<A: Archetype>: Send + Sync + 'static {
     /// Calls the underlying function, extracting the arguments.
     fn populate(&self, map: &mut Map<A>);
 

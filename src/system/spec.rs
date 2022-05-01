@@ -4,7 +4,7 @@ use std::any::Any;
 
 use crate::util::DbgTypeId;
 use crate::world::{self, storage};
-use crate::{comp, system, Archetype};
+use crate::{comp, system, Archetype, Global};
 
 /// Describes an instance of system.
 ///
@@ -49,11 +49,42 @@ impl Dependency {
 /// Indicates that the system requires a global state.
 pub struct GlobalRequest {
     /// The type of the global state.
-    pub global:  DbgTypeId,
+    pub ty:      DbgTypeId,
+    /// A closure that calls [`Global::initial`].
+    pub initial: GlobalInitial,
     /// Whether mutable access is requested.
     pub mutable: bool,
-    /// Whether the resource requires thread safety.
-    pub sync:    bool,
+}
+
+/// Specifies the initializer for a global type.
+pub enum GlobalInitial {
+    /// Used for thread-safe globals.
+    Sync(fn() -> Box<dyn Any + Send + Sync>),
+    /// Used for thread-unsafe globals.
+    Unsync(fn() -> Box<dyn Any>),
+}
+
+impl GlobalRequest {
+    /// Creates a new thread-safe global state request with types known at compile time.
+    pub fn new_sync<G: Global + Send + Sync>(mutable: bool) -> Self {
+        Self {
+            ty: DbgTypeId::of::<G>(),
+            initial: GlobalInitial::Sync(|| Box::new(G::initial())),
+            mutable,
+        }
+    }
+
+    /// Creates a new thread-unsafe global state request with types known at compile time.
+    pub fn new_unsync<G: Global>(mutable: bool) -> Self {
+        Self {
+            ty: DbgTypeId::of::<G>(),
+            initial: GlobalInitial::Unsync(|| Box::new(G::initial())),
+            mutable,
+        }
+    }
+
+    /// Returns whether the global is thread-safe.
+    pub fn sync(&self) -> bool { matches!(&self.initial, GlobalInitial::Sync(..)) }
 }
 
 /// Indicates that the system requires a simple component read/write.

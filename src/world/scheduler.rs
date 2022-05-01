@@ -1,4 +1,3 @@
-use std::any::Any;
 use std::collections::{HashMap, VecDeque};
 use std::sync::atomic::{self, AtomicBool};
 use std::sync::Arc;
@@ -17,11 +16,6 @@ pub(crate) struct Builder {
     pub(crate) send_systems:   Vec<Box<dyn system::Spec + Send>>,
     /// Systems that must be scheduled to the main thread.
     pub(crate) unsend_systems: Vec<Box<dyn system::Spec>>,
-
-    /// Global states that can be concurrently accessed by systems on other threads.
-    pub(crate) send_globals:   HashMap<DbgTypeId, Option<Box<dyn Any + Send>>>,
-    /// Global states that must be accessed on the main thread.
-    pub(crate) unsend_globals: HashMap<DbgTypeId, Option<Box<dyn Any>>>,
 
     pub(crate) partitions: IndexSet<system::PartitionWrapper>,
 
@@ -82,6 +76,17 @@ impl Builder {
             for (offset, &(task1, ref access1)) in tasks.iter().enumerate() {
                 for &(task2, ref access2) in &tasks[(offset + 1)..] {
                     if access1.conflicts_with(access2) {
+                        exclusions.get_mut(&task1).expect("unknown task").push(task2);
+                        exclusions.get_mut(&task2).expect("unknown task").push(task1);
+                    }
+                }
+            }
+        }
+
+        for (global_ty, tasks) in &self.globals {
+            for (offset, &(task1, mut1)) in tasks.iter().enumerate() {
+                for &(task2, mut2) in &tasks[(offset + 1)..] {
+                    if mut1 || mut2 {
                         exclusions.get_mut(&task1).expect("unknown task").push(task2);
                         exclusions.get_mut(&task2).expect("unknown task").push(task1);
                     }

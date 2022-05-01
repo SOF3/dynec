@@ -10,14 +10,15 @@ use crate::{comp, system};
 /// No more systems can be scheduled after the builder is built.
 #[derive(Default)]
 pub struct Builder {
-    scheduler:  scheduler::Builder,
-    archetypes: HashMap<DbgTypeId, Box<dyn typed::AnyBuilder>>,
-    globals:    HashMap<DbgTypeId, DefaultableAny>,
+    scheduler:      scheduler::Builder,
+    archetypes:     HashMap<DbgTypeId, Box<dyn typed::AnyBuilder>>,
+    send_globals:   HashMap<DbgTypeId, DefaultableAny<dyn Any + Send + Sync>>,
+    unsend_globals: HashMap<DbgTypeId, DefaultableAny<dyn Any>>,
 }
 
-enum DefaultableAny {
-    Given(Box<dyn Any>),
-    Missing(fn() -> Box<dyn Any>),
+enum DefaultableAny<A: ?Sized> {
+    Given(Box<A>),
+    Missing(fn() -> Box<A>),
 }
 
 impl Builder {
@@ -28,19 +29,29 @@ impl Builder {
         self.archetypes.entry(archetype.id).or_insert_with(archetype.builder)
     }
 
-    fn register_resources(&mut self, system: &dyn system::Spec, sync: bool) {
+    fn register_resources(&mut self, system: &dyn system::Spec, sync: bool, id: scheduler::TaskId) {
         system.for_each_global_request(&mut |request| {
-            if request.sync {
-                self.scheduler.send_globals.entry(request.global).or_default();
-            } else if sync {
-                panic!(
-                    "Cannot schedule system {} as thread-safe because it requires thread-unsafe \
-                     resources",
-                    system.debug_name()
-                );
-            } else {
-                self.scheduler.unsend_globals.entry(request.global).or_default();
+            match request.initial {
+                spec::GlobalInitial::Sync(initial) => {
+                    self.send_globals
+                        .entry(request.ty)
+                        .or_insert_with(|| DefaultableAny::Missing(initial));
+                }
+                _ if sync => {
+                    panic!(
+                        "Cannot schedule system {} as thread-safe because it requires \
+                         thread-unsafe resources",
+                        system.debug_name()
+                    );
+                }
+                spec::GlobalInitial::Unsync(initial) => {
+                    self.unsend_globals
+                        .entry(request.ty)
+                        .or_insert_with(|| DefaultableAny::Missing(initial));
+                }
             }
+
+            self.scheduler.globals.entry(request.ty).or_default().push((id, request.mutable));
         });
 
         system.for_each_simple_request(&mut |request| {
@@ -86,20 +97,21 @@ impl Builder {
 
     /// Schedules a thread-safe system.
     pub fn schedule(&mut self, system: Box<dyn system::Spec + Send>) {
-        self.register_resources(&*system, true);
-
         let index = self.scheduler.send_systems.len();
         let id = scheduler::TaskId { class: scheduler::TaskClass::Send, index };
+
+        self.register_resources(&*system, true, id);
 
         self.scheduler.send_systems.push(system);
     }
 
     /// Schedules a system that must be run on the main thread.
     pub fn schedule_thread_unsafe(&mut self, system: Box<dyn system::Spec>) {
-        self.register_resources(&*system, false);
-
         let index = self.scheduler.unsend_systems.len();
         let id = scheduler::TaskId { class: scheduler::TaskClass::Unsend, index };
+
+        self.register_resources(&*system, false, id);
+
         self.scheduler.unsend_systems.push(system);
     }
 
@@ -113,17 +125,24 @@ impl Builder {
                 .collect(),
         };
 
-        let globals = self
-            .globals
+        let send_globals = self
+            .send_globals
             .into_iter()
             .map(|(ty, da)| match da {
                 DefaultableAny::Given(value) => (ty, value),
                 DefaultableAny::Missing(default) => (ty, default()),
             })
             .collect();
-        let globals = super::Globals { globals };
+        let unsend_globals = self
+            .unsend_globals
+            .into_iter()
+            .map(|(ty, da)| match da {
+                DefaultableAny::Given(value) => (ty, value),
+                DefaultableAny::Missing(default) => (ty, default()),
+            })
+            .collect();
 
-        super::World { storages, globals, scheduler: self.scheduler.build() }
+        super::World { storages, send_globals, unsend_globals, scheduler: self.scheduler.build() }
     }
 }
 

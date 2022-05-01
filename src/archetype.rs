@@ -20,4 +20,4 @@
 /// An archetype is a kind of entity with a fixed set of (optional) components.
 ///
 /// See the [module-level documentation](mod@crate::archetype) for more information.
-pub trait Archetype: 'static {}
+pub trait Archetype: Send + Sync + 'static {}

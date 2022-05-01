@@ -344,7 +344,10 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 }
             }
             ArgType::Global { thread_local } => {
-                let is_sync = !thread_local;
+                let new_sync = match thread_local {
+                    true => quote!(new_unsync),
+                    false => quote!(new_sync),
+                };
 
                 let (param_ty, mutable) = match &*param.ty {
                     syn::Type::Reference(ty) => (&ty.elem, ty.mutability.is_some()),
@@ -357,11 +360,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 };
 
                 global_requests.push(quote! {
-                    #crate_name::system::spec::GlobalRequest {
-                        global: ::dynec::util::DbgTypeId::of::<#param_ty>(),
-                        mutable: #mutable,
-                        sync: #is_sync,
-                    }
+                    #crate_name::system::spec::GlobalRequest::#new_sync::<#param_ty>(#mutable)
                 });
             }
             ArgType::Simple { mutable, arch, comp } => {

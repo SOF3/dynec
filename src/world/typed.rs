@@ -69,12 +69,12 @@ impl<A: Archetype> AnyBuilder for Builder<A> {
 
 fn toposort_populators<A: Archetype>(
     storages: &mut HashMap<DbgTypeId, storage::SharedSimple<A>>,
-) -> Vec<Box<dyn Fn(&mut comp::Map<A>)>> {
+) -> Vec<Box<dyn Fn(&mut comp::Map<A>) + Send + Sync>> {
     let mut populators = Vec::new();
 
     struct Request<A: Archetype> {
         dep_count: usize,
-        populator: Box<dyn Fn(&mut comp::Map<A>)>,
+        populator: Box<dyn Fn(&mut comp::Map<A>) + Send + Sync>,
     }
 
     let mut unprocessed = Vec::new();
@@ -154,7 +154,7 @@ pub(crate) struct Typed<A: Archetype> {
     pub(crate) simple_storages:   HashMap<DbgTypeId, storage::SharedSimple<A>>,
     pub(crate) isotope_storages:  RwLock<HashMap<comp::any::Identifier, storage::SharedSimple<A>>>,
     pub(crate) isotope_factories: HashMap<DbgTypeId, Box<dyn storage::AnyIsotopeFactory<A>>>,
-    pub(crate) populators:        Vec<Box<dyn Fn(&mut comp::Map<A>)>>,
+    pub(crate) populators:        Vec<Box<dyn Fn(&mut comp::Map<A>) + Send + Sync>>,
 }
 
 impl<A: Archetype> Typed<A> {
@@ -184,13 +184,13 @@ impl<A: Archetype> Typed<A> {
     }
 }
 
-pub(crate) trait AnyTyped {
-    fn as_any(&self) -> &dyn Any;
-    fn as_any_mut(&mut self) -> &mut dyn Any;
+pub(crate) trait AnyTyped: Send + Sync {
+    fn as_any(&self) -> &(dyn Any + Send + Sync);
+    fn as_any_mut(&mut self) -> &mut (dyn Any + Send + Sync);
 }
 
 impl<A: Archetype> AnyTyped for Typed<A> {
-    fn as_any(&self) -> &dyn Any { self }
+    fn as_any(&self) -> &(dyn Any + Send + Sync) { self }
 
-    fn as_any_mut(&mut self) -> &mut dyn Any { self }
+    fn as_any_mut(&mut self) -> &mut (dyn Any + Send + Sync) { self }
 }

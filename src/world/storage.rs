@@ -9,7 +9,7 @@ use parking_lot::RwLock;
 
 use crate::{comp, entity, Archetype};
 
-pub(crate) type SharedSimple<A> = Arc<RwLock<dyn AnySimpleStorage<A>>>;
+pub(crate) type SharedSimple<A> = Arc<RwLock<dyn AnySimpleStorage<A> + Send + Sync>>;
 
 pub(crate) fn shared_simple<A: Archetype, C: comp::Simple<A>>() -> SharedSimple<A> {
     Arc::new(RwLock::new(Storage::<A, C>::new_simple()))
@@ -170,7 +170,7 @@ enum LazyIniter<C: 'static> {
     Isotope { c: C },
 }
 
-pub(crate) trait AnyIsotopeFactory<A: Archetype> {}
+pub(crate) trait AnyIsotopeFactory<A: Archetype>: Send + Sync {}
 
 struct IsotopeFactory<A: Archetype, C: comp::Isotope<A>> {
     _ph: PhantomData<(A, C)>,

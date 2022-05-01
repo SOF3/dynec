@@ -64,19 +64,18 @@ impl SimpleSpec {
 
 /// The data structure that stores all states in the game.
 pub struct World {
-    storages:  Storages,
-    globals:   Globals,
-    scheduler: scheduler::Scheduler,
+    /// Stores the component states in a world.
+    storages:       Storages,
+    scheduler:      scheduler::Scheduler,
+    /// Global states that can be concurrently accessed by systems on other threads.
+    send_globals:   HashMap<DbgTypeId, Box<dyn Any + Send + Sync>>,
+    /// Global states that must be accessed on the main thread.
+    unsend_globals: HashMap<DbgTypeId, Box<dyn Any>>,
 }
 
 /// Stores the component states in a world.
 pub struct Storages {
     archetypes: HashMap<DbgTypeId, Box<dyn typed::AnyTyped>>,
-}
-
-/// Stores the global states in a world.
-pub struct Globals {
-    globals: HashMap<DbgTypeId, Box<dyn Any>>,
 }
 
 impl World {

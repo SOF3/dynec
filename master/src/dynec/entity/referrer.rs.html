@@ -57,10 +57,8 @@
 <span id="52">52</span>
 <span id="53">53</span>
 <span id="54">54</span>
-<span id="55">55</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::any::TypeId</span>;
-
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::sealed</span>;
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">super</span>::sealed</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::util::DbgTypeId</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::Archetype</span>;
 
 <span class="doccomment">/// A type that may own entity references (no matter strong or weak).</span>
@@ -71,7 +69,7 @@
     <span class="doccomment">/// As a result, `Referrer` is not implemented for [`std::sync::Arc`]</span>
     <span class="doccomment">/// because it may result in visiting the same entity reference multiple times,</span>
     <span class="doccomment">/// which will lead to incorrect behaviour.</span>
-    <span class="kw">fn</span> <span class="ident">visit_each</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span>, <span class="ident">F</span>: <span class="ident">Visitor</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;s</span> <span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">archetype</span>: <span class="ident">TypeId</span>, <span class="ident">visitor</span>: <span class="kw-2">&amp;mut</span> <span class="ident">F</span>);
+    <span class="kw">fn</span> <span class="ident">visit_each</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span>, <span class="ident">F</span>: <span class="ident">Visitor</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;s</span> <span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">archetype</span>: <span class="ident">DbgTypeId</span>, <span class="ident">visitor</span>: <span class="kw-2">&amp;mut</span> <span class="ident">F</span>);
 }
 
 <span class="doccomment">/// A value used to visit each entity reference.</span>
@@ -91,16 +89,16 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span><span class="op">&gt;</span> <span class="ident">Referrer</span> <span class="kw">for</span> <span class="ident"><span class="kw">super</span>::Weak</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">visit_each</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span>, <span class="ident">F</span>: <span class="ident">Visitor</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;s</span> <span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">ty</span>: <span class="ident">TypeId</span>, <span class="ident">visitor</span>: <span class="kw-2">&amp;mut</span> <span class="ident">F</span>) {
-        <span class="kw">if</span> <span class="ident">ty</span> <span class="op">==</span> <span class="ident">TypeId::of</span>::<span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>() {
+    <span class="kw">fn</span> <span class="ident">visit_each</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span>, <span class="ident">F</span>: <span class="ident">Visitor</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;s</span> <span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">ty</span>: <span class="ident">DbgTypeId</span>, <span class="ident">visitor</span>: <span class="kw-2">&amp;mut</span> <span class="ident">F</span>) {
+        <span class="kw">if</span> <span class="ident">ty</span> <span class="op">==</span> <span class="ident">DbgTypeId::of</span>::<span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>() {
             <span class="ident">visitor</span>.<span class="ident">visit</span>(<span class="ident">sealed::RefMutRaw</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>.<span class="ident">id</span>));
         }
     }
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span><span class="op">&gt;</span> <span class="ident">Referrer</span> <span class="kw">for</span> <span class="ident"><span class="kw">super</span>::Entity</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">visit_each</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span>, <span class="ident">F</span>: <span class="ident">Visitor</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;s</span> <span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">ty</span>: <span class="ident">TypeId</span>, <span class="ident">visitor</span>: <span class="kw-2">&amp;mut</span> <span class="ident">F</span>) {
-        <span class="kw">if</span> <span class="ident">ty</span> <span class="op">==</span> <span class="ident">TypeId::of</span>::<span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>() {
+    <span class="kw">fn</span> <span class="ident">visit_each</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span>, <span class="ident">F</span>: <span class="ident">Visitor</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;s</span> <span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">ty</span>: <span class="ident">DbgTypeId</span>, <span class="ident">visitor</span>: <span class="kw-2">&amp;mut</span> <span class="ident">F</span>) {
+        <span class="kw">if</span> <span class="ident">ty</span> <span class="op">==</span> <span class="ident">DbgTypeId::of</span>::<span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>() {
             <span class="ident">visitor</span>.<span class="ident">visit</span>(<span class="ident">sealed::RefMutRaw</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>.<span class="ident">id</span>));
         }
     }

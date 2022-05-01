@@ -124,11 +124,26 @@
 <span id="119">119</span>
 <span id="120">120</span>
 <span id="121">121</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::any</span>::{<span class="ident">Any</span>, <span class="ident">TypeId</span>};
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
+<span id="129">129</span>
+<span id="130">130</span>
+<span id="131">131</span>
+<span id="132">132</span>
+<span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::any::Any</span>;
 <span class="kw">use</span> <span class="ident">std::collections::HashMap</span>;
 
 <span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">scheduler</span>, <span class="ident">typed</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::system::spec</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::util::DbgTypeId</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">comp</span>, <span class="ident">system</span>};
 
 <span class="doccomment">/// This type is used to build a world.</span>
@@ -136,8 +151,13 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Builder</span> {
     <span class="ident">scheduler</span>:  <span class="ident">scheduler::Builder</span>,
-    <span class="ident">archetypes</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">TypeId</span>, <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">typed::AnyBuilder</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    <span class="ident">globals</span>:    <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">TypeId</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Any</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">archetypes</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">DbgTypeId</span>, <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">typed::AnyBuilder</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">globals</span>:    <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">DbgTypeId</span>, <span class="ident">DefaultableAny</span><span class="op">&gt;</span>,
+}
+
+<span class="kw">enum</span> <span class="ident">DefaultableAny</span> {
+    <span class="ident">Given</span>(<span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Any</span><span class="op">&gt;</span>),
+    <span class="ident">Missing</span>(<span class="kw">fn</span>() -&gt; <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Any</span><span class="op">&gt;</span>),
 }
 
 <span class="kw">impl</span> <span class="ident">Builder</span> {
@@ -225,24 +245,32 @@
 
     <span class="doccomment">/// Constructs the world from the builder.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">build</span>(<span class="self">self</span>) -&gt; <span class="ident"><span class="kw">super</span>::World</span> {
-        <span class="kw">let</span> <span class="ident">archetypes</span> <span class="op">=</span>
-            <span class="self">self</span>.<span class="ident">archetypes</span>.<span class="ident">into_iter</span>().<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">ty</span>, <span class="ident">builder</span>)<span class="op">|</span> (<span class="ident">ty</span>, <span class="ident">builder</span>.<span class="ident">build</span>())).<span class="ident">collect</span>();
+        <span class="kw">let</span> <span class="ident">storages</span> <span class="op">=</span> <span class="ident"><span class="kw">super</span>::Storages</span> {
+            <span class="ident">archetypes</span>: <span class="self">self</span>
+                .<span class="ident">archetypes</span>
+                .<span class="ident">into_iter</span>()
+                .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">ty</span>, <span class="ident">builder</span>)<span class="op">|</span> (<span class="ident">ty</span>, <span class="ident">builder</span>.<span class="ident">build</span>()))
+                .<span class="ident">collect</span>(),
+        };
 
-        <span class="ident"><span class="kw">super</span>::World</span> { <span class="ident">archetypes</span> }
+        <span class="kw">let</span> <span class="ident">globals</span> <span class="op">=</span> <span class="self">self</span>
+            .<span class="ident">globals</span>
+            .<span class="ident">into_iter</span>()
+            .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">ty</span>, <span class="ident">da</span>)<span class="op">|</span> <span class="kw">match</span> <span class="ident">da</span> {
+                <span class="ident">DefaultableAny::Given</span>(<span class="ident">value</span>) =&gt; (<span class="ident">ty</span>, <span class="ident">value</span>),
+                <span class="ident">DefaultableAny::Missing</span>(<span class="ident">default</span>) =&gt; (<span class="ident">ty</span>, <span class="ident">default</span>()),
+            })
+            .<span class="ident">collect</span>();
+        <span class="kw">let</span> <span class="ident">globals</span> <span class="op">=</span> <span class="ident"><span class="kw">super</span>::Globals</span> { <span class="ident">globals</span> };
+
+        <span class="ident"><span class="kw">super</span>::World</span> { <span class="ident">storages</span>, <span class="ident">globals</span>, <span class="ident">scheduler</span>: <span class="self">self</span>.<span class="ident">scheduler</span>.<span class="ident">build</span>() }
     }
-}
-
-<span class="doccomment">/// Identifies an archetype + component type.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Hash</span>)]</span>
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">UndiscrimComponentIdentifier</span> {
-    <span class="ident">arch</span>: <span class="ident">TypeId</span>,
-    <span class="ident">comp</span>: <span class="ident">TypeId</span>,
 }
 
 <span class="doccomment">/// Identifies an archetype + component type + discriminant.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Hash</span>)]</span>
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">ComponentIdentifier</span> {
-    <span class="ident">arch</span>: <span class="ident">TypeId</span>,
+    <span class="ident">arch</span>: <span class="ident">DbgTypeId</span>,
     <span class="ident">comp</span>: <span class="ident">comp::any::Identifier</span>,
 }
 </code></pre></div>

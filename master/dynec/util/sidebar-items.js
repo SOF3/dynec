@@ -1,1 +1,1 @@
-initSidebarItems({"trait":[["Ref","A generic mutable/immutable reference type."]]});
+initSidebarItems({"struct":[["DbgTypeId","A TypeId that may include type name for debugging."]],"trait":[["Ref","A generic mutable/immutable reference type."]]});

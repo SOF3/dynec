@@ -1017,7 +1017,7 @@
 
                 <span class="ident">global_requests</span>.<span class="ident">push</span>(<span class="macro">quote!</span> {
                     #<span class="ident">crate_name::system::spec::GlobalRequest</span> {
-                        <span class="ident">global</span>: <span class="ident">::std::any::TypeId::of</span>::<span class="op">&lt;</span>#<span class="ident">param_ty</span><span class="op">&gt;</span>(),
+                        <span class="ident">global</span>: <span class="ident">::dynec::util::DbgTypeId::of</span>::<span class="op">&lt;</span>#<span class="ident">param_ty</span><span class="op">&gt;</span>(),
                         <span class="ident">mutable</span>: #<span class="ident">mutable</span>,
                         <span class="ident">sync</span>: #<span class="ident">is_sync</span>,
                     }

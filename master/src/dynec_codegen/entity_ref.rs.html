@@ -169,7 +169,7 @@
                 <span class="macro">quote!</span> {
                     <span class="kw">fn</span> <span class="ident">visit_each</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span>, <span class="ident">F</span>: #<span class="ident">crate_name::entity::Visitor</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span><span class="op">&gt;</span><span class="op">&gt;</span>(
                         <span class="kw-2">&amp;</span><span class="lifetime">&#39;s</span> <span class="kw-2">mut</span> <span class="self">self</span>,
-                        <span class="ident">archetype</span>: <span class="ident">::std::any::TypeId</span>,
+                        <span class="ident">archetype</span>: #<span class="ident">crate_name::util::DbgTypeId</span>,
                         <span class="ident">visitor</span>: <span class="kw-2">&amp;mut</span> <span class="ident">F</span>,
                     ) {
                         #(
@@ -238,7 +238,7 @@
                 <span class="macro">quote!</span> {
                     <span class="kw">fn</span> <span class="ident">visit_each</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span>, <span class="ident">F</span>: #<span class="ident">crate_name::entity::Visitor</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span><span class="op">&gt;</span><span class="op">&gt;</span>(
                         <span class="kw-2">&amp;</span><span class="lifetime">&#39;s</span> <span class="kw-2">mut</span> <span class="self">self</span>,
-                        <span class="ident">archetype</span>: <span class="ident">::std::any::TypeId</span>,
+                        <span class="ident">archetype</span>: #<span class="ident">crate_name::util::DbgTypeId</span>,
                         <span class="ident">visitor</span>: <span class="kw-2">&amp;mut</span> <span class="ident">F</span>,
                     ) {
                         <span class="kw">match</span> <span class="self">self</span> {

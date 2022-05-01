@@ -195,41 +195,31 @@
 <span id="190">190</span>
 <span id="191">191</span>
 <span id="192">192</span>
-<span id="193">193</span>
-<span id="194">194</span>
-<span id="195">195</span>
-<span id="196">196</span>
-<span id="197">197</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Utilties for dynamic dispatch related to components.</span>
 
-<span class="kw">use</span> <span class="ident">std::any</span>::{<span class="self">self</span>, <span class="ident">Any</span>, <span class="ident">TypeId</span>};
+<span class="kw">use</span> <span class="ident">std::any</span>::{<span class="self">self</span>, <span class="ident">Any</span>};
 <span class="kw">use</span> <span class="ident">std::collections::BTreeMap</span>;
 <span class="kw">use</span> <span class="ident">std::marker::PhantomData</span>;
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">cmp</span>, <span class="ident">hash</span>};
 
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::Discrim</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::util::DbgTypeId</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">comp</span>, <span class="ident">Archetype</span>};
 
 <span class="doccomment">/// Identifies a generic simple or discriminated isotope component type.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">Identifier</span> {
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">id</span>:      <span class="ident">TypeId</span>,
-    <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span> <span class="comment">// used for debugging only</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">name</span>:    <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span>,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">id</span>:      <span class="ident">DbgTypeId</span>,
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">discrim</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">Identifier</span> {
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">simple</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span>, <span class="ident">C</span>: <span class="ident">comp::Simple</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span><span class="op">&gt;</span>() -&gt; <span class="self">Self</span> {
-        <span class="ident">Identifier</span> { <span class="ident">id</span>: <span class="ident">TypeId::of</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(), <span class="ident">name</span>: <span class="ident">any::type_name</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(), <span class="ident">discrim</span>: <span class="prelude-val">None</span> }
+        <span class="ident">Identifier</span> { <span class="ident">id</span>: <span class="ident">DbgTypeId::of</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(), <span class="ident">discrim</span>: <span class="prelude-val">None</span> }
     }
 
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">isotope</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span>, <span class="ident">C</span>: <span class="ident">comp::Isotope</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="ident">discrim</span>: <span class="ident">C::Discrim</span>) -&gt; <span class="self">Self</span> {
-        <span class="ident">Identifier</span> {
-            <span class="ident">id</span>:      <span class="ident">TypeId::of</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(),
-            <span class="ident">name</span>:    <span class="ident">any::type_name</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(),
-            <span class="ident">discrim</span>: <span class="prelude-val">Some</span>(<span class="ident">discrim</span>.<span class="ident">to_usize</span>()),
-        }
+        <span class="ident">Identifier</span> { <span class="ident">id</span>: <span class="ident">DbgTypeId::of</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(), <span class="ident">discrim</span>: <span class="prelude-val">Some</span>(<span class="ident">discrim</span>.<span class="ident">to_usize</span>()) }
     }
 }
 
@@ -323,7 +313,7 @@
     <span class="kw">fn</span> <span class="ident">populate</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">map</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Map</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>);
 
     <span class="doccomment">/// Returns the component types required by this function.</span>
-    <span class="kw">fn</span> <span class="ident">deps</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">TypeId</span>, <span class="ident">comp::SimpleInitStrategy</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>)<span class="op">&gt;</span>;
+    <span class="kw">fn</span> <span class="ident">deps</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">DbgTypeId</span>, <span class="ident">comp::SimpleInitStrategy</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>)<span class="op">&gt;</span>;
 }
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ComponentDescriptor</span> {}
@@ -353,9 +343,9 @@
                 <span class="ident">map</span>.<span class="ident">insert_simple</span>(<span class="ident">populate</span>);
             }
 
-            <span class="kw">fn</span> <span class="ident">deps</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">TypeId</span>, <span class="ident">comp::SimpleInitStrategy</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>)<span class="op">&gt;</span> {
+            <span class="kw">fn</span> <span class="ident">deps</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">DbgTypeId</span>, <span class="ident">comp::SimpleInitStrategy</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>)<span class="op">&gt;</span> {
                 <span class="macro">vec!</span>[
-                    $((<span class="ident">TypeId::of</span>::<span class="op">&lt;</span><span class="macro-nonterminal">$</span><span class="macro-nonterminal">deps</span><span class="op">&gt;</span>(), <span class="op">&lt;</span><span class="macro-nonterminal">$</span><span class="macro-nonterminal">deps</span> <span class="kw">as</span> <span class="ident">comp::Simple</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::INIT_STRATEGY</span>),)<span class="op">*</span>
+                    $((<span class="ident">DbgTypeId::of</span>::<span class="op">&lt;</span><span class="macro-nonterminal">$</span><span class="macro-nonterminal">deps</span><span class="op">&gt;</span>(), <span class="op">&lt;</span><span class="macro-nonterminal">$</span><span class="macro-nonterminal">deps</span> <span class="kw">as</span> <span class="ident">comp::Simple</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::INIT_STRATEGY</span>),)<span class="op">*</span>
                 ]
             }
         }

@@ -431,6 +431,7 @@
 <span id="426">426</span>
 <span id="427">427</span>
 <span id="428">428</span>
+<span id="429">429</span>
 </pre><pre class="rust"><code><span class="doccomment">/// Declares archetypes.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// # Example</span>
@@ -848,6 +849,7 @@
             <span class="ident">builder</span>.<span class="ident">schedule</span>(<span class="ident">Box::new</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">systems</span>));
         )<span class="op">*</span>
 
+        <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">unused_mut</span>)]</span>
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">world</span> <span class="op">=</span> <span class="ident">builder</span>.<span class="ident">build</span>();
 
         $(

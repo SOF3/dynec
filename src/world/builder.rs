@@ -1,8 +1,9 @@
-use std::any::{Any, TypeId};
+use std::any::Any;
 use std::collections::HashMap;
 
 use super::{scheduler, typed};
 use crate::system::spec;
+use crate::util::DbgTypeId;
 use crate::{comp, system};
 
 /// This type is used to build a world.
@@ -10,8 +11,13 @@ use crate::{comp, system};
 #[derive(Default)]
 pub struct Builder {
     scheduler:  scheduler::Builder,
-    archetypes: HashMap<TypeId, Box<dyn typed::AnyBuilder>>,
-    globals:    HashMap<TypeId, Option<Box<dyn Any>>>,
+    archetypes: HashMap<DbgTypeId, Box<dyn typed::AnyBuilder>>,
+    globals:    HashMap<DbgTypeId, DefaultableAny>,
+}
+
+enum DefaultableAny {
+    Given(Box<dyn Any>),
+    Missing(fn() -> Box<dyn Any>),
 }
 
 impl Builder {
@@ -99,23 +105,31 @@ impl Builder {
 
     /// Constructs the world from the builder.
     pub fn build(self) -> super::World {
-        let archetypes =
-            self.archetypes.into_iter().map(|(ty, builder)| (ty, builder.build())).collect();
+        let storages = super::Storages {
+            archetypes: self
+                .archetypes
+                .into_iter()
+                .map(|(ty, builder)| (ty, builder.build()))
+                .collect(),
+        };
 
-        super::World { archetypes }
+        let globals = self
+            .globals
+            .into_iter()
+            .map(|(ty, da)| match da {
+                DefaultableAny::Given(value) => (ty, value),
+                DefaultableAny::Missing(default) => (ty, default()),
+            })
+            .collect();
+        let globals = super::Globals { globals };
+
+        super::World { storages, globals, scheduler: self.scheduler.build() }
     }
-}
-
-/// Identifies an archetype + component type.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub(crate) struct UndiscrimComponentIdentifier {
-    arch: TypeId,
-    comp: TypeId,
 }
 
 /// Identifies an archetype + component type + discriminant.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) struct ComponentIdentifier {
-    arch: TypeId,
+    arch: DbgTypeId,
     comp: comp::any::Identifier,
 }

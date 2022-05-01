@@ -1,4 +1,4 @@
-use crate::{comp, system, system_test, world, Archetype};
+use crate::{comp, system, system_test, Archetype};
 
 enum TestArch {}
 impl Archetype for TestArch {}

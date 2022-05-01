@@ -1,7 +1,8 @@
 //! Specifies the requirements for a system.
 
-use std::any::{Any, TypeId};
+use std::any::Any;
 
+use crate::util::DbgTypeId;
 use crate::world::{self, storage};
 use crate::{comp, system, Archetype};
 
@@ -48,7 +49,7 @@ impl Dependency {
 /// Indicates that the system requires a global state.
 pub struct GlobalRequest {
     /// The type of the global state.
-    pub global:  TypeId,
+    pub global:  DbgTypeId,
     /// Whether mutable access is requested.
     pub mutable: bool,
     /// Whether the resource requires thread safety.
@@ -60,7 +61,7 @@ pub struct SimpleRequest {
     /// The archetype requested.
     pub(crate) archetype:       ArchetypeDescriptor,
     /// The type of the simple component.
-    pub(crate) comp:            TypeId,
+    pub(crate) comp:            DbgTypeId,
     /// Builder for the storage. Must be `Box<storage::SharedSimple<A>>`.
     pub(crate) storage_builder: fn() -> Box<dyn Any>,
     /// Whether mutable access is requested.
@@ -72,7 +73,7 @@ impl SimpleRequest {
     pub fn new<A: Archetype, C: comp::Simple<A>>(mutable: bool) -> Self {
         Self {
             archetype: ArchetypeDescriptor::of::<A>(),
-            comp: TypeId::of::<C>(),
+            comp: DbgTypeId::of::<C>(),
             mutable,
             storage_builder: || Box::new(storage::shared_simple::<A, C>()),
         }
@@ -80,13 +81,13 @@ impl SimpleRequest {
 }
 
 pub(crate) struct ArchetypeDescriptor {
-    pub(crate) id:      TypeId,
+    pub(crate) id:      DbgTypeId,
     pub(crate) builder: fn() -> Box<dyn world::typed::AnyBuilder>,
 }
 
 impl ArchetypeDescriptor {
     fn of<A: Archetype>() -> Self {
-        Self { id: TypeId::of::<A>(), builder: || Box::new(world::typed::builder::<A>()) }
+        Self { id: DbgTypeId::of::<A>(), builder: || Box::new(world::typed::builder::<A>()) }
     }
 }
 
@@ -95,7 +96,7 @@ pub struct IsotopeRequest {
     /// The archetype requested.
     pub(crate) archetype:       ArchetypeDescriptor,
     /// The archetype of the isotope component.
-    pub(crate) comp:            TypeId,
+    pub(crate) comp:            DbgTypeId,
     /// Builder for the IsotopeFactory. Must be `Box<Box<dyn storage::AnyIsotopeFactory<A>>>`.
     pub(crate) factory_builder: fn() -> Box<dyn Any>,
     /// If `Some`, only the isotope components of the given discriminants are accessible.
@@ -114,7 +115,7 @@ impl IsotopeRequest {
     ) -> Self {
         Self {
             archetype: ArchetypeDescriptor::of::<A>(),
-            comp: TypeId::of::<C>(),
+            comp: DbgTypeId::of::<C>(),
             discrim,
             mutable,
             factory_builder: || Box::new(storage::isotope_factory::<A, C>()),

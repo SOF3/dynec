@@ -1,16 +1,21 @@
-use std::any::{self, Any, TypeId};
+use std::any::{self, Any};
 use std::collections::{hash_map, HashMap};
 use std::sync::Arc;
 
 use parking_lot::RwLock;
 
 use super::storage;
+use crate::util::DbgTypeId;
 use crate::{comp, entity, Archetype};
 
 pub(crate) trait AnyBuilder {
-    fn add_simple_storage_if_missing(&mut self, component: TypeId, shared: fn() -> Box<dyn Any>);
+    fn add_simple_storage_if_missing(&mut self, component: DbgTypeId, shared: fn() -> Box<dyn Any>);
 
-    fn add_isotope_factory_if_missing(&mut self, component: TypeId, shared: fn() -> Box<dyn Any>);
+    fn add_isotope_factory_if_missing(
+        &mut self,
+        component: DbgTypeId,
+        shared: fn() -> Box<dyn Any>,
+    );
 
     fn build(self: Box<Self>) -> Box<dyn AnyTyped>;
 }
@@ -20,24 +25,32 @@ pub(crate) fn builder<A: Archetype>() -> impl AnyBuilder {
 }
 
 struct Builder<A: Archetype> {
-    simple_storages:   HashMap<TypeId, storage::SharedSimple<A>>,
-    isotope_factories: HashMap<TypeId, Box<dyn storage::AnyIsotopeFactory<A>>>,
+    simple_storages:   HashMap<DbgTypeId, storage::SharedSimple<A>>,
+    isotope_factories: HashMap<DbgTypeId, Box<dyn storage::AnyIsotopeFactory<A>>>,
 }
 
 impl<A: Archetype> AnyBuilder for Builder<A> {
-    fn add_simple_storage_if_missing(&mut self, component: TypeId, shared: fn() -> Box<dyn Any>) {
+    fn add_simple_storage_if_missing(
+        &mut self,
+        component: DbgTypeId,
+        shared: fn() -> Box<dyn Any>,
+    ) {
         let shared: storage::SharedSimple<A> = match shared().downcast() {
             Ok(ss) => *ss,
             Err(_) => panic!(
                 "Expected storage::SharedSimple<{}>, got {:?}",
                 any::type_name::<A>(),
-                shared.type_id()
+                shared.type_id(),
             ),
         };
         self.simple_storages.entry(component).or_insert_with(|| shared);
     }
 
-    fn add_isotope_factory_if_missing(&mut self, component: TypeId, shared: fn() -> Box<dyn Any>) {
+    fn add_isotope_factory_if_missing(
+        &mut self,
+        component: DbgTypeId,
+        shared: fn() -> Box<dyn Any>,
+    ) {
         todo!()
     }
 
@@ -55,7 +68,7 @@ impl<A: Archetype> AnyBuilder for Builder<A> {
 }
 
 fn toposort_populators<A: Archetype>(
-    storages: &mut HashMap<TypeId, storage::SharedSimple<A>>,
+    storages: &mut HashMap<DbgTypeId, storage::SharedSimple<A>>,
 ) -> Vec<Box<dyn Fn(&mut comp::Map<A>)>> {
     let mut populators = Vec::new();
 
@@ -75,9 +88,9 @@ fn toposort_populators<A: Archetype>(
         };
     }
 
-    let mut requests = HashMap::<TypeId, Request<A>>::new();
-    let mut dependents_map = HashMap::<TypeId, Vec<TypeId>>::new(); // all values here must also have an entry in requests before popping
-    let mut heads = Vec::<TypeId>::new(); // all entries here must also have an entry in requests
+    let mut requests = HashMap::<DbgTypeId, Request<A>>::new();
+    let mut dependents_map = HashMap::<DbgTypeId, Vec<DbgTypeId>>::new(); // all values here must also have an entry in requests before popping
+    let mut heads = Vec::<DbgTypeId>::new(); // all entries here must also have an entry in requests
 
     while let Some((ty, desc)) = unprocessed.pop() {
         let deps = desc.deps();
@@ -127,7 +140,7 @@ fn toposort_populators<A: Archetype>(
     if !requests.is_empty() {
         panic!(
             "Cyclic dependency detected for component initializers of {}",
-            any::type_name::<A>()
+            any::type_name::<A>(),
         );
     }
 
@@ -138,9 +151,9 @@ fn toposort_populators<A: Archetype>(
 #[derive(Default)]
 pub(crate) struct Typed<A: Archetype> {
     pub(crate) ealloc:            entity::Ealloc,
-    pub(crate) simple_storages:   HashMap<TypeId, storage::SharedSimple<A>>,
+    pub(crate) simple_storages:   HashMap<DbgTypeId, storage::SharedSimple<A>>,
     pub(crate) isotope_storages:  RwLock<HashMap<comp::any::Identifier, storage::SharedSimple<A>>>,
-    pub(crate) isotope_factories: HashMap<TypeId, Box<dyn storage::AnyIsotopeFactory<A>>>,
+    pub(crate) isotope_factories: HashMap<DbgTypeId, Box<dyn storage::AnyIsotopeFactory<A>>>,
     pub(crate) populators:        Vec<Box<dyn Fn(&mut comp::Map<A>)>>,
 }
 

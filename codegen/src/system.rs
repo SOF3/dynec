@@ -358,7 +358,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
 
                 global_requests.push(quote! {
                     #crate_name::system::spec::GlobalRequest {
-                        global: ::std::any::TypeId::of::<#param_ty>(),
+                        global: ::dynec::util::DbgTypeId::of::<#param_ty>(),
                         mutable: #mutable,
                         sync: #is_sync,
                     }

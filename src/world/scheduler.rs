@@ -1,4 +1,4 @@
-use std::any::{Any, TypeId};
+use std::any::Any;
 use std::collections::{HashMap, VecDeque};
 use std::sync::atomic::{self, AtomicBool};
 use std::sync::Arc;
@@ -9,6 +9,7 @@ use indexmap::IndexSet;
 use parking_lot::{Condvar, Mutex, MutexGuard};
 
 use crate::system;
+use crate::util::DbgTypeId;
 
 #[derive(Default)]
 pub(crate) struct Builder {
@@ -18,16 +19,16 @@ pub(crate) struct Builder {
     pub(crate) unsend_systems: Vec<Box<dyn system::Spec>>,
 
     /// Global states that can be concurrently accessed by systems on other threads.
-    pub(crate) send_globals:   HashMap<TypeId, Option<Box<dyn Any + Send>>>,
+    pub(crate) send_globals:   HashMap<DbgTypeId, Option<Box<dyn Any + Send>>>,
     /// Global states that must be accessed on the main thread.
-    pub(crate) unsend_globals: HashMap<TypeId, Option<Box<dyn Any>>>,
+    pub(crate) unsend_globals: HashMap<DbgTypeId, Option<Box<dyn Any>>>,
 
     pub(crate) partitions: IndexSet<system::PartitionWrapper>,
 
     /// Indexes systems that access a component.
-    pub(crate) components: HashMap<TypeId, Vec<(TaskId, ComponentAccess)>>,
+    pub(crate) components: HashMap<DbgTypeId, Vec<(TaskId, ComponentAccess)>>,
     /// Indexes systems that access a global.
-    pub(crate) globals:    HashMap<TypeId, Vec<(TaskId, bool)>>,
+    pub(crate) globals:    HashMap<DbgTypeId, Vec<(TaskId, bool)>>,
 
     /// If `dependencies[a].contains(b)`, `b` runs before `a`
     pub(crate) dependencies: HashMap<TaskId, Vec<TaskId>>,
@@ -41,14 +42,14 @@ pub(crate) struct Scheduler {
     state:      Mutex<State>,
 }
 
-impl Scheduler {
-    pub(crate) fn build(builder: Builder) -> Scheduler {
+impl Builder {
+    pub(crate) fn build(self) -> Scheduler {
         let send_tasks =
-            (0..builder.send_systems.len()).map(|index| TaskId { class: TaskClass::Send, index });
-        let unsend_tasks = (0..builder.unsend_systems.len())
-            .map(|index| TaskId { class: TaskClass::Unsend, index });
-        let partition_tasks = (0..builder.partitions.len())
-            .map(|index| TaskId { class: TaskClass::Partition, index });
+            (0..self.send_systems.len()).map(|index| TaskId { class: TaskClass::Send, index });
+        let unsend_tasks =
+            (0..self.unsend_systems.len()).map(|index| TaskId { class: TaskClass::Unsend, index });
+        let partition_tasks =
+            (0..self.partitions.len()).map(|index| TaskId { class: TaskClass::Partition, index });
 
         let mut dependents: HashMap<_, _> = [TASK_SOURCE, TASK_SINK]
             .into_iter()
@@ -65,7 +66,7 @@ impl Scheduler {
             dependents.get_mut(&TASK_SINK).expect("just inserted").push(task);
         }
 
-        for (task, task_dependents) in &builder.dependents {
+        for (task, task_dependents) in &self.dependents {
             dependents.get_mut(task).expect("unknown task").extend(task_dependents);
         }
 
@@ -77,7 +78,7 @@ impl Scheduler {
             .map(|task| (task, Vec::new()))
             .collect();
 
-        for (comp_ty, tasks) in &builder.components {
+        for (comp_ty, tasks) in &self.components {
             for (offset, &(task1, ref access1)) in tasks.iter().enumerate() {
                 for &(task2, ref access2) in &tasks[(offset + 1)..] {
                     if access1.conflicts_with(access2) {
@@ -95,7 +96,7 @@ impl Scheduler {
             .chain(partition_tasks)
             .map(|task| (task, 0))
             .collect();
-        for (dep, vec) in &builder.dependents {
+        for (dep, vec) in &self.dependents {
             for task_dependent in vec {
                 *blocker_count_cache.get_mut(task_dependent).expect("unknown task") += 1;
             }
@@ -105,7 +106,7 @@ impl Scheduler {
             dependents,
             exclusions,
             blocker_count_cache,
-            send_systems: builder.send_systems.into_iter().map(Mutex::new).collect(),
+            send_systems: self.send_systems.into_iter().map(Mutex::new).collect(),
         };
 
         let sync_state = SyncState { condvar: Condvar::new(), completed: AtomicBool::new(false) };

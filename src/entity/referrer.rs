@@ -1,6 +1,5 @@
-use std::any::TypeId;
-
 use super::sealed;
+use crate::util::DbgTypeId;
 use crate::Archetype;
 
 /// A type that may own entity references (no matter strong or weak).
@@ -11,7 +10,7 @@ pub trait Referrer {
     /// As a result, `Referrer` is not implemented for [`std::sync::Arc`]
     /// because it may result in visiting the same entity reference multiple times,
     /// which will lead to incorrect behaviour.
-    fn visit_each<'s, F: Visitor<'s>>(&'s mut self, archetype: TypeId, visitor: &mut F);
+    fn visit_each<'s, F: Visitor<'s>>(&'s mut self, archetype: DbgTypeId, visitor: &mut F);
 }
 
 /// A value used to visit each entity reference.
@@ -31,16 +30,16 @@ impl<'s, F: FnMut(&'s mut super::Raw)> Visitor<'s> for F {
 }
 
 impl<A: Archetype> Referrer for super::Weak<A> {
-    fn visit_each<'s, F: Visitor<'s>>(&'s mut self, ty: TypeId, visitor: &mut F) {
-        if ty == TypeId::of::<A>() {
+    fn visit_each<'s, F: Visitor<'s>>(&'s mut self, ty: DbgTypeId, visitor: &mut F) {
+        if ty == DbgTypeId::of::<A>() {
             visitor.visit(sealed::RefMutRaw(&mut self.id));
         }
     }
 }
 
 impl<A: Archetype> Referrer for super::Entity<A> {
-    fn visit_each<'s, F: Visitor<'s>>(&'s mut self, ty: TypeId, visitor: &mut F) {
-        if ty == TypeId::of::<A>() {
+    fn visit_each<'s, F: Visitor<'s>>(&'s mut self, ty: DbgTypeId, visitor: &mut F) {
+        if ty == DbgTypeId::of::<A>() {
             visitor.visit(sealed::RefMutRaw(&mut self.id));
         }
     }

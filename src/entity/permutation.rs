@@ -1,10 +1,10 @@
-use std::any::TypeId;
 use std::cmp;
 use std::num::NonZeroU32;
 
 use xias::Xias;
 
 use crate::entity;
+use crate::util::DbgTypeId;
 
 /// A permutation of entities.
 pub struct Permutation {
@@ -73,7 +73,7 @@ impl Permutation {
     }
 
     /// Updates an entity referrer with the permutation.
-    pub fn update_referrer(&self, archetype: TypeId, referrer: &mut impl entity::Referrer) {
+    pub fn update_referrer(&self, archetype: DbgTypeId, referrer: &mut impl entity::Referrer) {
         referrer.visit_each(archetype, &mut |r| self.update(r))
     }
 
@@ -94,11 +94,11 @@ impl Permutation {
 
 #[cfg(test)]
 mod tests {
-    use std::any::TypeId;
     use std::collections::HashMap;
 
     use super::Permutation;
     use crate::entity::RefId;
+    use crate::util::DbgTypeId;
     use crate::{entity, TestArch};
 
     #[test]
@@ -118,7 +118,7 @@ mod tests {
         for (original, target) in [(1, 3), (3, 1), (5, 2)] {
             let mut entity =
                 crate::entity::Entity::<TestArch>::new_allocated(entity::Raw::testing(original));
-            permutation.update_referrer(TypeId::of::<TestArch>(), &mut entity);
+            permutation.update_referrer(DbgTypeId::of::<TestArch>(), &mut entity);
             assert_eq!(entity.id().0 .0.get(), target);
         }
     }

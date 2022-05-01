@@ -1,8 +1,9 @@
 //! The world stores the states of the game.
 
-use std::any::{self, TypeId};
+use std::any::{self, Any};
 use std::collections::HashMap;
 
+use crate::util::DbgTypeId;
 use crate::{comp, entity, Archetype, Entity};
 
 mod builder;
@@ -44,8 +45,8 @@ pub fn new<'t>(bundles: impl IntoIterator<Item = &'t dyn Bundle> + Copy) -> Worl
 
 /// Identifies an archetype + component type.
 pub(crate) struct ArchComp {
-    arch: TypeId,
-    comp: TypeId,
+    arch: DbgTypeId,
+    comp: DbgTypeId,
 }
 
 /// Describes a simple component type.
@@ -63,12 +64,24 @@ impl SimpleSpec {
 
 /// The data structure that stores all states in the game.
 pub struct World {
-    archetypes: HashMap<TypeId, Box<dyn typed::AnyTyped>>,
+    storages:  Storages,
+    globals:   Globals,
+    scheduler: scheduler::Scheduler,
+}
+
+/// Stores the component states in a world.
+pub struct Storages {
+    archetypes: HashMap<DbgTypeId, Box<dyn typed::AnyTyped>>,
+}
+
+/// Stores the global states in a world.
+pub struct Globals {
+    globals: HashMap<DbgTypeId, Box<dyn Any>>,
 }
 
 impl World {
     fn archetype<A: Archetype>(&self) -> &typed::Typed<A> {
-        match self.archetypes.get(&TypeId::of::<A>()) {
+        match self.storages.archetypes.get(&DbgTypeId::of::<A>()) {
             Some(typed) => typed.as_any().downcast_ref().expect("TypeId mismatch"),
             None => panic!(
                 "The archetype {} cannot be used because it is not used in any systems",
@@ -78,7 +91,7 @@ impl World {
     }
 
     fn archetype_mut<A: Archetype>(&mut self) -> &mut typed::Typed<A> {
-        match self.archetypes.get_mut(&TypeId::of::<A>()) {
+        match self.storages.archetypes.get_mut(&DbgTypeId::of::<A>()) {
             Some(typed) => typed.as_any_mut().downcast_mut().expect("TypeId mismatch"),
             None => panic!(
                 "The archetype {} cannot be used because it is not used in any systems",

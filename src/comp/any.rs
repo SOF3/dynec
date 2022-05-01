@@ -1,33 +1,28 @@
 //! Utilties for dynamic dispatch related to components.
 
-use std::any::{self, Any, TypeId};
+use std::any::{self, Any};
 use std::collections::BTreeMap;
 use std::marker::PhantomData;
 use std::{cmp, hash};
 
 use super::Discrim;
+use crate::util::DbgTypeId;
 use crate::{comp, Archetype};
 
 /// Identifies a generic simple or discriminated isotope component type.
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Identifier {
-    pub(crate) id:      TypeId,
-    #[allow(dead_code)] // used for debugging only
-    pub(crate) name:    &'static str,
+    pub(crate) id:      DbgTypeId,
     pub(crate) discrim: Option<usize>,
 }
 
 impl Identifier {
     pub(crate) fn simple<A: Archetype, C: comp::Simple<A>>() -> Self {
-        Identifier { id: TypeId::of::<C>(), name: any::type_name::<C>(), discrim: None }
+        Identifier { id: DbgTypeId::of::<C>(), discrim: None }
     }
 
     pub(crate) fn isotope<A: Archetype, C: comp::Isotope<A>>(discrim: C::Discrim) -> Self {
-        Identifier {
-            id:      TypeId::of::<C>(),
-            name:    any::type_name::<C>(),
-            discrim: Some(discrim.to_usize()),
-        }
+        Identifier { id: DbgTypeId::of::<C>(), discrim: Some(discrim.to_usize()) }
     }
 }
 
@@ -121,7 +116,7 @@ pub trait AutoInitFn<A: Archetype>: 'static {
     fn populate(&self, map: &mut Map<A>);
 
     /// Returns the component types required by this function.
-    fn deps(&self) -> Vec<(TypeId, comp::SimpleInitStrategy<A>)>;
+    fn deps(&self) -> Vec<(DbgTypeId, comp::SimpleInitStrategy<A>)>;
 }
 
 pub struct ComponentDescriptor {}
@@ -151,9 +146,9 @@ macro_rules! impl_auto_init_fn {
                 map.insert_simple(populate);
             }
 
-            fn deps(&self) -> Vec<(TypeId, comp::SimpleInitStrategy<A>)> {
+            fn deps(&self) -> Vec<(DbgTypeId, comp::SimpleInitStrategy<A>)> {
                 vec![
-                    $((TypeId::of::<$deps>(), <$deps as comp::Simple<A>>::INIT_STRATEGY),)*
+                    $((DbgTypeId::of::<$deps>(), <$deps as comp::Simple<A>>::INIT_STRATEGY),)*
                 ]
             }
         }

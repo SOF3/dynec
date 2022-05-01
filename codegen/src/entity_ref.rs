@@ -33,7 +33,7 @@ pub(crate) fn entity_ref(
                 quote! {
                     fn visit_each<'s, F: #crate_name::entity::Visitor<'s>>(
                         &'s mut self,
-                        archetype: ::std::any::TypeId,
+                        archetype: #crate_name::util::DbgTypeId,
                         visitor: &mut F,
                     ) {
                         #(
@@ -102,7 +102,7 @@ pub(crate) fn entity_ref(
                 quote! {
                     fn visit_each<'s, F: #crate_name::entity::Visitor<'s>>(
                         &'s mut self,
-                        archetype: ::std::any::TypeId,
+                        archetype: #crate_name::util::DbgTypeId,
                         visitor: &mut F,
                     ) {
                         match self {

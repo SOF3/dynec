@@ -415,6 +415,7 @@ macro_rules! system_test {
             builder.schedule(Box::new($systems));
         )*
 
+        #[allow(unused_mut)]
         let mut world = builder.build();
 
         $(

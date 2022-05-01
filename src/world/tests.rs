@@ -1,4 +1,4 @@
-use crate::{comp, system, world, Archetype};
+use crate::{comp, system, system_test, world, Archetype};
 
 enum TestArch {}
 impl Archetype for TestArch {}
@@ -35,25 +35,9 @@ fn system_with_comp3_comp4_comp5(
 ) {
 }
 
-macro_rules! make_world {
-    ($($systems:expr),* $(,)?) => {{
-        struct AnonymousBundle;
-
-        impl world::Bundle for AnonymousBundle {
-            fn register(&self, builder: &mut world::Builder) {
-                $(
-                    builder.schedule(Box::new($systems));
-                )*
-            }
-        }
-
-        world::new([&AnonymousBundle as &dyn world::Bundle])
-    }}
-}
-
 #[test]
 fn test_dependencies_successful() {
-    let mut world = make_world!(system_with_comp3_comp4_comp5.build());
+    let mut world = system_test!(system_with_comp3_comp4_comp5.build(););
     world.create::<TestArch>(crate::comps![@(crate) TestArch => Comp1(1), Comp5(1)]);
 }
 
@@ -62,7 +46,7 @@ fn test_dependencies_successful() {
                            without explicitly passing a component of type \
                            `dynec::world::tests::Comp5`")]
 fn test_dependencies_missing_required_simple() {
-    let mut world = make_world!(system_with_comp3_comp4_comp5.build());
+    let mut world = system_test!(system_with_comp3_comp4_comp5.build(););
     world.create::<TestArch>(crate::comps![@(crate) TestArch => Comp1(1)]);
 }
 
@@ -72,6 +56,6 @@ fn test_dependencies_missing_required_simple() {
                            `dynec::world::tests::Comp1`, which is required for \
                            `dynec::world::tests::Comp2`")]
 fn test_dependencies_missing_required_dep() {
-    let mut world = make_world!(system_with_comp3_comp4_comp5.build());
+    let mut world = system_test!(system_with_comp3_comp4_comp5.build(););
     world.create::<TestArch>(crate::comps![@(crate) TestArch => Comp5(1)]);
 }

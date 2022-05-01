@@ -295,7 +295,7 @@
 <span class="doccomment">/// A simple component has only one instance per entity.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// See the [module-level documentation](mod@crate::comp) for more information.</span>
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Simple</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span><span class="op">&gt;</span>: <span class="ident">entity::Referrer</span> <span class="op">+</span> <span class="ident">Sized</span> <span class="op">+</span> <span class="lifetime">&#39;static</span> {
+<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Simple</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span><span class="op">&gt;</span>: <span class="ident">entity::Referrer</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="ident">Sized</span> <span class="op">+</span> <span class="lifetime">&#39;static</span> {
     <span class="doccomment">/// The presence constraint of this component.</span>
     <span class="kw">const</span> <span class="ident">PRESENCE</span>: <span class="ident">SimplePresence</span>;
 
@@ -341,7 +341,7 @@
 <span class="doccomment">/// An isotope component may have multiple instances per entity.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// See the [module-level documentation](mod@crate::comp) for more information.</span>
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Isotope</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span><span class="op">&gt;</span>: <span class="ident">entity::Referrer</span> <span class="op">+</span> <span class="ident">Sized</span> <span class="op">+</span> <span class="lifetime">&#39;static</span> {
+<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Isotope</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span><span class="op">&gt;</span>: <span class="ident">entity::Referrer</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="ident">Sized</span> <span class="op">+</span> <span class="lifetime">&#39;static</span> {
     <span class="doccomment">/// The discriminant type.</span>
     <span class="kw">type</span> <span class="ident">Discrim</span>: <span class="ident">Discrim</span>;
 

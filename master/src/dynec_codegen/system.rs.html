@@ -656,7 +656,6 @@
 <span id="651">651</span>
 <span id="652">652</span>
 <span id="653">653</span>
-<span id="654">654</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">proc_macro2::TokenStream</span>;
 <span class="kw">use</span> <span class="ident">quote::quote</span>;
 <span class="kw">use</span> <span class="ident">syn::parse</span>::{<span class="ident">Parse</span>, <span class="ident">ParseStream</span>};
@@ -1003,7 +1002,10 @@
                 }
             }
             <span class="ident">ArgType::Global</span> { <span class="ident">thread_local</span> } =&gt; {
-                <span class="kw">let</span> <span class="ident">is_sync</span> <span class="op">=</span> <span class="op">!</span><span class="ident">thread_local</span>;
+                <span class="kw">let</span> <span class="ident">new_sync</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">thread_local</span> {
+                    <span class="bool-val">true</span> =&gt; <span class="macro">quote!</span>(<span class="ident">new_unsync</span>),
+                    <span class="bool-val">false</span> =&gt; <span class="macro">quote!</span>(<span class="ident">new_sync</span>),
+                };
 
                 <span class="kw">let</span> (<span class="ident">param_ty</span>, <span class="ident">mutable</span>) <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">param</span>.<span class="ident">ty</span> {
                     <span class="ident">syn::Type::Reference</span>(<span class="ident">ty</span>) =&gt; (<span class="kw-2">&amp;</span><span class="ident">ty</span>.<span class="ident">elem</span>, <span class="ident">ty</span>.<span class="ident">mutability</span>.<span class="ident">is_some</span>()),
@@ -1016,11 +1018,7 @@
                 };
 
                 <span class="ident">global_requests</span>.<span class="ident">push</span>(<span class="macro">quote!</span> {
-                    #<span class="ident">crate_name::system::spec::GlobalRequest</span> {
-                        <span class="ident">global</span>: <span class="ident">::dynec::util::DbgTypeId::of</span>::<span class="op">&lt;</span>#<span class="ident">param_ty</span><span class="op">&gt;</span>(),
-                        <span class="ident">mutable</span>: #<span class="ident">mutable</span>,
-                        <span class="ident">sync</span>: #<span class="ident">is_sync</span>,
-                    }
+                    #<span class="ident">crate_name::system::spec::GlobalRequest</span>::#<span class="ident">new_sync</span>::<span class="op">&lt;</span>#<span class="ident">param_ty</span><span class="op">&gt;</span>(#<span class="ident">mutable</span>)
                 });
             }
             <span class="ident">ArgType::Simple</span> { <span class="ident">mutable</span>, <span class="ident">arch</span>, <span class="ident">comp</span> } =&gt; {

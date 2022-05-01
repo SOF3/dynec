@@ -138,6 +138,25 @@
 <span id="133">133</span>
 <span id="134">134</span>
 <span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::any::Any</span>;
 <span class="kw">use</span> <span class="ident">std::collections::HashMap</span>;
 
@@ -150,14 +169,15 @@
 <span class="doccomment">/// No more systems can be scheduled after the builder is built.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Builder</span> {
-    <span class="ident">scheduler</span>:  <span class="ident">scheduler::Builder</span>,
-    <span class="ident">archetypes</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">DbgTypeId</span>, <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">typed::AnyBuilder</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    <span class="ident">globals</span>:    <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">DbgTypeId</span>, <span class="ident">DefaultableAny</span><span class="op">&gt;</span>,
+    <span class="ident">scheduler</span>:      <span class="ident">scheduler::Builder</span>,
+    <span class="ident">archetypes</span>:     <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">DbgTypeId</span>, <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">typed::AnyBuilder</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">send_globals</span>:   <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">DbgTypeId</span>, <span class="ident">DefaultableAny</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Any</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">unsend_globals</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">DbgTypeId</span>, <span class="ident">DefaultableAny</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Any</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 }
 
-<span class="kw">enum</span> <span class="ident">DefaultableAny</span> {
-    <span class="ident">Given</span>(<span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Any</span><span class="op">&gt;</span>),
-    <span class="ident">Missing</span>(<span class="kw">fn</span>() -&gt; <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Any</span><span class="op">&gt;</span>),
+<span class="kw">enum</span> <span class="ident">DefaultableAny</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="question-mark">?</span><span class="ident">Sized</span><span class="op">&gt;</span> {
+    <span class="ident">Given</span>(<span class="ident">Box</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>),
+    <span class="ident">Missing</span>(<span class="kw">fn</span>() -&gt; <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>),
 }
 
 <span class="kw">impl</span> <span class="ident">Builder</span> {
@@ -168,19 +188,29 @@
         <span class="self">self</span>.<span class="ident">archetypes</span>.<span class="ident">entry</span>(<span class="ident">archetype</span>.<span class="ident">id</span>).<span class="ident">or_insert_with</span>(<span class="ident">archetype</span>.<span class="ident">builder</span>)
     }
 
-    <span class="kw">fn</span> <span class="ident">register_resources</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">system</span>: <span class="kw-2">&amp;</span><span class="kw">dyn</span> <span class="ident">system::Spec</span>, <span class="ident">sync</span>: <span class="ident">bool</span>) {
+    <span class="kw">fn</span> <span class="ident">register_resources</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">system</span>: <span class="kw-2">&amp;</span><span class="kw">dyn</span> <span class="ident">system::Spec</span>, <span class="ident">sync</span>: <span class="ident">bool</span>, <span class="ident">id</span>: <span class="ident">scheduler::TaskId</span>) {
         <span class="ident">system</span>.<span class="ident">for_each_global_request</span>(<span class="kw-2">&amp;mut</span> <span class="op">|</span><span class="ident">request</span><span class="op">|</span> {
-            <span class="kw">if</span> <span class="ident">request</span>.<span class="ident">sync</span> {
-                <span class="self">self</span>.<span class="ident">scheduler</span>.<span class="ident">send_globals</span>.<span class="ident">entry</span>(<span class="ident">request</span>.<span class="ident">global</span>).<span class="ident">or_default</span>();
-            } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">sync</span> {
-                <span class="macro">panic!</span>(
-                    <span class="string">&quot;Cannot schedule system {} as thread-safe because it requires thread-unsafe \
-                     resources&quot;</span>,
-                    <span class="ident">system</span>.<span class="ident">debug_name</span>()
-                );
-            } <span class="kw">else</span> {
-                <span class="self">self</span>.<span class="ident">scheduler</span>.<span class="ident">unsend_globals</span>.<span class="ident">entry</span>(<span class="ident">request</span>.<span class="ident">global</span>).<span class="ident">or_default</span>();
+            <span class="kw">match</span> <span class="ident">request</span>.<span class="ident">initial</span> {
+                <span class="ident">spec::GlobalInitial::Sync</span>(<span class="ident">initial</span>) =&gt; {
+                    <span class="self">self</span>.<span class="ident">send_globals</span>
+                        .<span class="ident">entry</span>(<span class="ident">request</span>.<span class="ident">ty</span>)
+                        .<span class="ident">or_insert_with</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">DefaultableAny::Missing</span>(<span class="ident">initial</span>));
+                }
+                <span class="kw">_</span> <span class="kw">if</span> <span class="ident">sync</span> =&gt; {
+                    <span class="macro">panic!</span>(
+                        <span class="string">&quot;Cannot schedule system {} as thread-safe because it requires \
+                         thread-unsafe resources&quot;</span>,
+                        <span class="ident">system</span>.<span class="ident">debug_name</span>()
+                    );
+                }
+                <span class="ident">spec::GlobalInitial::Unsync</span>(<span class="ident">initial</span>) =&gt; {
+                    <span class="self">self</span>.<span class="ident">unsend_globals</span>
+                        .<span class="ident">entry</span>(<span class="ident">request</span>.<span class="ident">ty</span>)
+                        .<span class="ident">or_insert_with</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">DefaultableAny::Missing</span>(<span class="ident">initial</span>));
+                }
             }
+
+            <span class="self">self</span>.<span class="ident">scheduler</span>.<span class="ident">globals</span>.<span class="ident">entry</span>(<span class="ident">request</span>.<span class="ident">ty</span>).<span class="ident">or_default</span>().<span class="ident">push</span>((<span class="ident">id</span>, <span class="ident">request</span>.<span class="ident">mutable</span>));
         });
 
         <span class="ident">system</span>.<span class="ident">for_each_simple_request</span>(<span class="kw-2">&amp;mut</span> <span class="op">|</span><span class="ident">request</span><span class="op">|</span> {
@@ -226,20 +256,21 @@
 
     <span class="doccomment">/// Schedules a thread-safe system.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">schedule</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">system</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">system::Spec</span> <span class="op">+</span> <span class="ident">Send</span><span class="op">&gt;</span>) {
-        <span class="self">self</span>.<span class="ident">register_resources</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">system</span>, <span class="bool-val">true</span>);
-
         <span class="kw">let</span> <span class="ident">index</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">scheduler</span>.<span class="ident">send_systems</span>.<span class="ident">len</span>();
         <span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="ident">scheduler::TaskId</span> { <span class="ident">class</span>: <span class="ident">scheduler::TaskClass::Send</span>, <span class="ident">index</span> };
+
+        <span class="self">self</span>.<span class="ident">register_resources</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">system</span>, <span class="bool-val">true</span>, <span class="ident">id</span>);
 
         <span class="self">self</span>.<span class="ident">scheduler</span>.<span class="ident">send_systems</span>.<span class="ident">push</span>(<span class="ident">system</span>);
     }
 
     <span class="doccomment">/// Schedules a system that must be run on the main thread.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">schedule_thread_unsafe</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">system</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">system::Spec</span><span class="op">&gt;</span>) {
-        <span class="self">self</span>.<span class="ident">register_resources</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">system</span>, <span class="bool-val">false</span>);
-
         <span class="kw">let</span> <span class="ident">index</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">scheduler</span>.<span class="ident">unsend_systems</span>.<span class="ident">len</span>();
         <span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="ident">scheduler::TaskId</span> { <span class="ident">class</span>: <span class="ident">scheduler::TaskClass::Unsend</span>, <span class="ident">index</span> };
+
+        <span class="self">self</span>.<span class="ident">register_resources</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">system</span>, <span class="bool-val">false</span>, <span class="ident">id</span>);
+
         <span class="self">self</span>.<span class="ident">scheduler</span>.<span class="ident">unsend_systems</span>.<span class="ident">push</span>(<span class="ident">system</span>);
     }
 
@@ -253,17 +284,24 @@
                 .<span class="ident">collect</span>(),
         };
 
-        <span class="kw">let</span> <span class="ident">globals</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">globals</span>
+        <span class="kw">let</span> <span class="ident">send_globals</span> <span class="op">=</span> <span class="self">self</span>
+            .<span class="ident">send_globals</span>
             .<span class="ident">into_iter</span>()
             .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">ty</span>, <span class="ident">da</span>)<span class="op">|</span> <span class="kw">match</span> <span class="ident">da</span> {
                 <span class="ident">DefaultableAny::Given</span>(<span class="ident">value</span>) =&gt; (<span class="ident">ty</span>, <span class="ident">value</span>),
                 <span class="ident">DefaultableAny::Missing</span>(<span class="ident">default</span>) =&gt; (<span class="ident">ty</span>, <span class="ident">default</span>()),
             })
             .<span class="ident">collect</span>();
-        <span class="kw">let</span> <span class="ident">globals</span> <span class="op">=</span> <span class="ident"><span class="kw">super</span>::Globals</span> { <span class="ident">globals</span> };
+        <span class="kw">let</span> <span class="ident">unsend_globals</span> <span class="op">=</span> <span class="self">self</span>
+            .<span class="ident">unsend_globals</span>
+            .<span class="ident">into_iter</span>()
+            .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">ty</span>, <span class="ident">da</span>)<span class="op">|</span> <span class="kw">match</span> <span class="ident">da</span> {
+                <span class="ident">DefaultableAny::Given</span>(<span class="ident">value</span>) =&gt; (<span class="ident">ty</span>, <span class="ident">value</span>),
+                <span class="ident">DefaultableAny::Missing</span>(<span class="ident">default</span>) =&gt; (<span class="ident">ty</span>, <span class="ident">default</span>()),
+            })
+            .<span class="ident">collect</span>();
 
-        <span class="ident"><span class="kw">super</span>::World</span> { <span class="ident">storages</span>, <span class="ident">globals</span>, <span class="ident">scheduler</span>: <span class="self">self</span>.<span class="ident">scheduler</span>.<span class="ident">build</span>() }
+        <span class="ident"><span class="kw">super</span>::World</span> { <span class="ident">storages</span>, <span class="ident">send_globals</span>, <span class="ident">unsend_globals</span>, <span class="ident">scheduler</span>: <span class="self">self</span>.<span class="ident">scheduler</span>.<span class="ident">build</span>() }
     }
 }
 

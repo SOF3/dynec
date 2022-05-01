@@ -48,7 +48,7 @@
 <span class="doccomment">/// An archetype is a kind of entity with a fixed set of (optional) components.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// See the [module-level documentation](mod@crate::archetype) for more information.</span>
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Archetype</span>: <span class="lifetime">&#39;static</span> {}
+<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Archetype</span>: <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span> {}
 </code></pre></div>
 </section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (7c4b47696 2022-04-30)" ></div>
 </body></html>

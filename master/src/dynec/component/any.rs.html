@@ -199,6 +199,7 @@
 <span id="194">194</span>
 <span id="195">195</span>
 <span id="196">196</span>
+<span id="197">197</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Utilties for dynamic dispatch related to components.</span>
 
 <span class="kw">use</span> <span class="ident">std::any</span>::{<span class="self">self</span>, <span class="ident">Any</span>, <span class="ident">TypeId</span>};
@@ -341,9 +342,10 @@
                         <span class="kw">match</span> <span class="ident">map</span>.<span class="ident">get_simple</span>::<span class="op">&lt;</span><span class="macro-nonterminal">$</span><span class="macro-nonterminal">deps</span><span class="op">&gt;</span>() {
                             <span class="prelude-val">Some</span>(<span class="ident">comp</span>) =&gt; <span class="ident">comp</span>,
                             <span class="prelude-val">None</span> =&gt; <span class="macro">panic!</span>(
-                                <span class="string">&quot;Cannot initialize entity of type {} without explicitly passing a component of type {}&quot;</span>,
+                                <span class="string">&quot;Cannot create an entity of type `{}` without explicitly passing a component of type `{}`, which is required for `{}`&quot;</span>,
                                 <span class="ident">any::type_name</span>::<span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>(),
                                 <span class="ident">any::type_name</span>::<span class="op">&lt;</span><span class="macro-nonterminal">$</span><span class="macro-nonterminal">deps</span><span class="op">&gt;</span>(),
+                                <span class="ident">any::type_name</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(),
                             ),
                         },
                     )<span class="op">*</span>

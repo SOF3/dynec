@@ -124,6 +124,8 @@
 <span id="119">119</span>
 <span id="120">120</span>
 <span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Specifies the requirements for a system.</span>
 
 <span class="kw">use</span> <span class="ident">std::any</span>::{<span class="ident">Any</span>, <span class="ident">TypeId</span>};
@@ -194,6 +196,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">SimpleRequest</span> {
+    <span class="doccomment">/// Creates a new simple component request with types known at compile time.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span>, <span class="ident">C</span>: <span class="ident">component::Simple</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="ident">mutable</span>: <span class="ident">bool</span>) -&gt; <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">archetype</span>: <span class="ident">ArchetypeDescriptor::of</span>::<span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>(),
@@ -232,6 +235,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">IsotopeRequest</span> {
+    <span class="doccomment">/// Creates a new isotope component request with types known at compile time.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span>, <span class="ident">C</span>: <span class="ident">component::Isotope</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span><span class="op">&gt;</span>(
         <span class="ident">discrim</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span><span class="op">&gt;</span>,
         <span class="ident">mutable</span>: <span class="ident">bool</span>,

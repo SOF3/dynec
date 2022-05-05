@@ -150,14 +150,6 @@
 <span id="145">145</span>
 <span id="146">146</span>
 <span id="147">147</span>
-<span id="148">148</span>
-<span id="149">149</span>
-<span id="150">150</span>
-<span id="151">151</span>
-<span id="152">152</span>
-<span id="153">153</span>
-<span id="154">154</span>
-<span id="155">155</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Specifies the requirements for a system.</span>
 
 <span class="kw">use</span> <span class="ident">std::any::Any</span>;
@@ -167,27 +159,17 @@
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">comp</span>, <span class="ident">system</span>, <span class="ident">Archetype</span>, <span class="ident">Global</span>};
 
 <span class="doccomment">/// Describes an instance of system.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// There may be multiple instances of the same implementor type.</span>
-<span class="doccomment">/// This is meaningful as they may have different states.</span>
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Spec</span> {
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Spec</span> {
     <span class="doccomment">/// The debug name of the system.</span>
-    <span class="kw">fn</span> <span class="ident">debug_name</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">String</span>;
-
-    <span class="doccomment">/// Executes the given function on each dependency.</span>
-    <span class="kw">fn</span> <span class="ident">for_each_dependency</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="kw">dyn</span> <span class="ident">FnMut</span>(<span class="ident">Dependency</span>));
-
-    <span class="doccomment">/// Executes the given function on each global state request.</span>
-    <span class="kw">fn</span> <span class="ident">for_each_global_request</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="kw">dyn</span> <span class="ident">FnMut</span>(<span class="ident">GlobalRequest</span>));
-
-    <span class="doccomment">/// Executes the given function on each simple component read/write request.</span>
-    <span class="kw">fn</span> <span class="ident">for_each_simple_request</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="kw">dyn</span> <span class="ident">FnMut</span>(<span class="ident">SimpleRequest</span>));
-
-    <span class="doccomment">/// Executes the given function on each isotope component read/write request.</span>
-    <span class="kw">fn</span> <span class="ident">for_each_isotope_request</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="kw">dyn</span> <span class="ident">FnMut</span>(<span class="ident">IsotopeRequest</span>));
-
-    <span class="doccomment">/// Runs the system.</span>
-    <span class="kw">fn</span> <span class="ident">run</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>);
+    <span class="kw">pub</span> <span class="ident">debug_name</span>:       <span class="ident">String</span>,
+    <span class="doccomment">/// The partition dependencies related to the system.</span>
+    <span class="kw">pub</span> <span class="ident">dependencies</span>:     <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Dependency</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// The global states requested by the system.</span>
+    <span class="kw">pub</span> <span class="ident">global_requests</span>:  <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">GlobalRequest</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// The simple components requested by the system.</span>
+    <span class="kw">pub</span> <span class="ident">simple_requests</span>:  <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">SimpleRequest</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// The isotope components requested by the system.</span>
+    <span class="kw">pub</span> <span class="ident">isotope_requests</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">IsotopeRequest</span><span class="op">&gt;</span>,
 }
 
 <span class="doccomment">/// Indicates the dependency of a system.</span>
@@ -217,6 +199,7 @@
 }
 
 <span class="doccomment">/// Specifies the initializer for a global type.</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">GlobalInitial</span> {
     <span class="doccomment">/// Used for thread-safe globals.</span>
     <span class="ident">Sync</span>(<span class="kw">fn</span>() -&gt; <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Any</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span>),
@@ -247,10 +230,22 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">sync</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> { <span class="macro">matches!</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">initial</span>, <span class="ident">GlobalInitial::Sync</span>(..)) }
 }
 
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">ArchetypeDescriptor</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">id</span>:      <span class="ident">DbgTypeId</span>,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">builder</span>: <span class="kw">fn</span>() -&gt; <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">world::typed::AnyBuilder</span><span class="op">&gt;</span>,
+}
+
+<span class="kw">impl</span> <span class="ident">ArchetypeDescriptor</span> {
+    <span class="kw">fn</span> <span class="ident">of</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span><span class="op">&gt;</span>() -&gt; <span class="self">Self</span> {
+        <span class="self">Self</span> { <span class="ident">id</span>: <span class="ident">DbgTypeId::of</span>::<span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>(), <span class="ident">builder</span>: <span class="op">|</span><span class="op">|</span> <span class="ident">Box::new</span>(<span class="ident">world::typed::builder</span>::<span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>()) }
+    }
+}
+
 <span class="doccomment">/// Indicates that the system requires a simple component read/write.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SimpleRequest</span> {
     <span class="doccomment">/// The archetype requested.</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">archetype</span>:       <span class="ident">ArchetypeDescriptor</span>,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">arch</span>:            <span class="ident">ArchetypeDescriptor</span>,
     <span class="doccomment">/// The type of the simple component.</span>
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">comp</span>:            <span class="ident">DbgTypeId</span>,
     <span class="doccomment">/// Builder for the storage. Must be `Box&lt;storage::SharedSimple&lt;A&gt;&gt;`.</span>
@@ -263,7 +258,7 @@
     <span class="doccomment">/// Creates a new simple component request with types known at compile time.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span>, <span class="ident">C</span>: <span class="ident">comp::Simple</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="ident">mutable</span>: <span class="ident">bool</span>) -&gt; <span class="self">Self</span> {
         <span class="self">Self</span> {
-            <span class="ident">archetype</span>: <span class="ident">ArchetypeDescriptor::of</span>::<span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>(),
+            <span class="ident">arch</span>: <span class="ident">ArchetypeDescriptor::of</span>::<span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>(),
             <span class="ident">comp</span>: <span class="ident">DbgTypeId::of</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(),
             <span class="ident">mutable</span>,
             <span class="ident">storage_builder</span>: <span class="op">|</span><span class="op">|</span> <span class="ident">Box::new</span>(<span class="ident">storage::shared_simple</span>::<span class="op">&lt;</span><span class="ident">A</span>, <span class="ident">C</span><span class="op">&gt;</span>()),
@@ -271,21 +266,10 @@
     }
 }
 
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">ArchetypeDescriptor</span> {
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">id</span>:      <span class="ident">DbgTypeId</span>,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">builder</span>: <span class="kw">fn</span>() -&gt; <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">world::typed::AnyBuilder</span><span class="op">&gt;</span>,
-}
-
-<span class="kw">impl</span> <span class="ident">ArchetypeDescriptor</span> {
-    <span class="kw">fn</span> <span class="ident">of</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span><span class="op">&gt;</span>() -&gt; <span class="self">Self</span> {
-        <span class="self">Self</span> { <span class="ident">id</span>: <span class="ident">DbgTypeId::of</span>::<span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>(), <span class="ident">builder</span>: <span class="op">|</span><span class="op">|</span> <span class="ident">Box::new</span>(<span class="ident">world::typed::builder</span>::<span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>()) }
-    }
-}
-
 <span class="doccomment">/// Indicates that the system requires an isotope component read/write.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">IsotopeRequest</span> {
     <span class="doccomment">/// The archetype requested.</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">archetype</span>:       <span class="ident">ArchetypeDescriptor</span>,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">arch</span>:            <span class="ident">ArchetypeDescriptor</span>,
     <span class="doccomment">/// The archetype of the isotope component.</span>
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">comp</span>:            <span class="ident">DbgTypeId</span>,
     <span class="doccomment">/// Builder for the IsotopeFactory. Must be `Box&lt;Box&lt;dyn storage::AnyIsotopeFactory&lt;A&gt;&gt;&gt;`.</span>
@@ -305,7 +289,7 @@
         <span class="ident">mutable</span>: <span class="ident">bool</span>,
     ) -&gt; <span class="self">Self</span> {
         <span class="self">Self</span> {
-            <span class="ident">archetype</span>: <span class="ident">ArchetypeDescriptor::of</span>::<span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>(),
+            <span class="ident">arch</span>: <span class="ident">ArchetypeDescriptor::of</span>::<span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>(),
             <span class="ident">comp</span>: <span class="ident">DbgTypeId::of</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(),
             <span class="ident">discrim</span>,
             <span class="ident">mutable</span>,
@@ -314,5 +298,5 @@
     }
 }
 </code></pre></div>
-</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (7c4b47696 2022-04-30)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (4c60a0ea5 2022-05-04)" ></div>
 </body></html>

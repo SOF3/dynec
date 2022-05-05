@@ -647,15 +647,6 @@
 <span id="642">642</span>
 <span id="643">643</span>
 <span id="644">644</span>
-<span id="645">645</span>
-<span id="646">646</span>
-<span id="647">647</span>
-<span id="648">648</span>
-<span id="649">649</span>
-<span id="650">650</span>
-<span id="651">651</span>
-<span id="652">652</span>
-<span id="653">653</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">proc_macro2::TokenStream</span>;
 <span class="kw">use</span> <span class="ident">quote::quote</span>;
 <span class="kw">use</span> <span class="ident">syn::parse</span>::{<span class="ident">Parse</span>, <span class="ident">ParseStream</span>};
@@ -1067,7 +1058,7 @@
                 #<span class="ident">vis</span> <span class="kw">fn</span> <span class="ident">build</span>(
                     <span class="kw-2">&amp;</span><span class="self">self</span>,
                     #(#<span class="ident">param_state_field_idents</span>: #<span class="ident">param_state_field_tys</span>,)<span class="op">*</span>
-                ) -&gt; <span class="kw">impl</span> #<span class="ident">crate_name::system::Spec</span> {
+                ) -&gt; <span class="kw">impl</span> #<span class="ident">crate_name::system::System</span> {
                     <span class="ident">__dynec_local_state</span> {
                         #(#<span class="ident">param_state_field_idents</span>,)<span class="op">*</span>
                         #(#<span class="ident">initial_state_field_idents</span>: #<span class="ident">initial_state_field_defaults</span>,)<span class="op">*</span>
@@ -1092,28 +1083,19 @@
                 }
             }
 
-            <span class="kw">impl</span> #<span class="ident">crate_name::system::Spec</span> <span class="kw">for</span> <span class="ident">__dynec_local_state</span> {
-                <span class="kw">fn</span> <span class="ident">debug_name</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">::std::string::String</span> {
+            <span class="kw">impl</span> #<span class="ident">crate_name::system::System</span> <span class="kw">for</span> <span class="ident">__dynec_local_state</span> {
+                <span class="kw">fn</span> <span class="ident">get_spec</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; #<span class="ident">crate_name::system::Spec</span> {
                     #<span class="ident">destructure_local_states</span>
-                    <span class="ident">::std::string::String::from</span>(#<span class="ident">name</span>)
-                }
 
-                <span class="kw">fn</span> <span class="ident">for_each_dependency</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="kw">dyn</span> <span class="ident">FnMut</span>(#<span class="ident">crate_name::system::spec::Dependency</span>)) {
-                    #<span class="ident">destructure_local_states</span>
-                    #(<span class="ident">f</span>(#<span class="ident">deps</span>);)<span class="op">*</span>
-                }
-
-                <span class="kw">fn</span> <span class="ident">for_each_global_request</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="kw">dyn</span> <span class="ident">FnMut</span>(#<span class="ident">crate_name::system::spec::GlobalRequest</span>)) {
-                    #(<span class="ident">f</span>(#<span class="ident">global_requests</span>);)<span class="op">*</span>
-                }
-
-                <span class="kw">fn</span> <span class="ident">for_each_simple_request</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="kw">dyn</span> <span class="ident">FnMut</span>(#<span class="ident">crate_name::system::spec::SimpleRequest</span>)) {
-                    #(<span class="ident">f</span>(#<span class="ident">simple_requests</span>);)<span class="op">*</span>
-                }
-
-                <span class="kw">fn</span> <span class="ident">for_each_isotope_request</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="kw">dyn</span> <span class="ident">FnMut</span>(#<span class="ident">crate_name::system::spec::IsotopeRequest</span>)) {
-                    #<span class="ident">destructure_local_states</span>
-                    #(<span class="ident">f</span>(#<span class="ident">isotope_requests</span>);)<span class="op">*</span>
+                    #<span class="ident">crate_name::system::Spec</span> {
+                        <span class="ident">debug_name</span>: {
+                            <span class="ident">::std::string::String::from</span>(#<span class="ident">name</span>)
+                        },
+                        <span class="ident">dependencies</span>: <span class="macro">vec!</span>[#(#<span class="ident">deps</span>),<span class="kw-2">*</span>],
+                        <span class="ident">global_requests</span>: <span class="macro">vec!</span>[#(#<span class="ident">global_requests</span>),<span class="kw-2">*</span>],
+                        <span class="ident">simple_requests</span>: <span class="macro">vec!</span>[#(#<span class="ident">simple_requests</span>),<span class="kw-2">*</span>],
+                        <span class="ident">isotope_requests</span>: <span class="macro">vec!</span>[#(#<span class="ident">isotope_requests</span>),<span class="kw-2">*</span>],
+                    }
                 }
 
                 <span class="kw">fn</span> <span class="ident">run</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
@@ -1310,5 +1292,5 @@
     }
 }
 </code></pre></div>
-</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec_codegen" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (7c4b47696 2022-04-30)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec_codegen" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (4c60a0ea5 2022-05-04)" ></div>
 </body></html>

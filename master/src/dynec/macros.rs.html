@@ -432,6 +432,12 @@
 <span id="427">427</span>
 <span id="428">428</span>
 <span id="429">429</span>
+<span id="430">430</span>
+<span id="431">431</span>
+<span id="432">432</span>
+<span id="433">433</span>
+<span id="434">434</span>
+<span id="435">435</span>
 </pre><pre class="rust"><code><span class="doccomment">/// Declares archetypes.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// # Example</span>
@@ -703,7 +709,7 @@
 <span class="doccomment">/// #[dynec::global(initial = Title(&quot;hello world&quot;))]</span>
 <span class="doccomment">/// struct Title(&amp;&#39;static str);</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// #[derive(PartialEq, Eq, Hash)]</span>
+<span class="doccomment">/// #[derive(Debug, PartialEq, Eq, Hash)]</span>
 <span class="doccomment">/// struct Foo;</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// dynec::archetype!(Player);</span>
@@ -746,8 +752,11 @@
 <span class="doccomment">///     }</span>
 <span class="doccomment">/// }</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// let spec = simulate.build(SkillId(3));</span>
-<span class="doccomment">/// assert_eq!(system::Spec::debug_name(&amp;spec), &quot;simulate[counter = 0, skill_id = SkillId(3)]&quot;);</span>
+<span class="doccomment">/// let system = simulate.build(SkillId(3));</span>
+<span class="doccomment">/// assert_eq!(</span>
+<span class="doccomment">///     system::System::get_spec(&amp;system).debug_name.as_str(),</span>
+<span class="doccomment">///     &quot;simulate[counter = 0, skill_id = SkillId(3)]&quot;</span>
+<span class="doccomment">/// );</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// {</span>
 <span class="doccomment">///     // We can also call the function directly in unit tests.</span>
@@ -799,10 +808,13 @@
             <span class="kw-2">*</span><span class="ident">counter_two</span> <span class="op">+</span><span class="op">=</span> <span class="number">3i64</span>;
         }
 
-        <span class="kw">let</span> <span class="ident">spec</span> <span class="op">=</span> <span class="ident">simulate</span>.<span class="ident">build</span>(<span class="number">2i64</span>);
+        <span class="kw">let</span> <span class="ident">system</span> <span class="op">=</span> <span class="ident">simulate</span>.<span class="ident">build</span>(<span class="number">2i64</span>);
         {
-            <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::system::Spec</span>;
-            <span class="macro">assert_eq!</span>(<span class="ident">spec</span>.<span class="ident">debug_name</span>(), <span class="string">&quot;dynec::macros::system_tests::simulate&quot;</span>);
+            <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::system::System</span>;
+            <span class="macro">assert_eq!</span>(
+                <span class="ident">system</span>.<span class="ident">get_spec</span>().<span class="ident">debug_name</span>.<span class="ident">as_str</span>(),
+                <span class="string">&quot;dynec::macros::system_tests::simulate&quot;</span>
+            );
         }
     }
 }
@@ -862,5 +874,5 @@
     }}
 }
 </code></pre></div>
-</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (7c4b47696 2022-04-30)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (4c60a0ea5 2022-05-04)" ></div>
 </body></html>

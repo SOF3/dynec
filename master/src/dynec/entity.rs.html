@@ -215,6 +215,10 @@
 <span id="210">210</span>
 <span id="211">211</span>
 <span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
 </pre><pre class="rust"><code><span class="doccomment">//! An entity is a single object that owns components.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Entities are reference-counted in debug mode,</span>
@@ -228,6 +232,10 @@
 <span class="kw">use</span> <span class="ident">std::marker::PhantomData</span>;
 <span class="kw">use</span> <span class="ident">std::num</span>;
 <span class="kw">use</span> <span class="ident">std::num::NonZeroU32</span>;
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(
+    <span class="ident">all</span>(<span class="ident">debug_assertions</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;debug-entity-rc&quot;</span>),
+    <span class="ident">all</span>(<span class="ident">not</span>(<span class="ident">debug_assertions</span>), <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;release-entity-rc&quot;</span>),
+))]</span>
 <span class="kw">use</span> <span class="ident">std::sync::Arc</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::Archetype</span>;
@@ -428,5 +436,5 @@
     }
 }
 </code></pre></div>
-</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (7c4b47696 2022-04-30)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (4c60a0ea5 2022-05-04)" ></div>
 </body></html>

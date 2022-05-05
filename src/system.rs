@@ -8,6 +8,7 @@
 //! Systems that use thread-unsafe resources (systems that are not [`Send`])
 //! are always executed on the main thread.
 
+use core::fmt;
 use std::any::TypeId;
 use std::collections::hash_map::DefaultHasher;
 use std::hash;
@@ -41,6 +42,9 @@ where
 /// before any posterior system starts executing,
 /// effectively creating a "partition" between the anterior and posterior systems.
 pub trait Partition: sealed::Sealed + 'static {
+    /// Describes the partition as [`fmt::Debug`].
+    fn describe(&self, f: &mut fmt::Formatter) -> fmt::Result;
+
     /// Computes the hash of this component.
     fn compute_hash(&self) -> u64;
 
@@ -51,9 +55,11 @@ pub trait Partition: sealed::Sealed + 'static {
     fn as_any(&self) -> &dyn std::any::Any;
 }
 
-impl<T: Eq + hash::Hash + 'static> sealed::Sealed for T {}
+impl<T: fmt::Debug + Eq + hash::Hash + 'static> sealed::Sealed for T {}
 
-impl<T: Eq + hash::Hash + 'static> Partition for T {
+impl<T: fmt::Debug + Eq + hash::Hash + 'static> Partition for T {
+    fn describe(&self, f: &mut fmt::Formatter) -> fmt::Result { writeln!(f, "{:?}", self) }
+
     fn compute_hash(&self) -> u64 {
         use hash::Hasher;
 
@@ -73,7 +79,13 @@ impl<T: Eq + hash::Hash + 'static> Partition for T {
     fn as_any(&self) -> &dyn std::any::Any { self }
 }
 
+/// A wrapper type for trait objects of [`Partition`]
+/// that implements [`Eq`] and [`hash::Hash`] in a type-dependent manner.
 pub(crate) struct PartitionWrapper(pub(crate) Box<dyn Partition>);
+
+impl fmt::Debug for PartitionWrapper {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { self.0.describe(f) }
+}
 
 impl PartialEq for PartitionWrapper {
     fn eq(&self, other: &Self) -> bool { (&*self.0).equals(&*other.0) }
@@ -87,6 +99,22 @@ impl hash::Hash for PartitionWrapper {
 
 mod sealed {
     pub trait Sealed {}
+}
+
+/// A system requests some resources, stores some states of its own and is runnable with the
+/// requested resources.
+///
+/// There may be multiple instances of the same implementor type.
+/// This is meaningful as they may have different states.
+pub trait System {
+    /// Describes this instance of system.
+    ///
+    /// The method is only called when the system was initially scheduled,
+    /// but it should return a consistent value.
+    fn get_spec(&self) -> Spec;
+
+    /// Runs the system.
+    fn run(&mut self);
 }
 
 pub mod spec;

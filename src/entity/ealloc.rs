@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use crate::entity;
+use crate::{entity, util};
 
 /// Manages entity ID allocation.
 pub(crate) struct Ealloc {
@@ -18,8 +18,7 @@ impl Ealloc {
     /// Allocates the smallest entity ID available.
     pub(crate) fn allocate(&mut self) -> entity::Raw {
         // TODO change to pop_first when it is stable
-        if let Some(&id) = self.recycled.iter().next() {
-            self.recycled.remove(&id);
+        if let Some(id) = util::btreeset_remove_first(&mut self.recycled) {
             id
         } else {
             self.push_gauge()

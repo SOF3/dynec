@@ -11,6 +11,10 @@
 use std::marker::PhantomData;
 use std::num;
 use std::num::NonZeroU32;
+#[cfg(any(
+    all(debug_assertions, feature = "debug-entity-rc"),
+    all(not(debug_assertions), feature = "release-entity-rc"),
+))]
 use std::sync::Arc;
 
 use crate::Archetype;

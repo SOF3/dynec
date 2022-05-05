@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use super::{scheduler, typed};
 use crate::system::spec;
 use crate::util::DbgTypeId;
-use crate::{comp, system};
+use crate::{comp, system, Global};
 
 /// This type is used to build a world.
 /// No more systems can be scheduled after the builder is built.
@@ -12,12 +12,12 @@ use crate::{comp, system};
 pub struct Builder {
     scheduler:      scheduler::Builder,
     archetypes:     HashMap<DbgTypeId, Box<dyn typed::AnyBuilder>>,
-    send_globals:   HashMap<DbgTypeId, DefaultableAny<dyn Any + Send + Sync>>,
-    unsend_globals: HashMap<DbgTypeId, DefaultableAny<dyn Any>>,
+    sync_globals:   HashMap<DbgTypeId, GlobalBuilder<dyn Any + Send + Sync>>,
+    unsync_globals: HashMap<DbgTypeId, GlobalBuilder<dyn Any>>,
 }
 
-enum DefaultableAny<A: ?Sized> {
-    Given(Box<A>),
+enum GlobalBuilder<A: ?Sized> {
+    Provided(Box<A>),
     Missing(fn() -> Box<A>),
 }
 
@@ -29,90 +29,102 @@ impl Builder {
         self.archetypes.entry(archetype.id).or_insert_with(archetype.builder)
     }
 
-    fn register_resources(&mut self, system: &dyn system::Spec, sync: bool, id: scheduler::TaskId) {
-        system.for_each_global_request(&mut |request| {
-            match request.initial {
-                spec::GlobalInitial::Sync(initial) => {
-                    self.send_globals
+    fn register_resources(&mut self, system: system::Spec, sync: bool, node: scheduler::Node) {
+        for request in system.global_requests {
+            match (request.initial, sync) {
+                (spec::GlobalInitial::Sync(initial), _) => {
+                    if self.unsync_globals.contains_key(&request.ty) {
+                        panic!(
+                            "Global type {} is used as both thread-safe and thread-local",
+                            request.ty
+                        );
+                    }
+
+                    self.sync_globals
                         .entry(request.ty)
-                        .or_insert_with(|| DefaultableAny::Missing(initial));
+                        .or_insert_with(|| GlobalBuilder::Missing(initial));
+
+                    self.scheduler.use_resource(
+                        node,
+                        scheduler::ResourceType::Global(request.ty),
+                        scheduler::ResourceAccess::new(request.mutable),
+                    );
                 }
-                _ if sync => {
+                (spec::GlobalInitial::Unsync(_), true) => {
                     panic!(
                         "Cannot schedule system {} as thread-safe because it requires \
                          thread-unsafe resources",
-                        system.debug_name()
+                        system.debug_name,
                     );
                 }
-                spec::GlobalInitial::Unsync(initial) => {
-                    self.unsend_globals
+                (spec::GlobalInitial::Unsync(initial), false) => {
+                    if self.sync_globals.contains_key(&request.ty) {
+                        panic!(
+                            "Global type {} is used as both thread-safe and thread-local",
+                            request.ty
+                        );
+                    }
+
+                    self.unsync_globals
                         .entry(request.ty)
-                        .or_insert_with(|| DefaultableAny::Missing(initial));
+                        .or_insert_with(|| GlobalBuilder::Missing(initial));
+
+                    self.scheduler.use_resource(
+                        node,
+                        scheduler::ResourceType::Global(request.ty),
+                        scheduler::ResourceAccess::new(request.mutable),
+                    );
                 }
             }
-
-            self.scheduler.globals.entry(request.ty).or_default().push((id, request.mutable));
-        });
-
-        system.for_each_simple_request(&mut |request| {
-            let builder = self.archetype(request.archetype);
-            builder.add_simple_storage_if_missing(request.comp, request.storage_builder);
-        });
-
-        system.for_each_isotope_request(&mut |request| {
-            let builder = self.archetype(request.archetype);
-            builder.add_isotope_factory_if_missing(request.comp, request.factory_builder);
-        });
-    }
-
-    fn create_partition(&mut self, partition: Box<dyn system::Partition>) -> scheduler::TaskId {
-        let partition = system::PartitionWrapper(partition);
-        match self.scheduler.partitions.get_index_of(&partition) {
-            Some(index) => scheduler::TaskId { class: scheduler::TaskClass::Partition, index },
-            None => {
-                let index = self.scheduler.partitions.len();
-                self.scheduler.partitions.insert(partition);
-                scheduler::TaskId { class: scheduler::TaskClass::Partition, index }
-            }
         }
-    }
 
-    fn add_dep(&mut self, earlier: scheduler::TaskId, later: scheduler::TaskId) {
-        self.scheduler.dependencies.entry(later).or_default().push(earlier);
-        self.scheduler.dependencies.entry(earlier).or_default().push(later);
-    }
+        for request in system.simple_requests {
+            let builder = self.archetype(request.arch);
+            builder.add_simple_storage_if_missing(request.comp, request.storage_builder);
 
-    fn add_deps(&mut self, system: &dyn system::Spec, system_id: scheduler::TaskId) {
-        system.for_each_dependency(&mut |dep| match dep {
-            spec::Dependency::Before(partition) => {
-                let partition_id = self.create_partition(partition);
-                self.add_dep(system_id, partition_id);
-            }
-            spec::Dependency::After(partition) => {
-                let partition_id = self.create_partition(partition);
-                self.add_dep(partition_id, system_id);
-            }
-        });
+            self.scheduler.use_resource(
+                node,
+                scheduler::ResourceType::Simple { arch: request.arch.id, comp: request.comp },
+                scheduler::ResourceAccess::new(request.mutable),
+            );
+        }
+
+        for request in system.isotope_requests {
+            let builder = self.archetype(request.arch);
+            builder.add_isotope_factory_if_missing(request.comp, request.factory_builder);
+
+            self.scheduler.use_resource(
+                node,
+                scheduler::ResourceType::Isotope { arch: request.arch.id, comp: request.comp },
+                scheduler::ResourceAccess::with_discrim(request.mutable, request.discrim.clone()),
+            );
+        }
+
+        self.scheduler.add_dependencies(system.dependencies, node);
     }
 
     /// Schedules a thread-safe system.
-    pub fn schedule(&mut self, system: Box<dyn system::Spec + Send>) {
-        let index = self.scheduler.send_systems.len();
-        let id = scheduler::TaskId { class: scheduler::TaskClass::Send, index };
-
-        self.register_resources(&*system, true, id);
-
-        self.scheduler.send_systems.push(system);
+    pub fn schedule(&mut self, system: Box<dyn system::System + Send>) {
+        let spec = system.get_spec();
+        let (node, system) = self.scheduler.push_send_system(system);
+        self.register_resources(spec, true, node);
     }
 
     /// Schedules a system that must be run on the main thread.
-    pub fn schedule_thread_unsafe(&mut self, system: Box<dyn system::Spec>) {
-        let index = self.scheduler.unsend_systems.len();
-        let id = scheduler::TaskId { class: scheduler::TaskClass::Unsend, index };
+    pub fn schedule_thread_unsafe(&mut self, system: Box<dyn system::System>) {
+        let spec = system.get_spec();
+        let (node, system) = self.scheduler.push_unsend_system(system);
+        self.register_resources(spec, false, node);
+    }
 
-        self.register_resources(&*system, false, id);
+    /// Provides a thread-safe global resource.
+    pub fn global<G: Global + Send + Sync>(&mut self, value: G) {
+        self.sync_globals.insert(DbgTypeId::of::<G>(), GlobalBuilder::Provided(Box::new(value)));
+    }
 
-        self.scheduler.unsend_systems.push(system);
+    /// Provides a thread-unsafe global resource.
+    pub fn global_thread_unsafe<G: Global>(&mut self, value: G) {
+        self.unsync_globals.insert(DbgTypeId::of::<G>(), GlobalBuilder::Provided(Box::new(value)));
     }
 
     /// Constructs the world from the builder.
@@ -126,19 +138,19 @@ impl Builder {
         };
 
         let send_globals = self
-            .send_globals
+            .sync_globals
             .into_iter()
             .map(|(ty, da)| match da {
-                DefaultableAny::Given(value) => (ty, value),
-                DefaultableAny::Missing(default) => (ty, default()),
+                GlobalBuilder::Provided(value) => (ty, value),
+                GlobalBuilder::Missing(default) => (ty, default()),
             })
             .collect();
         let unsend_globals = self
-            .unsend_globals
+            .unsync_globals
             .into_iter()
             .map(|(ty, da)| match da {
-                DefaultableAny::Given(value) => (ty, value),
-                DefaultableAny::Missing(default) => (ty, default()),
+                GlobalBuilder::Provided(value) => (ty, value),
+                GlobalBuilder::Missing(default) => (ty, default()),
             })
             .collect();
 

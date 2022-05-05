@@ -1,8 +1,11 @@
 //! Miscellaneous traits used for exposing type bounds in the API.
 
 use core::fmt;
-use std::any::{self, TypeId};
+#[cfg(debug_assertions)]
+use std::any;
+use std::any::TypeId;
 use std::borrow::Borrow;
+use std::collections::BTreeSet;
 use std::{cmp, hash};
 
 /// A generic mutable/immutable reference type.
@@ -44,21 +47,25 @@ pub struct DbgTypeId {
 
 impl DbgTypeId {
     /// Creates a new [`DbgTypeId`], similar to [`TypeId::of`].
-    pub fn of<T: 'static>() -> Self { Self { id: TypeId::of::<T>(), name: any::type_name::<T>() } }
+    pub fn of<T: 'static>() -> Self {
+        Self {
+            id:                            TypeId::of::<T>(),
+            #[cfg(debug_assertions)]
+            name:                          any::type_name::<T>(),
+        }
+    }
+}
 
-    /// Returns the TypeId as a displayable name.
-    pub fn name(&self) -> impl fmt::Display {
+impl fmt::Display for DbgTypeId {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         #[cfg(debug_assertions)]
         {
-            self.name
+            writeln!(f, "`{}`", self.name)
         }
 
         #[cfg(not(debug_assertions))]
         {
-            struct Ret(TypeId);
-            impl fmt::Display for Ret {
-                fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { writeln!(f, "{:?}", self.f) }
-            }
+            writeln!(f, "{:?}", self.id)
         }
     }
 }
@@ -89,4 +96,18 @@ impl hash::Hash for DbgTypeId {
 
 impl Borrow<TypeId> for DbgTypeId {
     fn borrow(&self) -> &TypeId { &self.id }
+}
+
+#[inline]
+pub(crate) fn btreeset_remove_first<T: Eq + Ord + Copy>(set: &mut BTreeSet<T>) -> Option<T> {
+    #[cfg(feature = "map-first-last")]
+    {
+        set.pop_first()
+    }
+
+    #[cfg(not(feature = "map-first-last"))]
+    {
+        let item = *set.iter().next()?;
+        Some(set.take(&item).expect("equality is not reflexive"))
+    }
 }

@@ -26,6 +26,7 @@ xias = "0.2.1"
 default = ["debug-entity-rc"]
 debug-entity-rc = [] # Enable entity refcounting in debug mode.
 release-entity-rc = [] # Enable entity refcounting in debug mode.
+map-first-last = [] # Use the unstable map_first_last feature
 
 [dev-dependencies]
 static_assertions = "1.1.0"

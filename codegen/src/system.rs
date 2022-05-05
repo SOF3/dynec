@@ -409,7 +409,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 #vis fn build(
                     &self,
                     #(#param_state_field_idents: #param_state_field_tys,)*
-                ) -> impl #crate_name::system::Spec {
+                ) -> impl #crate_name::system::System {
                     __dynec_local_state {
                         #(#param_state_field_idents,)*
                         #(#initial_state_field_idents: #initial_state_field_defaults,)*
@@ -434,28 +434,19 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 }
             }
 
-            impl #crate_name::system::Spec for __dynec_local_state {
-                fn debug_name(&self) -> ::std::string::String {
+            impl #crate_name::system::System for __dynec_local_state {
+                fn get_spec(&self) -> #crate_name::system::Spec {
                     #destructure_local_states
-                    ::std::string::String::from(#name)
-                }
 
-                fn for_each_dependency(&self, f: &mut dyn FnMut(#crate_name::system::spec::Dependency)) {
-                    #destructure_local_states
-                    #(f(#deps);)*
-                }
-
-                fn for_each_global_request(&self, f: &mut dyn FnMut(#crate_name::system::spec::GlobalRequest)) {
-                    #(f(#global_requests);)*
-                }
-
-                fn for_each_simple_request(&self, f: &mut dyn FnMut(#crate_name::system::spec::SimpleRequest)) {
-                    #(f(#simple_requests);)*
-                }
-
-                fn for_each_isotope_request(&self, f: &mut dyn FnMut(#crate_name::system::spec::IsotopeRequest)) {
-                    #destructure_local_states
-                    #(f(#isotope_requests);)*
+                    #crate_name::system::Spec {
+                        debug_name: {
+                            ::std::string::String::from(#name)
+                        },
+                        dependencies: vec![#(#deps),*],
+                        global_requests: vec![#(#global_requests),*],
+                        simple_requests: vec![#(#simple_requests),*],
+                        isotope_requests: vec![#(#isotope_requests),*],
+                    }
                 }
 
                 fn run(&mut self) {

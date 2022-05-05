@@ -269,7 +269,7 @@ mod global_tests {}
 /// #[dynec::global(initial = Title("hello world"))]
 /// struct Title(&'static str);
 ///
-/// #[derive(PartialEq, Eq, Hash)]
+/// #[derive(Debug, PartialEq, Eq, Hash)]
 /// struct Foo;
 ///
 /// dynec::archetype!(Player);
@@ -312,8 +312,11 @@ mod global_tests {}
 ///     }
 /// }
 ///
-/// let spec = simulate.build(SkillId(3));
-/// assert_eq!(system::Spec::debug_name(&spec), "simulate[counter = 0, skill_id = SkillId(3)]");
+/// let system = simulate.build(SkillId(3));
+/// assert_eq!(
+///     system::System::get_spec(&system).debug_name.as_str(),
+///     "simulate[counter = 0, skill_id = SkillId(3)]"
+/// );
 ///
 /// {
 ///     // We can also call the function directly in unit tests.
@@ -365,10 +368,13 @@ mod system_tests {
             *counter_two += 3i64;
         }
 
-        let spec = simulate.build(2i64);
+        let system = simulate.build(2i64);
         {
-            use crate::system::Spec;
-            assert_eq!(spec.debug_name(), "dynec::macros::system_tests::simulate");
+            use crate::system::System;
+            assert_eq!(
+                system.get_spec().debug_name.as_str(),
+                "dynec::macros::system_tests::simulate"
+            );
         }
     }
 }

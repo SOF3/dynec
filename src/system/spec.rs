@@ -7,27 +7,17 @@ use crate::world::{self, storage};
 use crate::{comp, system, Archetype, Global};
 
 /// Describes an instance of system.
-///
-/// There may be multiple instances of the same implementor type.
-/// This is meaningful as they may have different states.
-pub trait Spec {
+pub struct Spec {
     /// The debug name of the system.
-    fn debug_name(&self) -> String;
-
-    /// Executes the given function on each dependency.
-    fn for_each_dependency(&self, f: &mut dyn FnMut(Dependency));
-
-    /// Executes the given function on each global state request.
-    fn for_each_global_request(&self, f: &mut dyn FnMut(GlobalRequest));
-
-    /// Executes the given function on each simple component read/write request.
-    fn for_each_simple_request(&self, f: &mut dyn FnMut(SimpleRequest));
-
-    /// Executes the given function on each isotope component read/write request.
-    fn for_each_isotope_request(&self, f: &mut dyn FnMut(IsotopeRequest));
-
-    /// Runs the system.
-    fn run(&mut self);
+    pub debug_name:       String,
+    /// The partition dependencies related to the system.
+    pub dependencies:     Vec<Dependency>,
+    /// The global states requested by the system.
+    pub global_requests:  Vec<GlobalRequest>,
+    /// The simple components requested by the system.
+    pub simple_requests:  Vec<SimpleRequest>,
+    /// The isotope components requested by the system.
+    pub isotope_requests: Vec<IsotopeRequest>,
 }
 
 /// Indicates the dependency of a system.
@@ -57,6 +47,7 @@ pub struct GlobalRequest {
 }
 
 /// Specifies the initializer for a global type.
+#[derive(Clone, Copy)]
 pub enum GlobalInitial {
     /// Used for thread-safe globals.
     Sync(fn() -> Box<dyn Any + Send + Sync>),
@@ -87,10 +78,22 @@ impl GlobalRequest {
     pub fn sync(&self) -> bool { matches!(&self.initial, GlobalInitial::Sync(..)) }
 }
 
+#[derive(Clone, Copy)]
+pub(crate) struct ArchetypeDescriptor {
+    pub(crate) id:      DbgTypeId,
+    pub(crate) builder: fn() -> Box<dyn world::typed::AnyBuilder>,
+}
+
+impl ArchetypeDescriptor {
+    fn of<A: Archetype>() -> Self {
+        Self { id: DbgTypeId::of::<A>(), builder: || Box::new(world::typed::builder::<A>()) }
+    }
+}
+
 /// Indicates that the system requires a simple component read/write.
 pub struct SimpleRequest {
     /// The archetype requested.
-    pub(crate) archetype:       ArchetypeDescriptor,
+    pub(crate) arch:            ArchetypeDescriptor,
     /// The type of the simple component.
     pub(crate) comp:            DbgTypeId,
     /// Builder for the storage. Must be `Box<storage::SharedSimple<A>>`.
@@ -103,7 +106,7 @@ impl SimpleRequest {
     /// Creates a new simple component request with types known at compile time.
     pub fn new<A: Archetype, C: comp::Simple<A>>(mutable: bool) -> Self {
         Self {
-            archetype: ArchetypeDescriptor::of::<A>(),
+            arch: ArchetypeDescriptor::of::<A>(),
             comp: DbgTypeId::of::<C>(),
             mutable,
             storage_builder: || Box::new(storage::shared_simple::<A, C>()),
@@ -111,21 +114,10 @@ impl SimpleRequest {
     }
 }
 
-pub(crate) struct ArchetypeDescriptor {
-    pub(crate) id:      DbgTypeId,
-    pub(crate) builder: fn() -> Box<dyn world::typed::AnyBuilder>,
-}
-
-impl ArchetypeDescriptor {
-    fn of<A: Archetype>() -> Self {
-        Self { id: DbgTypeId::of::<A>(), builder: || Box::new(world::typed::builder::<A>()) }
-    }
-}
-
 /// Indicates that the system requires an isotope component read/write.
 pub struct IsotopeRequest {
     /// The archetype requested.
-    pub(crate) archetype:       ArchetypeDescriptor,
+    pub(crate) arch:            ArchetypeDescriptor,
     /// The archetype of the isotope component.
     pub(crate) comp:            DbgTypeId,
     /// Builder for the IsotopeFactory. Must be `Box<Box<dyn storage::AnyIsotopeFactory<A>>>`.
@@ -145,7 +137,7 @@ impl IsotopeRequest {
         mutable: bool,
     ) -> Self {
         Self {
-            archetype: ArchetypeDescriptor::of::<A>(),
+            arch: ArchetypeDescriptor::of::<A>(),
             comp: DbgTypeId::of::<C>(),
             discrim,
             mutable,

@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Inner",""],["LazyIniter",""]],"fn":[["isotope_factory",""],["shared_simple",""]],"struct":[["InnerVec",""],["IsotopeFactory",""],["Storage",""]],"trait":[["AnyIsotopeFactory",""],["AnySimpleStorage",""]],"type":[["SharedSimple",""]]});

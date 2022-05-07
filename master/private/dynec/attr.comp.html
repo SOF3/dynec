@@ -1,0 +1,60 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Derives a `comp::Simple` or `comp::Isotope` implementation for the applied type. This macro does not modify the input other than stripping attributes."><meta name="keywords" content="rust, rustlang, rust-lang, comp"><title>comp in dynec - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../normalize.css"><link rel="stylesheet" type="text/css" href="../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../dark.css" disabled><link rel="stylesheet" type="text/css" href="../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../storage.js"></script><script src="../crates.js"></script><script defer src="../main.js"></script>
+    <noscript><link rel="stylesheet" href="../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../favicon.svg"></head><body class="rustdoc attr"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../dynec/index.html"><div class="logo-container"><img class="rust-logo" src="../rust-logo.svg" alt="logo"></div>
+        </a><h2 class="location"></h2>
+    </nav>
+    <nav class="sidebar"><a class="sidebar-logo" href="../dynec/index.html"><div class="logo-container"><img class="rust-logo" src="../rust-logo.svg" alt="logo"></div>
+        </a><div class="sidebar-elems"><h2 class="location"><a href="index.html">In dynec</a></h2><div id="sidebar-vars" data-name="comp" data-ty="attr" data-relpath=""></div><script defer src="sidebar-items.js"></script></div></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../dynec/index.html"><img class="rust-logo" src="../rust-logo.svg" alt="logo"></a><nav class="sub"><div class="theme-picker hidden"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="22" height="22" alt="Pick another theme!" src="../brush.svg"></button><div id="theme-choices" role="menu"></div></div><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../wheel.svg"></a></div></form></nav></div><section id="main-content" class="content"><div class="main-heading">
+    <h1 class="fqn"><span class="in-band">Attribute Macro <a href="index.html">dynec</a>::<wbr><a class="attr" href="#">comp</a><button id="copy-path" onclick="copy_path(this)" title="Copy item path to clipboard"><img src="../clipboard.svg" width="19" height="18" alt="Copy item path"></button></span></h1><span class="out-of-band"><a class="srclink" href="../src/dynec_codegen/lib.rs.html#19">source</a> · <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span></div><div class="docblock item-decl"><pre class="rust attr"><code>#[comp]</code></pre></div><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Derives a <a href="comp/trait.Simple.html"><code>comp::Simple</code></a>
+or <a href="comp/trait.Isotope.html"><code>comp::Isotope</code></a> implementation for the applied type.
+This macro does not modify the input other than stripping attributes.</p>
+<p>This macro calls <a href="derive.EntityRef.html" title="EntityRef"><code>EntityRef</code></a> implicitly.
+Fields that reference entities should be annotated with <code>#[entity]</code>.</p>
+<h2 id="options"><a href="#options">Options</a></h2>
+<p>Options are applied behind the attribute name in the form <code>#[system(...)]</code>.
+Multiple options are separated by commas.</p>
+<h3 id="of--ty"><a href="#of--ty"><code>of = $ty</code></a></h3>
+<p>Implements the applied type as a component of the archetype <code>$ty</code>.</p>
+<h3 id="isotope--ty"><a href="#isotope--ty"><code>isotope = $ty</code></a></h3>
+<p>Indicates that the applied type is an <a href="comp/trait.Isotope.html">isotope component</a>
+with <a href="comp/trait.Isotope.html#associatedtype.Discrim">discriminant</a> of type <code>$ty</code>.
+Indicates that the type is an isotope component (with discriminant type
+<code>$ty</code>) instead of a simple component.</p>
+<h3 id="required"><a href="#required"><code>required</code></a></h3>
+<p>Indicates that the component must be <a href="comp/enum.SimplePresence.html">present</a>
+for an entity of its archetype any time as long as the entity is created andnot destroyed.</p>
+<p>This argument is exclusive with <code>isotope</code>,
+because isotopes are always unset for an unknown discriminant.</p>
+<h3 id="finalizer"><a href="#finalizer"><code>finalizer</code></a></h3>
+<p>Indicates that the component is a <a href="comp/trait.Simple.html#associatedconstant.IS_FINALIZER">finalizer</a>.</p>
+<h3 id="init"><a href="#init"><code>init</code></a></h3>
+<p>Provides an initializer for the component
+that gets called when the entity was created without this component.
+This initializer should be either a closure with explicit parameter types,
+or a function reference with arity in the form <code>path/arity</code> (e.g. <code>count/1</code>).</p>
+<h2 id="example"><a href="#example">Example</a></h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">dynec::comp</span>;
+
+<span class="macro">dynec::archetype!</span>(<span class="ident">Foo</span>; <span class="ident">Bar</span>);
+
+<span class="attribute">#[<span class="ident">comp</span>(<span class="ident">of</span> <span class="op">=</span> <span class="ident">Foo</span>, <span class="ident">of</span> <span class="op">=</span> <span class="ident">Bar</span>, <span class="ident">init</span> <span class="op">=</span> <span class="op">|</span><span class="op">|</span> <span class="ident">Qux</span>(<span class="number">1</span>), <span class="ident">finalizer</span>)]</span>
+<span class="kw">struct</span> <span class="ident">Qux</span>(<span class="ident">i32</span>);
+
+<span class="macro">static_assertions::assert_impl_all!</span>(<span class="ident">Qux</span>: <span class="ident">comp::Simple</span><span class="op">&lt;</span><span class="ident">Foo</span><span class="op">&gt;</span>, <span class="ident">comp::Simple</span><span class="op">&lt;</span><span class="ident">Bar</span><span class="op">&gt;</span>);
+<span class="macro">assert!</span>(<span class="macro">matches!</span>(<span class="op">&lt;</span><span class="ident">Qux</span> <span class="kw">as</span> <span class="ident">comp::Simple</span><span class="op">&lt;</span><span class="ident">Foo</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::PRESENCE</span>, <span class="ident">comp::SimplePresence::Optional</span>));
+<span class="macro">assert!</span>(<span class="op">&lt;</span><span class="ident">Qux</span> <span class="kw">as</span> <span class="ident">comp::Simple</span><span class="op">&lt;</span><span class="ident">Bar</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::IS_FINALIZER</span>);
+
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
+<span class="kw">struct</span> <span class="ident">Id</span>(<span class="ident">usize</span>);
+<span class="kw">impl</span> <span class="ident">comp::Discrim</span> <span class="kw">for</span> <span class="ident">Id</span> {
+    <span class="kw">fn</span> <span class="ident">from_usize</span>(<span class="ident">usize</span>: <span class="ident">usize</span>) -&gt; <span class="self">Self</span> { <span class="self">Self</span>(<span class="ident">usize</span>) }
+    <span class="kw">fn</span> <span class="ident">to_usize</span>(<span class="self">self</span>) -&gt; <span class="ident">usize</span> { <span class="self">self</span>.<span class="number">0</span> }
+}
+
+<span class="attribute">#[<span class="ident">comp</span>(<span class="ident">of</span> <span class="op">=</span> <span class="ident">Foo</span>, <span class="ident">isotope</span> <span class="op">=</span> <span class="ident">Id</span>, <span class="ident">init</span> <span class="op">=</span> <span class="ident">Corge::make</span><span class="op">/</span><span class="number">0</span>)]</span>
+<span class="kw">struct</span> <span class="ident">Corge</span>(<span class="ident">i32</span>);
+
+<span class="kw">impl</span> <span class="ident">Corge</span> {
+    <span class="kw">fn</span> <span class="ident">make</span>() -&gt; <span class="self">Self</span> { <span class="self">Self</span>(<span class="number">1</span>) }
+}</code></pre></div>
+</div></details></section></div></main><div id="rustdoc-vars" data-root-path="../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (77652b9ef 2022-05-06)" ></div>
+</body></html>

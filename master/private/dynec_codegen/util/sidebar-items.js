@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["parse_generics",""],["slow_drain_filter","A poorly optimized but stable implementation of `drain_filter`."]],"struct":[["Attr",""],["Named",""],["ParsedGenerics",""]]});

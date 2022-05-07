@@ -1,0 +1,179 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Converts a function into a system."><meta name="keywords" content="rust, rustlang, rust-lang, system"><title>system in dynec::macros - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script src="../../crates.js"></script><script defer src="../../main.js"></script>
+    <noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc attr"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../dynec/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
+        </a><h2 class="location"></h2>
+    </nav>
+    <nav class="sidebar"><a class="sidebar-logo" href="../../dynec/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
+        </a><div class="sidebar-elems"><h2 class="location"><a href="index.html">In dynec::macros</a></h2><div id="sidebar-vars" data-name="system" data-ty="attr" data-relpath=""></div><script defer src="sidebar-items.js"></script></div></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../dynec/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><div class="theme-picker hidden"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="22" height="22" alt="Pick another theme!" src="../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></form></nav></div><section id="main-content" class="content"><div class="main-heading">
+    <h1 class="fqn"><span class="in-band">Attribute Macro <a href="../index.html">dynec</a>::<wbr><a href="index.html">macros</a>::<wbr><a class="attr" href="#">system</a><button id="copy-path" onclick="copy_path(this)" title="Copy item path to clipboard"><img src="../../clipboard.svg" width="19" height="18" alt="Copy item path"></button></span></h1><span class="out-of-band"><a class="srclink" href="../../src/dynec_codegen/lib.rs.html#39">source</a> · <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span></div><div class="docblock item-decl"><pre class="rust attr"><code>#[system]</code></pre></div><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Converts a function into a system.</p>
+<p>This macro converts the function into a unit struct with the same name
+that implements <a href="../system/struct.Spec.html"><code>system::Spec</code></a>.
+The unit struct also derefs to a function pointer,
+so it is still possible to call the function directly (mainly useful in unit tests)
+without any change in the signature.
+However it is not recommended to call this function directly in production code.</p>
+<h2 id="options"><a href="#options">Options</a></h2>
+<p>Options are applied behind the attribute name in the form <code>#[system(...)]</code>.
+Multiple options are separated by commas.</p>
+<h3 id="name--expr"><a href="#name--expr"><code>name = $expr</code></a></h3>
+<p>Sets the <a href="../system/struct.Spec.html#structfield.debug_name">name</a> of the system to <code>$expr</code>.
+By default, the name is <code>concat!(module_path!(), &quot;::&quot;, $function_identifier)</code>.</p>
+<p>The <code>$expr</code> can read the local and param states of the system directly.
+Since the debug name is only used for display purposes,
+it is allowed (although confusing to the programmer) to use mutable states in the name.
+It is unspecified whether debug messages use the initial debug name or the updated state.</p>
+<h3 id="beforeexpr1-expr2--and-afterexpr1-expr2-"><a href="#beforeexpr1-expr2--and-afterexpr1-expr2-"><code>before($expr1, $expr2, ...)</code> and <code>after($expr1, $expr2, ...)</code></a></h3>
+<p>Indicates that the system must be executed
+before/after all <a href="../system/trait.Partition.html">partitions</a> given in the expressions.</p>
+<p>Similar to <code>name</code>, the expressions can read local and param states dirctly.
+However, only the expressions are only resolved once before the first run of the system,
+so mutating states has no effect on the system schedule.</p>
+<h2 id="parameters"><a href="#parameters">Parameters</a></h2>
+<p>Each parameter of a system function has a special meaning:</p>
+<h3 id="local-states"><a href="#local-states">Local states</a></h3>
+<p>Parameters with the attribute <code>#[dynec(local = xxx)]</code> are “local states”,
+where <code>xxx</code> is an expression that evaluates to the initial value of the state.</p>
+<p>Local states must take the type <code>&amp;T</code> or <code>&amp;mut T</code>,
+where <code>T</code> is the actual stored state.
+The mutated state persists for each instance of the system.</p>
+<p>Use global states instead if the local state needs to be accessed from multiple systems.</p>
+<h3 id="param-states"><a href="#param-states">Param states</a></h3>
+<p>Parameters with the attribute <code>#[dynec(param)]</code> are “param states”.
+The user has to pass initial values for param states in the <code>.build()</code> method.
+Param states behave identically to local states
+except for different definition location of the initial value.</p>
+<p>It is typically used to initialize systems with resources that cannot be created statically
+(e.g. system canvas resources),
+or to schedule multiple systems declared from the same function
+(e.g. working on multiple discriminants of an isotope component).</p>
+<h3 id="global-states"><a href="#global-states">Global states</a></h3>
+<p>Parameters with the attribute <code>#[dynec(global)]</code> are “global states”.
+Global states are shared scalar data between multiple systems.
+See <a href="../global/trait.Global.html"><code>Global</code></a> for more information.</p>
+<p>Thread-unsafe (non-<code>Send + Sync</code>) global states must be declared as
+<code>#[dynec(global(thread_local))]</code> to indicate that
+the global state can only be accessed from the main thread.
+As a result, systems that request thread-local global states
+will only be scheduled on the main thread.</p>
+<h3 id="simple-components"><a href="#simple-components">Simple components</a></h3>
+<p>Parameters with the attribute <code>#[dynec(simple(arch = Type1, comp = Type2))]</code>
+are “simple components”.
+Alternatively, parameters that do not have a <code>#[dynec]</code> attribute
+but with a type <code>impl ReadSimple&lt;Type1, Type2&gt;</code>/<code>impl WriteSimple&lt;Type1, Type2&gt;</code>
+are also simple components
+(where <code>Simple</code> can be qualified by any path, e.g. <code>system::Simple</code>).
+This requests access to a <a href="../comp/trait.Simple.html">simple component</a> of type <code>Type2</code>
+from entities of the <a href="../trait.Archetype.html">archetype</a> <code>Type1</code>,
+exposed through a type that implements <a href="../system/struct.Simple.html"><code>system::Simple</code></a>.</p>
+<p>With the attribute, only read access is permitted by default.
+To allow write access, add <code>mut</code> to the <code>simple</code> option list with the first syntax.
+No information is inferred from the type if <code>#[dync(simple)]</code></p>
+<h3 id="isotope-components"><a href="#isotope-components">Isotope components</a></h3>
+<p>Parameters with the attribute <code>#[dynec(isotope(arch = Type1, comp = Type2))]</code>
+are “isotope components”.
+Alternatively, parameters that do not have a <code>#[dynec]</code> attribute
+but with a type <code>Isotope&lt;Type1, &amp;Type2&gt;</code> are also isotope components.
+This requests access to an <a href="../comp/trait.Isotope.html">isotope component</a> of type <code>Type2</code>
+from entities of the <a href="../trait.Archetype.html">archetype</a> <code>Type1</code>,
+exposed through a type that implements <a href="../system/struct.Isotope.html"><code>system::Isotope</code></a>.</p>
+<p>Only read access is permitted by default.
+To allow write access, add <code>mut</code> to the <code>isotope</code> option list with the first syntax,
+or change the component reference to <code>&amp;mut</code> with the second syntax.</p>
+<p>By default, all discriminants of the isotope component are requested.
+To request only particular discriminants,
+add <code>discrim = expr</code> to the <code>isotope</code> option list with the first syntax,
+or add the <code>#[dynec(isotope(discrim = expr))]</code> with the second syntax,
+where <code>expr</code> is a value that implements <code>IntoIterator&lt;Item = Type2::Discrim&gt;</code>
+Note that <code>arch</code>, <code>comp</code> and <code>mut</code> must not be used if the second syntax is intended.</p>
+<p>Similar to <code>name</code>, the expressions can read local and param states dirctly.
+However, only the expressions are only resolved once before the first run of the system,
+so mutating states has no effect on the system schedule.</p>
+<h2 id="example"><a href="#example">Example</a></h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">dynec::system</span>;
+
+<span class="attribute">#[<span class="ident">dynec::global</span>(<span class="ident">initial</span> <span class="op">=</span> <span class="ident">Title</span>(<span class="string">&quot;hello world&quot;</span>))]</span>
+<span class="kw">struct</span> <span class="ident">Title</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span>);
+
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Hash</span>)]</span>
+<span class="kw">struct</span> <span class="ident">Foo</span>;
+
+<span class="macro">dynec::archetype!</span>(<span class="ident">Player</span>);
+
+<span class="attribute">#[<span class="ident">dynec::comp</span>(<span class="ident">of</span> <span class="op">=</span> <span class="ident">Player</span>)]</span>
+<span class="kw">struct</span> <span class="ident">PositionX</span>(<span class="ident">f32</span>);
+<span class="attribute">#[<span class="ident">dynec::comp</span>(<span class="ident">of</span> <span class="op">=</span> <span class="ident">Player</span>)]</span>
+<span class="kw">struct</span> <span class="ident">PositionY</span>(<span class="ident">f32</span>);
+
+<span class="attribute">#[<span class="ident">dynec::comp</span>(<span class="ident">of</span> <span class="op">=</span> <span class="ident">Player</span>)]</span>
+<span class="kw">struct</span> <span class="ident">Direction</span>(<span class="ident">f32</span>, <span class="ident">f32</span>);
+
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
+<span class="kw">struct</span> <span class="ident">SkillId</span>(<span class="ident">usize</span>);
+<span class="kw">impl</span> <span class="ident">dynec::comp::Discrim</span> <span class="kw">for</span> <span class="ident">SkillId</span> {
+    <span class="kw">fn</span> <span class="ident">from_usize</span>(<span class="ident">id</span>: <span class="ident">usize</span>) -&gt; <span class="self">Self</span> { <span class="self">Self</span>(<span class="ident">id</span>) }
+    <span class="kw">fn</span> <span class="ident">to_usize</span>(<span class="self">self</span>) -&gt; <span class="ident">usize</span> { <span class="self">self</span>.<span class="number">0</span> }
+}
+
+<span class="attribute">#[<span class="ident">dynec::comp</span>(<span class="ident">of</span> <span class="op">=</span> <span class="ident">Player</span>, <span class="ident">isotope</span> <span class="op">=</span> <span class="ident">SkillId</span>, <span class="ident">init</span> <span class="op">=</span> <span class="op">|</span><span class="op">|</span> <span class="ident">SkillLevel</span>(<span class="number">1</span>))]</span>
+<span class="kw">struct</span> <span class="ident">SkillLevel</span>(<span class="ident">u8</span>);
+
+<span class="attribute">#[<span class="ident">system</span>(
+    <span class="ident">name</span> <span class="op">=</span> <span class="macro">format!</span>(<span class="string">&quot;simulate[counter = {}, skill_id = {:?}]&quot;</span>, <span class="ident">counter</span>, <span class="ident">skill_id</span>),
+    <span class="ident">before</span>(<span class="ident">Foo</span>),
+)]</span>
+<span class="kw">fn</span> <span class="ident">simulate</span>(
+    <span class="attribute">#[<span class="ident">dynec</span>(<span class="ident">local</span> <span class="op">=</span> <span class="number">0</span>)]</span> <span class="ident">counter</span>: <span class="kw-2">&amp;mut</span> <span class="ident">u16</span>,
+    <span class="attribute">#[<span class="ident">dynec</span>(<span class="ident">param</span>)]</span> <span class="ident">skill_id</span>: <span class="kw-2">&amp;</span><span class="ident">SkillId</span>,
+    <span class="attribute">#[<span class="ident">dynec</span>(<span class="ident">global</span>)]</span> <span class="ident">title</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Title</span>,
+    <span class="ident">x</span>: <span class="ident">system::Simple</span><span class="op">&lt;</span><span class="ident">Player</span>, <span class="kw-2">&amp;mut</span> <span class="ident">PositionX</span><span class="op">&gt;</span>,
+    <span class="ident">y</span>: <span class="ident">system::Simple</span><span class="op">&lt;</span><span class="ident">Player</span>, <span class="kw-2">&amp;mut</span> <span class="ident">PositionY</span><span class="op">&gt;</span>,
+    <span class="ident">dir</span>: <span class="ident">system::Simple</span><span class="op">&lt;</span><span class="ident">Player</span>, <span class="kw-2">&amp;</span><span class="ident">Direction</span><span class="op">&gt;</span>,
+    <span class="attribute">#[<span class="ident">dynec</span>(<span class="ident">isotope</span>(<span class="ident">discrim</span> <span class="op">=</span> [<span class="kw-2">*</span><span class="ident">skill_id</span>]</span>))] <span class="ident">skill</span>: <span class="ident">system::Isotope</span><span class="op">&lt;</span><span class="ident">Player</span>, <span class="kw-2">&amp;</span><span class="ident">SkillLevel</span><span class="op">&gt;</span>,
+) {
+    <span class="kw-2">*</span><span class="ident">counter</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+
+    <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">counter</span> <span class="op">==</span> <span class="number">1</span> {
+        <span class="ident">title</span>.<span class="number">0</span> <span class="op">=</span> <span class="string">&quot;changed&quot;</span>;
+    }
+}
+
+<span class="kw">let</span> <span class="ident">system</span> <span class="op">=</span> <span class="ident">simulate</span>.<span class="ident">build</span>(<span class="ident">SkillId</span>(<span class="number">3</span>));
+<span class="macro">assert_eq!</span>(
+    <span class="ident">system::Sendable::get_spec</span>(<span class="kw-2">&amp;</span><span class="ident">system</span>).<span class="ident">debug_name</span>.<span class="ident">as_str</span>(),
+    <span class="string">&quot;simulate[counter = 0, skill_id = SkillId(3)]&quot;</span>
+);
+
+{
+    <span class="comment">// We can also call the function directly in unit tests.</span>
+
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">counter</span> <span class="op">=</span> <span class="number">0</span>;
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">title</span> <span class="op">=</span> <span class="ident">Title</span>(<span class="string">&quot;original&quot;</span>);
+
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">world</span> <span class="op">=</span> <span class="macro">dynec::system_test!</span> {
+        <span class="ident">simulate</span>.<span class="ident">build</span>(<span class="ident">SkillId</span>(<span class="number">2</span>));
+        <span class="kw">_</span>: <span class="ident">Player</span> <span class="op">=</span> (
+            <span class="ident">PositionX</span>(<span class="number">0.0</span>),
+            <span class="ident">PositionY</span>(<span class="number">0.0</span>),
+            <span class="ident">Direction</span>(<span class="number">0.5</span>, <span class="number">0.5</span>),
+        );
+        <span class="kw">_</span>: <span class="ident">Player</span> <span class="op">=</span> (
+            <span class="ident">PositionX</span>(<span class="number">0.5</span>),
+            <span class="ident">PositionY</span>(<span class="number">0.5</span>),
+            <span class="ident">Direction</span>(<span class="number">0.5</span>, <span class="number">0.5</span>),
+        );
+    };
+
+    <span class="ident">simulate</span>(
+        <span class="kw-2">&amp;mut</span> <span class="ident">counter</span>,
+        <span class="kw-2">&amp;</span><span class="ident">SkillId</span>(<span class="number">2</span>),
+        <span class="kw-2">&amp;mut</span> <span class="ident">title</span>,
+        <span class="macro">todo!</span>(<span class="string">&quot;component access logic&quot;</span>),
+        <span class="macro">todo!</span>(<span class="string">&quot;component access logic&quot;</span>),
+        <span class="macro">todo!</span>(<span class="string">&quot;component access logic&quot;</span>),
+        <span class="macro">todo!</span>(<span class="string">&quot;component access logic&quot;</span>),
+    );
+
+    <span class="macro">assert_eq!</span>(<span class="ident">counter</span>, <span class="number">1</span>);
+    <span class="macro">assert_eq!</span>(<span class="ident">title</span>.<span class="number">0</span>, <span class="string">&quot;changed&quot;</span>);
+}</code></pre></div>
+</div></details></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (77652b9ef 2022-05-06)" ></div>
+</body></html>

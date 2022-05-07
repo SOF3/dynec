@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["GlobalBuilder",""]],"struct":[["Builder","This type is used to build a world. No more systems can be scheduled after the builder is built."],["ComponentIdentifier","Identifies an archetype + component type + discriminant."]]});

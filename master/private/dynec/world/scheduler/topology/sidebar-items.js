@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["build_dependents_map",""],["build_exclusions",""],["build_initials",""]],"struct":[["Topology","Stores the topology of the schedule, including the dependency and exclusion relationship."]]});

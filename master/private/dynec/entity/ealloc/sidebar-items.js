@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Ealloc","Manages entity ID allocation."]]});

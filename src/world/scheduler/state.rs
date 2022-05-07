@@ -11,8 +11,9 @@ impl SyncState {
     pub(in crate::world::scheduler) fn get_send_system(
         &self,
         index: SendSystemIndex,
-    ) -> &Mutex<Box<dyn system::Sendable>> {
-        &self.send_systems.get(index.0).expect("invalid node index").1
+    ) -> (&str, &Mutex<Box<dyn system::Sendable>>) {
+        let (debug_name, system) = self.send_systems.get(index.0).expect("invalid node index");
+        (debug_name, system)
     }
 }
 
@@ -24,8 +25,10 @@ impl UnsyncState {
     pub(in crate::world::scheduler) fn get_unsend_system_mut(
         &mut self,
         index: UnsendSystemIndex,
-    ) -> &mut dyn system::Unsendable {
-        &mut *self.unsend_systems.get_mut(index.0).expect("invalid node index").1
+    ) -> (&str, &mut dyn system::Unsendable) {
+        let (debug_name, system) =
+            self.unsend_systems.get_mut(index.0).expect("invalid node index");
+        (debug_name, &mut **system)
     }
 }
 

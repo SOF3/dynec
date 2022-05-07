@@ -4,10 +4,10 @@ use std::num::NonZeroUsize;
 use parking_lot::Condvar;
 
 use super::{Node, SendSystemIndex, Topology, UnsendSystemIndex, WakeupState};
-use crate::util;
+use crate::{util, world};
 
 /// Stores the tick-local state for schedule availability.
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub(in crate::world::scheduler) struct Planner {
     /// Stores the number of nodes blocking each node from getting scheduled.
     /// Started nodes are not removed from the map and remain as 0.
@@ -24,25 +24,31 @@ pub(in crate::world::scheduler) struct Planner {
     /// `wakeup_count` must always be re-checked.
     pub(in crate::world::scheduler) unsend_runnable: BTreeSet<UnsendSystemIndex>,
 
-    /// Whether the planner is complete.
-    pub(in crate::world::scheduler) is_complete: bool,
+    /// Number of remaining systems to run.
+    pub(in crate::world::scheduler) remaining_systems: usize,
 }
 
 impl Planner {
     /// Steal a task from the pending pool if any is available
     fn steal<I: Eq + Ord + Copy>(
         &mut self,
+        tracer: &impl world::Tracer,
+        thread: world::tracer::Thread,
         topology: &Topology,
         pool: fn(&mut Self) -> &mut BTreeSet<I>,
         to_node: fn(I) -> Node,
     ) -> StealResult<I> {
-        if self.is_complete {
+        if self.remaining_systems == 0 {
+            tracer.steal_return_complete(thread);
             return StealResult::CycleComplete;
         }
 
         let index = match util::btreeset_remove_first(pool(self)) {
             Some(index) => index,
-            None => return StealResult::Pending,
+            None => {
+                tracer.steal_return_pending(thread);
+                return StealResult::Pending;
+            }
         };
         let node = to_node(index);
 
@@ -70,6 +76,7 @@ impl Planner {
                             self.send_runnable
                                 .take(&index)
                                 .expect("Pending node should be in runnable pool");
+                            tracer.unmark_runnable(excl);
                         }
                         Node::UnsendSystem(index) => {
                             self.unsend_runnable
@@ -96,21 +103,29 @@ impl Planner {
 
     pub(in crate::world::scheduler) fn steal_send(
         &mut self,
+        tracer: &impl world::Tracer,
+        thread: world::tracer::Thread,
         topology: &Topology,
     ) -> StealResult<SendSystemIndex> {
-        self.steal(topology, |this| &mut this.send_runnable, Node::SendSystem)
+        self.steal(tracer, thread, topology, |this| &mut this.send_runnable, Node::SendSystem)
     }
 
     pub(in crate::world::scheduler) fn steal_unsend(
         &mut self,
+        tracer: &impl world::Tracer,
+        thread: world::tracer::Thread,
         topology: &Topology,
     ) -> StealResult<UnsendSystemIndex> {
-        self.steal(topology, |this| &mut this.unsend_runnable, Node::UnsendSystem)
+        self.steal(tracer, thread, topology, |this| &mut this.unsend_runnable, Node::UnsendSystem)
     }
 
     /// Mark a node as completed.
+    ///
+    /// This method is only called for system nodes.
+    /// Partition nodes are completed in-place.
     pub(in crate::world::scheduler) fn complete(
         &mut self,
+        tracer: &impl world::Tracer,
         node: Node,
         topology: &Topology,
         condvar: &Condvar,
@@ -123,21 +138,31 @@ impl Planner {
             }
         }
 
-        self.remove_one_block(topology, topology.dependents_of(node).iter().copied());
+        self.remove_one_block(tracer, topology, topology.dependents_of(node).iter().copied());
+        self.remove_one_block(tracer, topology, topology.exclusions_of(node).iter().copied());
+
+        self.remaining_systems -= 1;
 
         condvar.notify_all();
     }
 
-    fn remove_one_block(&mut self, topology: &Topology, queue: impl Iterator<Item = Node>) {
+    /// Removes one blocker from each node in the queue iterator.
+    fn remove_one_block(
+        &mut self,
+        tracer: &impl world::Tracer,
+        topology: &Topology,
+        queue: impl Iterator<Item = Node>,
+    ) {
         let mut queue: Vec<Node> = queue.collect();
         while let Some(node) = queue.pop() {
-            self.remove_one_block_no_recursion(node, topology, &mut queue);
+            self.remove_one_block_no_recursion(tracer, node, topology, &mut queue);
         }
     }
 
     /// Removes one blocker count from a node wakeup state
     fn remove_one_block_no_recursion(
         &mut self,
+        tracer: &impl world::Tracer,
         node: Node,
         topology: &Topology,
         queue: &mut Vec<Node>,
@@ -155,20 +180,27 @@ impl Planner {
                         if !new {
                             panic!("Blocked node {node:?} is already in runnable pool")
                         }
+                        tracer.mark_runnable(node);
                     }
                     Node::UnsendSystem(index) => {
                         let new = self.unsend_runnable.insert(index);
                         if !new {
                             panic!("Blocked node {node:?} is already in runnable pool")
                         }
+                        tracer.mark_runnable(node);
                     }
                     Node::Partition(index) => {
                         *state = WakeupState::Completed;
+                        tracer.partition(
+                            node,
+                            &*topology.partitions.get(index.0).expect("invalid node index").0,
+                        );
                         queue.extend(topology.dependents_of(node).iter().copied())
                     }
                 }
             }
-            _ => panic!("Node {node:?} is in state {state:?} which should not have blockers"),
+            WakeupState::Completed => {} // no exclusion for completed nodes
+            state => panic!("Node {node:?} is in state {state:?} which should not have blockers"),
         }
     }
 }

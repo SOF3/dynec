@@ -15,6 +15,10 @@ pub(crate) mod storage;
 pub(crate) mod typed;
 
 mod scheduler;
+pub use scheduler::{Node as ScheduleNode, PartitionIndex, SendSystemIndex, UnsendSystemIndex};
+
+pub mod tracer;
+pub use tracer::Tracer;
 
 /// A bundle encapsulates the systems and resources for a specific feature.
 /// This can be used by library crates to expose their features as a single API.
@@ -120,8 +124,9 @@ impl World {
         }
     }
 
-    pub fn execute(&mut self) {
-        self.scheduler.execute_full_cycle(
+    pub fn execute(&mut self, tracer: &impl Tracer) {
+        self.scheduler.execute(
+            tracer,
             &self.components,
             &self.sync_globals,
             &mut self.unsync_globals,

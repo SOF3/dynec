@@ -40,7 +40,7 @@ where
 /// it is guaranteed that all anterior systems will finish executing
 /// before any posterior system starts executing,
 /// effectively creating a "partition" between the anterior and posterior systems.
-pub trait Partition: sealed::Sealed + 'static {
+pub trait Partition: sealed::Sealed + Send + Sync + 'static {
     /// Describes the partition as [`fmt::Debug`].
     fn describe(&self, f: &mut fmt::Formatter) -> fmt::Result;
 
@@ -56,7 +56,7 @@ pub trait Partition: sealed::Sealed + 'static {
 
 impl<T: fmt::Debug + Eq + hash::Hash + 'static> sealed::Sealed for T {}
 
-impl<T: fmt::Debug + Eq + hash::Hash + 'static> Partition for T {
+impl<T: fmt::Debug + Eq + hash::Hash + Send + Sync + 'static> Partition for T {
     fn describe(&self, f: &mut fmt::Formatter) -> fmt::Result { writeln!(f, "{:?}", self) }
 
     fn compute_hash(&self) -> u64 {

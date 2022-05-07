@@ -2,6 +2,7 @@ use parking_lot::{Condvar, Mutex, MutexGuard};
 
 use super::planner::StealResult;
 use super::{Node, Planner, SendArgs, Topology, UnsendArgs, WakeupState};
+use crate::world;
 
 pub(in crate::world::scheduler) struct Executor {
     thread_pool: Option<rayon::ThreadPool>,
@@ -30,6 +31,7 @@ impl Executor {
 
     pub(in crate::world::scheduler) fn execute_full_cycle(
         &self,
+        tracer: &impl world::Tracer,
         topology: &Topology,
         planner: &mut Mutex<Planner>,
         send: SendArgs<'_>,
@@ -39,16 +41,31 @@ impl Executor {
 
         planner.get_mut().clone_from(topology.initial_planner());
 
+        tracer.start_cycle();
+
+        for &index in &planner.get_mut().send_runnable {
+            tracer.mark_runnable(Node::SendSystem(index));
+        }
+        for &index in &planner.get_mut().unsend_runnable {
+            tracer.mark_runnable(Node::UnsendSystem(index));
+        }
+
+        for &index in &topology.depless_pars {
+            let node = Node::Partition(index);
+            let partition = &*topology.partitions.get(index.0).expect("invalid node index").0;
+            tracer.partition(node, partition);
+        }
+
         let context = Context { topology, planner, condvar: &condvar };
 
         if let Some(pool) = &self.thread_pool {
             pool.in_place_scope(|scope| {
-                for _ in 0..self.concurrency {
-                    scope.spawn(|_| threaded_worker(context, send));
+                for worker_id in 0..self.concurrency {
+                    scope.spawn(move |_| threaded_worker(worker_id, tracer, context, send));
                 }
 
                 let poll_send = self.concurrency == 0;
-                main_worker(context, send, unsend, poll_send)
+                main_worker(tracer, context, send, unsend, poll_send)
             });
         }
 
@@ -57,31 +74,56 @@ impl Executor {
             .wakeup_state
             .values()
             .all(|state| matches!(state, WakeupState::Completed)));
+
+        tracer.end_cycle();
     }
 }
 
-fn main_worker(context: Context<'_>, send: SendArgs<'_>, unsend: UnsendArgs<'_>, poll_send: bool) {
+fn main_worker(
+    tracer: &impl world::Tracer,
+    context: Context<'_>,
+    send: SendArgs<'_>,
+    unsend: UnsendArgs<'_>,
+    poll_send: bool,
+) {
     let mut planner_guard = context.planner.lock();
 
     loop {
-        match planner_guard.steal_unsend(context.topology) {
+        match planner_guard.steal_unsend(tracer, world::tracer::Thread::Main, context.topology) {
             StealResult::CycleComplete => return,
-            StealResult::Pending if poll_send => match planner_guard.steal_send(context.topology) {
+            StealResult::Pending if poll_send => match planner_guard.steal_send(
+                tracer,
+                world::tracer::Thread::Main,
+                context.topology,
+            ) {
                 StealResult::CycleComplete => return,
                 StealResult::Pending => context.condvar.wait(&mut planner_guard),
                 StealResult::Ready(index) => {
                     MutexGuard::unlocked(&mut planner_guard, || {
-                        let system = send.sync_state.get_send_system(index);
+                        let (debug_name, system) = send.state.get_send_system(index);
 
                         {
                             let mut system = system
                                 .try_lock()
                                 .expect("system should only be scheduled to one worker");
-                            system.run(send.sync_globals, send.components);
+                            tracer.start_run_sendable(
+                                world::tracer::Thread::Main,
+                                Node::SendSystem(index),
+                                debug_name,
+                                &mut **system,
+                            );
+                            system.run(send.globals, send.components);
+                            tracer.end_run_sendable(
+                                world::tracer::Thread::Main,
+                                Node::SendSystem(index),
+                                debug_name,
+                                &mut **system,
+                            );
                         }
                     });
 
                     planner_guard.complete(
+                        tracer,
                         Node::SendSystem(index),
                         context.topology,
                         context.condvar,
@@ -91,14 +133,25 @@ fn main_worker(context: Context<'_>, send: SendArgs<'_>, unsend: UnsendArgs<'_>,
             StealResult::Pending => context.condvar.wait(&mut planner_guard),
             StealResult::Ready(index) => {
                 MutexGuard::unlocked(&mut planner_guard, || {
-                    let system = unsend.unsync_state.get_unsend_system_mut(index);
+                    let (debug_name, system) = unsend.state.get_unsend_system_mut(index);
 
-                    {
-                        system.run(send.sync_globals, unsend.unsync_globals, send.components);
-                    }
+                    tracer.start_run_unsendable(
+                        world::tracer::Thread::Main,
+                        Node::UnsendSystem(index),
+                        debug_name,
+                        &mut *system,
+                    );
+                    system.run(send.globals, unsend.globals, send.components);
+                    tracer.end_run_unsendable(
+                        world::tracer::Thread::Main,
+                        Node::UnsendSystem(index),
+                        debug_name,
+                        &mut *system,
+                    );
                 });
 
                 planner_guard.complete(
+                    tracer,
                     Node::UnsendSystem(index),
                     context.topology,
                     context.condvar,
@@ -108,26 +161,50 @@ fn main_worker(context: Context<'_>, send: SendArgs<'_>, unsend: UnsendArgs<'_>,
     }
 }
 
-fn threaded_worker(context: Context<'_>, send: SendArgs<'_>) {
+fn threaded_worker(
+    id: usize,
+    tracer: &impl world::Tracer,
+    context: Context<'_>,
+    send: SendArgs<'_>,
+) {
+    let thread = world::tracer::Thread::Worker(id);
+
     let mut planner_guard = context.planner.lock();
 
     loop {
-        match planner_guard.steal_send(context.topology) {
+        match planner_guard.steal_send(tracer, thread, context.topology) {
             StealResult::CycleComplete => return,
             StealResult::Pending => context.condvar.wait(&mut planner_guard),
             StealResult::Ready(index) => {
                 MutexGuard::unlocked(&mut planner_guard, || {
-                    let system = send.sync_state.get_send_system(index);
+                    let (debug_name, system) = send.state.get_send_system(index);
 
                     {
                         let mut system = system
                             .try_lock()
                             .expect("system should only be scheduled to one worker");
-                        system.run(send.sync_globals, send.components);
+                        tracer.start_run_sendable(
+                            thread,
+                            Node::SendSystem(index),
+                            debug_name,
+                            &mut **system,
+                        );
+                        system.run(send.globals, send.components);
+                        tracer.end_run_sendable(
+                            thread,
+                            Node::SendSystem(index),
+                            debug_name,
+                            &mut **system,
+                        );
                     }
                 });
 
-                planner_guard.complete(Node::SendSystem(index), context.topology, context.condvar);
+                planner_guard.complete(
+                    tracer,
+                    Node::SendSystem(index),
+                    context.topology,
+                    context.condvar,
+                );
             }
         }
     }

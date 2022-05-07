@@ -12,6 +12,11 @@ pub struct Components {
     pub(in crate::world) archetypes: HashMap<DbgTypeId, Box<dyn typed::AnyTyped>>,
 }
 
+impl Components {
+    /// Creates a dummy, empty component store used for testing.
+    pub(crate) fn empty() -> Self { Self { archetypes: HashMap::new() } }
+}
+
 #[cfg(test)]
 static_assertions::assert_impl_all!(Components: Send, Sync);
 
@@ -21,8 +26,18 @@ pub struct SyncGlobals {
     pub(in crate::world) sync_globals: HashMap<DbgTypeId, Mutex<Box<dyn Any + Send + Sync>>>,
 }
 
+impl SyncGlobals {
+    /// Creates a dummy, empty global store used for testing.
+    pub(crate) fn empty() -> Self { Self { sync_globals: HashMap::new() } }
+}
+
 /// Stores the thread-unsafe global states in a world.
 pub struct UnsyncGlobals {
     /// Global states that must be accessed on the main thread.
     pub(in crate::world) unsync_globals: HashMap<DbgTypeId, RefCell<Box<dyn Any>>>,
+}
+
+impl UnsyncGlobals {
+    /// Creates a dummy, empty global store used for testing.
+    pub(crate) fn empty() -> Self { Self { unsync_globals: HashMap::new() } }
 }

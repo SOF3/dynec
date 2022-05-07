@@ -32,17 +32,19 @@ pub(crate) struct Scheduler {
 }
 
 impl Scheduler {
-    pub(in crate::world) fn execute_full_cycle(
+    pub(in crate::world) fn execute(
         &mut self,
+        tracer: &impl world::Tracer,
         components: &world::Components,
         sync_globals: &world::SyncGlobals,
         unsync_globals: &mut world::UnsyncGlobals,
     ) {
         self.executor.execute_full_cycle(
+            tracer,
             &self.topology,
             &mut self.planner,
-            SendArgs { sync_state: &self.sync_state, components, sync_globals },
-            UnsendArgs { unsync_state: &mut self.unsync_state, unsync_globals },
+            SendArgs { state: &self.sync_state, components, globals: sync_globals },
+            UnsendArgs { state: &mut self.unsync_state, globals: unsync_globals },
         );
     }
 }
@@ -73,19 +75,25 @@ impl WakeupState {
     }
 }
 
+/// Identifies a topological node in the schedule of a cycle.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub(crate) enum Node {
+pub enum Node {
     SendSystem(SendSystemIndex),
     UnsendSystem(UnsendSystemIndex),
     Partition(PartitionIndex),
 }
 
+/// Uniquely identifies a [`system::Sendable`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub(crate) struct SendSystemIndex(usize);
+pub struct SendSystemIndex(usize);
+
+/// Uniquely identifies a [`system::Unsendable`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub(crate) struct UnsendSystemIndex(usize);
+pub struct UnsendSystemIndex(usize);
+
+/// Uniquely identifies a [`system::Partition`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub(crate) struct PartitionIndex(usize);
+pub struct PartitionIndex(usize);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) enum ResourceType {
@@ -104,6 +112,7 @@ impl fmt::Display for ResourceType {
     }
 }
 
+#[derive(Debug)]
 pub(crate) struct ResourceAccess {
     mutable: bool,
     discrim: Option<Vec<usize>>,
@@ -171,12 +180,12 @@ struct Order {
 
 #[derive(Clone, Copy)]
 struct SendArgs<'t> {
-    sync_state:   &'t SyncState,
-    components:   &'t world::Components,
-    sync_globals: &'t world::SyncGlobals,
+    state:      &'t SyncState,
+    components: &'t world::Components,
+    globals:    &'t world::SyncGlobals,
 }
 
 struct UnsendArgs<'t> {
-    unsync_state:   &'t mut UnsyncState,
-    unsync_globals: &'t mut world::UnsyncGlobals,
+    state:   &'t mut UnsyncState,
+    globals: &'t mut world::UnsyncGlobals,
 }

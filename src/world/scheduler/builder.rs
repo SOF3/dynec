@@ -135,7 +135,7 @@ impl Builder {
         let topology = Topology::init(
             self.send_systems.len(),
             self.unsend_systems.len(),
-            self.partitions.len(),
+            self.partitions.into_iter().collect(),
             &self.orders,
             &self.resources,
         );

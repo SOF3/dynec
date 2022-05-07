@@ -5,16 +5,28 @@ use super::{
     Node, Order, PartitionIndex, Planner, ResourceAccess, ResourceType, SendSystemIndex,
     UnsendSystemIndex, WakeupState,
 };
+use crate::system;
 
 /// Stores the topology of the schedule,
 /// including the dependency and exclusion relationship.
+#[derive(Debug)]
 pub(in crate::world::scheduler) struct Topology {
     /// If `dependents[a].contains(b)`, `b` depends on `a`.
     /// This means `b` is a wakeup candidate when `a` completes.
     dependents: HashMap<Node, Vec<Node>>,
 
-    /// The Planner reset state every tick.
+    /// The [`Planner`] reset state every tick.
     initial_planner: Planner,
+
+    /// The list of partitions without dependencies.
+    ///
+    /// This field is persisted for tracing.
+    pub(in crate::world::scheduler) depless_pars: Vec<PartitionIndex>,
+
+    /// The indexable list of partitions.
+    ///
+    /// This field is persisted for tracing.
+    pub(in crate::world::scheduler) partitions: Vec<system::PartitionWrapper>,
 
     /// If `exclusions[a].contains(b)`, `a` and `b` must not execute concurrently.
     /// `exclusions[a].contains(b)` if and only if `exclusions[b].contains(a)`.
@@ -25,7 +37,7 @@ impl Topology {
     pub(in crate::world::scheduler) fn init(
         send_systems_count: usize,
         unsend_systems_count: usize,
-        partitions_count: usize,
+        partitions: Vec<system::PartitionWrapper>,
         orders: &[Order],
         resources: &HashMap<ResourceType, HashMap<Node, Vec<ResourceAccess>>>,
     ) -> Self {
@@ -34,15 +46,15 @@ impl Topology {
             .chain(
                 (0..unsend_systems_count).map(|index| Node::UnsendSystem(UnsendSystemIndex(index))),
             )
-            .chain((0..partitions_count).map(|index| Node::Partition(PartitionIndex(index))));
+            .chain((0..partitions.len()).map(|index| Node::Partition(PartitionIndex(index))));
 
         let dependents = build_dependents_map(nodes_iter.clone(), orders.iter().copied());
-        let initial_planner =
+        let (initial_planner, depless_pars) =
             build_initials(nodes_iter.clone(), orders.iter().copied(), &dependents);
 
         let exclusions = build_exclusions(nodes_iter, resources);
 
-        Self { dependents, initial_planner, exclusions }
+        Self { dependents, initial_planner, depless_pars, partitions, exclusions }
     }
 
     pub(in crate::world::scheduler) fn dependents_of(&self, node: Node) -> &[Node] {
@@ -68,11 +80,11 @@ fn build_dependents_map(
 }
 
 fn build_initials(
-    nodes: impl Iterator<Item = Node>,
+    nodes: impl Iterator<Item = Node> + Clone,
     orders: impl Iterator<Item = Order>,
     dependents: &HashMap<Node, Vec<Node>>,
-) -> Planner {
-    let mut dependency_counts: HashMap<Node, usize> = nodes.map(|node| (node, 0)).collect();
+) -> (Planner, Vec<PartitionIndex>) {
+    let mut dependency_counts: HashMap<Node, usize> = nodes.clone().map(|node| (node, 0)).collect();
     for order in orders {
         *dependency_counts.get_mut(&order.after).expect("invalid node index") += 1;
     }
@@ -130,7 +142,10 @@ fn build_initials(
         })
         .collect();
 
-    Planner { wakeup_state, send_runnable, unsend_runnable, is_complete: false }
+    let remaining_systems =
+        nodes.filter(|node| matches!(node, Node::SendSystem(_) | Node::UnsendSystem(_))).count();
+
+    (Planner { wakeup_state, send_runnable, unsend_runnable, remaining_systems }, depless_pars)
 }
 
 fn build_exclusions(

@@ -36,6 +36,9 @@
 <span id="31">31</span>
 <span id="32">32</span>
 <span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">parking_lot::Mutex</span>;
 
 <span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">SendSystemIndex</span>, <span class="ident">UnsendSystemIndex</span>};
@@ -49,8 +52,9 @@
     <span class="kw">pub</span>(<span class="kw">in</span> <span class="ident"><span class="kw">crate</span>::world::scheduler</span>) <span class="kw">fn</span> <span class="ident">get_send_system</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">index</span>: <span class="ident">SendSystemIndex</span>,
-    ) -&gt; <span class="kw-2">&amp;</span><span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">system::Sendable</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">send_systems</span>.<span class="ident">get</span>(<span class="ident">index</span>.<span class="number">0</span>).<span class="ident">expect</span>(<span class="string">&quot;invalid node index&quot;</span>).<span class="number">1</span>
+    ) -&gt; (<span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="kw-2">&amp;</span><span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">system::Sendable</span><span class="op">&gt;</span><span class="op">&gt;</span>) {
+        <span class="kw">let</span> (<span class="ident">debug_name</span>, <span class="ident">system</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">send_systems</span>.<span class="ident">get</span>(<span class="ident">index</span>.<span class="number">0</span>).<span class="ident">expect</span>(<span class="string">&quot;invalid node index&quot;</span>);
+        (<span class="ident">debug_name</span>, <span class="ident">system</span>)
     }
 }
 
@@ -62,8 +66,10 @@
     <span class="kw">pub</span>(<span class="kw">in</span> <span class="ident"><span class="kw">crate</span>::world::scheduler</span>) <span class="kw">fn</span> <span class="ident">get_unsend_system_mut</span>(
         <span class="kw-2">&amp;mut</span> <span class="self">self</span>,
         <span class="ident">index</span>: <span class="ident">UnsendSystemIndex</span>,
-    ) -&gt; <span class="kw-2">&amp;mut</span> <span class="kw">dyn</span> <span class="ident">system::Unsendable</span> {
-        <span class="kw-2">&amp;mut</span> <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">unsend_systems</span>.<span class="ident">get_mut</span>(<span class="ident">index</span>.<span class="number">0</span>).<span class="ident">expect</span>(<span class="string">&quot;invalid node index&quot;</span>).<span class="number">1</span>
+    ) -&gt; (<span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="kw-2">&amp;mut</span> <span class="kw">dyn</span> <span class="ident">system::Unsendable</span>) {
+        <span class="kw">let</span> (<span class="ident">debug_name</span>, <span class="ident">system</span>) <span class="op">=</span>
+            <span class="self">self</span>.<span class="ident">unsend_systems</span>.<span class="ident">get_mut</span>(<span class="ident">index</span>.<span class="number">0</span>).<span class="ident">expect</span>(<span class="string">&quot;invalid node index&quot;</span>);
+        (<span class="ident">debug_name</span>, <span class="kw-2">&amp;mut</span> <span class="kw-2">*</span><span class="kw-2">*</span><span class="ident">system</span>)
     }
 }
 

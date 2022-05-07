@@ -31,6 +31,21 @@
 <span id="26">26</span>
 <span id="27">27</span>
 <span id="28">28</span>
+<span id="29">29</span>
+<span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
+<span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
+<span id="37">37</span>
+<span id="38">38</span>
+<span id="39">39</span>
+<span id="40">40</span>
+<span id="41">41</span>
+<span id="42">42</span>
+<span id="43">43</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::any::Any</span>;
 <span class="kw">use</span> <span class="ident">std::cell::RefCell</span>;
 <span class="kw">use</span> <span class="ident">std::collections::HashMap</span>;
@@ -45,6 +60,11 @@
     <span class="kw">pub</span>(<span class="kw">in</span> <span class="ident"><span class="kw">crate</span>::world</span>) <span class="ident">archetypes</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">DbgTypeId</span>, <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">typed::AnyTyped</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 }
 
+<span class="kw">impl</span> <span class="ident">Components</span> {
+    <span class="doccomment">/// Creates a dummy, empty component store used for testing.</span>
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">empty</span>() -&gt; <span class="self">Self</span> { <span class="self">Self</span> { <span class="ident">archetypes</span>: <span class="ident">HashMap::new</span>() } }
+}
+
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="macro">static_assertions::assert_impl_all!</span>(<span class="ident">Components</span>: <span class="ident">Send</span>, <span class="ident">Sync</span>);
 
@@ -54,10 +74,20 @@
     <span class="kw">pub</span>(<span class="kw">in</span> <span class="ident"><span class="kw">crate</span>::world</span>) <span class="ident">sync_globals</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">DbgTypeId</span>, <span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Any</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 }
 
+<span class="kw">impl</span> <span class="ident">SyncGlobals</span> {
+    <span class="doccomment">/// Creates a dummy, empty global store used for testing.</span>
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">empty</span>() -&gt; <span class="self">Self</span> { <span class="self">Self</span> { <span class="ident">sync_globals</span>: <span class="ident">HashMap::new</span>() } }
+}
+
 <span class="doccomment">/// Stores the thread-unsafe global states in a world.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">UnsyncGlobals</span> {
     <span class="doccomment">/// Global states that must be accessed on the main thread.</span>
     <span class="kw">pub</span>(<span class="kw">in</span> <span class="ident"><span class="kw">crate</span>::world</span>) <span class="ident">unsync_globals</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">DbgTypeId</span>, <span class="ident">RefCell</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Any</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+}
+
+<span class="kw">impl</span> <span class="ident">UnsyncGlobals</span> {
+    <span class="doccomment">/// Creates a dummy, empty global store used for testing.</span>
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">empty</span>() -&gt; <span class="self">Self</span> { <span class="self">Self</span> { <span class="ident">unsync_globals</span>: <span class="ident">HashMap::new</span>() } }
 }
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (77652b9ef 2022-05-06)" ></div>

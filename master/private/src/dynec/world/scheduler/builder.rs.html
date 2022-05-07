@@ -299,7 +299,7 @@
         <span class="kw">let</span> <span class="ident">topology</span> <span class="op">=</span> <span class="ident">Topology::init</span>(
             <span class="self">self</span>.<span class="ident">send_systems</span>.<span class="ident">len</span>(),
             <span class="self">self</span>.<span class="ident">unsend_systems</span>.<span class="ident">len</span>(),
-            <span class="self">self</span>.<span class="ident">partitions</span>.<span class="ident">len</span>(),
+            <span class="self">self</span>.<span class="ident">partitions</span>.<span class="ident">into_iter</span>().<span class="ident">collect</span>(),
             <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">orders</span>,
             <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">resources</span>,
         );

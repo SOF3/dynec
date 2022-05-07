@@ -163,6 +163,20 @@
 <span id="158">158</span>
 <span id="159">159</span>
 <span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::collections</span>::{<span class="ident">BTreeSet</span>, <span class="ident">HashMap</span>, <span class="ident">HashSet</span>};
 <span class="kw">use</span> <span class="ident">std::num::NonZeroUsize</span>;
 
@@ -170,16 +184,28 @@
     <span class="ident">Node</span>, <span class="ident">Order</span>, <span class="ident">PartitionIndex</span>, <span class="ident">Planner</span>, <span class="ident">ResourceAccess</span>, <span class="ident">ResourceType</span>, <span class="ident">SendSystemIndex</span>,
     <span class="ident">UnsendSystemIndex</span>, <span class="ident">WakeupState</span>,
 };
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::system</span>;
 
 <span class="doccomment">/// Stores the topology of the schedule,</span>
 <span class="doccomment">/// including the dependency and exclusion relationship.</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span>(<span class="kw">in</span> <span class="ident"><span class="kw">crate</span>::world::scheduler</span>) <span class="kw">struct</span> <span class="ident">Topology</span> {
     <span class="doccomment">/// If `dependents[a].contains(b)`, `b` depends on `a`.</span>
     <span class="doccomment">/// This means `b` is a wakeup candidate when `a` completes.</span>
     <span class="ident">dependents</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">Node</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Node</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 
-    <span class="doccomment">/// The Planner reset state every tick.</span>
+    <span class="doccomment">/// The [`Planner`] reset state every tick.</span>
     <span class="ident">initial_planner</span>: <span class="ident">Planner</span>,
+
+    <span class="doccomment">/// The list of partitions without dependencies.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// This field is persisted for tracing.</span>
+    <span class="kw">pub</span>(<span class="kw">in</span> <span class="ident"><span class="kw">crate</span>::world::scheduler</span>) <span class="ident">depless_pars</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PartitionIndex</span><span class="op">&gt;</span>,
+
+    <span class="doccomment">/// The indexable list of partitions.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// This field is persisted for tracing.</span>
+    <span class="kw">pub</span>(<span class="kw">in</span> <span class="ident"><span class="kw">crate</span>::world::scheduler</span>) <span class="ident">partitions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">system::PartitionWrapper</span><span class="op">&gt;</span>,
 
     <span class="doccomment">/// If `exclusions[a].contains(b)`, `a` and `b` must not execute concurrently.</span>
     <span class="doccomment">/// `exclusions[a].contains(b)` if and only if `exclusions[b].contains(a)`.</span>
@@ -190,7 +216,7 @@
     <span class="kw">pub</span>(<span class="kw">in</span> <span class="ident"><span class="kw">crate</span>::world::scheduler</span>) <span class="kw">fn</span> <span class="ident">init</span>(
         <span class="ident">send_systems_count</span>: <span class="ident">usize</span>,
         <span class="ident">unsend_systems_count</span>: <span class="ident">usize</span>,
-        <span class="ident">partitions_count</span>: <span class="ident">usize</span>,
+        <span class="ident">partitions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">system::PartitionWrapper</span><span class="op">&gt;</span>,
         <span class="ident">orders</span>: <span class="kw-2">&amp;</span>[<span class="ident">Order</span>],
         <span class="ident">resources</span>: <span class="kw-2">&amp;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">ResourceType</span>, <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">Node</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ResourceAccess</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
     ) -&gt; <span class="self">Self</span> {
@@ -199,15 +225,15 @@
             .<span class="ident">chain</span>(
                 (<span class="number">0</span>..<span class="ident">unsend_systems_count</span>).<span class="ident">map</span>(<span class="op">|</span><span class="ident">index</span><span class="op">|</span> <span class="ident">Node::UnsendSystem</span>(<span class="ident">UnsendSystemIndex</span>(<span class="ident">index</span>))),
             )
-            .<span class="ident">chain</span>((<span class="number">0</span>..<span class="ident">partitions_count</span>).<span class="ident">map</span>(<span class="op">|</span><span class="ident">index</span><span class="op">|</span> <span class="ident">Node::Partition</span>(<span class="ident">PartitionIndex</span>(<span class="ident">index</span>))));
+            .<span class="ident">chain</span>((<span class="number">0</span>..<span class="ident">partitions</span>.<span class="ident">len</span>()).<span class="ident">map</span>(<span class="op">|</span><span class="ident">index</span><span class="op">|</span> <span class="ident">Node::Partition</span>(<span class="ident">PartitionIndex</span>(<span class="ident">index</span>))));
 
         <span class="kw">let</span> <span class="ident">dependents</span> <span class="op">=</span> <span class="ident">build_dependents_map</span>(<span class="ident">nodes_iter</span>.<span class="ident">clone</span>(), <span class="ident">orders</span>.<span class="ident">iter</span>().<span class="ident">copied</span>());
-        <span class="kw">let</span> <span class="ident">initial_planner</span> <span class="op">=</span>
+        <span class="kw">let</span> (<span class="ident">initial_planner</span>, <span class="ident">depless_pars</span>) <span class="op">=</span>
             <span class="ident">build_initials</span>(<span class="ident">nodes_iter</span>.<span class="ident">clone</span>(), <span class="ident">orders</span>.<span class="ident">iter</span>().<span class="ident">copied</span>(), <span class="kw-2">&amp;</span><span class="ident">dependents</span>);
 
         <span class="kw">let</span> <span class="ident">exclusions</span> <span class="op">=</span> <span class="ident">build_exclusions</span>(<span class="ident">nodes_iter</span>, <span class="ident">resources</span>);
 
-        <span class="self">Self</span> { <span class="ident">dependents</span>, <span class="ident">initial_planner</span>, <span class="ident">exclusions</span> }
+        <span class="self">Self</span> { <span class="ident">dependents</span>, <span class="ident">initial_planner</span>, <span class="ident">depless_pars</span>, <span class="ident">partitions</span>, <span class="ident">exclusions</span> }
     }
 
     <span class="kw">pub</span>(<span class="kw">in</span> <span class="ident"><span class="kw">crate</span>::world::scheduler</span>) <span class="kw">fn</span> <span class="ident">dependents_of</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">node</span>: <span class="ident">Node</span>) -&gt; <span class="kw-2">&amp;</span>[<span class="ident">Node</span>] {
@@ -233,11 +259,11 @@
 }
 
 <span class="kw">fn</span> <span class="ident">build_initials</span>(
-    <span class="ident">nodes</span>: <span class="kw">impl</span> <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">Node</span><span class="op">&gt;</span>,
+    <span class="ident">nodes</span>: <span class="kw">impl</span> <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">Node</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Clone</span>,
     <span class="ident">orders</span>: <span class="kw">impl</span> <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">Order</span><span class="op">&gt;</span>,
     <span class="ident">dependents</span>: <span class="kw-2">&amp;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">Node</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Node</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-) -&gt; <span class="ident">Planner</span> {
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dependency_counts</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">Node</span>, <span class="ident">usize</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">nodes</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">node</span><span class="op">|</span> (<span class="ident">node</span>, <span class="number">0</span>)).<span class="ident">collect</span>();
+) -&gt; (<span class="ident">Planner</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PartitionIndex</span><span class="op">&gt;</span>) {
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dependency_counts</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">Node</span>, <span class="ident">usize</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">nodes</span>.<span class="ident">clone</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">node</span><span class="op">|</span> (<span class="ident">node</span>, <span class="number">0</span>)).<span class="ident">collect</span>();
     <span class="kw">for</span> <span class="ident">order</span> <span class="kw">in</span> <span class="ident">orders</span> {
         <span class="kw-2">*</span><span class="ident">dependency_counts</span>.<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">order</span>.<span class="ident">after</span>).<span class="ident">expect</span>(<span class="string">&quot;invalid node index&quot;</span>) <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
     }
@@ -295,7 +321,9 @@
         })
         .<span class="ident">collect</span>();
 
-    <span class="ident">Planner</span> { <span class="ident">wakeup_state</span>, <span class="ident">send_runnable</span>, <span class="ident">unsend_runnable</span>, <span class="ident">is_complete</span>: <span class="bool-val">false</span> }
+    <span class="kw">let</span> <span class="ident">remaining_systems</span> <span class="op">=</span> <span class="ident">nodes</span>.<span class="ident">filter</span>(<span class="op">|</span><span class="ident">node</span><span class="op">|</span> <span class="macro">matches!</span>(<span class="ident">node</span>, <span class="ident">Node::SendSystem</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">Node::UnsendSystem</span>(<span class="kw">_</span>))).<span class="ident">count</span>();
+
+    (<span class="ident">Planner</span> { <span class="ident">wakeup_state</span>, <span class="ident">send_runnable</span>, <span class="ident">unsend_runnable</span>, <span class="ident">remaining_systems</span> }, <span class="ident">depless_pars</span>)
 }
 
 <span class="kw">fn</span> <span class="ident">build_exclusions</span>(

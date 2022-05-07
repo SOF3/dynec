@@ -2,12 +2,20 @@ use std::fmt;
 use std::num::NonZeroUsize;
 
 use crate::util::DbgTypeId;
+use crate::world;
 
 mod builder;
 pub(crate) use builder::Builder;
 
+mod executor;
+use executor::Executor;
+
 mod planner;
+use parking_lot::Mutex;
 use planner::Planner;
+
+mod state;
+use state::{SyncState, UnsyncState};
 
 mod topology;
 use topology::Topology;
@@ -16,8 +24,30 @@ use topology::Topology;
 mod tests;
 
 pub(crate) struct Scheduler {
-    topology: Topology,
-    planner:  Planner,
+    topology:     Topology,
+    planner:      Mutex<Planner>,
+    sync_state:   SyncState,
+    unsync_state: UnsyncState,
+    executor:     Executor,
+}
+
+impl Scheduler {
+    pub(in crate::world) fn execute_full_cycle(
+        &mut self,
+        components: &world::Components,
+        send_globals: &world::SendGlobals,
+        unsend_globals: &world::UnsendGlobals,
+    ) {
+        self.executor.execute_full_cycle(
+            &self.topology,
+            &mut self.planner,
+            &self.sync_state,
+            &mut self.unsync_state,
+            components,
+            send_globals,
+            unsend_globals,
+        );
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -66,6 +96,7 @@ pub(crate) enum ResourceType {
     Simple { arch: DbgTypeId, comp: DbgTypeId },
     Isotope { arch: DbgTypeId, comp: DbgTypeId },
 }
+
 impl fmt::Display for ResourceType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {

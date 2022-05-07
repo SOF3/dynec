@@ -1,13 +1,15 @@
 //! The world stores the states of the game.
 
-use std::any::{self, Any};
-use std::collections::HashMap;
+use std::any::{self};
 
 use crate::util::DbgTypeId;
 use crate::{comp, entity, Archetype, Entity};
 
 mod builder;
 pub use builder::Builder;
+
+mod state;
+pub use state::{Components, SendGlobals, UnsendGlobals};
 
 pub(crate) mod storage;
 pub(crate) mod typed;
@@ -28,7 +30,30 @@ pub trait Bundle {
 
 /// Creates a dynec world from bundles.
 pub fn new<'t>(bundles: impl IntoIterator<Item = &'t dyn Bundle> + Copy) -> World {
-    let mut builder = Builder::default();
+    new_with_concurrency(
+        bundles,
+        match std::thread::available_parallelism() {
+            Ok(c) => c.get(),
+            Err(err) => {
+                log::error!("Cannot detect number of CPUs, parallelism disabled");
+                0
+            }
+        },
+    )
+}
+
+/// Creates a dynec world from bundles with threading disabled.
+pub fn new_unthreaded<'t>(bundles: impl IntoIterator<Item = &'t dyn Bundle> + Copy) -> World {
+    new_with_concurrency(bundles, 0)
+}
+
+/// Creates a dynec world from bundles and specify the number of worker threads
+/// (not counting the main thread, which only executes thread-local tasks).
+pub fn new_with_concurrency<'t>(
+    bundles: impl IntoIterator<Item = &'t dyn Bundle> + Copy,
+    concurrency: usize,
+) -> World {
+    let mut builder = Builder::new(concurrency);
 
     for bundle in bundles {
         bundle.register(&mut builder);
@@ -65,22 +90,18 @@ impl SimpleSpec {
 /// The data structure that stores all states in the game.
 pub struct World {
     /// Stores the component states in a world.
-    storages:       Storages,
+    components:     Components,
+    /// Stores the system-local states and the scheduler topology.
     scheduler:      scheduler::Scheduler,
     /// Global states that can be concurrently accessed by systems on other threads.
-    send_globals:   HashMap<DbgTypeId, Box<dyn Any + Send + Sync>>,
+    send_globals:   SendGlobals,
     /// Global states that must be accessed on the main thread.
-    unsend_globals: HashMap<DbgTypeId, Box<dyn Any>>,
-}
-
-/// Stores the component states in a world.
-pub struct Storages {
-    archetypes: HashMap<DbgTypeId, Box<dyn typed::AnyTyped>>,
+    unsend_globals: UnsendGlobals,
 }
 
 impl World {
     fn archetype<A: Archetype>(&self) -> &typed::Typed<A> {
-        match self.storages.archetypes.get(&DbgTypeId::of::<A>()) {
+        match self.components.archetypes.get(&DbgTypeId::of::<A>()) {
             Some(typed) => typed.as_any().downcast_ref().expect("TypeId mismatch"),
             None => panic!(
                 "The archetype {} cannot be used because it is not used in any systems",
@@ -90,13 +111,21 @@ impl World {
     }
 
     fn archetype_mut<A: Archetype>(&mut self) -> &mut typed::Typed<A> {
-        match self.storages.archetypes.get_mut(&DbgTypeId::of::<A>()) {
+        match self.components.archetypes.get_mut(&DbgTypeId::of::<A>()) {
             Some(typed) => typed.as_any_mut().downcast_mut().expect("TypeId mismatch"),
             None => panic!(
                 "The archetype {} cannot be used because it is not used in any systems",
                 any::type_name::<A>()
             ),
         }
+    }
+
+    pub fn execute(&mut self) {
+        self.scheduler.execute_full_cycle(
+            &self.components,
+            &self.send_globals,
+            &self.unsend_globals,
+        );
     }
 
     /// Adds an entity to the world.

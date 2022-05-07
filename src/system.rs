@@ -8,13 +8,12 @@
 //! Systems that use thread-unsafe resources (systems that are not [`Send`])
 //! are always executed on the main thread.
 
-use core::fmt;
 use std::any::TypeId;
 use std::collections::hash_map::DefaultHasher;
-use std::hash;
 use std::marker::PhantomData;
+use std::{fmt, hash};
 
-use crate::{comp, util, Archetype};
+use crate::{comp, util, world, Archetype};
 
 /// Provides access to a simple component in a specific archetype.
 pub struct Simple<A: Archetype, R: util::Ref>
@@ -106,7 +105,7 @@ mod sealed {
 ///
 /// There may be multiple instances of the same implementor type.
 /// This is meaningful as they may have different states.
-pub trait System {
+pub trait Sendable: Send {
     /// Describes this instance of system.
     ///
     /// The method is only called when the system was initially scheduled,
@@ -114,7 +113,26 @@ pub trait System {
     fn get_spec(&self) -> Spec;
 
     /// Runs the system.
-    fn run(&mut self);
+    fn run(&mut self, globals: &world::SendGlobals, components: &world::Components);
+}
+
+/// A variant of [`Sendable`] that runs on the main thread only,
+/// but allows storing [`Send`] states
+/// and accessing non-<code>[Send] + [Sync]</code> global states.
+pub trait Unsendable {
+    /// Describes this instance of system.
+    ///
+    /// The method is only called when the system was initially scheduled,
+    /// but it should return a consistent value.
+    fn get_spec(&self) -> Spec;
+
+    /// Runs the system.
+    fn run(
+        &mut self,
+        send_globals: &world::SendGlobals,
+        unsend_globals: &world::UnsendGlobals,
+        components: &world::Components,
+    );
 }
 
 pub mod spec;

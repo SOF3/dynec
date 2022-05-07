@@ -1,27 +1,39 @@
-use core::fmt;
 use std::collections::{hash_map, HashMap};
+use std::fmt;
 
 use indexmap::IndexSet;
+use parking_lot::Mutex;
 
 use super::{
-    Node, Order, PartitionIndex, ResourceAccess, ResourceType, Scheduler, SendSystemIndex,
-    Topology, UnsendSystemIndex,
+    Executor, Node, Order, PartitionIndex, ResourceAccess, ResourceType, Scheduler,
+    SendSystemIndex, SyncState, Topology, UnsendSystemIndex, UnsyncState,
 };
 use crate::system::{self, spec};
 
-#[derive(Default)]
 pub(crate) struct Builder {
-    send_systems:   Vec<(String, Box<dyn system::System + Send>)>,
-    unsend_systems: Vec<(String, Box<dyn system::System>)>,
-    partitions:     IndexSet<system::PartitionWrapper>,
-    resources:      HashMap<ResourceType, HashMap<Node, Vec<ResourceAccess>>>,
-    orders:         Vec<Order>,
+    pub(in crate::world) concurrency: usize,
+    send_systems:                     Vec<(String, Box<dyn system::Sendable>)>,
+    unsend_systems:                   Vec<(String, Box<dyn system::Unsendable>)>,
+    partitions:                       IndexSet<system::PartitionWrapper>,
+    resources:                        HashMap<ResourceType, HashMap<Node, Vec<ResourceAccess>>>,
+    orders:                           Vec<Order>,
 }
 
 impl Builder {
+    pub(crate) fn new(concurrency: usize) -> Self {
+        Self {
+            concurrency,
+            send_systems: Vec::new(),
+            unsend_systems: Vec::new(),
+            partitions: IndexSet::new(),
+            resources: HashMap::new(),
+            orders: Vec::new(),
+        }
+    }
+
     pub(crate) fn push_send_system(
         &mut self,
-        sys: Box<dyn system::System + Send>,
+        sys: Box<dyn system::Sendable>,
     ) -> (Node, system::Spec) {
         let spec = sys.get_spec();
         let index = SendSystemIndex(self.send_systems.len());
@@ -31,7 +43,7 @@ impl Builder {
 
     pub(crate) fn push_unsend_system(
         &mut self,
-        sys: Box<dyn system::System>,
+        sys: Box<dyn system::Unsendable>,
     ) -> (Node, system::Spec) {
         let spec = sys.get_spec();
         let index = UnsendSystemIndex(self.send_systems.len());
@@ -127,7 +139,21 @@ impl Builder {
             &self.orders,
             &self.resources,
         );
-        let planner = topology.initial_planner().clone();
-        Scheduler { topology, planner }
+        let planner = Mutex::new(topology.initial_planner().clone());
+        let executor = Executor::new(self.concurrency);
+
+        Scheduler {
+            topology,
+            planner,
+            executor,
+            sync_state: SyncState {
+                send_systems: self
+                    .send_systems
+                    .into_iter()
+                    .map(|(ty, sys)| (ty, Mutex::new(sys)))
+                    .collect(),
+            },
+            unsync_state: UnsyncState { unsend_systems: self.unsend_systems },
+        }
     }
 }

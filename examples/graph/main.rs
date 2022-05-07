@@ -7,7 +7,7 @@ mod simulation;
 mod time;
 
 fn main() {
-    let world = dynec::new([
+    let _world = dynec::new([
         &render::Bundle as &dyn dynec::world::Bundle,
         &time::Bundle,
         &simulation::Bundle,

@@ -130,7 +130,7 @@ fn build_initials(
         })
         .collect();
 
-    Planner { wakeup_state, send_runnable, unsend_runnable }
+    Planner { wakeup_state, send_runnable, unsend_runnable, is_complete: false }
 }
 
 fn build_exclusions(

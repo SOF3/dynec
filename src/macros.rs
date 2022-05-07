@@ -314,7 +314,7 @@ mod global_tests {}
 ///
 /// let system = simulate.build(SkillId(3));
 /// assert_eq!(
-///     system::System::get_spec(&system).debug_name.as_str(),
+///     system::Sendable::get_spec(&system).debug_name.as_str(),
 ///     "simulate[counter = 0, skill_id = SkillId(3)]"
 /// );
 ///
@@ -370,7 +370,7 @@ mod system_tests {
 
         let system = simulate.build(2i64);
         {
-            use crate::system::System;
+            use crate::system::Sendable;
             assert_eq!(
                 system.get_spec().debug_name.as_str(),
                 "dynec::macros::system_tests::simulate"
@@ -416,7 +416,7 @@ macro_rules! system_test {
             $var:tt : $arch:ty = ($($components:tt)*);
         )*
     ) => {{
-        let mut builder = $crate::world::Builder::default();
+        let mut builder = $crate::world::Builder::new(0);
         $(
             builder.schedule(Box::new($systems));
         )*

@@ -1,12 +1,11 @@
 //! Miscellaneous traits used for exposing type bounds in the API.
 
-use core::fmt;
 #[cfg(debug_assertions)]
 use std::any;
 use std::any::TypeId;
 use std::borrow::Borrow;
 use std::collections::BTreeSet;
-use std::{cmp, hash};
+use std::{cmp, fmt, hash};
 
 /// A generic mutable/immutable reference type.
 pub trait Ref {

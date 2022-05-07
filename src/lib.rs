@@ -87,6 +87,9 @@ pub use global::Global;
 
 pub mod system;
 
+#[cfg(test)]
+mod test_util;
+
 pub mod world;
 #[doc(inline)]
 pub use world::new;

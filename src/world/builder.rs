@@ -1,5 +1,8 @@
 use std::any::Any;
+use std::cell::RefCell;
 use std::collections::HashMap;
+
+use parking_lot::Mutex;
 
 use super::{scheduler, typed};
 use crate::system::spec;
@@ -8,7 +11,6 @@ use crate::{comp, system, Global};
 
 /// This type is used to build a world.
 /// No more systems can be scheduled after the builder is built.
-#[derive(Default)]
 pub struct Builder {
     scheduler:      scheduler::Builder,
     archetypes:     HashMap<DbgTypeId, Box<dyn typed::AnyBuilder>>,
@@ -22,6 +24,16 @@ enum GlobalBuilder<A: ?Sized> {
 }
 
 impl Builder {
+    /// Creates a new builder with the specified concurrency.
+    pub fn new(concurrency: usize) -> Self {
+        Self {
+            scheduler:      scheduler::Builder::new(concurrency),
+            archetypes:     HashMap::new(),
+            sync_globals:   HashMap::new(),
+            unsync_globals: HashMap::new(),
+        }
+    }
+
     fn archetype(
         &mut self,
         archetype: spec::ArchetypeDescriptor,
@@ -104,14 +116,14 @@ impl Builder {
     }
 
     /// Schedules a thread-safe system.
-    pub fn schedule(&mut self, system: Box<dyn system::System + Send>) {
+    pub fn schedule(&mut self, system: Box<dyn system::Sendable>) {
         let spec = system.get_spec();
         let (node, system) = self.scheduler.push_send_system(system);
         self.register_resources(spec, true, node);
     }
 
     /// Schedules a system that must be run on the main thread.
-    pub fn schedule_thread_unsafe(&mut self, system: Box<dyn system::System>) {
+    pub fn schedule_thread_unsafe(&mut self, system: Box<dyn system::Unsendable>) {
         let spec = system.get_spec();
         let (node, system) = self.scheduler.push_unsend_system(system);
         self.register_resources(spec, false, node);
@@ -127,9 +139,15 @@ impl Builder {
         self.unsync_globals.insert(DbgTypeId::of::<G>(), GlobalBuilder::Provided(Box::new(value)));
     }
 
+    /// Adjust the concurrency of the scheduler.
+    /// Pass `0` to disable parallelism.
+    pub fn set_concurrency(&mut self, concurrency: usize) {
+        self.scheduler.concurrency = concurrency;
+    }
+
     /// Constructs the world from the builder.
     pub fn build(self) -> super::World {
-        let storages = super::Storages {
+        let storages = super::Components {
             archetypes: self
                 .archetypes
                 .into_iter()
@@ -140,21 +158,39 @@ impl Builder {
         let send_globals = self
             .sync_globals
             .into_iter()
-            .map(|(ty, da)| match da {
-                GlobalBuilder::Provided(value) => (ty, value),
-                GlobalBuilder::Missing(default) => (ty, default()),
+            .map(|(ty, da)| {
+                (
+                    ty,
+                    Mutex::new(match da {
+                        GlobalBuilder::Provided(value) => value,
+                        GlobalBuilder::Missing(default) => default(),
+                    }),
+                )
             })
             .collect();
+        let send_globals = super::SendGlobals { data: send_globals };
+
         let unsend_globals = self
             .unsync_globals
             .into_iter()
-            .map(|(ty, da)| match da {
-                GlobalBuilder::Provided(value) => (ty, value),
-                GlobalBuilder::Missing(default) => (ty, default()),
+            .map(|(ty, da)| {
+                (
+                    ty,
+                    RefCell::new(match da {
+                        GlobalBuilder::Provided(value) => value,
+                        GlobalBuilder::Missing(default) => default(),
+                    }),
+                )
             })
             .collect();
+        let unsend_globals = super::UnsendGlobals { data: unsend_globals };
 
-        super::World { storages, send_globals, unsend_globals, scheduler: self.scheduler.build() }
+        super::World {
+            components: storages,
+            send_globals,
+            unsend_globals,
+            scheduler: self.scheduler.build(),
+        }
     }
 }
 

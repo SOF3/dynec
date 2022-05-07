@@ -17,6 +17,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
     let mut name = quote!(concat!(module_path!(), "::", stringify!(#ident)));
 
     let mut crate_name = quote!(::dynec);
+    let mut system_thread_local = false;
 
     if !args.is_empty() {
         let args = syn::parse2::<Attr<FnOpt>>(args)?;
@@ -28,9 +29,17 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             crate_name = ts.clone();
         }
 
+        system_thread_local = args
+            .find_one(|opt| match opt {
+                FnOpt::ThreadLocal => Some(&()),
+                _ => None,
+            })?
+            .is_some();
+
         for named in &args.items {
             match &named.value {
                 FnOpt::DynecAs(_, _) => {} // already handled
+                FnOpt::ThreadLocal => {}   // already handled
                 FnOpt::Before(_, inputs) => {
                     for dep in inputs {
                         deps.push(quote!(#crate_name::system::spec::Dependency::Before(Box::new(#dep) as Box<dyn #crate_name::system::Partition>)));
@@ -398,6 +407,24 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
         } = self;
     };
 
+    let (system_trait, system_run_params) = match system_thread_local {
+        true => (
+            quote!(Unsendable),
+            quote! {
+                send_globals: &#crate_name::world::SendGlobals,
+                unsend_globals: &#crate_name::world::UnsendGlobals,
+                components: &#crate_name::world::Components,
+            },
+        ),
+        false => (
+            quote!(Sendable),
+            quote! {
+                send_globals: &#crate_name::world::SendGlobals,
+                components: &#crate_name::world::Components,
+            },
+        ),
+    };
+
     let output = quote! {
         #(#[#other_attrs])*
         #[derive(Clone, Copy)]
@@ -409,7 +436,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 #vis fn build(
                     &self,
                     #(#param_state_field_idents: #param_state_field_tys,)*
-                ) -> impl #crate_name::system::System {
+                ) -> impl #crate_name::system::#system_trait {
                     __dynec_local_state {
                         #(#param_state_field_idents,)*
                         #(#initial_state_field_idents: #initial_state_field_defaults,)*
@@ -434,7 +461,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 }
             }
 
-            impl #crate_name::system::System for __dynec_local_state {
+            impl #crate_name::system::#system_trait for __dynec_local_state {
                 fn get_spec(&self) -> #crate_name::system::Spec {
                     #destructure_local_states
 
@@ -449,7 +476,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                     }
                 }
 
-                fn run(&mut self) {
+                fn run(&mut self, #system_run_params) {
                     todo!()
                 }
             }
@@ -461,6 +488,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
 
 enum FnOpt {
     DynecAs(syn::token::Paren, TokenStream),
+    ThreadLocal,
     Before(syn::token::Paren, Punctuated<syn::Expr, syn::Token![,]>),
     After(syn::token::Paren, Punctuated<syn::Expr, syn::Token![,]>),
     Name(syn::Token![=], Box<syn::Expr>),
@@ -478,6 +506,7 @@ impl Parse for Named<FnOpt> {
                 let args = inner.parse()?;
                 FnOpt::DynecAs(paren, args)
             }
+            "thread_local" => FnOpt::ThreadLocal,
             "before" => {
                 let inner;
                 let paren = syn::parenthesized!(inner in input);

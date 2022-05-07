@@ -17,7 +17,7 @@ pub struct Bundle;
 
 impl dynec::world::Bundle for Bundle {
     /// Initializes the plugin, registering systems and initializing globals.
-    fn register(&self, builder: &mut dynec::world::Builder) {
+    fn register(&self, _builder: &mut dynec::world::Builder) {
         //builder.schedule(render);
     }
 

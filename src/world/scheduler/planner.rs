@@ -1,6 +1,8 @@
 use std::collections::{BTreeSet, HashMap};
 use std::num::NonZeroUsize;
 
+use parking_lot::Condvar;
+
 use super::{Node, SendSystemIndex, Topology, UnsendSystemIndex, WakeupState};
 use crate::util;
 
@@ -21,6 +23,9 @@ pub(in crate::world::scheduler) struct Planner {
     /// Due to exclusion, nodes in the queue may no longer be runnable.
     /// `wakeup_count` must always be re-checked.
     pub(in crate::world::scheduler) unsend_runnable: BTreeSet<UnsendSystemIndex>,
+
+    /// Whether the planner is complete.
+    pub(in crate::world::scheduler) is_complete: bool,
 }
 
 impl Planner {
@@ -30,8 +35,15 @@ impl Planner {
         topology: &Topology,
         pool: fn(&mut Self) -> &mut BTreeSet<I>,
         to_node: fn(I) -> Node,
-    ) -> Option<I> {
-        let index = util::btreeset_remove_first(pool(self))?;
+    ) -> StealResult<I> {
+        if self.is_complete {
+            return StealResult::CycleComplete;
+        }
+
+        let index = match util::btreeset_remove_first(pool(self)) {
+            Some(index) => index,
+            None => return StealResult::Pending,
+        };
         let node = to_node(index);
 
         // mark node as started
@@ -79,19 +91,30 @@ impl Planner {
             }
         }
 
-        Some(index)
+        StealResult::Ready(index)
     }
 
-    fn steal_send(&mut self, topology: &Topology) -> Option<SendSystemIndex> {
+    pub(in crate::world::scheduler) fn steal_send(
+        &mut self,
+        topology: &Topology,
+    ) -> StealResult<SendSystemIndex> {
         self.steal(topology, |this| &mut this.send_runnable, Node::SendSystem)
     }
 
-    fn steal_unsend(&mut self, topology: &Topology) -> Option<UnsendSystemIndex> {
+    pub(in crate::world::scheduler) fn steal_unsend(
+        &mut self,
+        topology: &Topology,
+    ) -> StealResult<UnsendSystemIndex> {
         self.steal(topology, |this| &mut this.unsend_runnable, Node::UnsendSystem)
     }
 
     /// Mark a node as completed.
-    fn complete(&mut self, node: Node, topology: &Topology) {
+    pub(in crate::world::scheduler) fn complete(
+        &mut self,
+        node: Node,
+        topology: &Topology,
+        condvar: &Condvar,
+    ) {
         {
             let state = self.wakeup_state.get_mut(&node).expect("invalid node index");
             match state {
@@ -101,6 +124,8 @@ impl Planner {
         }
 
         self.remove_one_block(topology, topology.dependents_of(node).iter().copied());
+
+        condvar.notify_all();
     }
 
     fn remove_one_block(&mut self, topology: &Topology, queue: impl Iterator<Item = Node>) {
@@ -146,4 +171,10 @@ impl Planner {
             _ => panic!("Node {node:?} is in state {state:?} which should not have blockers"),
         }
     }
+}
+
+pub(in crate::world::scheduler) enum StealResult<I> {
+    Ready(I),
+    Pending,
+    CycleComplete,
 }

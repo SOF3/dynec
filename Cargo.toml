@@ -20,6 +20,7 @@ itertools = "0.10.3"
 log = "0.4.16"
 num-traits = "0.2.14"
 parking_lot = "0.12.0"
+rayon = "1.5.2"
 xias = "0.2.1"
 
 [features]
@@ -30,3 +31,4 @@ map-first-last = [] # Use the unstable map_first_last feature
 
 [dev-dependencies]
 static_assertions = "1.1.0"
+strum = "0.24.0"

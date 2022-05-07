@@ -754,7 +754,7 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// let system = simulate.build(SkillId(3));</span>
 <span class="doccomment">/// assert_eq!(</span>
-<span class="doccomment">///     system::System::get_spec(&amp;system).debug_name.as_str(),</span>
+<span class="doccomment">///     system::Sendable::get_spec(&amp;system).debug_name.as_str(),</span>
 <span class="doccomment">///     &quot;simulate[counter = 0, skill_id = SkillId(3)]&quot;</span>
 <span class="doccomment">/// );</span>
 <span class="doccomment">///</span>
@@ -810,7 +810,7 @@
 
         <span class="kw">let</span> <span class="ident">system</span> <span class="op">=</span> <span class="ident">simulate</span>.<span class="ident">build</span>(<span class="number">2i64</span>);
         {
-            <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::system::System</span>;
+            <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::system::Sendable</span>;
             <span class="macro">assert_eq!</span>(
                 <span class="ident">system</span>.<span class="ident">get_spec</span>().<span class="ident">debug_name</span>.<span class="ident">as_str</span>(),
                 <span class="string">&quot;dynec::macros::system_tests::simulate&quot;</span>
@@ -856,7 +856,7 @@
             <span class="macro-nonterminal">$</span><span class="macro-nonterminal">var</span>:<span class="ident">tt</span> : <span class="macro-nonterminal">$</span><span class="macro-nonterminal">arch</span>:<span class="ident">ty</span> <span class="op">=</span> ($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">components</span>:<span class="ident">tt</span>)<span class="kw-2">*</span>);
         )<span class="op">*</span>
     ) =&gt; {{
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">builder</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">crate::world::Builder::default</span>();
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">builder</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">crate::world::Builder::new</span>(<span class="number">0</span>);
         $(
             <span class="ident">builder</span>.<span class="ident">schedule</span>(<span class="ident">Box::new</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">systems</span>));
         )<span class="op">*</span>
@@ -874,5 +874,5 @@
     }}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (4c60a0ea5 2022-05-04)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (77652b9ef 2022-05-06)" ></div>
 </body></html>

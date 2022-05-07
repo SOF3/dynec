@@ -138,7 +138,7 @@ so mutating states has no effect on the system schedule.</p>
 
 <span class="kw">let</span> <span class="ident">system</span> <span class="op">=</span> <span class="ident">simulate</span>.<span class="ident">build</span>(<span class="ident">SkillId</span>(<span class="number">3</span>));
 <span class="macro">assert_eq!</span>(
-    <span class="ident">system::System::get_spec</span>(<span class="kw-2">&amp;</span><span class="ident">system</span>).<span class="ident">debug_name</span>.<span class="ident">as_str</span>(),
+    <span class="ident">system::Sendable::get_spec</span>(<span class="kw-2">&amp;</span><span class="ident">system</span>).<span class="ident">debug_name</span>.<span class="ident">as_str</span>(),
     <span class="string">&quot;simulate[counter = 0, skill_id = SkillId(3)]&quot;</span>
 );
 
@@ -175,5 +175,5 @@ so mutating states has no effect on the system schedule.</p>
     <span class="macro">assert_eq!</span>(<span class="ident">counter</span>, <span class="number">1</span>);
     <span class="macro">assert_eq!</span>(<span class="ident">title</span>.<span class="number">0</span>, <span class="string">&quot;changed&quot;</span>);
 }</code></pre></div>
-</div></details></section></div></main><div id="rustdoc-vars" data-root-path="../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (4c60a0ea5 2022-05-04)" ></div>
+</div></details></section></div></main><div id="rustdoc-vars" data-root-path="../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (77652b9ef 2022-05-06)" ></div>
 </body></html>

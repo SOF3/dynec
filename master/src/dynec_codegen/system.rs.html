@@ -647,6 +647,35 @@
 <span id="642">642</span>
 <span id="643">643</span>
 <span id="644">644</span>
+<span id="645">645</span>
+<span id="646">646</span>
+<span id="647">647</span>
+<span id="648">648</span>
+<span id="649">649</span>
+<span id="650">650</span>
+<span id="651">651</span>
+<span id="652">652</span>
+<span id="653">653</span>
+<span id="654">654</span>
+<span id="655">655</span>
+<span id="656">656</span>
+<span id="657">657</span>
+<span id="658">658</span>
+<span id="659">659</span>
+<span id="660">660</span>
+<span id="661">661</span>
+<span id="662">662</span>
+<span id="663">663</span>
+<span id="664">664</span>
+<span id="665">665</span>
+<span id="666">666</span>
+<span id="667">667</span>
+<span id="668">668</span>
+<span id="669">669</span>
+<span id="670">670</span>
+<span id="671">671</span>
+<span id="672">672</span>
+<span id="673">673</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">proc_macro2::TokenStream</span>;
 <span class="kw">use</span> <span class="ident">quote::quote</span>;
 <span class="kw">use</span> <span class="ident">syn::parse</span>::{<span class="ident">Parse</span>, <span class="ident">ParseStream</span>};
@@ -666,6 +695,7 @@
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">name</span> <span class="op">=</span> <span class="macro">quote!</span>(<span class="macro">concat!</span>(<span class="macro">module_path!</span>(), <span class="string">&quot;::&quot;</span>, <span class="macro">stringify!</span>(#<span class="ident">ident</span>)));
 
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">crate_name</span> <span class="op">=</span> <span class="macro">quote!</span>(<span class="ident">::dynec</span>);
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">system_thread_local</span> <span class="op">=</span> <span class="bool-val">false</span>;
 
     <span class="kw">if</span> <span class="op">!</span><span class="ident">args</span>.<span class="ident">is_empty</span>() {
         <span class="kw">let</span> <span class="ident">args</span> <span class="op">=</span> <span class="ident">syn::parse2</span>::<span class="op">&lt;</span><span class="ident">Attr</span><span class="op">&lt;</span><span class="ident">FnOpt</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="ident">args</span>)<span class="question-mark">?</span>;
@@ -677,9 +707,17 @@
             <span class="ident">crate_name</span> <span class="op">=</span> <span class="ident">ts</span>.<span class="ident">clone</span>();
         }
 
+        <span class="ident">system_thread_local</span> <span class="op">=</span> <span class="ident">args</span>
+            .<span class="ident">find_one</span>(<span class="op">|</span><span class="ident">opt</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">opt</span> {
+                <span class="ident">FnOpt::ThreadLocal</span> =&gt; <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>()),
+                <span class="kw">_</span> =&gt; <span class="prelude-val">None</span>,
+            })<span class="question-mark">?</span>
+            .<span class="ident">is_some</span>();
+
         <span class="kw">for</span> <span class="ident">named</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">args</span>.<span class="ident">items</span> {
             <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">named</span>.<span class="ident">value</span> {
                 <span class="ident">FnOpt::DynecAs</span>(<span class="kw">_</span>, <span class="kw">_</span>) =&gt; {} <span class="comment">// already handled</span>
+                <span class="ident">FnOpt::ThreadLocal</span> =&gt; {}   <span class="comment">// already handled</span>
                 <span class="ident">FnOpt::Before</span>(<span class="kw">_</span>, <span class="ident">inputs</span>) =&gt; {
                     <span class="kw">for</span> <span class="ident">dep</span> <span class="kw">in</span> <span class="ident">inputs</span> {
                         <span class="ident">deps</span>.<span class="ident">push</span>(<span class="macro">quote!</span>(#<span class="ident">crate_name::system::spec::Dependency::Before</span>(<span class="ident">Box::new</span>(#<span class="ident">dep</span>) <span class="kw">as</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> #<span class="ident">crate_name::system::Partition</span><span class="op">&gt;</span>)));
@@ -1047,6 +1085,24 @@
         } <span class="op">=</span> <span class="self">self</span>;
     };
 
+    <span class="kw">let</span> (<span class="ident">system_trait</span>, <span class="ident">system_run_params</span>) <span class="op">=</span> <span class="kw">match</span> <span class="ident">system_thread_local</span> {
+        <span class="bool-val">true</span> =&gt; (
+            <span class="macro">quote!</span>(<span class="ident">Unsendable</span>),
+            <span class="macro">quote!</span> {
+                <span class="ident">send_globals</span>: <span class="kw-2">&amp;</span>#<span class="ident">crate_name::world::SendGlobals</span>,
+                <span class="ident">unsend_globals</span>: <span class="kw-2">&amp;</span>#<span class="ident">crate_name::world::UnsendGlobals</span>,
+                <span class="ident">components</span>: <span class="kw-2">&amp;</span>#<span class="ident">crate_name::world::Components</span>,
+            },
+        ),
+        <span class="bool-val">false</span> =&gt; (
+            <span class="macro">quote!</span>(<span class="ident">Sendable</span>),
+            <span class="macro">quote!</span> {
+                <span class="ident">send_globals</span>: <span class="kw-2">&amp;</span>#<span class="ident">crate_name::world::SendGlobals</span>,
+                <span class="ident">components</span>: <span class="kw-2">&amp;</span>#<span class="ident">crate_name::world::Components</span>,
+            },
+        ),
+    };
+
     <span class="kw">let</span> <span class="ident">output</span> <span class="op">=</span> <span class="macro">quote!</span> {
         #(<span class="attribute">#[#<span class="ident">other_attrs</span>]</span>)<span class="op">*</span>
         <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
@@ -1058,7 +1114,7 @@
                 #<span class="ident">vis</span> <span class="kw">fn</span> <span class="ident">build</span>(
                     <span class="kw-2">&amp;</span><span class="self">self</span>,
                     #(#<span class="ident">param_state_field_idents</span>: #<span class="ident">param_state_field_tys</span>,)<span class="op">*</span>
-                ) -&gt; <span class="kw">impl</span> #<span class="ident">crate_name::system::System</span> {
+                ) -&gt; <span class="kw">impl</span> #<span class="ident">crate_name::system</span>::#<span class="ident">system_trait</span> {
                     <span class="ident">__dynec_local_state</span> {
                         #(#<span class="ident">param_state_field_idents</span>,)<span class="op">*</span>
                         #(#<span class="ident">initial_state_field_idents</span>: #<span class="ident">initial_state_field_defaults</span>,)<span class="op">*</span>
@@ -1083,7 +1139,7 @@
                 }
             }
 
-            <span class="kw">impl</span> #<span class="ident">crate_name::system::System</span> <span class="kw">for</span> <span class="ident">__dynec_local_state</span> {
+            <span class="kw">impl</span> #<span class="ident">crate_name::system</span>::#<span class="ident">system_trait</span> <span class="kw">for</span> <span class="ident">__dynec_local_state</span> {
                 <span class="kw">fn</span> <span class="ident">get_spec</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; #<span class="ident">crate_name::system::Spec</span> {
                     #<span class="ident">destructure_local_states</span>
 
@@ -1098,7 +1154,7 @@
                     }
                 }
 
-                <span class="kw">fn</span> <span class="ident">run</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
+                <span class="kw">fn</span> <span class="ident">run</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, #<span class="ident">system_run_params</span>) {
                     <span class="macro">todo!</span>()
                 }
             }
@@ -1110,6 +1166,7 @@
 
 <span class="kw">enum</span> <span class="ident">FnOpt</span> {
     <span class="ident">DynecAs</span>(<span class="ident">syn::token::Paren</span>, <span class="ident">TokenStream</span>),
+    <span class="ident">ThreadLocal</span>,
     <span class="ident">Before</span>(<span class="ident">syn::token::Paren</span>, <span class="ident">Punctuated</span><span class="op">&lt;</span><span class="ident">syn::Expr</span>, <span class="macro">syn::Token!</span>[,]<span class="op">&gt;</span>),
     <span class="ident">After</span>(<span class="ident">syn::token::Paren</span>, <span class="ident">Punctuated</span><span class="op">&lt;</span><span class="ident">syn::Expr</span>, <span class="macro">syn::Token!</span>[,]<span class="op">&gt;</span>),
     <span class="ident">Name</span>(<span class="macro">syn::Token!</span>[<span class="op">=</span>], <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">syn::Expr</span><span class="op">&gt;</span>),
@@ -1127,6 +1184,7 @@
                 <span class="kw">let</span> <span class="ident">args</span> <span class="op">=</span> <span class="ident">inner</span>.<span class="ident">parse</span>()<span class="question-mark">?</span>;
                 <span class="ident">FnOpt::DynecAs</span>(<span class="ident">paren</span>, <span class="ident">args</span>)
             }
+            <span class="string">&quot;thread_local&quot;</span> =&gt; <span class="ident">FnOpt::ThreadLocal</span>,
             <span class="string">&quot;before&quot;</span> =&gt; {
                 <span class="kw">let</span> <span class="ident">inner</span>;
                 <span class="kw">let</span> <span class="ident">paren</span> <span class="op">=</span> <span class="macro">syn::parenthesized!</span>(<span class="ident">inner</span> <span class="kw">in</span> <span class="ident">input</span>);
@@ -1292,5 +1350,5 @@
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec_codegen" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (4c60a0ea5 2022-05-04)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec_codegen" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (77652b9ef 2022-05-06)" ></div>
 </body></html>

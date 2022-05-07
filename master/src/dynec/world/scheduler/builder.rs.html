@@ -136,30 +136,68 @@
 <span id="131">131</span>
 <span id="132">132</span>
 <span id="133">133</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">core::fmt</span>;
-<span class="kw">use</span> <span class="ident">std::collections</span>::{<span class="ident">hash_map</span>, <span class="ident">HashMap</span>};
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::collections</span>::{<span class="ident">hash_map</span>, <span class="ident">HashMap</span>};
+<span class="kw">use</span> <span class="ident">std::fmt</span>;
 
 <span class="kw">use</span> <span class="ident">indexmap::IndexSet</span>;
+<span class="kw">use</span> <span class="ident">parking_lot::Mutex</span>;
 
 <span class="kw">use</span> <span class="kw">super</span>::{
-    <span class="ident">Node</span>, <span class="ident">Order</span>, <span class="ident">PartitionIndex</span>, <span class="ident">ResourceAccess</span>, <span class="ident">ResourceType</span>, <span class="ident">Scheduler</span>, <span class="ident">SendSystemIndex</span>,
-    <span class="ident">Topology</span>, <span class="ident">UnsendSystemIndex</span>,
+    <span class="ident">Executor</span>, <span class="ident">Node</span>, <span class="ident">Order</span>, <span class="ident">PartitionIndex</span>, <span class="ident">ResourceAccess</span>, <span class="ident">ResourceType</span>, <span class="ident">Scheduler</span>,
+    <span class="ident">SendSystemIndex</span>, <span class="ident">SyncState</span>, <span class="ident">Topology</span>, <span class="ident">UnsendSystemIndex</span>, <span class="ident">UnsyncState</span>,
 };
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::system</span>::{<span class="self">self</span>, <span class="ident">spec</span>};
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>)]</span>
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">Builder</span> {
-    <span class="ident">send_systems</span>:   <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">String</span>, <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">system::System</span> <span class="op">+</span> <span class="ident">Send</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
-    <span class="ident">unsend_systems</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">String</span>, <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">system::System</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
-    <span class="ident">partitions</span>:     <span class="ident">IndexSet</span><span class="op">&lt;</span><span class="ident">system::PartitionWrapper</span><span class="op">&gt;</span>,
-    <span class="ident">resources</span>:      <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">ResourceType</span>, <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">Node</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ResourceAccess</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    <span class="ident">orders</span>:         <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Order</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span>(<span class="kw">in</span> <span class="ident"><span class="kw">crate</span>::world</span>) <span class="ident">concurrency</span>: <span class="ident">usize</span>,
+    <span class="ident">send_systems</span>:                     <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">String</span>, <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">system::Sendable</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
+    <span class="ident">unsend_systems</span>:                   <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">String</span>, <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">system::Unsendable</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
+    <span class="ident">partitions</span>:                       <span class="ident">IndexSet</span><span class="op">&lt;</span><span class="ident">system::PartitionWrapper</span><span class="op">&gt;</span>,
+    <span class="ident">resources</span>:                        <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">ResourceType</span>, <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">Node</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ResourceAccess</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">orders</span>:                           <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Order</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">Builder</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">concurrency</span>: <span class="ident">usize</span>) -&gt; <span class="self">Self</span> {
+        <span class="self">Self</span> {
+            <span class="ident">concurrency</span>,
+            <span class="ident">send_systems</span>: <span class="ident">Vec::new</span>(),
+            <span class="ident">unsend_systems</span>: <span class="ident">Vec::new</span>(),
+            <span class="ident">partitions</span>: <span class="ident">IndexSet::new</span>(),
+            <span class="ident">resources</span>: <span class="ident">HashMap::new</span>(),
+            <span class="ident">orders</span>: <span class="ident">Vec::new</span>(),
+        }
+    }
+
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">push_send_system</span>(
         <span class="kw-2">&amp;mut</span> <span class="self">self</span>,
-        <span class="ident">sys</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">system::System</span> <span class="op">+</span> <span class="ident">Send</span><span class="op">&gt;</span>,
+        <span class="ident">sys</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">system::Sendable</span><span class="op">&gt;</span>,
     ) -&gt; (<span class="ident">Node</span>, <span class="ident">system::Spec</span>) {
         <span class="kw">let</span> <span class="ident">spec</span> <span class="op">=</span> <span class="ident">sys</span>.<span class="ident">get_spec</span>();
         <span class="kw">let</span> <span class="ident">index</span> <span class="op">=</span> <span class="ident">SendSystemIndex</span>(<span class="self">self</span>.<span class="ident">send_systems</span>.<span class="ident">len</span>());
@@ -169,7 +207,7 @@
 
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">push_unsend_system</span>(
         <span class="kw-2">&amp;mut</span> <span class="self">self</span>,
-        <span class="ident">sys</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">system::System</span><span class="op">&gt;</span>,
+        <span class="ident">sys</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">system::Unsendable</span><span class="op">&gt;</span>,
     ) -&gt; (<span class="ident">Node</span>, <span class="ident">system::Spec</span>) {
         <span class="kw">let</span> <span class="ident">spec</span> <span class="op">=</span> <span class="ident">sys</span>.<span class="ident">get_spec</span>();
         <span class="kw">let</span> <span class="ident">index</span> <span class="op">=</span> <span class="ident">UnsendSystemIndex</span>(<span class="self">self</span>.<span class="ident">send_systems</span>.<span class="ident">len</span>());
@@ -265,10 +303,24 @@
             <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">orders</span>,
             <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">resources</span>,
         );
-        <span class="kw">let</span> <span class="ident">planner</span> <span class="op">=</span> <span class="ident">topology</span>.<span class="ident">initial_planner</span>().<span class="ident">clone</span>();
-        <span class="ident">Scheduler</span> { <span class="ident">topology</span>, <span class="ident">planner</span> }
+        <span class="kw">let</span> <span class="ident">planner</span> <span class="op">=</span> <span class="ident">Mutex::new</span>(<span class="ident">topology</span>.<span class="ident">initial_planner</span>().<span class="ident">clone</span>());
+        <span class="kw">let</span> <span class="ident">executor</span> <span class="op">=</span> <span class="ident">Executor::new</span>(<span class="self">self</span>.<span class="ident">concurrency</span>);
+
+        <span class="ident">Scheduler</span> {
+            <span class="ident">topology</span>,
+            <span class="ident">planner</span>,
+            <span class="ident">executor</span>,
+            <span class="ident">sync_state</span>: <span class="ident">SyncState</span> {
+                <span class="ident">send_systems</span>: <span class="self">self</span>
+                    .<span class="ident">send_systems</span>
+                    .<span class="ident">into_iter</span>()
+                    .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">ty</span>, <span class="ident">sys</span>)<span class="op">|</span> (<span class="ident">ty</span>, <span class="ident">Mutex::new</span>(<span class="ident">sys</span>)))
+                    .<span class="ident">collect</span>(),
+            },
+            <span class="ident">unsync_state</span>: <span class="ident">UnsyncState</span> { <span class="ident">unsend_systems</span>: <span class="self">self</span>.<span class="ident">unsend_systems</span> },
+        }
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (4c60a0ea5 2022-05-04)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (77652b9ef 2022-05-06)" ></div>
 </body></html>

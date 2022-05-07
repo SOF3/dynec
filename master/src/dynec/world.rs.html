@@ -154,7 +154,7 @@
 <span id="149">149</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The world stores the states of the game.</span>
 
-<span class="kw">use</span> <span class="ident">std::any</span>::{<span class="self">self</span>};
+<span class="kw">use</span> <span class="ident">std::any</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::util::DbgTypeId</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">comp</span>, <span class="ident">entity</span>, <span class="ident">Archetype</span>, <span class="ident">Entity</span>};
@@ -163,7 +163,7 @@
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">builder::Builder</span>;
 
 <span class="kw">mod</span> <span class="ident">state</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">state</span>::{<span class="ident">Components</span>, <span class="ident">SendGlobals</span>, <span class="ident">UnsendGlobals</span>};
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">state</span>::{<span class="ident">Components</span>, <span class="ident">SyncGlobals</span>, <span class="ident">UnsyncGlobals</span>};
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod</span> <span class="ident">storage</span>;
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod</span> <span class="ident">typed</span>;
@@ -248,9 +248,9 @@
     <span class="doccomment">/// Stores the system-local states and the scheduler topology.</span>
     <span class="ident">scheduler</span>:      <span class="ident">scheduler::Scheduler</span>,
     <span class="doccomment">/// Global states that can be concurrently accessed by systems on other threads.</span>
-    <span class="ident">send_globals</span>:   <span class="ident">SendGlobals</span>,
+    <span class="ident">send_globals</span>:   <span class="ident">SyncGlobals</span>,
     <span class="doccomment">/// Global states that must be accessed on the main thread.</span>
-    <span class="ident">unsend_globals</span>: <span class="ident">UnsendGlobals</span>,
+    <span class="ident">unsend_globals</span>: <span class="ident">UnsyncGlobals</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">World</span> {
@@ -278,7 +278,7 @@
         <span class="self">self</span>.<span class="ident">scheduler</span>.<span class="ident">execute_full_cycle</span>(
             <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">components</span>,
             <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">send_globals</span>,
-            <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">unsend_globals</span>,
+            <span class="kw-2">&amp;mut</span> <span class="self">self</span>.<span class="ident">unsend_globals</span>,
         );
     }
 

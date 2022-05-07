@@ -1089,15 +1089,15 @@
         <span class="bool-val">true</span> =&gt; (
             <span class="macro">quote!</span>(<span class="ident">Unsendable</span>),
             <span class="macro">quote!</span> {
-                <span class="ident">send_globals</span>: <span class="kw-2">&amp;</span>#<span class="ident">crate_name::world::SendGlobals</span>,
-                <span class="ident">unsend_globals</span>: <span class="kw-2">&amp;</span>#<span class="ident">crate_name::world::UnsendGlobals</span>,
+                <span class="ident">send_globals</span>: <span class="kw-2">&amp;</span>#<span class="ident">crate_name::world::SyncGlobals</span>,
+                <span class="ident">unsend_globals</span>: <span class="kw-2">&amp;</span>#<span class="ident">crate_name::world::UnsyncGlobals</span>,
                 <span class="ident">components</span>: <span class="kw-2">&amp;</span>#<span class="ident">crate_name::world::Components</span>,
             },
         ),
         <span class="bool-val">false</span> =&gt; (
             <span class="macro">quote!</span>(<span class="ident">Sendable</span>),
             <span class="macro">quote!</span> {
-                <span class="ident">send_globals</span>: <span class="kw-2">&amp;</span>#<span class="ident">crate_name::world::SendGlobals</span>,
+                <span class="ident">send_globals</span>: <span class="kw-2">&amp;</span>#<span class="ident">crate_name::world::SyncGlobals</span>,
                 <span class="ident">components</span>: <span class="kw-2">&amp;</span>#<span class="ident">crate_name::world::Components</span>,
             },
         ),

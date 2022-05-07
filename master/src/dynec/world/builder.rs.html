@@ -375,7 +375,7 @@
                 )
             })
             .<span class="ident">collect</span>();
-        <span class="kw">let</span> <span class="ident">send_globals</span> <span class="op">=</span> <span class="ident"><span class="kw">super</span>::SendGlobals</span> { <span class="ident">data</span>: <span class="ident">send_globals</span> };
+        <span class="kw">let</span> <span class="ident">send_globals</span> <span class="op">=</span> <span class="ident"><span class="kw">super</span>::SyncGlobals</span> { <span class="ident">data</span>: <span class="ident">send_globals</span> };
 
         <span class="kw">let</span> <span class="ident">unsend_globals</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">unsync_globals</span>
@@ -390,7 +390,7 @@
                 )
             })
             .<span class="ident">collect</span>();
-        <span class="kw">let</span> <span class="ident">unsend_globals</span> <span class="op">=</span> <span class="ident"><span class="kw">super</span>::UnsendGlobals</span> { <span class="ident">data</span>: <span class="ident">unsend_globals</span> };
+        <span class="kw">let</span> <span class="ident">unsend_globals</span> <span class="op">=</span> <span class="ident"><span class="kw">super</span>::UnsyncGlobals</span> { <span class="ident">data</span>: <span class="ident">unsend_globals</span> };
 
         <span class="ident"><span class="kw">super</span>::World</span> {
             <span class="ident">components</span>: <span class="ident">storages</span>,

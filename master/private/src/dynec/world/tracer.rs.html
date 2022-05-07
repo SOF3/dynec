@@ -171,6 +171,7 @@
 <span id="166">166</span>
 <span id="167">167</span>
 <span id="168">168</span>
+<span id="169">169</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Exposes testing, profiling and tracing capabilities.</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">system</span>, <span class="ident">world</span>};
@@ -249,7 +250,8 @@
 <span class="doccomment">/// A tracer that logs all events.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Log</span>(
     <span class="doccomment">/// The log level to log events with.</span>
-    <span class="kw">pub</span> <span class="ident">log::Level</span>);
+    <span class="kw">pub</span> <span class="ident">log::Level</span>,
+);
 
 <span class="kw">impl</span> <span class="ident">Tracer</span> <span class="kw">for</span> <span class="ident">Log</span> {
     <span class="kw">fn</span> <span class="ident">start_cycle</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) {

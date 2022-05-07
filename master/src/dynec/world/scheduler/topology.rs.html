@@ -177,6 +177,7 @@
 <span id="172">172</span>
 <span id="173">173</span>
 <span id="174">174</span>
+<span id="175">175</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::collections</span>::{<span class="ident">BTreeSet</span>, <span class="ident">HashMap</span>, <span class="ident">HashSet</span>};
 <span class="kw">use</span> <span class="ident">std::num::NonZeroUsize</span>;
 
@@ -321,7 +322,8 @@
         })
         .<span class="ident">collect</span>();
 
-    <span class="kw">let</span> <span class="ident">remaining_systems</span> <span class="op">=</span> <span class="ident">nodes</span>.<span class="ident">filter</span>(<span class="op">|</span><span class="ident">node</span><span class="op">|</span> <span class="macro">matches!</span>(<span class="ident">node</span>, <span class="ident">Node::SendSystem</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">Node::UnsendSystem</span>(<span class="kw">_</span>))).<span class="ident">count</span>();
+    <span class="kw">let</span> <span class="ident">remaining_systems</span> <span class="op">=</span>
+        <span class="ident">nodes</span>.<span class="ident">filter</span>(<span class="op">|</span><span class="ident">node</span><span class="op">|</span> <span class="macro">matches!</span>(<span class="ident">node</span>, <span class="ident">Node::SendSystem</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">Node::UnsendSystem</span>(<span class="kw">_</span>))).<span class="ident">count</span>();
 
     (<span class="ident">Planner</span> { <span class="ident">wakeup_state</span>, <span class="ident">send_runnable</span>, <span class="ident">unsend_runnable</span>, <span class="ident">remaining_systems</span> }, <span class="ident">depless_pars</span>)
 }

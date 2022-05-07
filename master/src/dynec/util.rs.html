@@ -165,9 +165,9 @@
     <span class="doccomment">/// Creates a new [`DbgTypeId`], similar to [`TypeId::of`].</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">of</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="lifetime">&#39;static</span><span class="op">&gt;</span>() -&gt; <span class="self">Self</span> {
         <span class="self">Self</span> {
-            <span class="ident">id</span>:   <span class="ident">TypeId::of</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(),
+            <span class="ident">id</span>:                            <span class="ident">TypeId::of</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(),
             <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">debug_assertions</span>)]</span>
-            <span class="ident">name</span>: <span class="ident">any::type_name</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(),
+            <span class="ident">name</span>:                          <span class="ident">any::type_name</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(),
         }
     }
 }

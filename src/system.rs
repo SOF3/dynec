@@ -129,8 +129,8 @@ pub trait Unsendable {
     /// Runs the system.
     fn run(
         &mut self,
-        send_globals: &world::SyncGlobals,
-        unsend_globals: &world::UnsyncGlobals,
+        sync_globals: &world::SyncGlobals,
+        unsync_globals: &world::UnsyncGlobals,
         components: &world::Components,
     );
 }

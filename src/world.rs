@@ -94,9 +94,9 @@ pub struct World {
     /// Stores the system-local states and the scheduler topology.
     scheduler:      scheduler::Scheduler,
     /// Global states that can be concurrently accessed by systems on other threads.
-    send_globals:   SyncGlobals,
+    sync_globals:   SyncGlobals,
     /// Global states that must be accessed on the main thread.
-    unsend_globals: UnsyncGlobals,
+    unsync_globals: UnsyncGlobals,
 }
 
 impl World {
@@ -123,8 +123,8 @@ impl World {
     pub fn execute(&mut self) {
         self.scheduler.execute_full_cycle(
             &self.components,
-            &self.send_globals,
-            &mut self.unsend_globals,
+            &self.sync_globals,
+            &mut self.unsync_globals,
         );
     }
 

@@ -3,7 +3,6 @@ use parking_lot::{Condvar, Mutex, MutexGuard};
 use super::planner::StealResult;
 use super::{Node, Planner, SendArgs, Topology, UnsendArgs, WakeupState};
 
-
 pub(in crate::world::scheduler) struct Executor {
     thread_pool: Option<rayon::ThreadPool>,
     concurrency: usize,

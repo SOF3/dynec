@@ -155,7 +155,7 @@ impl Builder {
                 .collect(),
         };
 
-        let send_globals = self
+        let sync_globals = self
             .sync_globals
             .into_iter()
             .map(|(ty, da)| {
@@ -168,9 +168,9 @@ impl Builder {
                 )
             })
             .collect();
-        let send_globals = super::SyncGlobals { data: send_globals };
+        let sync_globals = super::SyncGlobals { sync_globals };
 
-        let unsend_globals = self
+        let unsync_globals = self
             .unsync_globals
             .into_iter()
             .map(|(ty, da)| {
@@ -183,12 +183,12 @@ impl Builder {
                 )
             })
             .collect();
-        let unsend_globals = super::UnsyncGlobals { data: unsend_globals };
+        let unsync_globals = super::UnsyncGlobals { unsync_globals };
 
         super::World {
             components: storages,
-            send_globals,
-            unsend_globals,
+            sync_globals,
+            unsync_globals,
             scheduler: self.scheduler.build(),
         }
     }

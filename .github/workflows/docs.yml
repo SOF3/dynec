@@ -19,27 +19,29 @@ jobs:
           profile: default
           default: true
 
-      - name: Build documentation
-        run: cargo doc
+      - name: Build documentation without private items
+        run: cargo doc && mv target/doc ..staging
+      - name: Build documentation with private items
+        run: cargo doc --document-private-items --all --all-features && mv target/doc ..staging/private
 
       - name: Clone site repo
         uses: actions/checkout@v2
         with:
           ssh-key: ${{secrets.API_KEY}}
-          path: .site-repo
+          path: ..site-repo
           ref: gh-pages
       - name: Delete previous build
         run: test ! -d $(echo ${{github.ref}} | cut -d/ -f3) || rm -r $(echo ${{github.ref}} | cut -d/ -f3)
-        working-directory: .site-repo
+        working-directory: ..site-repo
       - name: Copy artifact to site repo
-        run: cp -r target/doc .site-repo/$(echo ${{github.ref}} | cut -d/ -f3)
+        run: cp -r ..staging ..site-repo/$(echo ${{github.ref}} | cut -d/ -f3)
 
       - name: Set Git author
         run: git config --global user.name "github-actions[bot]" && git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
       - name: Git commit
         run: git add $(echo ${{github.ref}} | cut -d/ -f3) && git commit --allow-empty -m "Docs build for SOF3/dynec@${{github.sha}}"
-        working-directory: .site-repo
+        working-directory: ..site-repo
 
       - name: Push pages
         run: git push
-        working-directory: .site-repo
+        working-directory: ..site-repo

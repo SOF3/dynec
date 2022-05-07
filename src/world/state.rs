@@ -16,13 +16,13 @@ pub struct Components {
 static_assertions::assert_impl_all!(Components: Send, Sync);
 
 /// Stores the thread-safe global states in a world.
-pub struct SendGlobals {
+pub struct SyncGlobals {
     /// Global states that can be concurrently accessed by systems on other threads.
     pub(in crate::world) data: HashMap<DbgTypeId, Mutex<Box<dyn Any + Send + Sync>>>,
 }
 
 /// Stores the thread-unsafe global states in a world.
-pub struct UnsendGlobals {
+pub struct UnsyncGlobals {
     /// Global states that must be accessed on the main thread.
     pub(in crate::world) data: HashMap<DbgTypeId, RefCell<Box<dyn Any>>>,
 }

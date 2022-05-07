@@ -113,7 +113,7 @@ pub trait Sendable: Send {
     fn get_spec(&self) -> Spec;
 
     /// Runs the system.
-    fn run(&mut self, globals: &world::SendGlobals, components: &world::Components);
+    fn run(&mut self, globals: &world::SyncGlobals, components: &world::Components);
 }
 
 /// A variant of [`Sendable`] that runs on the main thread only,
@@ -129,8 +129,8 @@ pub trait Unsendable {
     /// Runs the system.
     fn run(
         &mut self,
-        send_globals: &world::SendGlobals,
-        unsend_globals: &world::UnsendGlobals,
+        send_globals: &world::SyncGlobals,
+        unsend_globals: &world::UnsyncGlobals,
         components: &world::Components,
     );
 }

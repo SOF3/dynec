@@ -168,7 +168,7 @@ impl Builder {
                 )
             })
             .collect();
-        let send_globals = super::SendGlobals { data: send_globals };
+        let send_globals = super::SyncGlobals { data: send_globals };
 
         let unsend_globals = self
             .unsync_globals
@@ -183,7 +183,7 @@ impl Builder {
                 )
             })
             .collect();
-        let unsend_globals = super::UnsendGlobals { data: unsend_globals };
+        let unsend_globals = super::UnsyncGlobals { data: unsend_globals };
 
         super::World {
             components: storages,

@@ -35,17 +35,14 @@ impl Scheduler {
     pub(in crate::world) fn execute_full_cycle(
         &mut self,
         components: &world::Components,
-        send_globals: &world::SendGlobals,
-        unsend_globals: &world::UnsendGlobals,
+        sync_globals: &world::SyncGlobals,
+        unsync_globals: &mut world::UnsyncGlobals,
     ) {
         self.executor.execute_full_cycle(
             &self.topology,
             &mut self.planner,
-            &self.sync_state,
-            &mut self.unsync_state,
-            components,
-            send_globals,
-            unsend_globals,
+            SendArgs { sync_state: &self.sync_state, components, sync_globals },
+            UnsendArgs { unsync_state: &mut self.unsync_state, unsync_globals },
         );
     }
 }
@@ -170,4 +167,16 @@ impl ResourceAccess {
 struct Order {
     before: Node,
     after:  Node,
+}
+
+#[derive(Clone, Copy)]
+struct SendArgs<'t> {
+    sync_state:   &'t SyncState,
+    components:   &'t world::Components,
+    sync_globals: &'t world::SyncGlobals,
+}
+
+struct UnsendArgs<'t> {
+    unsync_state:   &'t mut UnsyncState,
+    unsync_globals: &'t mut world::UnsyncGlobals,
 }

@@ -6,7 +6,7 @@ struct Tracer<Id>(Id, Box<dyn Fn() -> system::Spec + Send>);
 impl<Id: Send> system::Sendable for Tracer<Id> {
     fn get_spec(&self) -> system::Spec { self.1() }
 
-    fn run(&mut self, globals: &world::SendGlobals, components: &world::Components) {}
+    fn run(&mut self, globals: &world::SyncGlobals, components: &world::Components) {}
 }
 
 #[test]

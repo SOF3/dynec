@@ -1,6 +1,6 @@
 //! The world stores the states of the game.
 
-use std::any::{self};
+use std::any;
 
 use crate::util::DbgTypeId;
 use crate::{comp, entity, Archetype, Entity};
@@ -9,7 +9,7 @@ mod builder;
 pub use builder::Builder;
 
 mod state;
-pub use state::{Components, SendGlobals, UnsendGlobals};
+pub use state::{Components, SyncGlobals, UnsyncGlobals};
 
 pub(crate) mod storage;
 pub(crate) mod typed;
@@ -94,9 +94,9 @@ pub struct World {
     /// Stores the system-local states and the scheduler topology.
     scheduler:      scheduler::Scheduler,
     /// Global states that can be concurrently accessed by systems on other threads.
-    send_globals:   SendGlobals,
+    send_globals:   SyncGlobals,
     /// Global states that must be accessed on the main thread.
-    unsend_globals: UnsendGlobals,
+    unsend_globals: UnsyncGlobals,
 }
 
 impl World {
@@ -124,7 +124,7 @@ impl World {
         self.scheduler.execute_full_cycle(
             &self.components,
             &self.send_globals,
-            &self.unsend_globals,
+            &mut self.unsend_globals,
         );
     }
 

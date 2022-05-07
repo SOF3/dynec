@@ -411,15 +411,15 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
         true => (
             quote!(Unsendable),
             quote! {
-                send_globals: &#crate_name::world::SendGlobals,
-                unsend_globals: &#crate_name::world::UnsendGlobals,
+                send_globals: &#crate_name::world::SyncGlobals,
+                unsend_globals: &#crate_name::world::UnsyncGlobals,
                 components: &#crate_name::world::Components,
             },
         ),
         false => (
             quote!(Sendable),
             quote! {
-                send_globals: &#crate_name::world::SendGlobals,
+                send_globals: &#crate_name::world::SyncGlobals,
                 components: &#crate_name::world::Components,
             },
         ),

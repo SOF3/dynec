@@ -64,6 +64,7 @@ impl world::Tracer for UnmarkCounterTracer {
         self.0.fetch_add(1, atomic::Ordering::SeqCst);
     }
 }
+
 /// Collects the maximum concurrency.
 #[derive(Default)]
 struct MaxConcurrencyTracer {
@@ -90,6 +91,55 @@ impl world::Tracer for MaxConcurrencyTracer {
         system: &mut dyn system::Sendable,
     ) {
         self.current.fetch_sub(1, atomic::Ordering::SeqCst);
+    }
+
+    fn start_run_unsendable(
+        &self,
+        thread: tracer::Thread,
+        node: world::ScheduleNode,
+        debug_name: &str,
+        system: &mut dyn system::Unsendable,
+    ) {
+        let value = self.current.fetch_add(1, atomic::Ordering::SeqCst);
+        self.max.fetch_max(value + 1, atomic::Ordering::SeqCst);
+    }
+
+    fn end_run_unsendable(
+        &self,
+        thread: tracer::Thread,
+        node: world::ScheduleNode,
+        debug_name: &str,
+        system: &mut dyn system::Unsendable,
+    ) {
+        self.current.fetch_sub(1, atomic::Ordering::SeqCst);
+    }
+}
+
+/// Counts the number of systems run.
+#[derive(Default)]
+struct RunCounterTracer {
+    send:   AtomicUsize,
+    unsend: AtomicUsize,
+}
+impl world::Tracer for RunCounterTracer {
+    fn start_run_sendable(
+        &self,
+        thread: tracer::Thread,
+        node: world::ScheduleNode,
+        debug_name: &str,
+        system: &mut dyn system::Sendable,
+    ) {
+        self.send.fetch_add(1, atomic::Ordering::SeqCst);
+    }
+
+    fn start_run_unsendable(
+        &self,
+        thread: tracer::Thread,
+        node: world::ScheduleNode,
+        debug_name: &str,
+        system: &mut dyn system::Unsendable,
+    ) {
+        self.unsend.fetch_add(1, atomic::Ordering::SeqCst);
     }
 }
 
@@ -523,7 +573,9 @@ fn test_bootstrap<const S: usize, const U: usize, T, C, R, V>(
     static SET_LOGGER_ONCE: Once = Once::new();
     SET_LOGGER_ONCE.call_once(env_logger::init);
 
-    for _ in 0..*CONCURRENT_TEST_REPETITIONS {
+    for i in 0..*CONCURRENT_TEST_REPETITIONS {
+        log::trace!("Repeat test round {i}");
+
         let mut builder = Builder::new(concurrency);
 
         let run = Arc::new(make_run());
@@ -584,8 +636,11 @@ fn test_bootstrap<const S: usize, const U: usize, T, C, R, V>(
 
         let mut scheduler = builder.build();
 
-        let tracer =
-            tracer::Aggregate((tracer::Log(log::Level::Trace), tracer::Aggregate(make_tracers())));
+        let tracer = tracer::Aggregate((
+            tracer::Log(log::Level::Trace),
+            RunCounterTracer::default(),
+            tracer::Aggregate(make_tracers()),
+        ));
 
         scheduler.execute(
             &tracer,
@@ -594,7 +649,10 @@ fn test_bootstrap<const S: usize, const U: usize, T, C, R, V>(
             &mut world::UnsyncGlobals::empty(),
         );
 
-        let tracer::Aggregate((_, tracer::Aggregate(tracers))) = tracer;
+        let tracer::Aggregate((_, rct, tracer::Aggregate(tracers))) = tracer;
+
+        assert_eq!(rct.send.load(atomic::Ordering::SeqCst), S);
+        assert_eq!(rct.unsend.load(atomic::Ordering::SeqCst), U);
 
         verify(tracers);
     }

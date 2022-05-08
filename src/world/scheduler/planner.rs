@@ -76,7 +76,6 @@ impl Planner {
                             self.send_runnable
                                 .take(&index)
                                 .expect("Pending node should be in runnable pool");
-                            tracer.unmark_runnable(excl);
                         }
                         Node::UnsendSystem(index) => {
                             self.unsend_runnable
@@ -87,6 +86,7 @@ impl Planner {
                             panic!("partitions are not exclusive with other nodes")
                         }
                     }
+                    tracer.unmark_runnable(excl);
                 }
                 WakeupState::Blocked { count } => {
                     *count = NonZeroUsize::new(count.get() + 1).expect("integer overflow");

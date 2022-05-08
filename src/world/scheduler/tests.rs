@@ -1,3 +1,6 @@
+use std::cell::Cell;
+use std::env;
+use std::rc::Rc;
 use std::sync::atomic::{self, AtomicUsize};
 use std::sync::Arc;
 
@@ -11,7 +14,9 @@ use crate::{comp, system, world, TestArch};
 // Repeat concurrent tests to increase the chance of catching random bugs.
 // However, do not rely on test repetitions to assert for behavior;
 // use more synchronization where practical.
-const CONCURRENT_TEST_REPETITIONS: usize = if option_env!("RUST_LOG").is_some() { 1 } else { 100 };
+lazy_static::lazy_static! {
+    static ref CONCURRENT_TEST_REPETITIONS: usize = if env::var("RUST_LOG").is_ok() { 1 } else { 100 };
+}
 
 /// `push_send_system` and `push_unsend_system` only check the `debug_name` field,
 /// so other fields can be left empty.
@@ -31,7 +36,7 @@ impl system::Sendable for SendSystem {
     fn run(&mut self, globals: &world::SyncGlobals, components: &world::Components) { self.1(); }
 }
 
-struct UnsendSystem(String, Box<dyn Fn() + Send>);
+struct UnsendSystem(String, Box<dyn Fn()>);
 impl system::Unsendable for UnsendSystem {
     fn get_spec(&self) -> system::Spec { dummy_spec(self.0.as_str()) }
     fn run(
@@ -124,6 +129,7 @@ fn test_global_exclusion() {
     );
 }
 
+#[test]
 fn test_different_global_exclusion() {
     test_bootstrap(
         2,
@@ -463,6 +469,45 @@ fn test_isotope_share() {
     );
 }
 
+// Make sure that thread-local systems have the same exclusion rules as thread-safe systems.
+#[test]
+fn test_thread_local_exclusion() {
+    test_bootstrap(
+        1,
+        || (UnmarkCounterTracer::default(), MaxConcurrencyTracer::default()),
+        |builder, [sys1], [sys2]| {
+            builder.use_resource(
+                Node::SendSystem(sys1),
+                ResourceType::Isotope {
+                    arch: DbgTypeId::of::<TestArch>(),
+                    comp: DbgTypeId::of::<Comp1>(),
+                },
+                ResourceAccess { mutable: true, discrim: Some(vec![1, 2]) },
+            );
+            builder.use_resource(
+                Node::UnsendSystem(sys2),
+                ResourceType::Isotope {
+                    arch: DbgTypeId::of::<TestArch>(),
+                    comp: DbgTypeId::of::<Comp1>(),
+                },
+                ResourceAccess { mutable: true, discrim: Some(vec![2, 3]) },
+            );
+        },
+        || |_| {},
+        |(uct, mct)| {
+            let unmark_count = uct.0.into_inner();
+            assert_eq!(
+                unmark_count, 1,
+                "Expected thread-local and thread-safe systems to still conform to resource \
+                 exclusion"
+            );
+
+            let max_concurrency = mct.max.into_inner();
+            assert_eq!(max_concurrency, 1, "Expected 2 systems to run concurrently");
+        },
+    );
+}
+
 fn test_bootstrap<const S: usize, const U: usize, T, C, R, V>(
     concurrency: usize,
     make_tracers: fn() -> T,
@@ -478,20 +523,30 @@ fn test_bootstrap<const S: usize, const U: usize, T, C, R, V>(
     static SET_LOGGER_ONCE: Once = Once::new();
     SET_LOGGER_ONCE.call_once(env_logger::init);
 
-    for _ in 0..CONCURRENT_TEST_REPETITIONS {
+    for _ in 0..*CONCURRENT_TEST_REPETITIONS {
         let mut builder = Builder::new(concurrency);
 
         let run = Arc::new(make_run());
 
         let send_nodes: [SendSystemIndex; S] = (0..S)
             .map(|i| {
+                let node_box = Arc::new(Mutex::new(None::<Node>));
                 let (node, spec) = builder.push_send_system(Box::new(SendSystem(
                     format!("SendSystem #{}", i),
                     Box::new({
                         let run = Arc::clone(&run);
-                        move || run(Node::SendSystem(SendSystemIndex(i)))
+                        let node_box = Arc::clone(&node_box);
+                        move || {
+                            let node_guard = node_box.try_lock().expect("node_box contention");
+                            let &node = node_guard.as_ref().expect("node_box not populated");
+                            run(node)
+                        }
                     }),
                 )));
+                {
+                    let mut node_guard = node_box.try_lock().expect("node_box contention");
+                    *node_guard = Some(node);
+                }
                 match node {
                     Node::SendSystem(index) => index,
                     _ => unreachable!(),
@@ -502,13 +557,20 @@ fn test_bootstrap<const S: usize, const U: usize, T, C, R, V>(
             .expect("S == S");
         let unsend_nodes: [UnsendSystemIndex; U] = (0..U)
             .map(|i| {
+                let node_box = Rc::new(Cell::new(None::<Node>));
                 let (node, spec) = builder.push_unsend_system(Box::new(UnsendSystem(
                     format!("UnsendSystem #{}", i),
                     Box::new({
                         let run = Arc::clone(&run);
-                        move || run(Node::UnsendSystem(UnsendSystemIndex(i)))
+                        let node_box = Rc::clone(&node_box);
+                        move || {
+                            let node = node_box.get();
+                            let node = node.expect("node_box not populated");
+                            run(node)
+                        }
                     }),
                 )));
+                node_box.set(Some(node));
                 match node {
                     Node::UnsendSystem(index) => index,
                     _ => unreachable!(),

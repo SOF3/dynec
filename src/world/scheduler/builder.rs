@@ -46,7 +46,7 @@ impl Builder {
         sys: Box<dyn system::Unsendable>,
     ) -> (Node, system::Spec) {
         let spec = sys.get_spec();
-        let index = UnsendSystemIndex(self.send_systems.len());
+        let index = UnsendSystemIndex(self.unsend_systems.len());
         self.unsend_systems.push((spec.debug_name.clone(), sys));
         (Node::UnsendSystem(index), spec)
     }

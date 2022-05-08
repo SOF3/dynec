@@ -8,6 +8,11 @@ use crate::test_util::AntiSemaphore;
 use crate::world::tracer;
 use crate::{system, world};
 
+// Repeat concurrent tests to increase the chance of catching random bugs.
+// However, do not rely on test repetitions to assert for behavior;
+// use more synchronization where practical.
+const CONCURRENT_TEST_REPETITIONS: usize = 100;
+
 /// `push_send_system` and `push_unsend_system` only check the `debug_name` field,
 /// so other fields can be left empty.
 fn dummy_spec(name: &str) -> system::Spec {
@@ -79,9 +84,10 @@ impl world::Tracer for MaxConcurrencyTracer {
 
 #[test]
 fn test_global_exclusion() {
-    let (uct, mct) = test_bootstrap(
-        (UnmarkCounterTracer::default(), MaxConcurrencyTracer::default()),
-        |builder, [sys1, sys2], []| {
+    test_bootstrap(
+        2,
+        || (UnmarkCounterTracer::default(), MaxConcurrencyTracer::default()),
+        |builder, [sys1, sys2, sys3], []| {
             builder.use_resource(
                 Node::SendSystem(sys1),
                 ResourceType::Global(DbgTypeId::of::<Global1>()),
@@ -92,21 +98,31 @@ fn test_global_exclusion() {
                 ResourceType::Global(DbgTypeId::of::<Global1>()),
                 ResourceAccess { mutable: true, discrim: None },
             );
+            builder.use_resource(
+                Node::SendSystem(sys3),
+                ResourceType::Global(DbgTypeId::of::<Global1>()),
+                ResourceAccess { mutable: false, discrim: None }, // mutable: false here
+            );
         },
-        |_| (),
+        || |_| (),
+        |(uct, mct)| {
+            let unmark_count = uct.0.into_inner();
+            assert_eq!(
+                unmark_count, 3,
+                "Expected resource exclusion to unmark all other runnable nodes"
+            );
+
+            let max_concurrency = mct.max.into_inner();
+            assert_eq!(max_concurrency, 1, "Expected resource exclusion to deny concurrency");
+        },
     );
-
-    let unmark_count = uct.0.into_inner();
-    assert_eq!(unmark_count, 1, "Expected resource exclusion to unmark runnable node");
-
-    let max_concurrency = mct.max.into_inner();
-    assert_eq!(max_concurrency, 1, "Expected resource exclusion to deny concurrency");
 }
 
 #[test]
 fn test_global_share() {
-    let (uct, mct) = test_bootstrap(
-        (UnmarkCounterTracer::default(), MaxConcurrencyTracer::default()),
+    test_bootstrap(
+        2,
+        || (UnmarkCounterTracer::default(), MaxConcurrencyTracer::default()),
         |builder, [sys1, sys2, sys3, sys4], []| {
             for sys in [sys1, sys2, sys3, sys4] {
                 builder.use_resource(
@@ -116,81 +132,91 @@ fn test_global_share() {
                 );
             }
         },
-        {
+        || {
             let asem = AntiSemaphore::new(2);
             move |_| asem.wait()
         },
+        |(uct, mct)| {
+            let unmark_count = uct.0.into_inner();
+            assert_eq!(unmark_count, 0, "Expected no exclusion");
+
+            let max_concurrency = mct.max.into_inner();
+            assert_eq!(max_concurrency, 2, "Expected 2 systems to run concurrently");
+        },
     );
-
-    let unmark_count = uct.0.into_inner();
-    assert_eq!(unmark_count, 0, "Expected no exclusion");
-
-    let max_concurrency = mct.max.into_inner();
-    assert_eq!(max_concurrency, 2, "Expected 2 systems to run concurrently");
 }
 
-fn test_bootstrap<const S: usize, const U: usize, T, F, R>(tracers: T, customize: F, run: R) -> T
-where
-    F: FnOnce(&mut Builder, [SendSystemIndex; S], [UnsendSystemIndex; U]),
+fn test_bootstrap<const S: usize, const U: usize, T, C, R, V>(
+    concurrency: usize,
+    make_tracers: fn() -> T,
+    customize: C,
+    make_run: fn() -> R,
+    verify: V,
+) where
+    C: Fn(&mut Builder, [SendSystemIndex; S], [UnsendSystemIndex; U]),
     R: Fn(Node) + Send + Sync + 'static,
+    V: Fn(T),
     tracer::Aggregate<T>: world::Tracer,
 {
     static SET_LOGGER_ONCE: Once = Once::new();
     SET_LOGGER_ONCE.call_once(env_logger::init);
 
-    let mut builder = Builder::new(2);
+    for _ in 0..CONCURRENT_TEST_REPETITIONS {
+        let mut builder = Builder::new(concurrency);
 
-    let run = Arc::new(run);
+        let run = Arc::new(make_run());
 
-    let send_nodes: [SendSystemIndex; S] = (0..S)
-        .map(|i| {
-            let (node, spec) = builder.push_send_system(Box::new(SendSystem(
-                format!("SendSystem #{}", i),
-                Box::new({
-                    let run = Arc::clone(&run);
-                    move || run(Node::SendSystem(SendSystemIndex(i)))
-                }),
-            )));
-            match node {
-                Node::SendSystem(index) => index,
-                _ => unreachable!(),
-            }
-        })
-        .collect::<Vec<_>>()
-        .try_into()
-        .expect("S == S");
-    let unsend_nodes: [UnsendSystemIndex; U] = (0..U)
-        .map(|i| {
-            let (node, spec) = builder.push_unsend_system(Box::new(UnsendSystem(
-                format!("UnsendSystem #{}", i),
-                Box::new({
-                    let run = Arc::clone(&run);
-                    move || run(Node::UnsendSystem(UnsendSystemIndex(i)))
-                }),
-            )));
-            match node {
-                Node::UnsendSystem(index) => index,
-                _ => unreachable!(),
-            }
-        })
-        .collect::<Vec<_>>()
-        .try_into()
-        .expect("U == U");
+        let send_nodes: [SendSystemIndex; S] = (0..S)
+            .map(|i| {
+                let (node, spec) = builder.push_send_system(Box::new(SendSystem(
+                    format!("SendSystem #{}", i),
+                    Box::new({
+                        let run = Arc::clone(&run);
+                        move || run(Node::SendSystem(SendSystemIndex(i)))
+                    }),
+                )));
+                match node {
+                    Node::SendSystem(index) => index,
+                    _ => unreachable!(),
+                }
+            })
+            .collect::<Vec<_>>()
+            .try_into()
+            .expect("S == S");
+        let unsend_nodes: [UnsendSystemIndex; U] = (0..U)
+            .map(|i| {
+                let (node, spec) = builder.push_unsend_system(Box::new(UnsendSystem(
+                    format!("UnsendSystem #{}", i),
+                    Box::new({
+                        let run = Arc::clone(&run);
+                        move || run(Node::UnsendSystem(UnsendSystemIndex(i)))
+                    }),
+                )));
+                match node {
+                    Node::UnsendSystem(index) => index,
+                    _ => unreachable!(),
+                }
+            })
+            .collect::<Vec<_>>()
+            .try_into()
+            .expect("U == U");
 
-    customize(&mut builder, send_nodes, unsend_nodes);
+        customize(&mut builder, send_nodes, unsend_nodes);
 
-    let mut scheduler = builder.build();
+        let mut scheduler = builder.build();
 
-    let tracer = tracer::Aggregate((tracer::Log(log::Level::Trace), tracer::Aggregate(tracers)));
+        let tracer =
+            tracer::Aggregate((tracer::Log(log::Level::Trace), tracer::Aggregate(make_tracers())));
 
-    scheduler.execute(
-        &tracer,
-        &world::Components::empty(),
-        &world::SyncGlobals::empty(),
-        &mut world::UnsyncGlobals::empty(),
-    );
+        scheduler.execute(
+            &tracer,
+            &world::Components::empty(),
+            &world::SyncGlobals::empty(),
+            &mut world::UnsyncGlobals::empty(),
+        );
 
-    let tracer::Aggregate((_, tracer::Aggregate(tracers))) = tracer;
+        let tracer::Aggregate((_, tracer::Aggregate(tracers))) = tracer;
 
-    tracers
+        verify(tracers);
+    }
 }

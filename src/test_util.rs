@@ -138,13 +138,15 @@ pub(crate) trait Tick:
 }
 impl<T: fmt::Debug + Copy + Eq + Ord + strum::IntoEnumIterator + Send + Sync + Sized> Tick for T {}
 
+#[derive(Debug)]
 pub(crate) struct AntiSemaphore {
     saturation: usize,
     lock:       Mutex<AntiSemaphoreInner>,
     condvar:    Condvar,
 }
 
-pub(crate) struct AntiSemaphoreInner {
+#[derive(Debug)]
+struct AntiSemaphoreInner {
     current: usize,
 }
 

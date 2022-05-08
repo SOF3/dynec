@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["Thread",""]],"struct":[["Log","A tracer that logs all events."],["Noop","An empty tracer."]],"trait":[["Tracer","A tracer used for recording the events throughout an execution cycle."]]});
+initSidebarItems({"enum":[["Thread",""]],"struct":[["Aggregate",""],["Log","A tracer that logs all events."],["Noop","An empty tracer."]],"trait":[["Tracer","A tracer used for recording the events throughout an execution cycle."]]});

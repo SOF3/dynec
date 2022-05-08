@@ -172,74 +172,247 @@
 <span id="167">167</span>
 <span id="168">168</span>
 <span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
+<span id="180">180</span>
+<span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Exposes testing, profiling and tracing capabilities.</span>
+
+<span class="kw">use</span> <span class="ident">core::fmt</span>;
 
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">system</span>, <span class="ident">world</span>};
 
-<span class="doccomment">/// A tracer used for recording the events throughout an execution cycle.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// Can be used for profiling and testing.</span>
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Tracer</span>: <span class="ident">Sync</span> {
+<span class="macro">macro_rules!</span> <span class="ident">define_tracer</span> {
+    (
+        $(
+            $(<span class="attribute">#[<span class="macro-nonterminal">$</span><span class="macro-nonterminal">meta</span>:<span class="ident">meta</span>]</span>)<span class="op">*</span>
+            <span class="kw">fn</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">name</span>:<span class="ident">ident</span>(
+                <span class="kw-2">&amp;</span><span class="self">self</span>
+                $(,<span class="macro-nonterminal">$</span><span class="macro-nonterminal">logged_ident</span>:<span class="ident">ident</span>: <span class="macro-nonterminal">$</span><span class="macro-nonterminal">logged_ty</span>:<span class="ident">ty</span> $({@<span class="ident">LOG_WITH</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">log_with</span>:<span class="ident">expr</span>})<span class="question-mark">?</span>)<span class="op">*</span>
+                $(; @<span class="ident">NOLOG</span> $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">nolog_ident</span>:<span class="ident">ident</span>: <span class="macro-nonterminal">$</span><span class="macro-nonterminal">nolog_ty</span>:<span class="ident">ty</span>),<span class="kw-2">*</span>)<span class="question-mark">?</span>
+                $(,)<span class="question-mark">?</span>
+            );
+        )<span class="op">*</span>
+    ) =&gt; {
+        <span class="doccomment">/// A tracer used for recording the events throughout an execution cycle.</span>
+        <span class="doccomment">///</span>
+        <span class="doccomment">/// Can be used for profiling and testing.</span>
+        <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Tracer</span>: <span class="ident">Sync</span> {
+            $(
+                $(<span class="attribute">#[<span class="macro-nonterminal">$</span><span class="macro-nonterminal">meta</span>]</span>)<span class="op">*</span>
+                <span class="kw">fn</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">name</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">logged_ident</span>: <span class="macro-nonterminal">$</span><span class="macro-nonterminal">logged_ty</span>,)<span class="op">*</span> $($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">nolog_ident</span>: <span class="macro-nonterminal">$</span><span class="macro-nonterminal">nolog_ty</span>,)<span class="kw-2">*</span>)<span class="question-mark">?</span>) {}
+            )<span class="op">*</span>
+        }
+
+        <span class="kw">impl</span> <span class="ident">Tracer</span> <span class="kw">for</span> <span class="ident">Log</span> {
+            $(
+                <span class="kw">fn</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">name</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">logged_ident</span>: <span class="macro-nonterminal">$</span><span class="macro-nonterminal">logged_ty</span>,)<span class="op">*</span> $($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">nolog_ident</span>: <span class="macro-nonterminal">$</span><span class="macro-nonterminal">nolog_ty</span>,)<span class="kw-2">*</span>)<span class="question-mark">?</span>) {
+                    <span class="macro">log::log!</span>(<span class="self">self</span>.<span class="number">0</span>, <span class="macro">concat!</span>(<span class="macro">stringify!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">name</span>), <span class="string">&quot;(&quot;</span>, $(
+                        <span class="macro">stringify!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">logged_ident</span>),
+                        <span class="string">&quot; = {&quot;</span>,
+                        <span class="macro">stringify!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">logged_ident</span>),
+                        <span class="string">&quot;:?}, &quot;</span>,
+                    )<span class="op">*</span> <span class="string">&quot;)&quot;</span>), $(
+                        <span class="macro-nonterminal">$</span><span class="macro-nonterminal">logged_ident</span> <span class="op">=</span> <span class="macro">define_tracer!</span>(@<span class="ident">LOG_EXPR</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">logged_ident</span> $(@<span class="ident">LOG_WITH</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">log_with</span>)<span class="question-mark">?</span>),
+                    )<span class="kw-2">*</span>);
+                }
+            )<span class="op">*</span>
+        }
+
+        <span class="macro">impl_tuple_accumulate!</span> {
+            @<span class="ident">TYPES</span> (
+                <span class="ident">T1</span>, <span class="ident">T2</span>, <span class="ident">T3</span>, <span class="ident">T4</span>, <span class="ident">T5</span>, <span class="ident">T6</span>, <span class="ident">T7</span>, <span class="ident">T8</span>,
+                <span class="ident">T9</span>, <span class="ident">T10</span>, <span class="ident">T11</span>, <span class="ident">T12</span>, <span class="ident">T13</span>, <span class="ident">T14</span>, <span class="ident">T15</span>, <span class="ident">T16</span>,
+                <span class="ident">T17</span>, <span class="ident">T18</span>, <span class="ident">T19</span>, <span class="ident">T20</span>, <span class="ident">T21</span>, <span class="ident">T22</span>, <span class="ident">T23</span>, <span class="ident">T24</span>,
+                <span class="ident">T25</span>, <span class="ident">T26</span>, <span class="ident">T27</span>, <span class="ident">T28</span>, <span class="ident">T29</span>, <span class="ident">T30</span>, <span class="ident">T31</span>, <span class="ident">T32</span>,
+            );
+            $(
+                @<span class="ident">VARS</span> (
+                    <span class="ident">t1</span>, <span class="ident">t2</span>, <span class="ident">t3</span>, <span class="ident">t4</span>, <span class="ident">t5</span>, <span class="ident">t6</span>, <span class="ident">t7</span>, <span class="ident">t8</span>,
+                    <span class="ident">t9</span>, <span class="ident">t10</span>, <span class="ident">t11</span>, <span class="ident">t12</span>, <span class="ident">t13</span>, <span class="ident">t14</span>, <span class="ident">t15</span>, <span class="ident">t16</span>,
+                    <span class="ident">t17</span>, <span class="ident">t18</span>, <span class="ident">t19</span>, <span class="ident">t20</span>, <span class="ident">t21</span>, <span class="ident">t22</span>, <span class="ident">t23</span>, <span class="ident">t24</span>,
+                    <span class="ident">t25</span>, <span class="ident">t26</span>, <span class="ident">t27</span>, <span class="ident">t28</span>, <span class="ident">t29</span>, <span class="ident">t30</span>, <span class="ident">t31</span>, <span class="ident">t32</span>,
+                );
+                @<span class="ident">METHOD</span> {<span class="kw">fn</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">name</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">logged_ident</span>: <span class="macro-nonterminal">$</span><span class="macro-nonterminal">logged_ty</span>,)<span class="op">*</span> $($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">nolog_ident</span>: <span class="macro-nonterminal">$</span><span class="macro-nonterminal">nolog_ty</span>,)<span class="kw-2">*</span>)<span class="question-mark">?</span>);}
+            )<span class="op">*</span>
+        }
+    };
+
+    (@<span class="ident">LOG_EXPR</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">ident</span>:<span class="ident">ident</span>) =&gt; { <span class="macro-nonterminal">$</span><span class="macro-nonterminal">ident</span> };
+    (@<span class="ident">LOG_EXPR</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">ident</span>:<span class="ident">ident</span> @<span class="ident">LOG_WITH</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">closure</span>:<span class="ident">expr</span>) =&gt; { (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">closure</span>)(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">ident</span>) }
+}
+
+<span class="macro">macro_rules!</span> <span class="ident">impl_tuple</span> {
+    (
+        @<span class="ident">TYPES</span> ($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">ty</span>:<span class="ident">ident</span>),<span class="op">*</span> $(,)<span class="question-mark">?</span>);
+        $(
+            @<span class="ident">VARS</span> ($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">vars</span>:<span class="ident">ident</span>),<span class="op">*</span> $(,)<span class="question-mark">?</span>);
+            @<span class="ident">METHOD</span> {<span class="kw">fn</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">name</span>:<span class="ident">ident</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg_ident</span>:<span class="ident">ident</span>: <span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg_ty</span>:<span class="ident">ty</span>,)<span class="kw-2">*</span>);}
+        )<span class="op">*</span>
+    ) =&gt; {
+        <span class="kw">impl</span><span class="op">&lt;</span>$(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">ty</span>: <span class="ident">Tracer</span>),<span class="kw-2">*</span><span class="op">&gt;</span> <span class="ident">Tracer</span> <span class="kw">for</span> <span class="ident">Aggregate</span><span class="op">&lt;</span>($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">ty</span>,)<span class="kw-2">*</span>)<span class="op">&gt;</span> {
+            $(
+                <span class="kw">fn</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">name</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg_ident</span>: <span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg_ty</span>),<span class="kw-2">*</span>) {
+                    <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">unused_mut</span>)]</span>
+                    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">args</span> <span class="op">=</span> ($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg_ident</span>,)<span class="kw-2">*</span>);
+
+                    <span class="kw">fn</span> <span class="ident">call_with_args</span>(<span class="ident">tracer</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">Tracer</span>, ($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg_ident</span>,)<span class="kw-2">*</span>): <span class="kw-2">&amp;mut</span> ($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg_ty</span>,)<span class="kw-2">*</span>)) {
+                        <span class="ident">tracer</span>.<span class="macro-nonterminal">$</span><span class="macro-nonterminal">name</span>($(<span class="kw-2">*</span><span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg_ident</span>,)<span class="kw-2">*</span>);
+                    }
+
+                    <span class="kw">let</span> <span class="ident">Aggregate</span>(($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">vars</span>,)<span class="kw-2">*</span>)) <span class="op">=</span> <span class="self">self</span>;
+                    $(
+                        <span class="ident">call_with_args</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">vars</span>, <span class="kw-2">&amp;mut</span> <span class="ident">args</span>);
+                    )<span class="op">*</span>
+                }
+            )<span class="op">*</span>
+        }
+    };
+}
+
+<span class="macro">macro_rules!</span> <span class="ident">impl_tuple_accumulate</span> {
+    (@<span class="ident">TYPES</span> (); $(@<span class="ident">VARS</span> (); @<span class="ident">METHOD</span> {$(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">body</span>:<span class="ident">tt</span>)<span class="kw-2">*</span>})<span class="kw-2">*</span>) =&gt; {
+        <span class="macro">impl_tuple!</span> {
+            @<span class="ident">TYPES</span> ();
+            $(
+                @<span class="ident">VARS</span> ();
+                @<span class="ident">METHOD</span> {$(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">body</span>)<span class="kw-2">*</span>}
+            )<span class="op">*</span>
+        }
+    };
+    (
+        @<span class="ident">TYPES</span> (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">first_ty</span>:<span class="ident">ident</span> $(, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">rest_ty</span>:<span class="ident">ident</span>)<span class="op">*</span> $(,)<span class="question-mark">?</span>);
+        $(
+            @<span class="ident">VARS</span> (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">first_var</span>:<span class="ident">ident</span> $(, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">rest_var</span>:<span class="ident">ident</span>)<span class="op">*</span> $(,)<span class="question-mark">?</span>);
+            @<span class="ident">METHOD</span> {$(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">body</span>:<span class="ident">tt</span>)<span class="kw-2">*</span>}
+        )<span class="op">*</span>
+    ) =&gt; {
+        <span class="macro">impl_tuple!</span> {
+            @<span class="ident">TYPES</span> (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">first_ty</span> $(, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">rest_ty</span>)<span class="op">*</span> );
+            $(
+                @<span class="ident">VARS</span> (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">first_var</span> $(, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">rest_var</span>)<span class="kw-2">*</span>);
+                @<span class="ident">METHOD</span> {$(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">body</span>)<span class="kw-2">*</span>}
+            )<span class="op">*</span>
+        }
+
+        <span class="macro">impl_tuple_accumulate!</span> {
+            @<span class="ident">TYPES</span> ($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">rest_ty</span>),<span class="kw-2">*</span>);
+            $(
+                @<span class="ident">VARS</span> ($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">rest_var</span>),<span class="kw-2">*</span>);
+                @<span class="ident">METHOD</span> {$(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">body</span>)<span class="kw-2">*</span>}
+            )<span class="op">*</span>
+        }
+    };
+}
+
+<span class="macro">define_tracer!</span> {
     <span class="doccomment">/// A cycle starts.</span>
-    <span class="kw">fn</span> <span class="ident">start_cycle</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) {}
+    <span class="kw">fn</span> <span class="ident">start_cycle</span>(<span class="kw-2">&amp;</span><span class="self">self</span>);
 
     <span class="doccomment">/// A cycle ends.</span>
-    <span class="kw">fn</span> <span class="ident">end_cycle</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) {}
+    <span class="kw">fn</span> <span class="ident">end_cycle</span>(<span class="kw-2">&amp;</span><span class="self">self</span>);
 
     <span class="doccomment">/// A thread tries to steal a task, but all tasks have started.</span>
-    <span class="kw">fn</span> <span class="ident">steal_return_complete</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">thread</span>: <span class="ident">Thread</span>) {}
+    <span class="kw">fn</span> <span class="ident">steal_return_complete</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">thread</span>: <span class="ident">Thread</span>);
 
     <span class="doccomment">/// A thread tries to steal a task, but no tasks are in the runnable pool.</span>
-    <span class="kw">fn</span> <span class="ident">steal_return_pending</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">thread</span>: <span class="ident">Thread</span>) {}
+    <span class="kw">fn</span> <span class="ident">steal_return_pending</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">thread</span>: <span class="ident">Thread</span>);
 
     <span class="doccomment">/// A node is marked as runnable because all blockers have been removed.</span>
-    <span class="kw">fn</span> <span class="ident">mark_runnable</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">node</span>: <span class="ident">world::ScheduleNode</span>) {}
+    <span class="kw">fn</span> <span class="ident">mark_runnable</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">node</span>: <span class="ident">world::ScheduleNode</span>);
 
     <span class="doccomment">/// A node is unmarked as runnable because an exclusive node has been stolen.</span>
-    <span class="kw">fn</span> <span class="ident">unmark_runnable</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">node</span>: <span class="ident">world::ScheduleNode</span>) {}
+    <span class="kw">fn</span> <span class="ident">unmark_runnable</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">node</span>: <span class="ident">world::ScheduleNode</span>);
 
     <span class="doccomment">/// A thread-safe system starts running.</span>
     <span class="kw">fn</span> <span class="ident">start_run_sendable</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">thread</span>: <span class="ident">Thread</span>,
         <span class="ident">node</span>: <span class="ident">world::ScheduleNode</span>,
-        <span class="ident">debug_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
+        <span class="ident">debug_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>;
+        @<span class="ident">NOLOG</span>
         <span class="ident">system</span>: <span class="kw-2">&amp;mut</span> <span class="kw">dyn</span> <span class="ident">system::Sendable</span>,
-    ) {
-    }
+    );
 
     <span class="doccomment">/// A thread-safe system stops running.</span>
     <span class="kw">fn</span> <span class="ident">end_run_sendable</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">thread</span>: <span class="ident">Thread</span>,
         <span class="ident">node</span>: <span class="ident">world::ScheduleNode</span>,
-        <span class="ident">debug_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
+        <span class="ident">debug_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>;
+        @<span class="ident">NOLOG</span>
         <span class="ident">system</span>: <span class="kw-2">&amp;mut</span> <span class="kw">dyn</span> <span class="ident">system::Sendable</span>,
-    ) {
-    }
+    );
 
     <span class="doccomment">/// A thread-unsafe system starts running.</span>
     <span class="kw">fn</span> <span class="ident">start_run_unsendable</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">thread</span>: <span class="ident">Thread</span>,
         <span class="ident">node</span>: <span class="ident">world::ScheduleNode</span>,
-        <span class="ident">debug_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
+        <span class="ident">debug_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>;
+        @<span class="ident">NOLOG</span>
         <span class="ident">system</span>: <span class="kw-2">&amp;mut</span> <span class="kw">dyn</span> <span class="ident">system::Unsendable</span>,
-    ) {
-    }
+    );
 
     <span class="doccomment">/// A thread-unsafe system stops running.</span>
     <span class="kw">fn</span> <span class="ident">end_run_unsendable</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">thread</span>: <span class="ident">Thread</span>,
         <span class="ident">node</span>: <span class="ident">world::ScheduleNode</span>,
-        <span class="ident">debug_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
+        <span class="ident">debug_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>;
+        @<span class="ident">NOLOG</span>
         <span class="ident">system</span>: <span class="kw-2">&amp;mut</span> <span class="kw">dyn</span> <span class="ident">system::Unsendable</span>,
-    ) {
-    }
+    );
 
     <span class="doccomment">/// A partition completes.</span>
-    <span class="kw">fn</span> <span class="ident">partition</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">node</span>: <span class="ident">world::ScheduleNode</span>, <span class="ident">partition</span>: <span class="kw-2">&amp;</span><span class="kw">dyn</span> <span class="ident">system::Partition</span>) {}
+    <span class="kw">fn</span> <span class="ident">partition</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">node</span>: <span class="ident">world::ScheduleNode</span>, <span class="ident">partition</span>: <span class="kw-2">&amp;</span><span class="kw">dyn</span> <span class="ident">system::Partition</span> {@<span class="ident">LOG_WITH</span> <span class="op">=</span> <span class="ident">RefPartitionWrapper</span>});
+}
+
+<span class="kw">struct</span> <span class="ident">RefPartitionWrapper</span><span class="op">&lt;</span><span class="lifetime">&#39;t</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;t</span> <span class="kw">dyn</span> <span class="ident">system::Partition</span>);
+<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;t</span><span class="op">&gt;</span> <span class="ident">fmt::Debug</span> <span class="kw">for</span> <span class="ident">RefPartitionWrapper</span><span class="op">&lt;</span><span class="lifetime">&#39;t</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="ident">fmt::Formatter</span>) -&gt; <span class="ident">fmt::Result</span> { <span class="self">self</span>.<span class="number">0</span>.<span class="ident">describe</span>(<span class="ident">f</span>) }
 }
 
 <span class="doccomment">/// An empty tracer.</span>
@@ -247,94 +420,13 @@
 
 <span class="kw">impl</span> <span class="ident">Tracer</span> <span class="kw">for</span> <span class="ident">Noop</span> {}
 
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Aggregate</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">T</span>);
+
 <span class="doccomment">/// A tracer that logs all events.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Log</span>(
     <span class="doccomment">/// The log level to log events with.</span>
     <span class="kw">pub</span> <span class="ident">log::Level</span>,
 );
-
-<span class="kw">impl</span> <span class="ident">Tracer</span> <span class="kw">for</span> <span class="ident">Log</span> {
-    <span class="kw">fn</span> <span class="ident">start_cycle</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) {
-        <span class="macro">log::log!</span>(<span class="self">self</span>.<span class="number">0</span>, <span class="string">&quot;start_cycle()&quot;</span>);
-    }
-
-    <span class="kw">fn</span> <span class="ident">end_cycle</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) {
-        <span class="macro">log::log!</span>(<span class="self">self</span>.<span class="number">0</span>, <span class="string">&quot;end_cycle()&quot;</span>);
-    }
-
-    <span class="kw">fn</span> <span class="ident">steal_return_complete</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">thread</span>: <span class="ident">Thread</span>) {
-        <span class="macro">log::log!</span>(<span class="self">self</span>.<span class="number">0</span>, <span class="string">&quot;steal_return_complete(thread = {thread:?})&quot;</span>);
-    }
-
-    <span class="kw">fn</span> <span class="ident">steal_return_pending</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">thread</span>: <span class="ident">Thread</span>) {
-        <span class="macro">log::log!</span>(<span class="self">self</span>.<span class="number">0</span>, <span class="string">&quot;steal_return_pending(thread = {thread:?})&quot;</span>);
-    }
-
-    <span class="kw">fn</span> <span class="ident">mark_runnable</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">node</span>: <span class="ident">world::ScheduleNode</span>) {
-        <span class="macro">log::log!</span>(<span class="self">self</span>.<span class="number">0</span>, <span class="string">&quot;mark_runnable(node = {node:?})&quot;</span>);
-    }
-
-    <span class="kw">fn</span> <span class="ident">unmark_runnable</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">node</span>: <span class="ident">world::ScheduleNode</span>) {
-        <span class="macro">log::log!</span>(<span class="self">self</span>.<span class="number">0</span>, <span class="string">&quot;unmark_runnable(node = {node:?})&quot;</span>);
-    }
-
-    <span class="kw">fn</span> <span class="ident">start_run_sendable</span>(
-        <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">thread</span>: <span class="ident">Thread</span>,
-        <span class="ident">node</span>: <span class="ident">world::ScheduleNode</span>,
-        <span class="ident">debug_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
-        <span class="ident">system</span>: <span class="kw-2">&amp;mut</span> <span class="kw">dyn</span> <span class="ident">system::Sendable</span>,
-    ) {
-        <span class="macro">log::log!</span>(
-            <span class="self">self</span>.<span class="number">0</span>,
-            <span class="string">&quot;start_run_sendable(thread = {thread:?}, node = {node:?}, debug_name = {debug_name:?})&quot;</span>
-        )
-    }
-
-    <span class="kw">fn</span> <span class="ident">end_run_sendable</span>(
-        <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">thread</span>: <span class="ident">Thread</span>,
-        <span class="ident">node</span>: <span class="ident">world::ScheduleNode</span>,
-        <span class="ident">debug_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
-        <span class="ident">system</span>: <span class="kw-2">&amp;mut</span> <span class="kw">dyn</span> <span class="ident">system::Sendable</span>,
-    ) {
-        <span class="macro">log::log!</span>(
-            <span class="self">self</span>.<span class="number">0</span>,
-            <span class="string">&quot;end_run_sendable(thread = {thread:?}, node = {node:?}, debug_name = {debug_name:?})&quot;</span>
-        )
-    }
-
-    <span class="kw">fn</span> <span class="ident">start_run_unsendable</span>(
-        <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">thread</span>: <span class="ident">Thread</span>,
-        <span class="ident">node</span>: <span class="ident">world::ScheduleNode</span>,
-        <span class="ident">debug_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
-        <span class="ident">system</span>: <span class="kw-2">&amp;mut</span> <span class="kw">dyn</span> <span class="ident">system::Unsendable</span>,
-    ) {
-        <span class="macro">log::log!</span>(
-            <span class="self">self</span>.<span class="number">0</span>,
-            <span class="string">&quot;start_run_unsendable(thread = {thread:?}, node = {node:?}, debug_name = \
-             {debug_name:?})&quot;</span>
-        )
-    }
-
-    <span class="kw">fn</span> <span class="ident">end_run_unsendable</span>(
-        <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">thread</span>: <span class="ident">Thread</span>,
-        <span class="ident">node</span>: <span class="ident">world::ScheduleNode</span>,
-        <span class="ident">debug_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
-        <span class="ident">system</span>: <span class="kw-2">&amp;mut</span> <span class="kw">dyn</span> <span class="ident">system::Unsendable</span>,
-    ) {
-        <span class="macro">log::log!</span>(
-            <span class="self">self</span>.<span class="number">0</span>,
-            <span class="string">&quot;end_run_unsendable(thread = {thread:?}, node = {node:?}, debug_name = {debug_name:?})&quot;</span>
-        )
-    }
-
-    <span class="kw">fn</span> <span class="ident">partition</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">node</span>: <span class="ident">world::ScheduleNode</span>, <span class="ident">partition</span>: <span class="kw-2">&amp;</span><span class="kw">dyn</span> <span class="ident">system::Partition</span>) {
-        <span class="macro">log::log!</span>(<span class="self">self</span>.<span class="number">0</span>, <span class="string">&quot;partition(node = {node:?})&quot;</span>)
-    }
-}
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">PartialOrd</span>, <span class="ident">Ord</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Thread</span> {
@@ -342,5 +434,5 @@
     <span class="ident">Worker</span>(<span class="ident">usize</span>),
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (77652b9ef 2022-05-06)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (ea92b0838 2022-05-07)" ></div>
 </body></html>

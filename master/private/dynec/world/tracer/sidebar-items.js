@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["Thread",""]],"struct":[["Log","A tracer that logs all events."],["Noop","An empty tracer."]],"trait":[["Tracer","A tracer used for recording the events throughout an execution cycle."]]});
+initSidebarItems({"enum":[["Thread",""]],"macro":[["define_tracer",""],["impl_tuple",""],["impl_tuple_accumulate",""]],"struct":[["Aggregate",""],["Log","A tracer that logs all events."],["Noop","An empty tracer."],["RefPartitionWrapper",""]],"trait":[["Tracer","A tracer used for recording the events throughout an execution cycle."]]});

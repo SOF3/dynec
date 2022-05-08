@@ -15,7 +15,15 @@ use crate::{comp, system, world, TestArch};
 // However, do not rely on test repetitions to assert for behavior;
 // use more synchronization where practical.
 lazy_static::lazy_static! {
-    static ref CONCURRENT_TEST_REPETITIONS: usize = if env::var("RUST_LOG").is_ok() { 1 } else { 100 };
+    static ref CONCURRENT_TEST_REPETITIONS: usize = (|| {
+        if let Ok(count) = env::var("CONCURRENT_TEST_REPETITIONS") {
+            if let Ok(count) = count.parse::<usize>() {
+                return count;
+            }
+        }
+
+        if env::var("RUST_LOG").is_ok() { 1 } else { 1000 }
+    })();
 }
 
 /// `push_send_system` and `push_unsend_system` only check the `debug_name` field,

@@ -218,12 +218,33 @@
 <span id="213">213</span>
 <span id="214">214</span>
 <span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
+<span id="228">228</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Exposes testing, profiling and tracing capabilities.</span>
 
-<span class="kw">use</span> <span class="ident">core::fmt</span>;
+<span class="kw">use</span> <span class="ident">std::fmt</span>;
 
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">system</span>, <span class="ident">world</span>};
 
+<span class="doccomment">/// Defines the [`Tracer`] trait and implements the [`Log`] and [`Aggregate`] types.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// All tracer method parameters must be either [`Copy`] or a mutable reference</span>
+<span class="doccomment">/// (or immutable reference, which is [`Copy`]).</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// Use the `{@LOG_WITH = transformer}` syntax to transform an argument for log printing,</span>
+<span class="doccomment">/// where `transformer` is an invokable that accepts the argument</span>
+<span class="doccomment">/// and returns any [`fmt::Debug`] type.</span>
 <span class="macro">macro_rules!</span> <span class="ident">define_tracer</span> {
     (
         $(
@@ -411,6 +432,7 @@
 }
 
 <span class="kw">struct</span> <span class="ident">RefPartitionWrapper</span><span class="op">&lt;</span><span class="lifetime">&#39;t</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;t</span> <span class="kw">dyn</span> <span class="ident">system::Partition</span>);
+
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;t</span><span class="op">&gt;</span> <span class="ident">fmt::Debug</span> <span class="kw">for</span> <span class="ident">RefPartitionWrapper</span><span class="op">&lt;</span><span class="lifetime">&#39;t</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="ident">fmt::Formatter</span>) -&gt; <span class="ident">fmt::Result</span> { <span class="self">self</span>.<span class="number">0</span>.<span class="ident">describe</span>(<span class="ident">f</span>) }
 }
@@ -420,7 +442,11 @@
 
 <span class="kw">impl</span> <span class="ident">Tracer</span> <span class="kw">for</span> <span class="ident">Noop</span> {}
 
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Aggregate</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">T</span>);
+<span class="doccomment">/// Groups multiple tracers into a tuple and dispatches each call to them in serial.</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Aggregate</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(
+    <span class="doccomment">/// A tuple of child tracers to execute in serial.</span>
+    <span class="kw">pub</span> <span class="ident">T</span>,
+);
 
 <span class="doccomment">/// A tracer that logs all events.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Log</span>(

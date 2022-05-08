@@ -170,6 +170,7 @@ impl AntiSemaphore {
         }
 
         if lock.current == self.saturation {
+            lock.current = 0;
             self.condvar.notify_all();
         } else {
             let result = self.condvar.wait_for(&mut lock, Duration::from_secs(5));

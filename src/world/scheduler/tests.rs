@@ -107,17 +107,14 @@ fn test_global_exclusion() {
 fn test_global_share() {
     let (uct, mct) = test_bootstrap(
         (UnmarkCounterTracer::default(), MaxConcurrencyTracer::default()),
-        |builder, [sys1, sys2], []| {
-            builder.use_resource(
-                Node::SendSystem(sys1),
-                ResourceType::Global(DbgTypeId::of::<Global1>()),
-                ResourceAccess { mutable: false, discrim: None },
-            );
-            builder.use_resource(
-                Node::SendSystem(sys2),
-                ResourceType::Global(DbgTypeId::of::<Global1>()),
-                ResourceAccess { mutable: false, discrim: None },
-            );
+        |builder, [sys1, sys2, sys3, sys4], []| {
+            for sys in [sys1, sys2, sys3, sys4] {
+                builder.use_resource(
+                    Node::SendSystem(sys),
+                    ResourceType::Global(DbgTypeId::of::<Global1>()),
+                    ResourceAccess { mutable: false, discrim: None },
+                );
+            }
         },
         {
             let asem = AntiSemaphore::new(2);

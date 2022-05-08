@@ -137,3 +137,45 @@ pub(crate) trait Tick:
 {
 }
 impl<T: fmt::Debug + Copy + Eq + Ord + strum::IntoEnumIterator + Send + Sync + Sized> Tick for T {}
+
+pub(crate) struct AntiSemaphore {
+    saturation: usize,
+    lock:       Mutex<AntiSemaphoreInner>,
+    condvar:    Condvar,
+}
+
+pub(crate) struct AntiSemaphoreInner {
+    current: usize,
+}
+
+impl AntiSemaphore {
+    pub(crate) fn new(saturation: usize) -> Self {
+        Self {
+            saturation,
+            lock: Mutex::new(AntiSemaphoreInner { current: 0 }),
+            condvar: Condvar::new(),
+        }
+    }
+
+    pub(crate) fn wait(&self) {
+        let mut lock = self.lock.lock();
+        log::trace!(
+            "AntiSemaphore(current: {}, saturation: {}).wait()",
+            lock.current,
+            self.saturation
+        );
+        lock.current += 1;
+        if lock.current > self.saturation {
+            panic!("AntiSemaphore exceeded saturation");
+        }
+
+        if lock.current == self.saturation {
+            self.condvar.notify_all();
+        } else {
+            let result = self.condvar.wait_for(&mut lock, Duration::from_secs(5));
+            if result.timed_out() {
+                panic!("Deadlock: AntiSemaphore not saturated for more than 5 seconds");
+            }
+        }
+    }
+}

@@ -1,9 +1,17 @@
 //! Exposes testing, profiling and tracing capabilities.
 
-use core::fmt;
+use std::fmt;
 
 use crate::{system, world};
 
+/// Defines the [`Tracer`] trait and implements the [`Log`] and [`Aggregate`] types.
+///
+/// All tracer method parameters must be either [`Copy`] or a mutable reference
+/// (or immutable reference, which is [`Copy`]).
+///
+/// Use the `{@LOG_WITH = transformer}` syntax to transform an argument for log printing,
+/// where `transformer` is an invokable that accepts the argument
+/// and returns any [`fmt::Debug`] type.
 macro_rules! define_tracer {
     (
         $(
@@ -191,6 +199,7 @@ define_tracer! {
 }
 
 struct RefPartitionWrapper<'t>(&'t dyn system::Partition);
+
 impl<'t> fmt::Debug for RefPartitionWrapper<'t> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { self.0.describe(f) }
 }
@@ -200,7 +209,11 @@ pub struct Noop;
 
 impl Tracer for Noop {}
 
-pub struct Aggregate<T>(T);
+/// Groups multiple tracers into a tuple and dispatches each call to them in serial.
+pub struct Aggregate<T>(
+    /// A tuple of child tracers to execute in serial.
+    pub T,
+);
 
 /// A tracer that logs all events.
 pub struct Log(

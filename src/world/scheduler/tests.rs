@@ -575,7 +575,7 @@ fn test_zero_concurrency_single_send() {
         || |_| {},
         |(mct,)| {
             let max_concurrency = mct.max.into_inner();
-            assert_eq!(max_concurrency, 1, "Expected single unsend system to run");
+            assert_eq!(max_concurrency, 1, "Expected single send system to run");
         },
     );
 }
@@ -594,6 +594,28 @@ fn test_zero_concurrency_single_unsend() {
     );
 }
 
+/// Bootstraps a test function for the scheduler.
+///
+/// This function performs the following:
+/// - Initialize the logger if it is missing.
+/// - Repeat the test for [`CONCURRENT_TEST_REPETITIONS`] iterations.
+/// - Schedules `S` thread-safe systems and `U` thread-unsafe systems to the scheduler,
+///   calling `make_run` for every iteration to create a shared runner for all systems.
+///   This means any values declared in the first layer of the `make_run` closure
+///   are going to be shared among all systems in the same iteration,
+///   while values declared in the second layer are local to a specific system run.
+///   The inner closure receives the system node ID.
+/// - Runs `customize` to setup system requests.
+///   The second and third parameters of `customize` are arrays,
+///   the respective lengths of which specify
+///   the number of thread-safe and thread-unsafe systems to schedule.
+///   The function is called with the node IDs of the corresponding systems.
+///   Therefore, by writing the second and third parameters as array patterns,
+///   the sizes `S` and `U` can be automatically inferred.
+/// - Builds a new scheduler from the information above.
+/// - Executes the built scheduler with a TRACE-level tracer,
+///   along with the tuple of schedulers returned by `make_tracers`.
+/// - Calls `verify` with the tuple of tracers to verify that the test has succeeded.
 fn test_bootstrap<const S: usize, const U: usize, T, C, R, V>(
     concurrency: usize,
     make_tracers: fn() -> T,

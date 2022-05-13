@@ -219,6 +219,13 @@
 <span id="214">214</span>
 <span id="215">215</span>
 <span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
 </pre><pre class="rust"><code><span class="doccomment">//! An entity is a single object that owns components.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Entities are reference-counted in debug mode,</span>
@@ -379,6 +386,13 @@
     }
 }
 
+<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;t</span>, <span class="ident">T</span>: <span class="ident">Ref</span><span class="op">&gt;</span> <span class="ident">sealed::Ref</span> <span class="kw">for</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;t</span> <span class="ident">T</span> {
+    <span class="kw">fn</span> <span class="ident">id</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">sealed::Raw</span> { <span class="ident">sealed::Ref::id</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="kw-2">*</span><span class="self">self</span>) }
+}
+<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;t</span>, <span class="ident">T</span>: <span class="ident">Ref</span><span class="op">&gt;</span> <span class="ident">Ref</span> <span class="kw">for</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;t</span> <span class="ident">T</span> {
+    <span class="kw">type</span> <span class="ident">Archetype</span> <span class="op">=</span> <span class="ident">T::Archetype</span>;
+}
+
 <span class="doccomment">/// A weak counted reference to an entity.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// This reference can outlive the entity.</span>
@@ -436,5 +450,5 @@
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (ea92b0838 2022-05-07)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (a5ad0d29a 2022-05-12)" ></div>
 </body></html>

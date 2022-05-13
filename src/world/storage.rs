@@ -1,4 +1,4 @@
-use std::any;
+use std::any::{self, Any};
 use std::collections::BTreeMap;
 use std::marker::PhantomData;
 use std::mem::{self, MaybeUninit};
@@ -19,6 +19,8 @@ pub(crate) trait AnySimpleStorage<A: Archetype> {
     fn init_strategy(&self) -> comp::SimpleInitStrategy<A>;
 
     fn init_with(&mut self, entity: entity::Raw, components: &mut comp::Map<A>);
+
+    fn as_any_mut(&mut self) -> &mut dyn Any;
 }
 
 pub(crate) struct Storage<A: Archetype, C: 'static> {
@@ -35,6 +37,10 @@ impl<A: Archetype, C: comp::Simple<A>> Storage<A, C> {
             _ph:         PhantomData,
         }
     }
+
+    pub(crate) fn get(&self, id: entity::Raw) -> Option<&C> { self.inner.get(id) }
+
+    pub(crate) fn get_mut(&mut self, id: entity::Raw) -> Option<&mut C> { self.inner.get_mut(id) }
 }
 
 impl<A: Archetype, C: comp::Simple<A>> AnySimpleStorage<A> for Storage<A, C> {
@@ -52,6 +58,8 @@ impl<A: Archetype, C: comp::Simple<A>> AnySimpleStorage<A> for Storage<A, C> {
             );
         }
     }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any { self }
 }
 
 enum Inner<T> {

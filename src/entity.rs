@@ -158,6 +158,13 @@ impl<A: Archetype> Clone for Entity<A> {
     }
 }
 
+impl<'t, T: Ref> sealed::Ref for &'t T {
+    fn id(&self) -> sealed::Raw { sealed::Ref::id(&**self) }
+}
+impl<'t, T: Ref> Ref for &'t T {
+    type Archetype = T::Archetype;
+}
+
 /// A weak counted reference to an entity.
 ///
 /// This reference can outlive the entity.

@@ -64,16 +64,21 @@ impl Executor {
                     scope.spawn(move |_| threaded_worker(worker_id, tracer, context, send));
                 }
 
-                let poll_send = self.concurrency == 0;
-                main_worker(tracer, context, send, unsend, poll_send)
+                main_worker(tracer, context, send, unsend, false)
             });
+        } else {
+            main_worker(tracer, context, send, unsend, true);
         }
 
-        debug_assert!(planner
-            .get_mut()
-            .wakeup_state
-            .values()
-            .all(|state| matches!(state, WakeupState::Completed)));
+        #[cfg(debug_assertions)]
+        {
+            for (node, state) in &planner.get_mut().wakeup_state {
+                let is_complete = matches!(state, WakeupState::Completed);
+                if !is_complete {
+                    panic!("Node {:?} state is {:?} instead of complete", node, state)
+                }
+            }
+        }
 
         tracer.end_cycle();
     }
@@ -89,7 +94,9 @@ fn main_worker(
     let mut planner_guard = context.planner.lock();
 
     loop {
-        match planner_guard.steal_unsend(tracer, world::tracer::Thread::Main, context.topology) {
+        let steal =
+            planner_guard.steal_unsend(tracer, world::tracer::Thread::Main, context.topology);
+        match steal {
             StealResult::CycleComplete => return,
             StealResult::Pending if poll_send => match planner_guard.steal_send(
                 tracer,

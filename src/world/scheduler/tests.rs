@@ -566,6 +566,34 @@ fn test_thread_local_exclusion() {
     );
 }
 
+#[test]
+fn test_zero_concurrency_single_send() {
+    test_bootstrap(
+        0,
+        || (MaxConcurrencyTracer::default(),),
+        |_builder, [_sys], []| {},
+        || |_| {},
+        |(mct,)| {
+            let max_concurrency = mct.max.into_inner();
+            assert_eq!(max_concurrency, 1, "Expected single unsend system to run");
+        },
+    );
+}
+
+#[test]
+fn test_zero_concurrency_single_unsend() {
+    test_bootstrap(
+        0,
+        || (MaxConcurrencyTracer::default(),),
+        |_builder, [], [_sys]| {},
+        || |_| {},
+        |(mct,)| {
+            let max_concurrency = mct.max.into_inner();
+            assert_eq!(max_concurrency, 1, "Expected single unsend system to run");
+        },
+    );
+}
+
 fn test_bootstrap<const S: usize, const U: usize, T, C, R, V>(
     concurrency: usize,
     make_tracers: fn() -> T,

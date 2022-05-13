@@ -1,6 +1,7 @@
 //! The world stores the states of the game.
 
-use std::any;
+use std::any::{self, TypeId};
+use std::sync::Arc;
 
 use crate::util::DbgTypeId;
 use crate::{comp, entity, Archetype, Entity};
@@ -115,7 +116,7 @@ impl World {
     }
 
     fn archetype_mut<A: Archetype>(&mut self) -> &mut typed::Typed<A> {
-        match self.components.archetypes.get_mut(&DbgTypeId::of::<A>()) {
+        match self.components.archetypes.get_mut(&TypeId::of::<A>()) {
             Some(typed) => typed.as_any_mut().downcast_mut().expect("TypeId mismatch"),
             None => panic!(
                 "The archetype {} cannot be used because it is not used in any systems",
@@ -147,6 +148,30 @@ impl World {
         let typed = self.archetype_mut::<E::Archetype>();
         let id = typed.create_near(near.map(|raw| raw.id().0), components);
         Entity::new_allocated(id)
+    }
+
+    /// Gets a reference to an entity component when the world is not running.
+    ///
+    /// Requires a mutable reference to the world to ensure that the world is not executing in
+    /// other systems.
+    pub fn get_simple<A: Archetype, C: comp::Simple<A>, E: entity::Ref<Archetype = A>>(
+        &mut self,
+        entity: E,
+    ) -> Option<&mut C> {
+        let typed = self.archetype_mut::<A>();
+        let storage = match typed.simple_storages.get_mut(&TypeId::of::<C>()) {
+            Some(storage) => storage,
+            None => panic!(
+                "The component {} cannot be retrieved because it is not used in any systems",
+                any::type_name::<C>()
+            ),
+        };
+        let storage =
+            Arc::get_mut(storage).expect("Storage Arc clones should not outlive system execution");
+        let storage = storage.get_mut();
+        let storage =
+            storage.as_any_mut().downcast_mut::<storage::Storage<A, C>>().expect("TypeId mismatch");
+        storage.get_mut(entity.id().0)
     }
 }
 

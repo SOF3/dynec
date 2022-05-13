@@ -205,6 +205,7 @@ impl Planner {
     }
 }
 
+#[derive(Debug)]
 pub(in crate::world::scheduler) enum StealResult<I> {
     Ready(I),
     Pending,

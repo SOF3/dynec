@@ -32,9 +32,9 @@ struct Comp6(i32);
 
 #[system(dynec_as(crate))]
 fn system_with_comp3_comp4_comp5(
-    _comp3: system::Simple<TestArch, &Comp3>,
-    _comp4: system::Simple<TestArch, &mut Comp4>,
-    _comp5: system::Simple<TestArch, &Comp5>,
+    _comp3: impl system::ReadSimple<TestArch, Comp3>,
+    _comp4: impl system::WriteSimple<TestArch, Comp4>,
+    _comp5: impl system::ReadSimple<TestArch, Comp5>,
 ) {
 }
 

@@ -20,6 +20,8 @@ pub(crate) trait AnySimpleStorage<A: Archetype> {
 
     fn init_with(&mut self, entity: entity::Raw, components: &mut comp::Map<A>);
 
+    fn as_any(&self) -> &dyn Any;
+
     fn as_any_mut(&mut self) -> &mut dyn Any;
 }
 
@@ -58,6 +60,8 @@ impl<A: Archetype, C: comp::Simple<A>> AnySimpleStorage<A> for Storage<A, C> {
             );
         }
     }
+
+    fn as_any(&self) -> &dyn Any { self }
 
     fn as_any_mut(&mut self) -> &mut dyn Any { self }
 }

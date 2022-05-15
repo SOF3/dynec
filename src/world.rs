@@ -105,26 +105,7 @@ pub struct World {
 }
 
 impl World {
-    fn archetype<A: Archetype>(&self) -> &typed::Typed<A> {
-        match self.components.archetypes.get(&DbgTypeId::of::<A>()) {
-            Some(typed) => typed.as_any().downcast_ref().expect("TypeId mismatch"),
-            None => panic!(
-                "The archetype {} cannot be used because it is not used in any systems",
-                any::type_name::<A>()
-            ),
-        }
-    }
-
-    fn archetype_mut<A: Archetype>(&mut self) -> &mut typed::Typed<A> {
-        match self.components.archetypes.get_mut(&TypeId::of::<A>()) {
-            Some(typed) => typed.as_any_mut().downcast_mut().expect("TypeId mismatch"),
-            None => panic!(
-                "The archetype {} cannot be used because it is not used in any systems",
-                any::type_name::<A>()
-            ),
-        }
-    }
-
+    /// Executes all systems in the world.
     pub fn execute(&mut self, tracer: &impl Tracer) {
         self.scheduler.execute(
             tracer,
@@ -145,7 +126,7 @@ impl World {
         near: Option<E>,
         components: comp::Map<<E as entity::Ref>::Archetype>,
     ) -> Entity<<E as entity::Ref>::Archetype> {
-        let typed = self.archetype_mut::<E::Archetype>();
+        let typed = self.components.archetype_mut::<E::Archetype>();
         let id = typed.create_near(near.map(|raw| raw.id().0), components);
         Entity::new_allocated(id)
     }
@@ -158,7 +139,7 @@ impl World {
         &mut self,
         entity: E,
     ) -> Option<&mut C> {
-        let typed = self.archetype_mut::<A>();
+        let typed = self.components.archetype_mut::<A>();
         let storage = match typed.simple_storages.get_mut(&TypeId::of::<C>()) {
             Some(storage) => storage,
             None => panic!(

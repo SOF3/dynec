@@ -19,7 +19,7 @@ pub trait Ref {
     fn as_ref(&self) -> &Self::Target;
 }
 
-impl<'t, T: ?Sized> Ref for &'t T {
+impl<T: ?Sized> Ref for &T {
     type Target = T;
 
     const MUTABLE: bool = false;
@@ -27,7 +27,7 @@ impl<'t, T: ?Sized> Ref for &'t T {
     fn as_ref(&self) -> &T { self }
 }
 
-impl<'t, T: ?Sized> Ref for &'t mut T {
+impl<T: ?Sized> Ref for &mut T {
     type Target = T;
 
     const MUTABLE: bool = true;

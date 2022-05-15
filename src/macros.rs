@@ -231,7 +231,8 @@ mod global_tests {}
 /// (where `Simple` can be qualified by any path, e.g. `system::Simple`).
 /// This requests access to a [simple component](crate::comp::Simple) of type `Type2`
 /// from entities of the [archetype](crate::Archetype) `Type1`,
-/// exposed through a type that implements [`system::Simple`](crate::system::Simple).
+/// exposed through a type that implements [`system::ReadSimple`](crate::system::ReadSimple)
+/// or [`system::WriteSimple`](crate::system::WriteSimple).
 ///
 /// With the attribute, only read access is permitted by default.
 /// To allow write access, add `mut` to the `simple` option list with the first syntax.
@@ -244,7 +245,8 @@ mod global_tests {}
 /// but with a type `Isotope<Type1, &Type2>` are also isotope components.
 /// This requests access to an [isotope component](crate::comp::Isotope) of type `Type2`
 /// from entities of the [archetype](crate::Archetype) `Type1`,
-/// exposed through a type that implements [`system::Isotope`](crate::system::Isotope).
+/// exposed through a type that implements [`system::ReadIsotope`](crate::system::ReadIsotope)
+/// or [`system::WriteIsotope`](crate::system::WriteIsotope).
 ///
 /// Only read access is permitted by default.
 /// To allow write access, add `mut` to the `isotope` option list with the first syntax,
@@ -298,12 +300,12 @@ mod global_tests {}
 /// )]
 /// fn simulate(
 ///     #[dynec(local = 0)] counter: &mut u16,
-///     #[dynec(param)] skill_id: &SkillId,
+///     #[dynec(param)] &skill_id: &SkillId,
 ///     #[dynec(global)] title: &mut Title,
-///     x: system::Simple<Player, &mut PositionX>,
-///     y: system::Simple<Player, &mut PositionY>,
-///     dir: system::Simple<Player, &Direction>,
-///     #[dynec(isotope(discrim = [*skill_id]))] skill: system::Isotope<Player, &SkillLevel>,
+///     x: impl system::WriteSimple<Player, PositionX>,
+///     y: impl system::WriteSimple<Player, PositionY>,
+///     dir: impl system::ReadSimple<Player, Direction>,
+///     #[dynec(isotope(discrim = [skill_id]))] skill: impl system::ReadIsotope<Player, SkillLevel>,
 /// ) {
 ///     *counter += 1;
 ///
@@ -338,7 +340,8 @@ mod global_tests {}
 ///         );
 ///     };
 ///
-///     simulate(
+///     /*
+///     simulate::call(
 ///         &mut counter,
 ///         &SkillId(2),
 ///         &mut title,
@@ -350,6 +353,7 @@ mod global_tests {}
 ///
 ///     assert_eq!(counter, 1);
 ///     assert_eq!(title.0, "changed");
+///     */
 /// }
 /// ```
 #[doc(inline)]

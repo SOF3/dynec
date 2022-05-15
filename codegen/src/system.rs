@@ -62,6 +62,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
     }
 
     let mut local_state_field_idents = Vec::new();
+    let mut local_state_field_pats = Vec::new();
     let mut local_state_field_tys = Vec::new();
 
     let mut param_state_field_idents = Vec::new();
@@ -70,6 +71,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
     let mut initial_state_field_idents = Vec::new();
     let mut initial_state_field_defaults = Vec::new();
 
+    let mut input_pats = Vec::new();
     let mut input_types = Vec::new();
 
     let mut global_requests = Vec::new();
@@ -84,6 +86,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             syn::FnArg::Typed(typed) => typed,
         };
 
+        input_pats.push(syn::Pat::clone(&param.pat));
         input_types.push(syn::Type::clone(&param.ty));
 
         enum ArgType {
@@ -247,74 +250,63 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
         let arg_type = match arg_type {
             MaybeArgType::Some(arg_type) => arg_type.value,
             _ => {
+                const USAGE_INFERENCE_ERROR: &str =
+                    "Cannot infer parameter usage. Specify explicitly with `#[dynec(...)]`, or \
+                     use the form `impl dynec::Trait<Arch, Comp>` where `Trait` is one of \
+                     `ReadSimple`, `WriteSimple`, `ReadIsotope` or `WriteIsotope`.";
+                let bail_inference = || Err(Error::new_spanned(&param, USAGE_INFERENCE_ERROR));
+
                 let isotope_discrim_hint = match arg_type {
                     MaybeArgType::Some(_) => unreachable!("inside match arm"),
                     MaybeArgType::IsotopeDiscrimHint(hint) => Some(hint.value),
                     MaybeArgType::None => None,
                 };
 
-                let ty = match &*param.ty {
-                    syn::Type::Path(ty) => ty,
-                    _ => {
-                        return Err(Error::new_spanned(
-                            param,
-                            "Cannot infer parameter usage. Spcify with #[dynec(...)].",
-                        ))
-                    }
+                let impl_ty = match &*param.ty {
+                    syn::Type::ImplTrait(ty) => ty,
+                    _ => return bail_inference(),
                 };
 
-                let ty_name = ty.path.segments.last().expect("path segments should be non-empty");
-                let ty_name_string = ty_name.ident.to_string();
+                if impl_ty.bounds.len() != 1 {
+                    return Err(Error::new_spanned(param, USAGE_INFERENCE_ERROR));
+                }
 
-                let isotope = match ty_name_string.as_str() {
-                    "Simple" => false,
-                    "Isotope" => true,
-                    _ => {
-                        return Err(Error::new_spanned(
-                            param,
-                            "Cannot infer parameter usage. Spcify with #[dynec(...)].",
-                        ))
-                    }
+                let bound = match &*impl_ty.bounds.first().expect("bounds.len() == 1") {
+                    syn::TypeParamBound::Trait(bound) => bound,
+                    _ => return bail_inference(),
                 };
+
+                let trait_name = bound.path.segments.last().expect("path should not be empty");
+                let trait_name_string = trait_name.ident.to_string();
+
+                let (mutable, isotope) = match trait_name_string.as_str() {
+                    "ReadSimple" => (false, false),
+                    "WriteSimple" => (true, false),
+                    "ReadIsotope" => (false, true),
+                    "WriteIsotope" => (true, true),
+                    _ => return bail_inference(),
+                };
+
                 if !isotope && isotope_discrim_hint.is_some() {
                     return Err(Error::new_spanned(
                         param,
-                        "`#[dynec(isotope)]` specified but `Simple` used in type. Possibly typo?",
+                        "`#[dynec(isotope)]` cannot be used with `impl Simple`.",
                     ));
                 }
 
-                let type_args = match &ty_name.arguments {
+                let type_args = match &trait_name.arguments {
                     syn::PathArguments::AngleBracketed(args) if args.args.len() == 2 => args,
-                    _ => {
-                        return Err(Error::new_spanned(
-                            &param.ty,
-                            "system::Simple and system::Isotope takes two type arguments",
-                        ))
-                    }
+                    _ => return bail_inference(),
                 };
 
                 let arch = match type_args.args.first().expect("type_args.args.len() == 2") {
                     syn::GenericArgument::Type(ty) => Box::new(ty.clone()),
-                    _ => {
-                        return Err(Error::new_spanned(
-                            &param.ty,
-                            "The first argument should be the archetype",
-                        ))
-                    }
+                    _ => return bail_inference(),
                 };
-                let (mutable, comp) =
-                    match type_args.args.last().expect("type_args.args.len() == 2") {
-                        syn::GenericArgument::Type(syn::Type::Reference(ty)) => {
-                            (ty.mutability.is_some(), ty.elem.clone())
-                        }
-                        _ => {
-                            return Err(Error::new_spanned(
-                                &param.ty,
-                                "The second argument of system::Simple and system::Isotope should \
-                                 be a reference to the component type",
-                            ))
-                        }
-                    };
+                let comp = match type_args.args.last().expect("type_args.args.len() == 2") {
+                    syn::GenericArgument::Type(ty) => Box::new(ty.clone()),
+                    _ => return bail_inference(),
+                };
 
                 if isotope {
                     ArgType::Isotope { mutable, arch, comp, discrim: isotope_discrim_hint }
@@ -328,6 +320,10 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             ArgType::Local { default } => {
                 let field_name = match &*param.pat {
                     syn::Pat::Ident(ident) => ident.ident.clone(),
+                    syn::Pat::Reference(pat) => match &*pat.pat {
+                        syn::Pat::Ident(ident) => ident.ident.clone(),
+                        _ => quote::format_ident!("__dynec_arg_{}", param_index),
+                    },
                     _ => quote::format_ident!("__dynec_arg_{}", param_index),
                 };
 
@@ -342,6 +338,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 };
 
                 local_state_field_idents.push(field_name.clone());
+                local_state_field_pats.push(param.pat.clone());
                 local_state_field_tys.push(syn::Type::clone(param_ty));
 
                 if let Some(default) = default {
@@ -402,9 +399,12 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
     let input_args: Vec<_> = input.sig.inputs.iter().collect();
 
     let destructure_local_states = quote! {
-        let &Self {
-            #(ref #local_state_field_idents,)*
-        } = self;
+        let (#(#local_state_field_pats,)*) = {
+            let &Self {
+                #(ref #local_state_field_idents,)*
+            } = self;
+            (#(#local_state_field_idents,)*)
+        };
     };
 
     let (system_trait, system_run_params) = match system_thread_local {
@@ -453,6 +453,13 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 #fn_body
             }
 
+            impl #ident {
+                #vis fn call(#(#input_args),*) {
+                    __dynec_original(#(#input_pats),*)
+                }
+            }
+            /*
+            // TODO: can we figure out another way to let user call the original function directly?
             impl ::std::ops::Deref for #ident {
                 type Target = fn(#(#input_types),*);
 
@@ -460,6 +467,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                     &(__dynec_original as fn(#(#input_types),*))
                 }
             }
+            */
 
             impl #crate_name::system::#system_trait for __dynec_local_state {
                 fn get_spec(&self) -> #crate_name::system::Spec {

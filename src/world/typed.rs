@@ -148,6 +148,7 @@ fn toposort_populators<A: Archetype>(
 }
 // TODO unit test toposort_populators
 
+/// Stores everything related to a specific archetype.
 #[derive(Default)]
 pub(crate) struct Typed<A: Archetype> {
     pub(crate) ealloc:            entity::Ealloc,

@@ -10,26 +10,21 @@
 
 use std::any::TypeId;
 use std::collections::hash_map::DefaultHasher;
-use std::marker::PhantomData;
 use std::{fmt, hash};
 
-use crate::{comp, util, world, Archetype};
+use crate::{comp, world, Archetype};
 
 /// Provides access to a simple component in a specific archetype.
-pub struct Simple<A: Archetype, R: util::Ref>
-where
-    R::Target: comp::Simple<A>,
-{
-    _ph: PhantomData<(A, R)>,
-}
+pub trait ReadSimple<A: Archetype, C: comp::Simple<A>> {}
+
+/// Provides access to a simple component in a specific archetype.
+pub trait WriteSimple<A: Archetype, C: comp::Simple<A>> {}
 
 /// Provides access to an isotope component in a specific archetype.
-pub struct Isotope<A: Archetype, R: util::Ref>
-where
-    R::Target: comp::Isotope<A>,
-{
-    _ph: PhantomData<(A, R)>,
-}
+pub trait ReadIsotope<A: Archetype, C: comp::Isotope<A>> {}
+
+/// Provides access to an isotope component in a specific archetype.
+pub trait WriteIsotope<A: Archetype, C: comp::Isotope<A>> {}
 
 /// A partition is a hashable type constructed by system specifications
 /// used to constrain system execution order.

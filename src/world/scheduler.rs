@@ -78,20 +78,23 @@ impl WakeupState {
 /// Identifies a topological node in the schedule of a cycle.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Node {
+    /// The execution span of a thread-safe system.
     SendSystem(SendSystemIndex),
+    /// The execution span of a thread-unsafe system.
     UnsendSystem(UnsendSystemIndex),
+    /// The instant between systems before and after a partition.
     Partition(PartitionIndex),
 }
 
-/// Uniquely identifies a [`system::Sendable`].
+/// Uniquely identifies a [`system::Sendable`](crate::system::Sendable).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SendSystemIndex(usize);
 
-/// Uniquely identifies a [`system::Unsendable`].
+/// Uniquely identifies a [`system::Unsendable`](crate::system::Unsendable).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct UnsendSystemIndex(usize);
 
-/// Uniquely identifies a [`system::Partition`].
+/// Uniquely identifies a [`system::Partition`](crate::system::Partition).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PartitionIndex(usize);
 

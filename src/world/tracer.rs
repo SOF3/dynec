@@ -221,8 +221,11 @@ pub struct Log(
     pub log::Level,
 );
 
+/// The thread ID for a system executor.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Thread {
+    /// The main thread, typically used for executing thread-unsafe systems.
     Main,
+    /// A worker thread. The index is in the range `0..concurrency`.
     Worker(usize),
 }

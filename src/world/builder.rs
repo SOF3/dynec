@@ -1,8 +1,7 @@
 use std::any::Any;
-use std::cell::RefCell;
 use std::collections::HashMap;
 
-use parking_lot::Mutex;
+use parking_lot::RwLock;
 
 use super::{scheduler, typed};
 use crate::system::spec;
@@ -161,7 +160,7 @@ impl Builder {
             .map(|(ty, da)| {
                 (
                     ty,
-                    Mutex::new(match da {
+                    RwLock::new(match da {
                         GlobalBuilder::Provided(value) => value,
                         GlobalBuilder::Missing(default) => default(),
                     }),
@@ -176,10 +175,10 @@ impl Builder {
             .map(|(ty, da)| {
                 (
                     ty,
-                    RefCell::new(match da {
+                    match da {
                         GlobalBuilder::Provided(value) => value,
                         GlobalBuilder::Missing(default) => default(),
-                    }),
+                    },
                 )
             })
             .collect();

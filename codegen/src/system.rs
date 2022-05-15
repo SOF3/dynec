@@ -71,8 +71,12 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
     let mut initial_state_field_idents = Vec::new();
     let mut initial_state_field_defaults = Vec::new();
 
+    let mut isotope_discrim_idents = Vec::new();
+    let mut isotope_discrim_values = Vec::new();
+
     let mut input_pats = Vec::new();
     let mut input_types = Vec::new();
+    let mut system_run_args = Vec::new();
 
     let mut global_requests = Vec::new();
     let mut simple_requests = Vec::new();
@@ -130,7 +134,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             if let Some(name) = match arg_type {
                 MaybeArgType::Some(named) => Some(&named.name),
                 MaybeArgType::IsotopeDiscrimHint(named) => Some(&named.name),
-                _ => None,
+                MaybeArgType::None => None,
             } {
                 return Err(Error::new(
                     name.span().join(ident.span()).unwrap_or_else(|| name.span()),
@@ -316,15 +320,15 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             }
         };
 
-        match arg_type {
+        let run_arg = match arg_type {
             ArgType::Local { default } => {
                 let field_name = match &*param.pat {
                     syn::Pat::Ident(ident) => ident.ident.clone(),
                     syn::Pat::Reference(pat) => match &*pat.pat {
                         syn::Pat::Ident(ident) => ident.ident.clone(),
-                        _ => quote::format_ident!("__dynec_arg_{}", param_index),
+                        _ => quote::format_ident!("__dynec_local_{}", param_index),
                     },
-                    _ => quote::format_ident!("__dynec_arg_{}", param_index),
+                    _ => quote::format_ident!("__dynec_local_{}", param_index),
                 };
 
                 let param_ty = match &*param.ty {
@@ -342,14 +346,24 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 local_state_field_tys.push(syn::Type::clone(param_ty));
 
                 if let Some(default) = default {
-                    initial_state_field_idents.push(field_name);
+                    initial_state_field_idents.push(field_name.clone());
                     initial_state_field_defaults.push(default);
                 } else {
-                    param_state_field_idents.push(field_name);
+                    param_state_field_idents.push(field_name.clone());
                     param_state_field_tys.push(syn::Type::clone(param_ty));
                 }
+
+                quote!(&mut self.#field_name)
             }
             ArgType::Global { thread_local } => {
+                if thread_local && !system_thread_local {
+                    return Err(Error::new_spanned(
+                        param,
+                        "Thread-local global states can only be used in systems marked as \
+                         `#[dynec(thread_local)]`.",
+                    ));
+                }
+
                 let new_sync = match thread_local {
                     true => quote!(new_unsync),
                     false => quote!(new_sync),
@@ -368,30 +382,65 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 global_requests.push(quote! {
                     #crate_name::system::spec::GlobalRequest::#new_sync::<#param_ty>(#mutable)
                 });
+
+                match (thread_local, mutable) {
+                    (false, true) => quote!(&mut *sync_globals.write::<#param_ty>()),
+                    (false, false) => quote!(&*sync_globals.read::<#param_ty>()),
+                    (true, _) => quote!(unsync_globals.get::<#param_ty>()),
+                }
             }
             ArgType::Simple { mutable, arch, comp } => {
                 simple_requests.push(quote! {
                     #crate_name::system::spec::SimpleRequest::new::<#arch, #comp>(#mutable)
                 });
+
+                match mutable {
+                    true => quote!(components.write_simple_storage::<#arch, #comp>()),
+                    false => quote!(components.read_simple_storage::<#arch, #comp>()),
+                }
             }
             ArgType::Isotope { mutable, arch, comp, discrim } => {
-                let discrim = match discrim {
-                    Some(discrim) => quote!(Some({
+                let discrim_vec = discrim.as_ref().map(|discrim| {
+                    quote!({
                         let __iter = ::std::iter::IntoIterator::into_iter(#discrim);
                         let __iter = ::std::iter::Iterator::map(__iter, |d| {
                             let _: &(<#comp as #crate_name::comp::Isotope<#arch>>::Discrim) = &d; // type check
                             #crate_name::comp::Discrim::to_usize(d)
                         });
                         ::std::iter::Iterator::collect::<::std::vec::Vec<_>>(__iter)
-                    })),
+                    })
+                });
+
+                let discrim_vec_option = match &discrim {
+                    Some(_) => quote!(Some(#discrim_vec)),
+                    None => quote!(None),
+                };
+                isotope_requests.push(quote! {
+                    #crate_name::system::spec::IsotopeRequest::new::<#arch, #comp>(#discrim_vec_option, #mutable)
+                });
+
+                let discrim_field_option = match &discrim {
+                    Some(_) => {
+                        let discrim_ident =
+                            quote::format_ident!("__dynec_isotope_discrim_{}", param_index);
+                        isotope_discrim_idents.push(discrim_ident.clone());
+                        isotope_discrim_values.push(discrim_vec);
+                        quote!(Some(&self.#discrim_ident))
+                    }
                     None => quote!(None),
                 };
 
-                isotope_requests.push(quote! {
-                    #crate_name::system::spec::IsotopeRequest::new::<#arch, #comp>(#discrim, #mutable)
-                });
+                match mutable {
+                    true => {
+                        quote!(components.write_isotope_storage::<#arch, #comp>(#discrim_field_option))
+                    }
+                    false => {
+                        quote!(components.read_isotope_storage::<#arch, #comp>(#discrim_field_option))
+                    }
+                }
             }
-        }
+        };
+        system_run_args.push(run_arg);
     }
 
     let fn_body = &*input.block;
@@ -402,6 +451,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
         let (#(#local_state_field_pats,)*) = {
             let &Self {
                 #(ref #local_state_field_idents,)*
+                #(#isotope_discrim_idents: _,)*
             } = self;
             (#(#local_state_field_idents,)*)
         };
@@ -440,6 +490,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                     __dynec_local_state {
                         #(#param_state_field_idents,)*
                         #(#initial_state_field_idents: #initial_state_field_defaults,)*
+                        #(#isotope_discrim_idents: #isotope_discrim_values,)*
                     }
                 }
             }
@@ -447,6 +498,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             #[allow(non_camel_case_types)]
             struct __dynec_local_state {
                 #(#local_state_field_idents: #local_state_field_tys,)*
+                #(#isotope_discrim_idents: Vec<usize>,)*
             }
 
             fn __dynec_original(#(#input_args),*) {
@@ -485,7 +537,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 }
 
                 fn run(&mut self, #system_run_params) {
-                    todo!()
+                    __dynec_original(#(#system_run_args),*)
                 }
             }
         };

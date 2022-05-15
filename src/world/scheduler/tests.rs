@@ -50,9 +50,10 @@ impl system::Unsendable for UnsendSystem {
     fn run(
         &mut self,
         sync_globals: &world::SyncGlobals,
-        unsync_globals: &world::UnsyncGlobals,
+        unsync_globals: &mut world::UnsyncGlobals,
         components: &world::Components,
     ) {
+        self.1();
     }
 }
 

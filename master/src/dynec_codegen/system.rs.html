@@ -676,6 +676,14 @@
 <span id="671">671</span>
 <span id="672">672</span>
 <span id="673">673</span>
+<span id="674">674</span>
+<span id="675">675</span>
+<span id="676">676</span>
+<span id="677">677</span>
+<span id="678">678</span>
+<span id="679">679</span>
+<span id="680">680</span>
+<span id="681">681</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">proc_macro2::TokenStream</span>;
 <span class="kw">use</span> <span class="ident">quote::quote</span>;
 <span class="kw">use</span> <span class="ident">syn::parse</span>::{<span class="ident">Parse</span>, <span class="ident">ParseStream</span>};
@@ -740,6 +748,7 @@
     }
 
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">local_state_field_idents</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">local_state_field_pats</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">local_state_field_tys</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
 
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">param_state_field_idents</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
@@ -748,6 +757,7 @@
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">initial_state_field_idents</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">initial_state_field_defaults</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
 
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">input_pats</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">input_types</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
 
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">global_requests</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
@@ -762,6 +772,7 @@
             <span class="ident">syn::FnArg::Typed</span>(<span class="ident">typed</span>) =&gt; <span class="ident">typed</span>,
         };
 
+        <span class="ident">input_pats</span>.<span class="ident">push</span>(<span class="ident">syn::Pat::clone</span>(<span class="kw-2">&amp;</span><span class="ident">param</span>.<span class="ident">pat</span>));
         <span class="ident">input_types</span>.<span class="ident">push</span>(<span class="ident">syn::Type::clone</span>(<span class="kw-2">&amp;</span><span class="ident">param</span>.<span class="ident">ty</span>));
 
         <span class="kw">enum</span> <span class="ident">ArgType</span> {
@@ -925,74 +936,63 @@
         <span class="kw">let</span> <span class="ident">arg_type</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">arg_type</span> {
             <span class="ident">MaybeArgType::Some</span>(<span class="ident">arg_type</span>) =&gt; <span class="ident">arg_type</span>.<span class="ident">value</span>,
             <span class="kw">_</span> =&gt; {
+                <span class="kw">const</span> <span class="ident">USAGE_INFERENCE_ERROR</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span>
+                    <span class="string">&quot;Cannot infer parameter usage. Specify explicitly with `#[dynec(...)]`, or \
+                     use the form `impl dynec::Trait&lt;Arch, Comp&gt;` where `Trait` is one of \
+                     `ReadSimple`, `WriteSimple`, `ReadIsotope` or `WriteIsotope`.&quot;</span>;
+                <span class="kw">let</span> <span class="ident">bail_inference</span> <span class="op">=</span> <span class="op">|</span><span class="op">|</span> <span class="prelude-val">Err</span>(<span class="ident">Error::new_spanned</span>(<span class="kw-2">&amp;</span><span class="ident">param</span>, <span class="ident">USAGE_INFERENCE_ERROR</span>));
+
                 <span class="kw">let</span> <span class="ident">isotope_discrim_hint</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">arg_type</span> {
                     <span class="ident">MaybeArgType::Some</span>(<span class="kw">_</span>) =&gt; <span class="macro">unreachable!</span>(<span class="string">&quot;inside match arm&quot;</span>),
                     <span class="ident">MaybeArgType::IsotopeDiscrimHint</span>(<span class="ident">hint</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">hint</span>.<span class="ident">value</span>),
                     <span class="ident">MaybeArgType::None</span> =&gt; <span class="prelude-val">None</span>,
                 };
 
-                <span class="kw">let</span> <span class="ident">ty</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">param</span>.<span class="ident">ty</span> {
-                    <span class="ident">syn::Type::Path</span>(<span class="ident">ty</span>) =&gt; <span class="ident">ty</span>,
-                    <span class="kw">_</span> =&gt; {
-                        <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::new_spanned</span>(
-                            <span class="ident">param</span>,
-                            <span class="string">&quot;Cannot infer parameter usage. Spcify with #[dynec(...)].&quot;</span>,
-                        ))
-                    }
+                <span class="kw">let</span> <span class="ident">impl_ty</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">param</span>.<span class="ident">ty</span> {
+                    <span class="ident">syn::Type::ImplTrait</span>(<span class="ident">ty</span>) =&gt; <span class="ident">ty</span>,
+                    <span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="ident">bail_inference</span>(),
                 };
 
-                <span class="kw">let</span> <span class="ident">ty_name</span> <span class="op">=</span> <span class="ident">ty</span>.<span class="ident">path</span>.<span class="ident">segments</span>.<span class="ident">last</span>().<span class="ident">expect</span>(<span class="string">&quot;path segments should be non-empty&quot;</span>);
-                <span class="kw">let</span> <span class="ident">ty_name_string</span> <span class="op">=</span> <span class="ident">ty_name</span>.<span class="ident">ident</span>.<span class="ident">to_string</span>();
+                <span class="kw">if</span> <span class="ident">impl_ty</span>.<span class="ident">bounds</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="number">1</span> {
+                    <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::new_spanned</span>(<span class="ident">param</span>, <span class="ident">USAGE_INFERENCE_ERROR</span>));
+                }
 
-                <span class="kw">let</span> <span class="ident">isotope</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">ty_name_string</span>.<span class="ident">as_str</span>() {
-                    <span class="string">&quot;Simple&quot;</span> =&gt; <span class="bool-val">false</span>,
-                    <span class="string">&quot;Isotope&quot;</span> =&gt; <span class="bool-val">true</span>,
-                    <span class="kw">_</span> =&gt; {
-                        <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::new_spanned</span>(
-                            <span class="ident">param</span>,
-                            <span class="string">&quot;Cannot infer parameter usage. Spcify with #[dynec(...)].&quot;</span>,
-                        ))
-                    }
+                <span class="kw">let</span> <span class="ident">bound</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">impl_ty</span>.<span class="ident">bounds</span>.<span class="ident">first</span>().<span class="ident">expect</span>(<span class="string">&quot;bounds.len() == 1&quot;</span>) {
+                    <span class="ident">syn::TypeParamBound::Trait</span>(<span class="ident">bound</span>) =&gt; <span class="ident">bound</span>,
+                    <span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="ident">bail_inference</span>(),
                 };
+
+                <span class="kw">let</span> <span class="ident">trait_name</span> <span class="op">=</span> <span class="ident">bound</span>.<span class="ident">path</span>.<span class="ident">segments</span>.<span class="ident">last</span>().<span class="ident">expect</span>(<span class="string">&quot;path should not be empty&quot;</span>);
+                <span class="kw">let</span> <span class="ident">trait_name_string</span> <span class="op">=</span> <span class="ident">trait_name</span>.<span class="ident">ident</span>.<span class="ident">to_string</span>();
+
+                <span class="kw">let</span> (<span class="ident">mutable</span>, <span class="ident">isotope</span>) <span class="op">=</span> <span class="kw">match</span> <span class="ident">trait_name_string</span>.<span class="ident">as_str</span>() {
+                    <span class="string">&quot;ReadSimple&quot;</span> =&gt; (<span class="bool-val">false</span>, <span class="bool-val">false</span>),
+                    <span class="string">&quot;WriteSimple&quot;</span> =&gt; (<span class="bool-val">true</span>, <span class="bool-val">false</span>),
+                    <span class="string">&quot;ReadIsotope&quot;</span> =&gt; (<span class="bool-val">false</span>, <span class="bool-val">true</span>),
+                    <span class="string">&quot;WriteIsotope&quot;</span> =&gt; (<span class="bool-val">true</span>, <span class="bool-val">true</span>),
+                    <span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="ident">bail_inference</span>(),
+                };
+
                 <span class="kw">if</span> <span class="op">!</span><span class="ident">isotope</span> <span class="op">&amp;&amp;</span> <span class="ident">isotope_discrim_hint</span>.<span class="ident">is_some</span>() {
                     <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::new_spanned</span>(
                         <span class="ident">param</span>,
-                        <span class="string">&quot;`#[dynec(isotope)]` specified but `Simple` used in type. Possibly typo?&quot;</span>,
+                        <span class="string">&quot;`#[dynec(isotope)]` cannot be used with `impl Simple`.&quot;</span>,
                     ));
                 }
 
-                <span class="kw">let</span> <span class="ident">type_args</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">ty_name</span>.<span class="ident">arguments</span> {
+                <span class="kw">let</span> <span class="ident">type_args</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">trait_name</span>.<span class="ident">arguments</span> {
                     <span class="ident">syn::PathArguments::AngleBracketed</span>(<span class="ident">args</span>) <span class="kw">if</span> <span class="ident">args</span>.<span class="ident">args</span>.<span class="ident">len</span>() <span class="op">==</span> <span class="number">2</span> =&gt; <span class="ident">args</span>,
-                    <span class="kw">_</span> =&gt; {
-                        <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::new_spanned</span>(
-                            <span class="kw-2">&amp;</span><span class="ident">param</span>.<span class="ident">ty</span>,
-                            <span class="string">&quot;system::Simple and system::Isotope takes two type arguments&quot;</span>,
-                        ))
-                    }
+                    <span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="ident">bail_inference</span>(),
                 };
 
                 <span class="kw">let</span> <span class="ident">arch</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">type_args</span>.<span class="ident">args</span>.<span class="ident">first</span>().<span class="ident">expect</span>(<span class="string">&quot;type_args.args.len() == 2&quot;</span>) {
                     <span class="ident">syn::GenericArgument::Type</span>(<span class="ident">ty</span>) =&gt; <span class="ident">Box::new</span>(<span class="ident">ty</span>.<span class="ident">clone</span>()),
-                    <span class="kw">_</span> =&gt; {
-                        <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::new_spanned</span>(
-                            <span class="kw-2">&amp;</span><span class="ident">param</span>.<span class="ident">ty</span>,
-                            <span class="string">&quot;The first argument should be the archetype&quot;</span>,
-                        ))
-                    }
+                    <span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="ident">bail_inference</span>(),
                 };
-                <span class="kw">let</span> (<span class="ident">mutable</span>, <span class="ident">comp</span>) <span class="op">=</span>
-                    <span class="kw">match</span> <span class="ident">type_args</span>.<span class="ident">args</span>.<span class="ident">last</span>().<span class="ident">expect</span>(<span class="string">&quot;type_args.args.len() == 2&quot;</span>) {
-                        <span class="ident">syn::GenericArgument::Type</span>(<span class="ident">syn::Type::Reference</span>(<span class="ident">ty</span>)) =&gt; {
-                            (<span class="ident">ty</span>.<span class="ident">mutability</span>.<span class="ident">is_some</span>(), <span class="ident">ty</span>.<span class="ident">elem</span>.<span class="ident">clone</span>())
-                        }
-                        <span class="kw">_</span> =&gt; {
-                            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::new_spanned</span>(
-                                <span class="kw-2">&amp;</span><span class="ident">param</span>.<span class="ident">ty</span>,
-                                <span class="string">&quot;The second argument of system::Simple and system::Isotope should \
-                                 be a reference to the component type&quot;</span>,
-                            ))
-                        }
-                    };
+                <span class="kw">let</span> <span class="ident">comp</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">type_args</span>.<span class="ident">args</span>.<span class="ident">last</span>().<span class="ident">expect</span>(<span class="string">&quot;type_args.args.len() == 2&quot;</span>) {
+                    <span class="ident">syn::GenericArgument::Type</span>(<span class="ident">ty</span>) =&gt; <span class="ident">Box::new</span>(<span class="ident">ty</span>.<span class="ident">clone</span>()),
+                    <span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="ident">bail_inference</span>(),
+                };
 
                 <span class="kw">if</span> <span class="ident">isotope</span> {
                     <span class="ident">ArgType::Isotope</span> { <span class="ident">mutable</span>, <span class="ident">arch</span>, <span class="ident">comp</span>, <span class="ident">discrim</span>: <span class="ident">isotope_discrim_hint</span> }
@@ -1006,6 +1006,10 @@
             <span class="ident">ArgType::Local</span> { <span class="ident">default</span> } =&gt; {
                 <span class="kw">let</span> <span class="ident">field_name</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">param</span>.<span class="ident">pat</span> {
                     <span class="ident">syn::Pat::Ident</span>(<span class="ident">ident</span>) =&gt; <span class="ident">ident</span>.<span class="ident">ident</span>.<span class="ident">clone</span>(),
+                    <span class="ident">syn::Pat::Reference</span>(<span class="ident">pat</span>) =&gt; <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">pat</span>.<span class="ident">pat</span> {
+                        <span class="ident">syn::Pat::Ident</span>(<span class="ident">ident</span>) =&gt; <span class="ident">ident</span>.<span class="ident">ident</span>.<span class="ident">clone</span>(),
+                        <span class="kw">_</span> =&gt; <span class="macro">quote::format_ident!</span>(<span class="string">&quot;__dynec_arg_{}&quot;</span>, <span class="ident">param_index</span>),
+                    },
                     <span class="kw">_</span> =&gt; <span class="macro">quote::format_ident!</span>(<span class="string">&quot;__dynec_arg_{}&quot;</span>, <span class="ident">param_index</span>),
                 };
 
@@ -1020,6 +1024,7 @@
                 };
 
                 <span class="ident">local_state_field_idents</span>.<span class="ident">push</span>(<span class="ident">field_name</span>.<span class="ident">clone</span>());
+                <span class="ident">local_state_field_pats</span>.<span class="ident">push</span>(<span class="ident">param</span>.<span class="ident">pat</span>.<span class="ident">clone</span>());
                 <span class="ident">local_state_field_tys</span>.<span class="ident">push</span>(<span class="ident">syn::Type::clone</span>(<span class="ident">param_ty</span>));
 
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">default</span>) <span class="op">=</span> <span class="ident">default</span> {
@@ -1080,9 +1085,12 @@
     <span class="kw">let</span> <span class="ident">input_args</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">sig</span>.<span class="ident">inputs</span>.<span class="ident">iter</span>().<span class="ident">collect</span>();
 
     <span class="kw">let</span> <span class="ident">destructure_local_states</span> <span class="op">=</span> <span class="macro">quote!</span> {
-        <span class="kw">let</span> <span class="kw-2">&amp;</span><span class="self">Self</span> {
-            #(<span class="kw-2">ref</span> #<span class="ident">local_state_field_idents</span>,)<span class="op">*</span>
-        } <span class="op">=</span> <span class="self">self</span>;
+        <span class="kw">let</span> (#(#<span class="ident">local_state_field_pats</span>,)<span class="kw-2">*</span>) <span class="op">=</span> {
+            <span class="kw">let</span> <span class="kw-2">&amp;</span><span class="self">Self</span> {
+                #(<span class="kw-2">ref</span> #<span class="ident">local_state_field_idents</span>,)<span class="op">*</span>
+            } <span class="op">=</span> <span class="self">self</span>;
+            (#(#<span class="ident">local_state_field_idents</span>,)<span class="kw-2">*</span>)
+        };
     };
 
     <span class="kw">let</span> (<span class="ident">system_trait</span>, <span class="ident">system_run_params</span>) <span class="op">=</span> <span class="kw">match</span> <span class="ident">system_thread_local</span> {
@@ -1131,13 +1139,21 @@
                 #<span class="ident">fn_body</span>
             }
 
-            <span class="kw">impl</span> <span class="ident">::std::ops::Deref</span> <span class="kw">for</span> #<span class="ident">ident</span> {
-                <span class="kw">type</span> <span class="ident">Target</span> <span class="op">=</span> <span class="kw">fn</span>(#(#<span class="ident">input_types</span>),<span class="kw-2">*</span>);
-
-                <span class="kw">fn</span> <span class="ident">deref</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident"><span class="self">Self</span>::Target</span> {
-                    <span class="kw-2">&amp;</span>(<span class="ident">__dynec_original</span> <span class="kw">as</span> <span class="kw">fn</span>(#(#<span class="ident">input_types</span>),<span class="kw-2">*</span>))
+            <span class="kw">impl</span> #<span class="ident">ident</span> {
+                #<span class="ident">vis</span> <span class="kw">fn</span> <span class="ident">call</span>(#(#<span class="ident">input_args</span>),<span class="kw-2">*</span>) {
+                    <span class="ident">__dynec_original</span>(#(#<span class="ident">input_pats</span>),<span class="kw-2">*</span>)
                 }
             }
+            <span class="comment">/*
+            // TODO: can we figure out another way to let user call the original function directly?
+            impl ::std::ops::Deref for #ident {
+                type Target = fn(#(#input_types),*);
+
+                fn deref(&amp;self) -&gt; &amp;Self::Target {
+                    &amp;(__dynec_original as fn(#(#input_types),*))
+                }
+            }
+            */</span>
 
             <span class="kw">impl</span> #<span class="ident">crate_name::system</span>::#<span class="ident">system_trait</span> <span class="kw">for</span> <span class="ident">__dynec_local_state</span> {
                 <span class="kw">fn</span> <span class="ident">get_spec</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; #<span class="ident">crate_name::system::Spec</span> {
@@ -1350,5 +1366,5 @@
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec_codegen" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (a5ad0d29a 2022-05-12)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec_codegen" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (70b3681bf 2022-05-14)" ></div>
 </body></html>

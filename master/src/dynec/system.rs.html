@@ -138,11 +138,6 @@
 <span id="133">133</span>
 <span id="134">134</span>
 <span id="135">135</span>
-<span id="136">136</span>
-<span id="137">137</span>
-<span id="138">138</span>
-<span id="139">139</span>
-<span id="140">140</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Systems are actions performed every frame to manipulate entities and components.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! A system can declare mutable or immutable access</span>
@@ -155,26 +150,21 @@
 
 <span class="kw">use</span> <span class="ident">std::any::TypeId</span>;
 <span class="kw">use</span> <span class="ident">std::collections::hash_map::DefaultHasher</span>;
-<span class="kw">use</span> <span class="ident">std::marker::PhantomData</span>;
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">fmt</span>, <span class="ident">hash</span>};
 
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">comp</span>, <span class="ident">util</span>, <span class="ident">world</span>, <span class="ident">Archetype</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">comp</span>, <span class="ident">world</span>, <span class="ident">Archetype</span>};
 
 <span class="doccomment">/// Provides access to a simple component in a specific archetype.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Simple</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span>, <span class="ident">R</span>: <span class="ident">util::Ref</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-    <span class="ident">R::Target</span>: <span class="ident">comp::Simple</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>,
-{
-    <span class="ident">_ph</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span>(<span class="ident">A</span>, <span class="ident">R</span>)<span class="op">&gt;</span>,
-}
+<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">ReadSimple</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span>, <span class="ident">C</span>: <span class="ident">comp::Simple</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span><span class="op">&gt;</span> {}
+
+<span class="doccomment">/// Provides access to a simple component in a specific archetype.</span>
+<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">WriteSimple</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span>, <span class="ident">C</span>: <span class="ident">comp::Simple</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span><span class="op">&gt;</span> {}
 
 <span class="doccomment">/// Provides access to an isotope component in a specific archetype.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Isotope</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span>, <span class="ident">R</span>: <span class="ident">util::Ref</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-    <span class="ident">R::Target</span>: <span class="ident">comp::Isotope</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>,
-{
-    <span class="ident">_ph</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span>(<span class="ident">A</span>, <span class="ident">R</span>)<span class="op">&gt;</span>,
-}
+<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">ReadIsotope</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span>, <span class="ident">C</span>: <span class="ident">comp::Isotope</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span><span class="op">&gt;</span> {}
+
+<span class="doccomment">/// Provides access to an isotope component in a specific archetype.</span>
+<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">WriteIsotope</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span>, <span class="ident">C</span>: <span class="ident">comp::Isotope</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span><span class="op">&gt;</span> {}
 
 <span class="doccomment">/// A partition is a hashable type constructed by system specifications</span>
 <span class="doccomment">/// used to constrain system execution order.</span>
@@ -284,5 +274,5 @@
 <span class="attribute">#[<span class="ident">doc</span>(<span class="ident">inline</span>)]</span>
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">spec::Spec</span>;
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (a5ad0d29a 2022-05-12)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (70b3681bf 2022-05-14)" ></div>
 </body></html>

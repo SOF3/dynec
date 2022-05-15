@@ -231,6 +231,9 @@
 <span id="226">226</span>
 <span id="227">227</span>
 <span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Exposes testing, profiling and tracing capabilities.</span>
 
 <span class="kw">use</span> <span class="ident">std::fmt</span>;
@@ -454,11 +457,14 @@
     <span class="kw">pub</span> <span class="ident">log::Level</span>,
 );
 
+<span class="doccomment">/// The thread ID for a system executor.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">PartialOrd</span>, <span class="ident">Ord</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Thread</span> {
+    <span class="doccomment">/// The main thread, typically used for executing thread-unsafe systems.</span>
     <span class="ident">Main</span>,
+    <span class="doccomment">/// A worker thread. The index is in the range `0..concurrency`.</span>
     <span class="ident">Worker</span>(<span class="ident">usize</span>),
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (a5ad0d29a 2022-05-12)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (70b3681bf 2022-05-14)" ></div>
 </body></html>

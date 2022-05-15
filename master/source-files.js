@@ -1,4 +1,4 @@
-var N = null;var sourcesIndex = {};
+var sourcesIndex = {};
 sourcesIndex["bitvec"] = {"name":"","dirs":[{"name":"array","files":["api.rs","iter.rs","ops.rs","traits.rs"]},{"name":"boxed","files":["api.rs","iter.rs","ops.rs","traits.rs"]},{"name":"field","files":["io.rs"]},{"name":"macros","files":["internal.rs"]},{"name":"ptr","files":["addr.rs","proxy.rs","range.rs","single.rs","span.rs"]},{"name":"slice","dirs":[{"name":"specialization","files":["lsb0.rs","msb0.rs"]}],"files":["api.rs","iter.rs","ops.rs","specialization.rs","traits.rs"]},{"name":"vec","files":["api.rs","iter.rs","ops.rs","traits.rs"]}],"files":["access.rs","array.rs","boxed.rs","devel.rs","domain.rs","field.rs","index.rs","lib.rs","macros.rs","mem.rs","order.rs","ptr.rs","slice.rs","store.rs","vec.rs","view.rs"]};
 sourcesIndex["cfg_if"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["crossbeam"] = {"name":"","files":["lib.rs"]};

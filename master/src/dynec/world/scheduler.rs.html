@@ -194,6 +194,9 @@
 <span id="189">189</span>
 <span id="190">190</span>
 <span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::fmt</span>;
 <span class="kw">use</span> <span class="ident">std::num::NonZeroUsize</span>;
 
@@ -274,20 +277,23 @@
 <span class="doccomment">/// Identifies a topological node in the schedule of a cycle.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">PartialOrd</span>, <span class="ident">Ord</span>, <span class="ident">Hash</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Node</span> {
+    <span class="doccomment">/// The execution span of a thread-safe system.</span>
     <span class="ident">SendSystem</span>(<span class="ident">SendSystemIndex</span>),
+    <span class="doccomment">/// The execution span of a thread-unsafe system.</span>
     <span class="ident">UnsendSystem</span>(<span class="ident">UnsendSystemIndex</span>),
+    <span class="doccomment">/// The instant between systems before and after a partition.</span>
     <span class="ident">Partition</span>(<span class="ident">PartitionIndex</span>),
 }
 
-<span class="doccomment">/// Uniquely identifies a [`system::Sendable`].</span>
+<span class="doccomment">/// Uniquely identifies a [`system::Sendable`](crate::system::Sendable).</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">PartialOrd</span>, <span class="ident">Ord</span>, <span class="ident">Hash</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SendSystemIndex</span>(<span class="ident">usize</span>);
 
-<span class="doccomment">/// Uniquely identifies a [`system::Unsendable`].</span>
+<span class="doccomment">/// Uniquely identifies a [`system::Unsendable`](crate::system::Unsendable).</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">PartialOrd</span>, <span class="ident">Ord</span>, <span class="ident">Hash</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">UnsendSystemIndex</span>(<span class="ident">usize</span>);
 
-<span class="doccomment">/// Uniquely identifies a [`system::Partition`].</span>
+<span class="doccomment">/// Uniquely identifies a [`system::Partition`](crate::system::Partition).</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">PartialOrd</span>, <span class="ident">Ord</span>, <span class="ident">Hash</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">PartitionIndex</span>(<span class="ident">usize</span>);
 
@@ -386,5 +392,5 @@
     <span class="ident">globals</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;t</span> <span class="kw-2">mut</span> <span class="ident">world::UnsyncGlobals</span>,
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (a5ad0d29a 2022-05-12)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (70b3681bf 2022-05-14)" ></div>
 </body></html>

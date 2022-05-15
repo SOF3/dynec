@@ -82,6 +82,14 @@ jobs:
             /home/runner/.cargo
             **/target
           key: ${{ matrix.toolchain }}-${{ hashFiles('**/Cargo.lock') }}
+        if: ${{ matrix.profile != '' || matrix.toolchain != 'nightly' }}
+      - uses: actions/cache@v2
+        with:
+          path: |
+            /home/runner/.cargo
+            **/target
+          key: ${{ matrix.toolchain }}-${{ hashFiles('**/Cargo.lock') }}-cov
+        if: ${{ matrix.profile == '' && matrix.toolchain == 'nightly' }}
       - name: cargo test
         if: ${{ matrix.profile != '' || matrix.toolchain != 'nightly' }}
         run: "cargo test --all ${{matrix.profile}}"

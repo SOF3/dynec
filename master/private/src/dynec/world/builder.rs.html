@@ -204,12 +204,10 @@
 <span id="199">199</span>
 <span id="200">200</span>
 <span id="201">201</span>
-<span id="202">202</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::any::Any</span>;
-<span class="kw">use</span> <span class="ident">std::cell::RefCell</span>;
 <span class="kw">use</span> <span class="ident">std::collections::HashMap</span>;
 
-<span class="kw">use</span> <span class="ident">parking_lot::Mutex</span>;
+<span class="kw">use</span> <span class="ident">parking_lot::RwLock</span>;
 
 <span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">scheduler</span>, <span class="ident">typed</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::system::spec</span>;
@@ -368,7 +366,7 @@
             .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">ty</span>, <span class="ident">da</span>)<span class="op">|</span> {
                 (
                     <span class="ident">ty</span>,
-                    <span class="ident">Mutex::new</span>(<span class="kw">match</span> <span class="ident">da</span> {
+                    <span class="ident">RwLock::new</span>(<span class="kw">match</span> <span class="ident">da</span> {
                         <span class="ident">GlobalBuilder::Provided</span>(<span class="ident">value</span>) =&gt; <span class="ident">value</span>,
                         <span class="ident">GlobalBuilder::Missing</span>(<span class="ident">default</span>) =&gt; <span class="ident">default</span>(),
                     }),
@@ -383,10 +381,10 @@
             .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">ty</span>, <span class="ident">da</span>)<span class="op">|</span> {
                 (
                     <span class="ident">ty</span>,
-                    <span class="ident">RefCell::new</span>(<span class="kw">match</span> <span class="ident">da</span> {
+                    <span class="kw">match</span> <span class="ident">da</span> {
                         <span class="ident">GlobalBuilder::Provided</span>(<span class="ident">value</span>) =&gt; <span class="ident">value</span>,
                         <span class="ident">GlobalBuilder::Missing</span>(<span class="ident">default</span>) =&gt; <span class="ident">default</span>(),
-                    }),
+                    },
                 )
             })
             .<span class="ident">collect</span>();

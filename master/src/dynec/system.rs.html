@@ -265,7 +265,7 @@
     <span class="kw">fn</span> <span class="ident">run</span>(
         <span class="kw-2">&amp;mut</span> <span class="self">self</span>,
         <span class="ident">sync_globals</span>: <span class="kw-2">&amp;</span><span class="ident">world::SyncGlobals</span>,
-        <span class="ident">unsync_globals</span>: <span class="kw-2">&amp;</span><span class="ident">world::UnsyncGlobals</span>,
+        <span class="ident">unsync_globals</span>: <span class="kw-2">&amp;mut</span> <span class="ident">world::UnsyncGlobals</span>,
         <span class="ident">components</span>: <span class="kw-2">&amp;</span><span class="ident">world::Components</span>,
     );
 }

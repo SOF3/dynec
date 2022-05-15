@@ -230,6 +230,10 @@
 <span id="225">225</span>
 <span id="226">226</span>
 <span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">proc_macro2::TokenStream</span>;
 <span class="kw">use</span> <span class="ident">quote::quote</span>;
 <span class="kw">use</span> <span class="ident">syn::parse</span>::{<span class="ident">Parse</span>, <span class="ident">ParseStream</span>};
@@ -337,6 +341,10 @@
                     <span class="kw">const</span> <span class="ident">IS_FINALIZER</span>: <span class="ident">bool</span> <span class="op">=</span> #<span class="ident">finalizer</span>;
                 },
             ));
+
+            <span class="kw">let</span> <span class="ident">must_impl</span> <span class="op">=</span>
+                <span class="ident">generics</span>.<span class="ident">impl_trait</span>(<span class="macro">quote!</span>(#<span class="ident">crate_name::comp::Must</span><span class="op">&lt;</span>#<span class="ident">archetype</span><span class="op">&gt;</span>), <span class="macro">quote!</span> {});
+            <span class="ident">output</span>.<span class="ident">extend</span>(<span class="macro">quote!</span>(<span class="kw">unsafe</span> #<span class="ident">must_impl</span>));
         }
     }
 

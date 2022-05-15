@@ -8,17 +8,71 @@
 //! Systems that use thread-unsafe resources (systems that are not [`Send`])
 //! are always executed on the main thread.
 
-use std::any::TypeId;
+use std::any::{self, TypeId};
 use std::collections::hash_map::DefaultHasher;
 use std::{fmt, hash};
 
-use crate::{comp, world, Archetype};
+use crate::{comp, entity, world, Archetype};
 
 /// Provides access to a simple component in a specific archetype.
-pub trait ReadSimple<A: Archetype, C: comp::Simple<A>> {}
+pub trait ReadSimple<A: Archetype, C: comp::Simple<A>> {
+    /// Returns an immutable reference to the component for the specified entity,
+    /// or `None` if the component is not present in the entity.
+    fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Option<&C>;
+
+    /// Returns an immutable reference to the component for the specified entity.
+    ///
+    /// This method is infallible, assuming [`comp::Must`] is only implemented
+    /// for components with [`comp::SimplePresence::Required`] presence.
+    fn get<E: entity::Ref<Archetype = A>>(&self, entity: E) -> &C
+    where
+        C: comp::Must<A>,
+    {
+        match self.try_get(entity) {
+            Some(comp) => comp,
+            None => panic!(
+                "Component {}/{} implements comp::Must but is not present",
+                any::type_name::<A>(),
+                any::type_name::<C>()
+            ),
+        }
+    }
+}
 
 /// Provides access to a simple component in a specific archetype.
-pub trait WriteSimple<A: Archetype, C: comp::Simple<A>> {}
+pub trait WriteSimple<A: Archetype, C: comp::Simple<A>>: ReadSimple<A, C> {
+    /// Returns a mutable reference to the component for the specified entity,
+    /// or `None` if the component is not present in the entity.
+    ///
+    /// Note that this method returns `Option<&mut C>`, not `&mut Option<C>`.
+    /// This means setting the Option itself to `Some`/`None` will not modify any stored value.
+    /// Use [`WriteSimple::set`] to add/remove a component.
+    fn try_get_mut<E: entity::Ref<Archetype = A>>(&mut self, entity: E) -> Option<&mut C>;
+
+    /// Returns an immutable reference to the component for the specified entity.
+    ///
+    /// This method is infallible, assuming [`comp::Must`] is only implemented
+    /// for components with [`comp::SimplePresence::Required`] presence.
+    fn get_mut<E: entity::Ref<Archetype = A>>(&mut self, entity: E) -> &mut C
+    where
+        C: comp::Must<A>,
+    {
+        match self.try_get_mut(entity) {
+            Some(comp) => comp,
+            None => panic!(
+                "Component {}/{} implements comp::Must but is not present",
+                any::type_name::<A>(),
+                any::type_name::<C>()
+            ),
+        }
+    }
+
+    /// Overwrites the component for the specified entity.
+    ///
+    /// Passing `None` to this method removes the component from the entity.
+    /// This leads to a panic for components with [`comp::SimplePresence::Required`] presence.
+    fn set<E: entity::Ref<Archetype = A>>(&mut self, entity: E, value: Option<C>) -> Option<C>;
+}
 
 /// Provides access to an isotope component in a specific archetype.
 pub trait ReadIsotope<A: Archetype, C: comp::Isotope<A>> {}

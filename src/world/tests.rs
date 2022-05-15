@@ -1,4 +1,5 @@
-use crate::{comp, system, system_test, Archetype};
+use super::tracer;
+use crate::{comp, global, system, system_test, Archetype};
 
 enum TestArch {}
 impl Archetype for TestArch {}
@@ -30,12 +31,23 @@ struct Comp5(i32);
 #[comp(dynec_as(crate), of = TestArch, required, init = || Comp6(9))]
 struct Comp6(i32);
 
+#[global(dynec_as(crate), initial)]
+#[derive(Default)]
+struct Aggregator {
+    comp30_sum:     i32,
+    comp41_product: i32,
+}
+
 #[system(dynec_as(crate))]
 fn system_with_comp3_comp4_comp5(
-    _comp3: impl system::ReadSimple<TestArch, Comp3>,
-    _comp4: impl system::WriteSimple<TestArch, Comp4>,
-    _comp5: impl system::ReadSimple<TestArch, Comp5>,
+    comp3: impl system::ReadSimple<TestArch, Comp3>,
+    comp4: impl system::WriteSimple<TestArch, Comp4>,
+    comp5: impl system::ReadSimple<TestArch, Comp5>,
+    comp6: impl system::ReadSimple<TestArch, Comp6>,
+    #[dynec(global)] aggregator: &mut Aggregator,
 ) {
+    aggregator.comp30_sum = 1;
+    // TODO test iterators
 }
 
 #[test]
@@ -77,6 +89,8 @@ fn test_dependencies_missing_required_dep() {
 
 #[test]
 fn test_world_run() {
-    let world = system_test!(system_with_comp3_comp4_comp5.build(););
-    // world.execute(&tracer::Log(log::Level::Trace));
+    let mut world = system_test!(system_with_comp3_comp4_comp5.build(););
+    world.execute(&tracer::Log(log::Level::Trace));
+    let aggregator = world.get_global::<Aggregator>();
+    assert_eq!(aggregator.comp30_sum, 1);
 }

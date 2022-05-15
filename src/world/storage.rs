@@ -43,6 +43,13 @@ impl<A: Archetype, C: comp::Simple<A>> Storage<A, C> {
     pub(crate) fn get(&self, id: entity::Raw) -> Option<&C> { self.inner.get(id) }
 
     pub(crate) fn get_mut(&mut self, id: entity::Raw) -> Option<&mut C> { self.inner.get_mut(id) }
+
+    pub(crate) fn set(&mut self, id: entity::Raw, value: Option<C>) -> Option<C> {
+        match value {
+            Some(value) => self.inner.insert(id, value),
+            None => self.inner.remove(id),
+        }
+    }
 }
 
 impl<A: Archetype, C: comp::Simple<A>> AnySimpleStorage<A> for Storage<A, C> {

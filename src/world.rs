@@ -4,7 +4,7 @@ use std::any::{self, TypeId};
 use std::sync::Arc;
 
 use crate::util::DbgTypeId;
-use crate::{comp, entity, Archetype, Entity};
+use crate::{comp, entity, Archetype, Entity, Global};
 
 mod builder;
 pub use builder::Builder;
@@ -153,6 +153,28 @@ impl World {
         let storage =
             storage.as_any_mut().downcast_mut::<storage::Storage<A, C>>().expect("TypeId mismatch");
         storage.get_mut(entity.id().0)
+    }
+
+    pub fn get_global<G: Global + Send + Sync>(&mut self) -> &mut G {
+        let global = match self.sync_globals.sync_globals.get_mut(&TypeId::of::<G>()) {
+            Some(global) => global,
+            None => panic!(
+                "The global state {} cannot be retrieved becaues it is not used in any systems",
+                any::type_name::<G>()
+            ),
+        };
+        global.get_mut().downcast_mut::<G>().expect("TypeId mismatch")
+    }
+
+    pub fn get_global_unsync<G: Global>(&mut self) -> &mut G {
+        let global = match self.unsync_globals.unsync_globals.get_mut(&TypeId::of::<G>()) {
+            Some(global) => global,
+            None => panic!(
+                "The global state {} cannot be retrieved becaues it is not used in any systems",
+                any::type_name::<G>()
+            ),
+        };
+        global.downcast_mut::<G>().expect("TypeId mismatch")
     }
 }
 

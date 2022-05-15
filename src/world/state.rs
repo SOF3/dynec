@@ -8,7 +8,7 @@ use parking_lot::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 use super::storage::Storage;
 use super::typed;
 use crate::util::DbgTypeId;
-use crate::{comp, system, Archetype, Global};
+use crate::{comp, entity, system, Archetype, Global};
 
 /// Stores the component states in a world.
 pub struct Components {
@@ -70,14 +70,19 @@ impl Components {
             storage.as_any().downcast_ref::<Storage<A, C>>().expect("TypeId mismatch")
         });
 
-        struct Ret<A: Archetype, C: comp::Simple<A>, S: ops::Deref<Target = Storage<A, C>>>(S);
+        struct Ret<A: Archetype, C: comp::Simple<A>, S: ops::Deref<Target = Storage<A, C>>> {
+            storage: S,
+        }
 
         impl<A: Archetype, C: comp::Simple<A>, S: ops::Deref<Target = Storage<A, C>>>
             system::ReadSimple<A, C> for Ret<A, C, S>
         {
+            fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Option<&C> {
+                self.storage.get(entity.id().0)
+            }
         }
 
-        Ret(guard)
+        Ret { storage: guard }
     }
 
     /// Creates a writable, exclusive accessor to the given archetyped simple component.
@@ -108,18 +113,44 @@ impl Components {
             storage.as_any_mut().downcast_mut::<Storage<A, C>>().expect("TypeId mismatch")
         });
 
-        struct Ret<A: Archetype, C: comp::Simple<A>, S: ops::Deref<Target = Storage<A, C>>>(S);
-
-        impl<A: Archetype, C: comp::Simple<A>, S: ops::Deref<Target = Storage<A, C>>>
-            system::ReadSimple<A, C> for Ret<A, C, S>
-        {
-        }
-        impl<A: Archetype, C: comp::Simple<A>, S: ops::Deref<Target = Storage<A, C>>>
-            system::WriteSimple<A, C> for Ret<A, C, S>
-        {
+        struct Ret<
+            A: Archetype,
+            C: comp::Simple<A>,
+            S: ops::Deref<Target = Storage<A, C>> + ops::DerefMut,
+        > {
+            storage: S,
         }
 
-        Ret(guard)
+        impl<
+                A: Archetype,
+                C: comp::Simple<A>,
+                S: ops::Deref<Target = Storage<A, C>> + ops::DerefMut,
+            > system::ReadSimple<A, C> for Ret<A, C, S>
+        {
+            fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Option<&C> {
+                self.storage.get(entity.id().0)
+            }
+        }
+        impl<
+                A: Archetype,
+                C: comp::Simple<A>,
+                S: ops::Deref<Target = Storage<A, C>> + ops::DerefMut,
+            > system::WriteSimple<A, C> for Ret<A, C, S>
+        {
+            fn try_get_mut<E: entity::Ref<Archetype = A>>(&mut self, entity: E) -> Option<&mut C> {
+                self.storage.get_mut(entity.id().0)
+            }
+
+            fn set<E: entity::Ref<Archetype = A>>(
+                &mut self,
+                entity: E,
+                value: Option<C>,
+            ) -> Option<C> {
+                self.storage.set(entity.id().0, value)
+            }
+        }
+
+        Ret { storage: guard }
     }
 
     /// Creates a read-only, shared accessor to the given archetyped isotope component.

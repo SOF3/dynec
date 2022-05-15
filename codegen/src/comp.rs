@@ -105,6 +105,10 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                     const IS_FINALIZER: bool = #finalizer;
                 },
             ));
+
+            let must_impl =
+                generics.impl_trait(quote!(#crate_name::comp::Must<#archetype>), quote! {});
+            output.extend(quote!(unsafe #must_impl));
         }
     }
 

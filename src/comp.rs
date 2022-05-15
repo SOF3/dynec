@@ -45,9 +45,7 @@
 //!
 //! Isotope components are never instantiated on entity creation.
 
-use std::marker::PhantomData;
-
-use crate::{entity, util, Archetype};
+use crate::{entity, Archetype};
 
 /// A simple component has only one instance per entity.
 ///
@@ -156,83 +154,10 @@ impl Discrim for usize {
 ///
 /// Implementing this trait incorrectly currently only causes a panic
 /// and does not result in UB, but it may cause UB in the future.
-pub unsafe trait Must {}
-
-/// A special type that implements [`Retrievable`] like simple components,
-/// but exposes a map-like interface to access isotope components,
-/// as if isotopes were implemented as `BTreeMap<C::Discrim, C>`.
-pub struct IsotopeMap<A: Archetype, R: util::Ref> {
-    // TODO
-    _ph: PhantomData<(A, R)>,
-}
-
-impl<A: Archetype, R: util::Ref> IsotopeMap<A, R>
-where
-    R::Target: Isotope<A>,
-{
-    /// Retrieve the isotope of the specified discriminant.
-    ///
-    /// # Return values
-    /// If the isotope is present in the storage,
-    /// returns `Some` referencing the storage value.
-    ///
-    /// For [`IsotopeInitStrategy::Default`],
-    /// if the isotope is not yet present in the storage,
-    /// returns `Some` referencing a temporary value
-    /// created from the default constructor.
-    /// This value is dropped after the system is called.
-    ///
-    /// For [`IsotopeInitStrategy::None`],
-    /// returns `None` if the isotope is not present in the entity.
-    ///
-    /// # Panics
-    /// Panics if the discriminant is restricted in the system spec.
-    pub fn try_get(
-        &self,
-        entity: &impl entity::Ref<Archetype = A>,
-        discrim: <R::Target as Isotope<A>>::Discrim,
-    ) -> Option<&<R::Target as Isotope<A>>::Discrim> {
-        todo!()
-    }
-}
-
-impl<'t, A: Archetype, C: Isotope<A>> IsotopeMap<A, &'t mut C> {
-    /// Retrieves a mutable reference to the isotope of the specified discriminant.
-    ///
-    /// # Return values
-    /// If the isotope is present in the storage,
-    /// returns `Some` referencing the storage value.
-    ///
-    /// For [`IsotopeInitStrategy::Default`],
-    /// if the isotope is not yet present in the storage,
-    /// the storage is populated with a new call to the default constructor,
-    /// then `Some` is returned referencing the storage value.
-    ///
-    /// For [`IsotopeInitStrategy::None`],
-    /// returns `None` if the isotope is not present in the entity.
-    pub fn try_get_mut(&mut self, discrim: C::Discrim) -> Option<&mut C> { todo!() }
-}
-
-/// A trait implemented for [`Simple`] references an [`IsotopeMap`].
-/// This trait is only used for early constraint checking in types that accept both types,
-/// and is not really useful by itself.
-pub trait Retrievable<A: Archetype>: sealed::Sealed<A> {}
-
-mod sealed {
-    pub trait Sealed<A> {}
-}
-
-impl<'t, A: Archetype, C: Simple<A>> sealed::Sealed<A> for &'t C {}
-impl<'t, A: Archetype, C: Simple<A>> Retrievable<A> for &'t C {}
-
-impl<'t, A: Archetype, C: Simple<A>> sealed::Sealed<A> for &'t mut C {}
-impl<'t, A: Archetype, C: Simple<A>> Retrievable<A> for &'t mut C {}
-
-impl<'t, A: Archetype, C: Isotope<A>> sealed::Sealed<A> for IsotopeMap<A, &'t C> {}
-impl<'t, A: Archetype, C: Isotope<A>> Retrievable<A> for IsotopeMap<A, &'t C> {}
-
-impl<'t, A: Archetype, C: Isotope<A>> sealed::Sealed<A> for IsotopeMap<A, &'t mut C> {}
-impl<'t, A: Archetype, C: Isotope<A>> Retrievable<A> for IsotopeMap<A, &'t mut C> {}
+///
+/// Not implementing this trait does not cause any issues
+/// except for ergonomic problems when using getters on storages.
+pub unsafe trait Must<A: Archetype> {}
 
 pub(crate) mod any;
 pub use any::{AutoInitFn, AutoIniter, Map};

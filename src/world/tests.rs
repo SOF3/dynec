@@ -1,8 +1,5 @@
 use super::tracer;
-use crate::{comp, global, system, system_test, Archetype};
-
-enum TestArch {}
-impl Archetype for TestArch {}
+use crate::{comp, global, system, system_test, TestArch};
 
 #[comp(dynec_as(crate), of = TestArch)]
 struct Comp1(i32);
@@ -69,19 +66,17 @@ fn test_dependencies_successful() {
 }
 
 #[test]
-#[should_panic(expected = "Cannot create an entity of type `dynec::world::tests::TestArch` \
-                           without explicitly passing a component of type \
-                           `dynec::world::tests::Comp5`")]
+#[should_panic(expected = "Cannot create an entity of type `dynec::test_util::TestArch` without \
+                           explicitly passing a component of type `dynec::world::tests::Comp5`")]
 fn test_dependencies_missing_required_simple() {
     let mut world = system_test!(system_with_comp3_comp4_comp5.build(););
     world.create::<TestArch>(crate::comps![@(crate) TestArch => Comp1(1)]);
 }
 
 #[test]
-#[should_panic(expected = "Cannot create an entity of type `dynec::world::tests::TestArch` \
-                           without explicitly passing a component of type \
-                           `dynec::world::tests::Comp1`, which is required for \
-                           `dynec::world::tests::Comp2`")]
+#[should_panic(expected = "Cannot create an entity of type `dynec::test_util::TestArch` without \
+                           explicitly passing a component of type `dynec::world::tests::Comp1`, \
+                           which is required for `dynec::world::tests::Comp2`")]
 fn test_dependencies_missing_required_dep() {
     let mut world = system_test!(system_with_comp3_comp4_comp5.build(););
     world.create::<TestArch>(crate::comps![@(crate) TestArch => Comp5(1)]);

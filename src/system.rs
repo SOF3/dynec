@@ -12,6 +12,7 @@ use std::any::{self, TypeId};
 use std::collections::hash_map::DefaultHasher;
 use std::{fmt, hash};
 
+use crate::entity::ealloc;
 use crate::{comp, entity, world, Archetype};
 
 /// Provides access to a simple component in a specific archetype.
@@ -162,7 +163,12 @@ pub trait Sendable: Send {
     fn get_spec(&self) -> Spec;
 
     /// Runs the system.
-    fn run(&mut self, globals: &world::SyncGlobals, components: &world::Components);
+    fn run(
+        &mut self,
+        globals: &world::SyncGlobals,
+        components: &world::Components,
+        ealloc_shard_map: &mut ealloc::ShardMap,
+    );
 }
 
 /// A variant of [`Sendable`] that runs on the main thread only,
@@ -181,6 +187,7 @@ pub trait Unsendable {
         sync_globals: &world::SyncGlobals,
         unsync_globals: &mut world::UnsyncGlobals,
         components: &world::Components,
+        ealloc_shard_map: &mut ealloc::ShardMap,
     );
 }
 

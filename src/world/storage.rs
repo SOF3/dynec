@@ -18,7 +18,7 @@ pub(crate) fn shared_simple<A: Archetype, C: comp::Simple<A>>() -> SharedSimple<
 pub(crate) trait AnySimpleStorage<A: Archetype> {
     fn init_strategy(&self) -> comp::SimpleInitStrategy<A>;
 
-    fn init_with(&mut self, entity: entity::Raw, components: &mut comp::Map<A>);
+    fn init_with(&mut self, entity: A::RawEntity, components: &mut comp::Map<A>);
 
     fn as_any(&self) -> &dyn Any;
 
@@ -26,7 +26,7 @@ pub(crate) trait AnySimpleStorage<A: Archetype> {
 }
 
 pub(crate) struct Storage<A: Archetype, C: 'static> {
-    inner:       Inner<C>,
+    inner:       Inner<A::RawEntity, C>,
     lazy_initer: LazyIniter<C>,
     _ph:         PhantomData<A>,
 }
@@ -40,11 +40,11 @@ impl<A: Archetype, C: comp::Simple<A>> Storage<A, C> {
         }
     }
 
-    pub(crate) fn get(&self, id: entity::Raw) -> Option<&C> { self.inner.get(id) }
+    pub(crate) fn get(&self, id: A::RawEntity) -> Option<&C> { self.inner.get(id) }
 
-    pub(crate) fn get_mut(&mut self, id: entity::Raw) -> Option<&mut C> { self.inner.get_mut(id) }
+    pub(crate) fn get_mut(&mut self, id: A::RawEntity) -> Option<&mut C> { self.inner.get_mut(id) }
 
-    pub(crate) fn set(&mut self, id: entity::Raw, value: Option<C>) -> Option<C> {
+    pub(crate) fn set(&mut self, id: A::RawEntity, value: Option<C>) -> Option<C> {
         match value {
             Some(value) => self.inner.insert(id, value),
             None => self.inner.remove(id),
@@ -55,7 +55,7 @@ impl<A: Archetype, C: comp::Simple<A>> Storage<A, C> {
 impl<A: Archetype, C: comp::Simple<A>> AnySimpleStorage<A> for Storage<A, C> {
     fn init_strategy(&self) -> comp::SimpleInitStrategy<A> { C::INIT_STRATEGY }
 
-    fn init_with(&mut self, entity: entity::Raw, components: &mut comp::Map<A>) {
+    fn init_with(&mut self, entity: A::RawEntity, components: &mut comp::Map<A>) {
         if let Some(comp) = components.remove_simple::<C>() {
             self.inner.insert(entity, comp);
         } else if let comp::SimplePresence::Required = C::PRESENCE {
@@ -73,23 +73,23 @@ impl<A: Archetype, C: comp::Simple<A>> AnySimpleStorage<A> for Storage<A, C> {
     fn as_any_mut(&mut self) -> &mut dyn Any { self }
 }
 
-enum Inner<T> {
-    Map(BTreeMap<entity::Raw, T>),
+enum Inner<R: entity::Raw, T> {
+    Map(BTreeMap<R, T>),
     Vec(InnerVec<T>),
 }
 
-impl<T> Default for Inner<T> {
+impl<R: entity::Raw, T> Default for Inner<R, T> {
     fn default() -> Self { Inner::Map(BTreeMap::new()) }
 }
 
-impl<T> Inner<T> {
-    pub(crate) fn get(&self, id: entity::Raw) -> Option<&T> {
+impl<R: entity::Raw, T> Inner<R, T> {
+    pub(crate) fn get(&self, id: R) -> Option<&T> {
         match self {
             Self::Map(map) => map.get(&id),
             Self::Vec(vec) => {
-                match vec.presence.get(id.usize()) {
+                match vec.presence.get(id.to_primitive()) {
                     Some(presence) if *presence => {
-                        let value = vec.data.get(id.usize())?;
+                        let value = vec.data.get(id.to_primitive())?;
                         // Safety: presence is true
                         let value = unsafe { value.assume_init_ref() };
                         Some(value)
@@ -100,13 +100,13 @@ impl<T> Inner<T> {
         }
     }
 
-    pub(crate) fn get_mut(&mut self, id: entity::Raw) -> Option<&mut T> {
+    pub(crate) fn get_mut(&mut self, id: R) -> Option<&mut T> {
         match self {
             Self::Map(map) => map.get_mut(&id),
             Self::Vec(vec) => {
-                match vec.presence.get(id.usize()) {
+                match vec.presence.get(id.to_primitive()) {
                     Some(presence) if *presence => {
-                        let value = vec.data.get_mut(id.usize())?;
+                        let value = vec.data.get_mut(id.to_primitive())?;
                         // Safety: presence is true
                         let value = unsafe { value.assume_init_mut() };
                         Some(value)
@@ -117,11 +117,11 @@ impl<T> Inner<T> {
         }
     }
 
-    pub(crate) fn insert(&mut self, id: entity::Raw, value: T) -> Option<T> {
+    pub(crate) fn insert(&mut self, id: R, value: T) -> Option<T> {
         match self {
             Self::Map(map) => map.insert(id, value),
             Self::Vec(vec) => {
-                let id = id.usize();
+                let id = id.to_primitive();
 
                 let required_len = id + 1;
                 if vec.presence.len() < required_len {
@@ -153,11 +153,11 @@ impl<T> Inner<T> {
         }
     }
 
-    pub(crate) fn remove(&mut self, id: entity::Raw) -> Option<T> {
+    pub(crate) fn remove(&mut self, id: R) -> Option<T> {
         match self {
             Self::Map(map) => map.remove(&id),
             Self::Vec(vec) => {
-                let id = id.usize();
+                let id = id.to_primitive();
 
                 match vec.presence.get_mut(id) {
                     Some(mut presence) if *presence => {

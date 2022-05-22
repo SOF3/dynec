@@ -1,3 +1,4 @@
+use matches2::option_match;
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::parse::{Parse, ParseStream};
@@ -17,17 +18,15 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
     if !args.is_empty() {
         let args: Attr<FnOpt> = syn::parse2(args)?;
 
-        if let Some((_, ts)) = args.find_one(|opt| match opt {
-            FnOpt::DynecAs(_, ts) => Some(ts),
-            _ => None,
-        })? {
+        if let Some((_, ts)) =
+            args.find_one(|opt| option_match!(opt, FnOpt::DynecAs(_, ts) => ts))?
+        {
             crate_name = ts.clone();
         }
 
-        if let Some((_, value)) = args.find_one(|opt| match opt {
-            FnOpt::Initial(value) => Some(value),
-            _ => None,
-        })? {
+        if let Some((_, value)) =
+            args.find_one(|opt| option_match!(opt, FnOpt::Initial(value) => value))?
+        {
             let value = match value {
                 Some((_, value)) => quote!(#value),
                 None => quote!(::std::default::Default::default()),

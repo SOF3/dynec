@@ -1,3 +1,4 @@
+use matches2::option_match;
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::parse::{Parse, ParseStream};
@@ -22,19 +23,14 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
     if !args.is_empty() {
         let args = syn::parse2::<Attr<FnOpt>>(args)?;
 
-        if let Some((_, ts)) = args.find_one(|opt| match opt {
-            FnOpt::DynecAs(_, ts) => Some(ts),
-            _ => None,
-        })? {
+        if let Some((_, ts)) =
+            args.find_one(|opt| option_match!(opt, FnOpt::DynecAs(_, ts) => ts))?
+        {
             crate_name = ts.clone();
         }
 
-        system_thread_local = args
-            .find_one(|opt| match opt {
-                FnOpt::ThreadLocal => Some(&()),
-                _ => None,
-            })?
-            .is_some();
+        system_thread_local =
+            args.find_one(|opt| option_match!(opt, FnOpt::ThreadLocal => &()))?.is_some();
 
         for named in &args.items {
             match &named.value {
@@ -164,32 +160,21 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                     }
                     ArgOpt::Global(_, global_opts) => {
                         let thread_local = global_opts
-                            .find_one(|opt| match opt {
-                                GlobalArgOpt::ThreadLocal => Some(&()),
-                            })?
+                            .find_one(|opt| option_match!(opt, GlobalArgOpt::ThreadLocal => &()))?
                             .is_some();
                         set_arg_type(&mut arg_type, arg.name, ArgType::Global { thread_local })?;
                     }
                     ArgOpt::Simple(_, simple_opts) => {
                         let mutable = simple_opts
-                            .find_one(|opt| match opt {
-                                SimpleArgOpt::Mutable => Some(&()),
-                                _ => None,
-                            })?
+                            .find_one(|opt| option_match!(opt, SimpleArgOpt::Mutable => &()))?
                             .is_some();
                         let (_, arch) = simple_opts
-                            .find_one(|opt| match opt {
-                                SimpleArgOpt::Arch(_, ty) => Some(ty),
-                                _ => None,
-                            })?
+                            .find_one(|opt| option_match!(opt, SimpleArgOpt::Arch(_, ty) => ty))?
                             .ok_or_else(|| {
                                 Error::new_spanned(&arg.name, "Simple arguments must have a type")
                             })?;
                         let (_, comp) = simple_opts
-                            .find_one(|opt| match opt {
-                                SimpleArgOpt::Comp(_, ty) => Some(ty),
-                                _ => None,
-                            })?
+                            .find_one(|opt| option_match!(opt, SimpleArgOpt::Comp(_, ty) => ty))?
                             .ok_or_else(|| {
                                 Error::new_spanned(&arg.name, "Simple arguments must have a type")
                             })?;
@@ -202,25 +187,17 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                     }
                     ArgOpt::Isotope(_, isotope_opts) => {
                         let mutable = isotope_opts
-                            .find_one(|opt| match opt {
-                                IsotopeArgOpt::Mutable => Some(&()),
-                                _ => None,
-                            })?
+                            .find_one(|opt| option_match!(opt, IsotopeArgOpt::Mutable => &()))?
                             .is_some();
 
-                        let discrim = isotope_opts.find_one(|opt| match opt {
-                            IsotopeArgOpt::Discrim(_, discrim) => Some(discrim),
-                            _ => None,
-                        })?;
+                        let discrim = isotope_opts.find_one(
+                            |opt| option_match!(opt, IsotopeArgOpt::Discrim(_, discrim) => discrim),
+                        )?;
 
-                        let arch = isotope_opts.find_one(|opt| match opt {
-                            IsotopeArgOpt::Arch(_, ty) => Some(ty),
-                            _ => None,
-                        })?;
-                        let comp = isotope_opts.find_one(|opt| match opt {
-                            IsotopeArgOpt::Comp(_, ty) => Some(ty),
-                            _ => None,
-                        })?;
+                        let arch = isotope_opts
+                            .find_one(|opt| option_match!(opt, IsotopeArgOpt::Arch(_, ty) => ty))?;
+                        let comp = isotope_opts
+                            .find_one(|opt| option_match!(opt, IsotopeArgOpt::Comp(_, ty) => ty))?;
 
                         match (arch, comp, discrim, mutable) {
                             (Some((_, arch)), Some((_, comp)), discrim, mutable) => {
@@ -464,6 +441,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 sync_globals: &#crate_name::world::SyncGlobals,
                 unsync_globals: &#crate_name::world::UnsyncGlobals,
                 components: &#crate_name::world::Components,
+                ealloc_shard_map: &mut #crate_name::entity::ealloc::ShardMap,
             },
         ),
         false => (
@@ -471,6 +449,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             quote! {
                 sync_globals: &#crate_name::world::SyncGlobals,
                 components: &#crate_name::world::Components,
+                ealloc_shard_map: &mut #crate_name::entity::ealloc::ShardMap,
             },
         ),
     };

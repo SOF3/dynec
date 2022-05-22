@@ -6,7 +6,7 @@ use parking_lot::RwLock;
 
 use super::storage;
 use crate::util::DbgTypeId;
-use crate::{comp, entity, Archetype};
+use crate::{comp, Archetype};
 
 pub(crate) trait AnyBuilder {
     fn add_simple_storage_if_missing(&mut self, component: DbgTypeId, shared: fn() -> Box<dyn Any>);
@@ -58,7 +58,6 @@ impl<A: Archetype> AnyBuilder for Builder<A> {
         let populators = toposort_populators(&mut self.simple_storages);
 
         Box::new(Typed::<A> {
-            ealloc: entity::Ealloc::default(),
             simple_storages: self.simple_storages,
             isotope_storages: RwLock::new(HashMap::new()),
             isotope_factories: self.isotope_factories,
@@ -151,7 +150,6 @@ fn toposort_populators<A: Archetype>(
 /// Stores everything related to a specific archetype.
 #[derive(Default)]
 pub(crate) struct Typed<A: Archetype> {
-    pub(crate) ealloc:            entity::Ealloc,
     pub(crate) simple_storages:   HashMap<DbgTypeId, storage::SharedSimple<A>>,
     pub(crate) isotope_storages:  RwLock<HashMap<comp::any::Identifier, storage::SharedSimple<A>>>,
     pub(crate) isotope_factories: HashMap<DbgTypeId, Box<dyn storage::AnyIsotopeFactory<A>>>,
@@ -159,16 +157,7 @@ pub(crate) struct Typed<A: Archetype> {
 }
 
 impl<A: Archetype> Typed<A> {
-    pub(crate) fn create_near(
-        &mut self,
-        near: Option<entity::Raw>,
-        mut components: comp::Map<A>,
-    ) -> entity::Raw {
-        let id = match near {
-            Some(hint) => self.ealloc.allocate_near(hint),
-            None => self.ealloc.allocate(),
-        };
-
+    pub(crate) fn init_entity(&mut self, id: A::RawEntity, mut components: comp::Map<A>) {
         for populate in &self.populators {
             populate(&mut components);
         }
@@ -180,8 +169,6 @@ impl<A: Archetype> Typed<A> {
         }
 
         // TODO extract isotope components
-
-        id
     }
 }
 

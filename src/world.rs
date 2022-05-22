@@ -3,6 +3,7 @@
 use std::any::{self, TypeId};
 use std::sync::Arc;
 
+use crate::entity::ealloc;
 use crate::util::DbgTypeId;
 use crate::{comp, entity, Archetype, Entity, Global};
 
@@ -10,6 +11,7 @@ mod builder;
 pub use builder::Builder;
 
 mod state;
+use ealloc::Ealloc;
 pub use state::{Components, SyncGlobals, UnsyncGlobals};
 
 pub(crate) mod storage;
@@ -94,6 +96,7 @@ impl SimpleSpec {
 
 /// The data structure that stores all states in the game.
 pub struct World {
+    ealloc_map:     ealloc::Map,
     /// Stores the component states in a world.
     components:     Components,
     /// Stores the system-local states and the scheduler topology.
@@ -112,22 +115,37 @@ impl World {
             &self.components,
             &self.sync_globals,
             &mut self.unsync_globals,
+            &mut self.ealloc_map,
         );
     }
 
     /// Adds an entity to the world.
     pub fn create<A: Archetype>(&mut self, components: comp::Map<A>) -> Entity<A> {
-        self.create_near::<entity::Entity<A>>(None, components)
+        self.create_near::<entity::Entity<A>>(Default::default(), components)
     }
 
     /// Adds an entity to the world near another entity.
     pub fn create_near<E: entity::Ref>(
         &mut self,
-        near: Option<E>,
+        hint: <<<E as entity::Ref>::Archetype as Archetype>::Ealloc as Ealloc>::AllocHint,
         components: comp::Map<<E as entity::Ref>::Archetype>,
     ) -> Entity<<E as entity::Ref>::Archetype> {
+        let ealloc = match self.ealloc_map.map.get_mut(&TypeId::of::<E::Archetype>()) {
+            Some(ealloc) => ealloc,
+            None => panic!(
+                "Cannot create entity for archetype {} because it is not used in any systems",
+                any::type_name::<E::Archetype>()
+            ),
+        };
+        let ealloc = ealloc
+            .as_any_mut()
+            .downcast_mut::<<E::Archetype as Archetype>::Ealloc>()
+            .expect("TypeId mismatch");
+        let id = ealloc.allocate(hint);
+
         let typed = self.components.archetype_mut::<E::Archetype>();
-        let id = typed.create_near(near.map(|raw| raw.id().0), components);
+        typed.init_entity(id, components);
+
         Entity::new_allocated(id)
     }
 
@@ -140,6 +158,7 @@ impl World {
         entity: E,
     ) -> Option<&mut C> {
         let typed = self.components.archetype_mut::<A>();
+        log::debug!("{:?}", typed.simple_storages.keys().collect::<Vec<_>>());
         let storage = match typed.simple_storages.get_mut(&TypeId::of::<C>()) {
             Some(storage) => storage,
             None => panic!(
@@ -152,7 +171,7 @@ impl World {
         let storage = storage.get_mut();
         let storage =
             storage.as_any_mut().downcast_mut::<storage::Storage<A, C>>().expect("TypeId mismatch");
-        storage.get_mut(entity.id().0)
+        storage.get_mut(entity.id())
     }
 
     pub fn get_global<G: Global + Send + Sync>(&mut self) -> &mut G {
@@ -179,4 +198,4 @@ impl World {
 }
 
 #[cfg(test)]
-mod tests;
+pub(crate) mod tests;

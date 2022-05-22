@@ -2,6 +2,7 @@ use parking_lot::{Condvar, Mutex, MutexGuard};
 
 use super::planner::StealResult;
 use super::{Node, Planner, SendArgs, Topology, UnsendArgs, WakeupState};
+use crate::entity::ealloc;
 use crate::world;
 
 pub(in crate::world::scheduler) struct Executor {
@@ -36,6 +37,7 @@ impl Executor {
         planner: &mut Mutex<Planner>,
         send: SendArgs<'_>,
         unsend: UnsendArgs<'_>,
+        ealloc_map: &mut ealloc::Map,
     ) {
         let condvar = Condvar::new();
 
@@ -58,16 +60,29 @@ impl Executor {
 
         let context = Context { topology, planner, condvar: &condvar };
 
+        let mut shards = ealloc_map.shards(self.concurrency + 1);
+
         if let Some(pool) = &self.thread_pool {
             pool.in_place_scope(|scope| {
-                for worker_id in 0..self.concurrency {
-                    scope.spawn(move |_| threaded_worker(worker_id, tracer, context, send));
+                let (main_shard, worker_shards) =
+                    shards.split_last_mut().expect("shards.len() == self.concurrency + 1");
+                debug_assert_eq!(worker_shards.len(), self.concurrency);
+
+                for (worker_id, shard) in worker_shards.iter_mut().enumerate() {
+                    scope.spawn(move |_| threaded_worker(worker_id, tracer, context, send, shard));
                 }
 
-                main_worker(tracer, context, send, unsend, false)
+                main_worker(tracer, context, send, unsend, false, main_shard)
             });
         } else {
-            main_worker(tracer, context, send, unsend, true);
+            main_worker(
+                tracer,
+                context,
+                send,
+                unsend,
+                true,
+                shards.get_mut(0).expect("concurrency = 0 in single-thread executor"),
+            );
         }
 
         #[cfg(debug_assertions)]
@@ -80,6 +95,8 @@ impl Executor {
             }
         }
 
+        ealloc_map.reconcile_shards(shards);
+
         tracer.end_cycle();
     }
 }
@@ -90,6 +107,7 @@ fn main_worker(
     send: SendArgs<'_>,
     unsend: UnsendArgs<'_>,
     poll_send: bool,
+    ealloc_shard_map: &mut ealloc::ShardMap,
 ) {
     let mut planner_guard = context.planner.lock();
 
@@ -119,7 +137,7 @@ fn main_worker(
                                 debug_name,
                                 &mut **system,
                             );
-                            system.run(send.globals, send.components);
+                            system.run(send.globals, send.components, ealloc_shard_map);
                             tracer.end_run_sendable(
                                 world::tracer::Thread::Main,
                                 Node::SendSystem(index),
@@ -148,7 +166,7 @@ fn main_worker(
                         debug_name,
                         &mut *system,
                     );
-                    system.run(send.globals, unsend.globals, send.components);
+                    system.run(send.globals, unsend.globals, send.components, ealloc_shard_map);
                     tracer.end_run_unsendable(
                         world::tracer::Thread::Main,
                         Node::UnsendSystem(index),
@@ -173,6 +191,7 @@ fn threaded_worker(
     tracer: &impl world::Tracer,
     context: Context<'_>,
     send: SendArgs<'_>,
+    ealloc_shard_map: &mut ealloc::ShardMap,
 ) {
     let thread = world::tracer::Thread::Worker(id);
 
@@ -196,7 +215,7 @@ fn threaded_worker(
                             debug_name,
                             &mut **system,
                         );
-                        system.run(send.globals, send.components);
+                        system.run(send.globals, send.components, ealloc_shard_map);
                         tracer.end_run_sendable(
                             thread,
                             Node::SendSystem(index),

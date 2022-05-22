@@ -17,7 +17,14 @@
 //! Archetypes and components are registered to the world
 //! when a system that uses this archetype-component pair is scheduled.
 
+use crate::entity;
+
 /// An archetype is a kind of entity with a fixed set of (optional) components.
 ///
 /// See the [module-level documentation](mod@crate::archetype) for more information.
-pub trait Archetype: Send + Sync + 'static {}
+pub trait Archetype: Send + Sync + 'static {
+    /// The raw ID type used for entities with this archetype.
+    type RawEntity: entity::Raw;
+
+    type Ealloc: entity::Ealloc<Raw = Self::RawEntity>;
+}

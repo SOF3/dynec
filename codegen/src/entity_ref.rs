@@ -31,16 +31,14 @@ pub(crate) fn entity_ref(
             generics.impl_trait(
                 quote!(#crate_name::entity::Referrer),
                 quote! {
-                    fn visit_each<'s, F: #crate_name::entity::Visitor<'s>>(
-                        &'s mut self,
-                        archetype: #crate_name::util::DbgTypeId,
-                        visitor: &mut F,
+                    fn visit(
+                        &mut self,
+                        arg: &mut #crate_name::entity::ReferrerArg,
                     ) {
                         #(
-                            #crate_name::entity::Referrer::visit_each(
+                            #crate_name::entity::Referrer::visit(
                                 &mut #fields,
-                                archetype,
-                                visitor,
+                                &mut *arg,
                             );
                         )*
                     }
@@ -87,10 +85,9 @@ pub(crate) fn entity_ref(
                 arms.push(quote! {
                     Self::#variant_ident #pattern => {
                         #(
-                            #crate_name::entity::Referrer::visit_each(
+                            #crate_name::entity::Referrer::visit(
                                 &mut #fields,
-                                arhcetype,
-                                visitor,
+                                &mut *arg,
                             );
                         )*
                     },
@@ -100,10 +97,9 @@ pub(crate) fn entity_ref(
             generics.impl_trait(
                 quote!(#crate_name::entity::Referrer),
                 quote! {
-                    fn visit_each<'s, F: #crate_name::entity::Visitor<'s>>(
-                        &'s mut self,
-                        archetype: #crate_name::util::DbgTypeId,
-                        visitor: &mut F,
+                    fn visit(
+                        &mut self,
+                        arg: &mut #crate_name::entity::ReferrerArg,
                     ) {
                         match self {
                             #(#arms)*

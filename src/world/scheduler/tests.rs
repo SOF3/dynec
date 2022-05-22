@@ -4,10 +4,8 @@ use std::rc::Rc;
 use std::sync::atomic::{self, AtomicUsize};
 use std::sync::Arc;
 
-use parking_lot::Once;
-
 use super::*;
-use crate::test_util::AntiSemaphore;
+use crate::test_util::{self, AntiSemaphore};
 use crate::world::tracer;
 use crate::{comp, system, world, TestArch};
 
@@ -41,7 +39,14 @@ fn dummy_spec(name: &str) -> system::Spec {
 struct SendSystem(String, Box<dyn Fn() + Send>);
 impl system::Sendable for SendSystem {
     fn get_spec(&self) -> system::Spec { dummy_spec(self.0.as_str()) }
-    fn run(&mut self, globals: &world::SyncGlobals, components: &world::Components) { self.1(); }
+    fn run(
+        &mut self,
+        globals: &world::SyncGlobals,
+        components: &world::Components,
+        ealloc_shard_map: &mut ealloc::ShardMap,
+    ) {
+        self.1();
+    }
 }
 
 struct UnsendSystem(String, Box<dyn Fn()>);
@@ -52,6 +57,7 @@ impl system::Unsendable for UnsendSystem {
         sync_globals: &world::SyncGlobals,
         unsync_globals: &mut world::UnsyncGlobals,
         components: &world::Components,
+        ealloc_shard_map: &mut ealloc::ShardMap,
     ) {
         self.1();
     }
@@ -629,8 +635,7 @@ fn test_bootstrap<const S: usize, const U: usize, T, C, R, V>(
     V: Fn(T),
     tracer::Aggregate<T>: world::Tracer,
 {
-    static SET_LOGGER_ONCE: Once = Once::new();
-    SET_LOGGER_ONCE.call_once(env_logger::init);
+    test_util::init();
 
     for i in 0..*CONCURRENT_TEST_REPETITIONS {
         log::trace!("Repeat test round {i}");
@@ -706,6 +711,7 @@ fn test_bootstrap<const S: usize, const U: usize, T, C, R, V>(
             &world::Components::empty(),
             &world::SyncGlobals::empty(),
             &mut world::UnsyncGlobals::empty(),
+            &mut ealloc::Map::default(),
         );
 
         let tracer::Aggregate((_, rct, tracer::Aggregate(tracers))) = tracer;

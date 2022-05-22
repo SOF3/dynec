@@ -1,11 +1,15 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fmt;
 use std::hash::Hash;
+use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use indexmap::IndexSet;
-use parking_lot::{Condvar, Mutex};
+use parking_lot::{Condvar, Mutex, Once};
+
+use crate::entity::ealloc;
+use crate::Archetype;
 
 /// Records event and ensures that they are in the correct order.
 pub(crate) struct EventTracer<T: fmt::Debug + Eq + Hash> {
@@ -181,4 +185,17 @@ impl AntiSemaphore {
             }
         }
     }
+}
+
+pub(crate) enum TestArch {}
+
+impl Archetype for TestArch {
+    type RawEntity = NonZeroU32;
+    type Ealloc =
+        ealloc::Recycling<NonZeroU32, BTreeSet<NonZeroU32>, ealloc::ThreadRngShardAssigner, 2>;
+}
+
+pub(crate) fn init() {
+    static SET_LOGGER_ONCE: Once = Once::new();
+    SET_LOGGER_ONCE.call_once(env_logger::init);
 }

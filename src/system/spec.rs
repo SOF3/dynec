@@ -2,6 +2,7 @@
 
 use std::any::Any;
 
+use crate::entity::ealloc;
 use crate::util::DbgTypeId;
 use crate::world::{self, storage};
 use crate::{comp, system, Archetype, Global};
@@ -81,12 +82,15 @@ impl GlobalRequest {
 #[derive(Clone, Copy)]
 pub(crate) struct ArchetypeDescriptor {
     pub(crate) id:      DbgTypeId,
-    pub(crate) builder: fn() -> Box<dyn world::typed::AnyBuilder>,
+    pub(crate) builder: fn() -> (ealloc::AnyBuilder, Box<dyn world::typed::AnyBuilder>),
 }
 
 impl ArchetypeDescriptor {
     fn of<A: Archetype>() -> Self {
-        Self { id: DbgTypeId::of::<A>(), builder: || Box::new(world::typed::builder::<A>()) }
+        Self {
+            id:      DbgTypeId::of::<A>(),
+            builder: || (ealloc::builder::<A>(), Box::new(world::typed::builder::<A>())),
+        }
     }
 }
 

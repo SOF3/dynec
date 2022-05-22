@@ -78,7 +78,7 @@ impl Components {
             system::ReadSimple<A, C> for Ret<A, C, S>
         {
             fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Option<&C> {
-                self.storage.get(entity.id().0)
+                self.storage.get(entity.id())
             }
         }
 
@@ -128,7 +128,7 @@ impl Components {
             > system::ReadSimple<A, C> for Ret<A, C, S>
         {
             fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Option<&C> {
-                self.storage.get(entity.id().0)
+                self.storage.get(entity.id())
             }
         }
         impl<
@@ -138,7 +138,7 @@ impl Components {
             > system::WriteSimple<A, C> for Ret<A, C, S>
         {
             fn try_get_mut<E: entity::Ref<Archetype = A>>(&mut self, entity: E) -> Option<&mut C> {
-                self.storage.get_mut(entity.id().0)
+                self.storage.get_mut(entity.id())
             }
 
             fn set<E: entity::Ref<Archetype = A>>(
@@ -146,7 +146,7 @@ impl Components {
                 entity: E,
                 value: Option<C>,
             ) -> Option<C> {
-                self.storage.set(entity.id().0, value)
+                self.storage.set(entity.id(), value)
             }
         }
 

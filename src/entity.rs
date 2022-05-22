@@ -8,9 +8,7 @@
 //!
 //! All strong references to an entity must be dropped before it gets deleted.
 
-use std::marker::PhantomData;
 use std::num;
-use std::num::NonZeroU32;
 #[cfg(any(
     all(debug_assertions, feature = "debug-entity-rc"),
     all(not(debug_assertions), feature = "release-entity-rc"),
@@ -19,68 +17,28 @@ use std::sync::Arc;
 
 use crate::Archetype;
 
-mod ealloc;
-pub(crate) use ealloc::Ealloc;
+mod raw;
+pub use raw::Raw;
 
-mod permutation;
-pub use permutation::Permutation;
+pub mod ealloc;
+pub use ealloc::Ealloc;
 
 mod referrer;
-pub use referrer::{Referrer, Visitor};
+pub use referrer::{Referrer, ReferrerArg};
 
 /// Re-export of [`dynec::EntityRef`](crate::EntityRef).
 pub use crate::macros::EntityRef as Ref;
 
 mod sealed {
-    pub trait Ref {
-        fn id(&self) -> Raw;
-    }
-
-    /// Sealed-public wrapper for `Raw`.
-    pub struct Raw(pub(crate) super::Raw);
-
-    /// Sealed-public wrapper for `&mut Raw`.
-    pub struct RefMutRaw<'s>(pub(crate) &'s mut super::Raw);
+    pub trait Sealed {}
 }
-
-#[allow(unused_imports)]
-pub(crate) use sealed::Ref as RefId;
 
 /// A trait implemented by all types of entity references.
-pub trait Ref: sealed::Ref {
+pub trait Ref: sealed::Sealed {
     /// The archetype that this entity belongs to.
     type Archetype: Archetype;
-}
 
-/// A raw, untyped entity ID.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub(crate) struct Raw(NonZeroU32);
-
-impl Raw {
-    /// Creates a new raw entity ID for testing.
-    #[cfg(test)]
-    pub(crate) fn testing(value: u32) -> Self {
-        Raw(NonZeroU32::new(value).expect("value is zero"))
-    }
-
-    pub(crate) fn usize(self) -> usize { self.0.get().try_into().expect("usize >= u32") }
-
-    pub(crate) fn into_api<A: Archetype>(self) -> UnclonableRef<A> {
-        UnclonableRef { value: self, _ph: PhantomData }
-    }
-
-    /// Computes this ID plus one
-    ///
-    /// This is only used in entity allocator.
-    fn increment(self) -> Self {
-        // TODO: allow customizing the integer type in the archetype in the future.
-        Raw(NonZeroU32::new(self.0.get() + 1).expect("Too many entities"))
-    }
-
-    /// Creates the default, smallest value of `Raw`.
-    ///
-    /// This is only used in entity allocator.
-    fn smallest() -> Self { Raw(NonZeroU32::new(1).expect("1 != 0")) }
+    fn id(&self) -> <Self::Archetype as Archetype>::RawEntity;
 }
 
 /// An unclonable reference to an entity.
@@ -91,15 +49,18 @@ impl Raw {
 /// Thus, it is always passed to users as a reference and cannot be cloned.
 #[repr(transparent)]
 pub struct UnclonableRef<A: Archetype> {
-    value: Raw,
-    _ph:   PhantomData<A>,
+    value: A::RawEntity,
 }
 
-impl<A: Archetype> sealed::Ref for UnclonableRef<A> {
-    fn id(&self) -> sealed::Raw { sealed::Raw(self.value) }
+impl<A: Archetype> UnclonableRef<A> {
+    /// Creates a new UnclonableRef.
+    pub(crate) fn new(value: A::RawEntity) -> Self { Self { value } }
 }
+
+impl<A: Archetype> sealed::Sealed for UnclonableRef<A> {}
 impl<A: Archetype> Ref for UnclonableRef<A> {
     type Archetype = A;
+    fn id(&self) -> A::RawEntity { self.value }
 }
 
 /// A counted reference to an entity.
@@ -108,8 +69,7 @@ impl<A: Archetype> Ref for UnclonableRef<A> {
 /// (after all finalizers have been unset).
 /// Use `Weak` if the reference is allowed to outlive the entity.
 pub struct Entity<A: Archetype> {
-    id:  Raw,
-    _ph: PhantomData<A>,
+    id: A::RawEntity,
 
     #[cfg(any(
         all(debug_assertions, feature = "debug-entity-rc"),
@@ -122,10 +82,9 @@ impl<A: Archetype> Entity<A> {
     /// Creates a new strong reference to an entity.
     ///
     /// This method should only be used when a completely new entity has been created.
-    pub(crate) fn new_allocated(id: Raw) -> Self {
+    pub(crate) fn new_allocated(id: A::RawEntity) -> Self {
         Self {
             id,
-            _ph: PhantomData,
 
             #[cfg(any(
                 all(debug_assertions, feature = "debug-entity-rc"),
@@ -136,18 +95,16 @@ impl<A: Archetype> Entity<A> {
     }
 }
 
-impl<A: Archetype> sealed::Ref for Entity<A> {
-    fn id(&self) -> sealed::Raw { sealed::Raw(self.id) }
-}
+impl<A: Archetype> sealed::Sealed for Entity<A> {}
 impl<A: Archetype> Ref for Entity<A> {
     type Archetype = A;
+    fn id(&self) -> A::RawEntity { self.id }
 }
 
 impl<A: Archetype> Clone for Entity<A> {
     fn clone(&self) -> Self {
         Self {
-            id:  self.id,
-            _ph: PhantomData,
+            id: self.id,
 
             #[cfg(any(
                 all(debug_assertions, feature = "debug-entity-rc"),
@@ -158,11 +115,10 @@ impl<A: Archetype> Clone for Entity<A> {
     }
 }
 
-impl<'t, T: Ref> sealed::Ref for &'t T {
-    fn id(&self) -> sealed::Raw { sealed::Ref::id(&**self) }
-}
+impl<'t, T: Ref> sealed::Sealed for &'t T {}
 impl<'t, T: Ref> Ref for &'t T {
     type Archetype = T::Archetype;
+    fn id(&self) -> <T::Archetype as Archetype>::RawEntity { Ref::id(&**self) }
 }
 
 /// A weak counted reference to an entity.
@@ -174,9 +130,8 @@ impl<'t, T: Ref> Ref for &'t T {
 /// in order to disambiguate new entities that uses the recycled memory.
 /// Therefore, the weak reference actually consumes more memory than the strong reference.
 pub struct Weak<A: Archetype> {
-    id:         Raw,
+    id:         A::RawEntity,
     generation: Generation,
-    _ph:        PhantomData<A>,
 
     #[cfg(any(
         all(debug_assertions, feature = "debug-entity-rc"),
@@ -185,11 +140,10 @@ pub struct Weak<A: Archetype> {
     rc: Arc<()>,
 }
 
-impl<A: Archetype> sealed::Ref for Weak<A> {
-    fn id(&self) -> sealed::Raw { sealed::Raw(self.id) }
-}
+impl<A: Archetype> sealed::Sealed for Weak<A> {}
 impl<A: Archetype> Ref for Weak<A> {
     type Archetype = A;
+    fn id(&self) -> A::RawEntity { self.id }
 }
 
 impl<A: Archetype> Clone for Weak<A> {
@@ -197,7 +151,6 @@ impl<A: Archetype> Clone for Weak<A> {
         Self {
             id:         self.id,
             generation: self.generation,
-            _ph:        PhantomData,
 
             #[cfg(any(
                 all(debug_assertions, feature = "debug-entity-rc"),
@@ -213,11 +166,14 @@ struct Generation(num::Wrapping<u32>);
 
 #[cfg(test)]
 mod tests {
-    use super::{Raw, Ref};
+    use std::num::NonZeroU32;
+
+    use super::{Ref, UnclonableRef};
     use crate::TestArch;
 
     // ensure that Ref<Archetype = A> for a fixed `A` must be object-safe.
     fn test_object_safety() {
-        let _: &dyn Ref<Archetype = TestArch> = &Raw::testing(1).into_api::<TestArch>();
+        let _: &dyn Ref<Archetype = TestArch> =
+            &UnclonableRef::new(NonZeroU32::new(1).expect("1 != 0"));
     }
 }

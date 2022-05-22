@@ -89,6 +89,8 @@ pub mod system;
 
 #[cfg(test)]
 mod test_util;
+#[cfg(test)]
+use test_util::TestArch;
 
 pub mod world;
 #[doc(inline)]
@@ -97,9 +99,3 @@ pub use world::new;
 pub use world::World;
 
 pub mod util;
-
-#[cfg(test)]
-enum TestArch {}
-
-#[cfg(test)]
-impl Archetype for TestArch {}

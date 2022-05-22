@@ -1,3 +1,4 @@
+use matches2::option_match;
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::parse::{Parse, ParseStream};
@@ -9,10 +10,9 @@ use crate::{entity_ref, util};
 pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
     let args: Attr<FnOpt> = syn::parse2(args)?;
 
-    let crate_name = if let Some((_, ts)) = args.find_one(|opt| match opt {
-        FnOpt::DynecAs(_, ts) => Some(ts),
-        _ => None,
-    })? {
+    let crate_name = if let Some((_, ts)) =
+        args.find_one(|opt| option_match!(opt, FnOpt::DynecAs(_, ts) => ts))?
+    {
         ts.clone()
     } else {
         quote!(::dynec)
@@ -27,15 +27,9 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
         })
         .collect();
 
-    let isotope = args.find_one(|arg| match arg {
-        FnOpt::Isotope(_, discrim) => Some(discrim),
-        _ => None,
-    })?;
+    let isotope = args.find_one(|arg| option_match!(arg, FnOpt::Isotope(_, discrim) => discrim))?;
 
-    let presence = args.find_one(|arg| match arg {
-        FnOpt::Required => Some(&()),
-        _ => None,
-    })?;
+    let presence = args.find_one(|arg| option_match!(arg, FnOpt::Required => &()))?;
     if let (Some((isotope_span, _)), Some((presence_span, _))) = (isotope, presence) {
         return Err(Error::new(
             isotope_span.join(presence_span).unwrap_or(presence_span),
@@ -47,10 +41,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
         None => quote!(#crate_name::comp::SimplePresence::Optional),
     };
 
-    let finalizer = args.find_one(|arg| match arg {
-        FnOpt::Finalizer => Some(&()),
-        _ => None,
-    })?;
+    let finalizer = args.find_one(|arg| option_match!(arg, FnOpt::Finalizer => &()))?;
     if let (Some((isotope_span, _)), Some((finalizer_span, _))) = (isotope, finalizer) {
         return Err(Error::new(
             isotope_span.join(finalizer_span).unwrap_or(finalizer_span),
@@ -59,10 +50,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
     }
     let finalizer = finalizer.is_some();
 
-    let init = args.find_one(|arg| match arg {
-        FnOpt::Init(_, func) => Some(func),
-        _ => None,
-    })?;
+    let init = args.find_one(|arg| option_match!(arg, FnOpt::Init(_, func) => func))?;
 
     let input: syn::DeriveInput = syn::parse2(input)?;
     let generics = util::parse_generics(&input);

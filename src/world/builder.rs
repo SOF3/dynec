@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use parking_lot::RwLock;
 
 use super::{scheduler, typed};
+use crate::entity::ealloc;
 use crate::system::spec;
 use crate::util::DbgTypeId;
 use crate::{comp, system, Global};
@@ -12,7 +13,7 @@ use crate::{comp, system, Global};
 /// No more systems can be scheduled after the builder is built.
 pub struct Builder {
     scheduler:      scheduler::Builder,
-    archetypes:     HashMap<DbgTypeId, Box<dyn typed::AnyBuilder>>,
+    archetypes:     HashMap<DbgTypeId, (ealloc::AnyBuilder, Box<dyn typed::AnyBuilder>)>,
     sync_globals:   HashMap<DbgTypeId, GlobalBuilder<dyn Any + Send + Sync>>,
     unsync_globals: HashMap<DbgTypeId, GlobalBuilder<dyn Any>>,
 }
@@ -37,7 +38,7 @@ impl Builder {
         &mut self,
         archetype: spec::ArchetypeDescriptor,
     ) -> &mut Box<dyn typed::AnyBuilder> {
-        self.archetypes.entry(archetype.id).or_insert_with(archetype.builder)
+        &mut self.archetypes.entry(archetype.id).or_insert_with(archetype.builder).1
     }
 
     fn register_resources(&mut self, system: system::Spec, sync: bool, node: scheduler::Node) {
@@ -146,13 +147,16 @@ impl Builder {
 
     /// Constructs the world from the builder.
     pub fn build(self) -> super::World {
-        let storages = super::Components {
-            archetypes: self
-                .archetypes
-                .into_iter()
-                .map(|(ty, builder)| (ty, builder.build()))
-                .collect(),
-        };
+        let (ealloc_map, storages) = self
+            .archetypes
+            .into_iter()
+            .map(|(ty, (ealloc, storages))| {
+                ((ty, ealloc(self.scheduler.concurrency + 1)), (ty, storages.build()))
+            })
+            .unzip();
+
+        let ealloc_map = ealloc::Map::new(ealloc_map);
+        let storages = super::Components { archetypes: storages };
 
         let sync_globals = self
             .sync_globals
@@ -185,6 +189,7 @@ impl Builder {
         let unsync_globals = super::UnsyncGlobals { unsync_globals };
 
         super::World {
+            ealloc_map,
             components: storages,
             sync_globals,
             unsync_globals,

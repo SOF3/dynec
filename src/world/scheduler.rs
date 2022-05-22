@@ -1,6 +1,7 @@
 use std::fmt;
 use std::num::NonZeroUsize;
 
+use crate::entity::ealloc;
 use crate::util::DbgTypeId;
 use crate::world;
 
@@ -38,6 +39,7 @@ impl Scheduler {
         components: &world::Components,
         sync_globals: &world::SyncGlobals,
         unsync_globals: &mut world::UnsyncGlobals,
+        ealloc_map: &mut ealloc::Map,
     ) {
         self.executor.execute_full_cycle(
             tracer,
@@ -45,6 +47,7 @@ impl Scheduler {
             &mut self.planner,
             SendArgs { state: &self.sync_state, components, globals: sync_globals },
             UnsendArgs { state: &mut self.unsync_state, globals: unsync_globals },
+            ealloc_map,
         );
     }
 }

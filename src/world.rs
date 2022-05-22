@@ -149,10 +149,9 @@ impl World {
         Entity::new_allocated(id)
     }
 
-    /// Gets a reference to an entity component when the world is not running.
+    /// Gets a reference to an entity component in offline mode.
     ///
-    /// Requires a mutable reference to the world to ensure that the world is not executing in
-    /// other systems.
+    /// Requires a mutable reference to the world to ensure that the world is offline.
     pub fn get_simple<A: Archetype, C: comp::Simple<A>, E: entity::Ref<Archetype = A>>(
         &mut self,
         entity: E,
@@ -174,6 +173,7 @@ impl World {
         storage.get_mut(entity.id())
     }
 
+    /// Gets a thread-safe global state in offline mode.
     pub fn get_global<G: Global + Send + Sync>(&mut self) -> &mut G {
         let global = match self.sync_globals.sync_globals.get_mut(&TypeId::of::<G>()) {
             Some(global) => global,
@@ -185,6 +185,10 @@ impl World {
         global.get_mut().downcast_mut::<G>().expect("TypeId mismatch")
     }
 
+    /// Gets a thread-unsafe global state in offline mode.
+    ///
+    /// Although permitted by the compiler, this method does not support types
+    /// registered as thread-safe global states.
     pub fn get_global_unsync<G: Global>(&mut self) -> &mut G {
         let global = match self.unsync_globals.unsync_globals.get_mut(&TypeId::of::<G>()) {
             Some(global) => global,

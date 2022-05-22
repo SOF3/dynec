@@ -26,5 +26,6 @@ pub trait Archetype: Send + Sync + 'static {
     /// The raw ID type used for entities with this archetype.
     type RawEntity: entity::Raw;
 
+    /// The entity ID allocator for entities of this archetype.
     type Ealloc: entity::Ealloc<Raw = Self::RawEntity>;
 }

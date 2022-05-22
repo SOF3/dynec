@@ -6,8 +6,10 @@ use std::sync::atomic::{AtomicU32, Ordering};
 ///
 /// Types implementing this trait are only used in storage internals.
 pub trait Raw: Sized + Send + Sync + Copy + fmt::Debug + Eq + Ord + 'static {
+    /// The atomic variant of this data type.
     type Atomic: Atomic<Self>;
 
+    /// Creates the smallest value of this type in atomic form, used for initialization.
     fn new() -> Self::Atomic;
 
     /// Equivalent to `self + count`, does not mutate any values

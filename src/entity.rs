@@ -38,6 +38,7 @@ pub trait Ref: sealed::Sealed {
     /// The archetype that this entity belongs to.
     type Archetype: Archetype;
 
+    /// The underlying entity ID referenced.
     fn id(&self) -> <Self::Archetype as Archetype>::RawEntity;
 }
 
@@ -124,7 +125,7 @@ impl<'t, T: Ref> Ref for &'t T {
 /// A weak counted reference to an entity.
 ///
 /// This reference can outlive the entity.
-/// However, it must still be visited in [`Referrer::visit_each`].
+/// However, it must still be visited in [`Referrer::visit`].
 ///
 /// This type additionally stores the generation of an entity
 /// in order to disambiguate new entities that uses the recycled memory.

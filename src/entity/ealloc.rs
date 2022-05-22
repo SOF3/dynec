@@ -1,3 +1,5 @@
+//! Manages entity ID allocation and deallocation.
+
 use std::any::Any;
 use std::collections::{BTreeSet, HashMap};
 use std::sync::Arc;
@@ -19,6 +21,7 @@ pub(crate) fn builder<A: Archetype>() -> AnyBuilder {
 
 /// Manages sharded entity ID allocation and deallocation.
 pub trait Ealloc: 'static {
+    /// The raw entity ID type supported by this allocator.
     type Raw: Raw;
 
     /// The hint type supported by the allocator to fine-tune memory allocation.
@@ -64,7 +67,7 @@ impl<T: Ealloc> AnyEalloc for T {
 
         for shard in shards {
             let shard: Box<T::Shard> = shard.as_any_box().downcast().expect("Shard type mismatch");
-            shard.deallocate_buffer(&mut buf);
+            shard.get_free_buffer(&mut buf);
         }
 
         self.deallocate(buf);
@@ -76,15 +79,20 @@ impl<T: Ealloc> AnyEalloc for T {
 /// Each worker thread has mutable access to a shard in each cycle.
 /// Between cycles, the shards are shuffled to new worker threads.
 pub trait Shard: Send + 'static {
+    /// The raw entity ID type.
     type Raw: Raw;
+
+    /// The allocation hint for the underlying recycler.
     type Hint: Sized;
 
     /// Allocates an ID from the shard.
     fn allocate(&mut self, hint: Self::Hint) -> Self::Raw;
 
+    /// Deallocates an ID.
     fn deallocate(&mut self, id: Self::Raw);
 
-    fn deallocate_buffer(self: Box<Self>, buf: &mut Vec<Self::Raw>);
+    /// Moves the buffer of deallocated IDs into the given vec.
+    fn get_free_buffer(self: Box<Self>, buf: &mut Vec<Self::Raw>);
 }
 
 pub(crate) trait AnyShard: Send + 'static {
@@ -301,7 +309,7 @@ struct RecyclingShardState<R: Raw, T: Recycler<R>> {
     recycler:  T,
 }
 
-/// [`Shard`] implementation for [`RecyclingEalloc`].
+/// [`Shard`] implementation for [`Recycling`].
 pub struct RecyclingShard<R: Raw, T: Recycler<R>, const BLOCK_SIZE: usize> {
     global_gauge: Arc<R::Atomic>,
     state:        Arc<Mutex<RecyclingShardState<R, T>>>,
@@ -331,7 +339,7 @@ impl<R: Raw, T: Recycler<R>, const BLOCK_SIZE: usize> Shard for RecyclingShard<R
 
     fn deallocate(&mut self, id: Self::Raw) { self.freed_buf.push(id); }
 
-    fn deallocate_buffer(self: Box<Self>, buf: &mut Vec<Self::Raw>) { buf.extend(self.freed_buf); }
+    fn get_free_buffer(self: Box<Self>, buf: &mut Vec<Self::Raw>) { buf.extend(self.freed_buf); }
 }
 
 /// A data structure that provides the ability to recycle entity IDs.
@@ -345,6 +353,7 @@ pub trait Recycler<R: Raw>: Default + Extend<R> + Send + 'static {
     /// Returns whether the recycler is empty.
     fn is_empty(&self) -> bool { self.len() == 0 }
 
+    /// Polls an ID from the recycler based on the given hint.
     fn poll(&mut self, hint: Self::Hint) -> Option<R>;
 }
 
@@ -476,6 +485,7 @@ impl Map {
     }
 }
 
+/// A map of shards assigned to a single worker thread.
 #[derive(Default)]
 pub struct ShardMap {
     map: HashMap<DbgTypeId, Box<dyn AnyShard>>,

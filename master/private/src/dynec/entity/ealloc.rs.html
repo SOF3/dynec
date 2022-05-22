@@ -575,7 +575,19 @@
 <span id="568">568</span>
 <span id="569">569</span>
 <span id="570">570</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::any::Any</span>;
+<span id="571">571</span>
+<span id="572">572</span>
+<span id="573">573</span>
+<span id="574">574</span>
+<span id="575">575</span>
+<span id="576">576</span>
+<span id="577">577</span>
+<span id="578">578</span>
+<span id="579">579</span>
+<span id="580">580</span>
+</pre><pre class="rust"><code><span class="doccomment">//! Manages entity ID allocation and deallocation.</span>
+
+<span class="kw">use</span> <span class="ident">std::any::Any</span>;
 <span class="kw">use</span> <span class="ident">std::collections</span>::{<span class="ident">BTreeSet</span>, <span class="ident">HashMap</span>};
 <span class="kw">use</span> <span class="ident">std::sync::Arc</span>;
 
@@ -596,6 +608,7 @@
 
 <span class="doccomment">/// Manages sharded entity ID allocation and deallocation.</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Ealloc</span>: <span class="lifetime">&#39;static</span> {
+    <span class="doccomment">/// The raw entity ID type supported by this allocator.</span>
     <span class="kw">type</span> <span class="ident">Raw</span>: <span class="ident">Raw</span>;
 
     <span class="doccomment">/// The hint type supported by the allocator to fine-tune memory allocation.</span>
@@ -641,7 +654,7 @@
 
         <span class="kw">for</span> <span class="ident">shard</span> <span class="kw">in</span> <span class="ident">shards</span> {
             <span class="kw">let</span> <span class="ident">shard</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">T::Shard</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">shard</span>.<span class="ident">as_any_box</span>().<span class="ident">downcast</span>().<span class="ident">expect</span>(<span class="string">&quot;Shard type mismatch&quot;</span>);
-            <span class="ident">shard</span>.<span class="ident">deallocate_buffer</span>(<span class="kw-2">&amp;mut</span> <span class="ident">buf</span>);
+            <span class="ident">shard</span>.<span class="ident">get_free_buffer</span>(<span class="kw-2">&amp;mut</span> <span class="ident">buf</span>);
         }
 
         <span class="self">self</span>.<span class="ident">deallocate</span>(<span class="ident">buf</span>);
@@ -653,15 +666,20 @@
 <span class="doccomment">/// Each worker thread has mutable access to a shard in each cycle.</span>
 <span class="doccomment">/// Between cycles, the shards are shuffled to new worker threads.</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Shard</span>: <span class="ident">Send</span> <span class="op">+</span> <span class="lifetime">&#39;static</span> {
+    <span class="doccomment">/// The raw entity ID type.</span>
     <span class="kw">type</span> <span class="ident">Raw</span>: <span class="ident">Raw</span>;
+
+    <span class="doccomment">/// The allocation hint for the underlying recycler.</span>
     <span class="kw">type</span> <span class="ident">Hint</span>: <span class="ident">Sized</span>;
 
     <span class="doccomment">/// Allocates an ID from the shard.</span>
     <span class="kw">fn</span> <span class="ident">allocate</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">hint</span>: <span class="ident"><span class="self">Self</span>::Hint</span>) -&gt; <span class="ident"><span class="self">Self</span>::Raw</span>;
 
+    <span class="doccomment">/// Deallocates an ID.</span>
     <span class="kw">fn</span> <span class="ident">deallocate</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">id</span>: <span class="ident"><span class="self">Self</span>::Raw</span>);
 
-    <span class="kw">fn</span> <span class="ident">deallocate_buffer</span>(<span class="self">self</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>, <span class="ident">buf</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Raw</span><span class="op">&gt;</span>);
+    <span class="doccomment">/// Moves the buffer of deallocated IDs into the given vec.</span>
+    <span class="kw">fn</span> <span class="ident">get_free_buffer</span>(<span class="self">self</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>, <span class="ident">buf</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Raw</span><span class="op">&gt;</span>);
 }
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">trait</span> <span class="ident">AnyShard</span>: <span class="ident">Send</span> <span class="op">+</span> <span class="lifetime">&#39;static</span> {
@@ -878,7 +896,7 @@
     <span class="ident">recycler</span>:  <span class="ident">T</span>,
 }
 
-<span class="doccomment">/// [`Shard`] implementation for [`RecyclingEalloc`].</span>
+<span class="doccomment">/// [`Shard`] implementation for [`Recycling`].</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">RecyclingShard</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">Raw</span>, <span class="ident">T</span>: <span class="ident">Recycler</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>, <span class="kw">const</span> <span class="ident">BLOCK_SIZE</span>: <span class="ident">usize</span><span class="op">&gt;</span> {
     <span class="ident">global_gauge</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">R::Atomic</span><span class="op">&gt;</span>,
     <span class="ident">state</span>:        <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">RecyclingShardState</span><span class="op">&lt;</span><span class="ident">R</span>, <span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
@@ -908,7 +926,7 @@
 
     <span class="kw">fn</span> <span class="ident">deallocate</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">id</span>: <span class="ident"><span class="self">Self</span>::Raw</span>) { <span class="self">self</span>.<span class="ident">freed_buf</span>.<span class="ident">push</span>(<span class="ident">id</span>); }
 
-    <span class="kw">fn</span> <span class="ident">deallocate_buffer</span>(<span class="self">self</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>, <span class="ident">buf</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Raw</span><span class="op">&gt;</span>) { <span class="ident">buf</span>.<span class="ident">extend</span>(<span class="self">self</span>.<span class="ident">freed_buf</span>); }
+    <span class="kw">fn</span> <span class="ident">get_free_buffer</span>(<span class="self">self</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>, <span class="ident">buf</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Raw</span><span class="op">&gt;</span>) { <span class="ident">buf</span>.<span class="ident">extend</span>(<span class="self">self</span>.<span class="ident">freed_buf</span>); }
 }
 
 <span class="doccomment">/// A data structure that provides the ability to recycle entity IDs.</span>
@@ -922,6 +940,7 @@
     <span class="doccomment">/// Returns whether the recycler is empty.</span>
     <span class="kw">fn</span> <span class="ident">is_empty</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> { <span class="self">self</span>.<span class="ident">len</span>() <span class="op">==</span> <span class="number">0</span> }
 
+    <span class="doccomment">/// Polls an ID from the recycler based on the given hint.</span>
     <span class="kw">fn</span> <span class="ident">poll</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">hint</span>: <span class="ident"><span class="self">Self</span>::Hint</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>;
 }
 
@@ -1053,6 +1072,7 @@
     }
 }
 
+<span class="doccomment">/// A map of shards assigned to a single worker thread.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ShardMap</span> {
     <span class="ident">map</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">DbgTypeId</span>, <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">AnyShard</span><span class="op">&gt;</span><span class="op">&gt;</span>,

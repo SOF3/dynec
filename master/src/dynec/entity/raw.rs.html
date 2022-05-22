@@ -82,6 +82,8 @@
 <span id="75">75</span>
 <span id="76">76</span>
 <span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">core::fmt</span>;
 <span class="kw">use</span> <span class="ident">std::num::NonZeroU32</span>;
 <span class="kw">use</span> <span class="ident">std::sync::atomic</span>::{<span class="ident">AtomicU32</span>, <span class="ident">Ordering</span>};
@@ -90,8 +92,10 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// Types implementing this trait are only used in storage internals.</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Raw</span>: <span class="ident">Sized</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="ident">Copy</span> <span class="op">+</span> <span class="ident">fmt::Debug</span> <span class="op">+</span> <span class="ident">Eq</span> <span class="op">+</span> <span class="ident">Ord</span> <span class="op">+</span> <span class="lifetime">&#39;static</span> {
+    <span class="doccomment">/// The atomic variant of this data type.</span>
     <span class="kw">type</span> <span class="ident">Atomic</span>: <span class="ident">Atomic</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>;
 
+    <span class="doccomment">/// Creates the smallest value of this type in atomic form, used for initialization.</span>
     <span class="kw">fn</span> <span class="ident">new</span>() -&gt; <span class="ident"><span class="self">Self</span>::Atomic</span>;
 
     <span class="doccomment">/// Equivalent to `self + count`, does not mutate any values</span>

@@ -184,6 +184,7 @@
 <span id="177">177</span>
 <span id="178">178</span>
 <span id="179">179</span>
+<span id="180">180</span>
 </pre><pre class="rust"><code><span class="doccomment">//! An entity is a single object that owns components.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Entities are reference-counted in debug mode,</span>
@@ -224,6 +225,7 @@
     <span class="doccomment">/// The archetype that this entity belongs to.</span>
     <span class="kw">type</span> <span class="ident">Archetype</span>: <span class="ident">Archetype</span>;
 
+    <span class="doccomment">/// The underlying entity ID referenced.</span>
     <span class="kw">fn</span> <span class="ident">id</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Archetype</span> <span class="kw">as</span> <span class="ident">Archetype</span><span class="op">&gt;</span><span class="ident">::RawEntity</span>;
 }
 
@@ -310,7 +312,7 @@
 <span class="doccomment">/// A weak counted reference to an entity.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// This reference can outlive the entity.</span>
-<span class="doccomment">/// However, it must still be visited in [`Referrer::visit_each`].</span>
+<span class="doccomment">/// However, it must still be visited in [`Referrer::visit`].</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// This type additionally stores the generation of an entity</span>
 <span class="doccomment">/// in order to disambiguate new entities that uses the recycled memory.</span>

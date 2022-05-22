@@ -35,6 +35,7 @@
 <span id="28">28</span>
 <span id="29">29</span>
 <span id="30">30</span>
+<span id="31">31</span>
 </pre><pre class="rust"><code><span class="doccomment">//! An archetype is a kind of entity with a fixed set of (optional) components.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! It is comparable to a class in OOP-based designs.</span>
@@ -63,6 +64,7 @@
     <span class="doccomment">/// The raw ID type used for entities with this archetype.</span>
     <span class="kw">type</span> <span class="ident">RawEntity</span>: <span class="ident">entity::Raw</span>;
 
+    <span class="doccomment">/// The entity ID allocator for entities of this archetype.</span>
     <span class="kw">type</span> <span class="ident">Ealloc</span>: <span class="ident">entity::Ealloc</span><span class="op">&lt;</span><span class="ident">Raw</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::RawEntity</span><span class="op">&gt;</span>;
 }
 </code></pre></div>

@@ -60,17 +60,35 @@
 <span id="53">53</span>
 <span id="54">54</span>
 <span id="55">55</span>
+<span id="56">56</span>
+<span id="57">57</span>
+<span id="58">58</span>
+<span id="59">59</span>
+<span id="60">60</span>
+<span id="61">61</span>
+<span id="62">62</span>
+<span id="63">63</span>
+<span id="64">64</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::any::TypeId</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::util::DbgTypeId</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::Archetype</span>;
 
 <span class="doccomment">/// A type that may own entity references (no matter strong or weak).</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// The parameters passed in this trait are abstracted by the opaque type [`ReferrerArg`].</span>
+<span class="doccomment">/// Implementors should only forward the arg reference to the other implementors,</span>
+<span class="doccomment">/// where the actual logic is eventually implemented by</span>
+<span class="doccomment">/// owned [`Entity`](super::Entity) and [`Weak`](super::Weak) fields.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// This trait is deliberately not implemented for [`UnclonableRef`](super::UnclonableRef),</span>
+<span class="doccomment">/// because this trait should only be used in global states and components,</span>
+<span class="doccomment">/// whilst `UnclonableRef` should only be used in systems temporarily.</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Referrer</span> {
     <span class="doccomment">/// Performs the mapping and increments the counter for each entity.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Each entity reference must be visited only exactly once for each visitor.</span>
-    <span class="doccomment">/// As a result, `Referrer` is not implemented for [`std::sync::Arc`]</span>
+    <span class="doccomment">/// As a result, `Referrer` is not implemented for [`Arc`](std::sync::Arc)</span>
     <span class="doccomment">/// because it may result in visiting the same entity reference multiple times,</span>
     <span class="doccomment">/// which will lead to incorrect behaviour.</span>
     <span class="kw">fn</span> <span class="ident">visit</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">arg</span>: <span class="kw-2">&amp;mut</span> <span class="ident">ReferrerArg</span>);

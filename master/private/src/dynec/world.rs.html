@@ -206,6 +206,10 @@
 <span id="199">199</span>
 <span id="200">200</span>
 <span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The world stores the states of the game.</span>
 
 <span class="kw">use</span> <span class="ident">std::any</span>::{<span class="self">self</span>, <span class="ident">TypeId</span>};
@@ -357,10 +361,9 @@
         <span class="ident">Entity::new_allocated</span>(<span class="ident">id</span>)
     }
 
-    <span class="doccomment">/// Gets a reference to an entity component when the world is not running.</span>
+    <span class="doccomment">/// Gets a reference to an entity component in offline mode.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// Requires a mutable reference to the world to ensure that the world is not executing in</span>
-    <span class="doccomment">/// other systems.</span>
+    <span class="doccomment">/// Requires a mutable reference to the world to ensure that the world is offline.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_simple</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span>, <span class="ident">C</span>: <span class="ident">comp::Simple</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>, <span class="ident">E</span>: <span class="ident">entity::Ref</span><span class="op">&lt;</span><span class="ident">Archetype</span> <span class="op">=</span> <span class="ident">A</span><span class="op">&gt;</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;mut</span> <span class="self">self</span>,
         <span class="ident">entity</span>: <span class="ident">E</span>,
@@ -382,6 +385,7 @@
         <span class="ident">storage</span>.<span class="ident">get_mut</span>(<span class="ident">entity</span>.<span class="ident">id</span>())
     }
 
+    <span class="doccomment">/// Gets a thread-safe global state in offline mode.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_global</span><span class="op">&lt;</span><span class="ident">G</span>: <span class="ident">Global</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut</span> <span class="ident">G</span> {
         <span class="kw">let</span> <span class="ident">global</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">sync_globals</span>.<span class="ident">sync_globals</span>.<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">TypeId::of</span>::<span class="op">&lt;</span><span class="ident">G</span><span class="op">&gt;</span>()) {
             <span class="prelude-val">Some</span>(<span class="ident">global</span>) =&gt; <span class="ident">global</span>,
@@ -393,6 +397,10 @@
         <span class="ident">global</span>.<span class="ident">get_mut</span>().<span class="ident">downcast_mut</span>::<span class="op">&lt;</span><span class="ident">G</span><span class="op">&gt;</span>().<span class="ident">expect</span>(<span class="string">&quot;TypeId mismatch&quot;</span>)
     }
 
+    <span class="doccomment">/// Gets a thread-unsafe global state in offline mode.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// Although permitted by the compiler, this method does not support types</span>
+    <span class="doccomment">/// registered as thread-safe global states.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_global_unsync</span><span class="op">&lt;</span><span class="ident">G</span>: <span class="ident">Global</span><span class="op">&gt;</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut</span> <span class="ident">G</span> {
         <span class="kw">let</span> <span class="ident">global</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">unsync_globals</span>.<span class="ident">unsync_globals</span>.<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">TypeId::of</span>::<span class="op">&lt;</span><span class="ident">G</span><span class="op">&gt;</span>()) {
             <span class="prelude-val">Some</span>(<span class="ident">global</span>) =&gt; <span class="ident">global</span>,

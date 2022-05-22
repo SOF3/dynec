@@ -3,7 +3,9 @@
         </a><h2 class="location"></h2>
     </nav>
     <nav class="sidebar"><a class="sidebar-logo" href="../../dynec_codegen/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../dynec_codegen/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><div class="theme-picker hidden"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="22" height="22" alt="Pick another theme!" src="../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../dynec_codegen/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><div id="settings-menu" tabindex="-1">
+                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
+                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -130,10 +132,6 @@
 <span id="125">125</span>
 <span id="126">126</span>
 <span id="127">127</span>
-<span id="128">128</span>
-<span id="129">129</span>
-<span id="130">130</span>
-<span id="131">131</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">proc_macro2::TokenStream</span>;
 <span class="kw">use</span> <span class="ident">quote</span>::{<span class="ident">format_ident</span>, <span class="ident">quote</span>};
 <span class="kw">use</span> <span class="ident">syn</span>::{<span class="ident">Error</span>, <span class="prelude-ty">Result</span>};
@@ -167,16 +165,14 @@
             <span class="ident">generics</span>.<span class="ident">impl_trait</span>(
                 <span class="macro">quote!</span>(#<span class="ident">crate_name::entity::Referrer</span>),
                 <span class="macro">quote!</span> {
-                    <span class="kw">fn</span> <span class="ident">visit_each</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span>, <span class="ident">F</span>: #<span class="ident">crate_name::entity::Visitor</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span><span class="op">&gt;</span><span class="op">&gt;</span>(
-                        <span class="kw-2">&amp;</span><span class="lifetime">&#39;s</span> <span class="kw-2">mut</span> <span class="self">self</span>,
-                        <span class="ident">archetype</span>: #<span class="ident">crate_name::util::DbgTypeId</span>,
-                        <span class="ident">visitor</span>: <span class="kw-2">&amp;mut</span> <span class="ident">F</span>,
+                    <span class="kw">fn</span> <span class="ident">visit</span>(
+                        <span class="kw-2">&amp;mut</span> <span class="self">self</span>,
+                        <span class="ident">arg</span>: <span class="kw-2">&amp;mut</span> #<span class="ident">crate_name::entity::ReferrerArg</span>,
                     ) {
                         #(
-                            #<span class="ident">crate_name::entity::Referrer::visit_each</span>(
+                            #<span class="ident">crate_name::entity::Referrer::visit</span>(
                                 <span class="kw-2">&amp;mut</span> #<span class="ident">fields</span>,
-                                <span class="ident">archetype</span>,
-                                <span class="ident">visitor</span>,
+                                <span class="kw-2">&amp;mut</span> <span class="kw-2">*</span><span class="ident">arg</span>,
                             );
                         )<span class="op">*</span>
                     }
@@ -223,10 +219,9 @@
                 <span class="ident">arms</span>.<span class="ident">push</span>(<span class="macro">quote!</span> {
                     <span class="self">Self</span>::#<span class="ident">variant_ident</span> #<span class="ident">pattern</span> =&gt; {
                         #(
-                            #<span class="ident">crate_name::entity::Referrer::visit_each</span>(
+                            #<span class="ident">crate_name::entity::Referrer::visit</span>(
                                 <span class="kw-2">&amp;mut</span> #<span class="ident">fields</span>,
-                                <span class="ident">arhcetype</span>,
-                                <span class="ident">visitor</span>,
+                                <span class="kw-2">&amp;mut</span> <span class="kw-2">*</span><span class="ident">arg</span>,
                             );
                         )<span class="op">*</span>
                     },
@@ -236,10 +231,9 @@
             <span class="ident">generics</span>.<span class="ident">impl_trait</span>(
                 <span class="macro">quote!</span>(#<span class="ident">crate_name::entity::Referrer</span>),
                 <span class="macro">quote!</span> {
-                    <span class="kw">fn</span> <span class="ident">visit_each</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span>, <span class="ident">F</span>: #<span class="ident">crate_name::entity::Visitor</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span><span class="op">&gt;</span><span class="op">&gt;</span>(
-                        <span class="kw-2">&amp;</span><span class="lifetime">&#39;s</span> <span class="kw-2">mut</span> <span class="self">self</span>,
-                        <span class="ident">archetype</span>: #<span class="ident">crate_name::util::DbgTypeId</span>,
-                        <span class="ident">visitor</span>: <span class="kw-2">&amp;mut</span> <span class="ident">F</span>,
+                    <span class="kw">fn</span> <span class="ident">visit</span>(
+                        <span class="kw-2">&amp;mut</span> <span class="self">self</span>,
+                        <span class="ident">arg</span>: <span class="kw-2">&amp;mut</span> #<span class="ident">crate_name::entity::ReferrerArg</span>,
                     ) {
                         <span class="kw">match</span> <span class="self">self</span> {
                             #(#<span class="ident">arms</span>)<span class="op">*</span>
@@ -266,5 +260,5 @@
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec_codegen" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (70b3681bf 2022-05-14)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec_codegen" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.63.0-nightly (9257f5aad 2022-05-21)" ></div>
 </body></html>

@@ -3,7 +3,9 @@
         </a><h2 class="location"></h2>
     </nav>
     <nav class="sidebar"><a class="sidebar-logo" href="../../dynec/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../dynec/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><div class="theme-picker hidden"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="22" height="22" alt="Pick another theme!" src="../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../dynec/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><div id="settings-menu" tabindex="-1">
+                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
+                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -185,11 +187,31 @@
 <span id="180">180</span>
 <span id="181">181</span>
 <span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The world stores the states of the game.</span>
 
 <span class="kw">use</span> <span class="ident">std::any</span>::{<span class="self">self</span>, <span class="ident">TypeId</span>};
 <span class="kw">use</span> <span class="ident">std::sync::Arc</span>;
 
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::entity::ealloc</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::util::DbgTypeId</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">comp</span>, <span class="ident">entity</span>, <span class="ident">Archetype</span>, <span class="ident">Entity</span>, <span class="ident">Global</span>};
 
@@ -197,6 +219,7 @@
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">builder::Builder</span>;
 
 <span class="kw">mod</span> <span class="ident">state</span>;
+<span class="kw">use</span> <span class="ident">ealloc::Ealloc</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">state</span>::{<span class="ident">Components</span>, <span class="ident">SyncGlobals</span>, <span class="ident">UnsyncGlobals</span>};
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod</span> <span class="ident">storage</span>;
@@ -281,6 +304,7 @@
 
 <span class="doccomment">/// The data structure that stores all states in the game.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">World</span> {
+    <span class="ident">ealloc_map</span>:     <span class="ident">ealloc::Map</span>,
     <span class="doccomment">/// Stores the component states in a world.</span>
     <span class="ident">components</span>:     <span class="ident">Components</span>,
     <span class="doccomment">/// Stores the system-local states and the scheduler topology.</span>
@@ -299,22 +323,37 @@
             <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">components</span>,
             <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">sync_globals</span>,
             <span class="kw-2">&amp;mut</span> <span class="self">self</span>.<span class="ident">unsync_globals</span>,
+            <span class="kw-2">&amp;mut</span> <span class="self">self</span>.<span class="ident">ealloc_map</span>,
         );
     }
 
     <span class="doccomment">/// Adds an entity to the world.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span><span class="op">&gt;</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">components</span>: <span class="ident">comp::Map</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>) -&gt; <span class="ident">Entity</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">create_near</span>::<span class="op">&lt;</span><span class="ident">entity::Entity</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="prelude-val">None</span>, <span class="ident">components</span>)
+        <span class="self">self</span>.<span class="ident">create_near</span>::<span class="op">&lt;</span><span class="ident">entity::Entity</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="ident">Default::default</span>(), <span class="ident">components</span>)
     }
 
     <span class="doccomment">/// Adds an entity to the world near another entity.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_near</span><span class="op">&lt;</span><span class="ident">E</span>: <span class="ident">entity::Ref</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;mut</span> <span class="self">self</span>,
-        <span class="ident">near</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span>,
+        <span class="ident">hint</span>: <span class="op">&lt;</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">E</span> <span class="kw">as</span> <span class="ident">entity::Ref</span><span class="op">&gt;</span><span class="ident">::Archetype</span> <span class="kw">as</span> <span class="ident">Archetype</span><span class="op">&gt;</span><span class="ident">::Ealloc</span> <span class="kw">as</span> <span class="ident">Ealloc</span><span class="op">&gt;</span><span class="ident">::AllocHint</span>,
         <span class="ident">components</span>: <span class="ident">comp::Map</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">E</span> <span class="kw">as</span> <span class="ident">entity::Ref</span><span class="op">&gt;</span><span class="ident">::Archetype</span><span class="op">&gt;</span>,
     ) -&gt; <span class="ident">Entity</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">E</span> <span class="kw">as</span> <span class="ident">entity::Ref</span><span class="op">&gt;</span><span class="ident">::Archetype</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">ealloc</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">ealloc_map</span>.<span class="ident">map</span>.<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">TypeId::of</span>::<span class="op">&lt;</span><span class="ident">E::Archetype</span><span class="op">&gt;</span>()) {
+            <span class="prelude-val">Some</span>(<span class="ident">ealloc</span>) =&gt; <span class="ident">ealloc</span>,
+            <span class="prelude-val">None</span> =&gt; <span class="macro">panic!</span>(
+                <span class="string">&quot;Cannot create entity for archetype {} because it is not used in any systems&quot;</span>,
+                <span class="ident">any::type_name</span>::<span class="op">&lt;</span><span class="ident">E::Archetype</span><span class="op">&gt;</span>()
+            ),
+        };
+        <span class="kw">let</span> <span class="ident">ealloc</span> <span class="op">=</span> <span class="ident">ealloc</span>
+            .<span class="ident">as_any_mut</span>()
+            .<span class="ident">downcast_mut</span>::<span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">E::Archetype</span> <span class="kw">as</span> <span class="ident">Archetype</span><span class="op">&gt;</span><span class="ident">::Ealloc</span><span class="op">&gt;</span>()
+            .<span class="ident">expect</span>(<span class="string">&quot;TypeId mismatch&quot;</span>);
+        <span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="ident">ealloc</span>.<span class="ident">allocate</span>(<span class="ident">hint</span>);
+
         <span class="kw">let</span> <span class="ident">typed</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">components</span>.<span class="ident">archetype_mut</span>::<span class="op">&lt;</span><span class="ident">E::Archetype</span><span class="op">&gt;</span>();
-        <span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="ident">typed</span>.<span class="ident">create_near</span>(<span class="ident">near</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">raw</span><span class="op">|</span> <span class="ident">raw</span>.<span class="ident">id</span>().<span class="number">0</span>), <span class="ident">components</span>);
+        <span class="ident">typed</span>.<span class="ident">init_entity</span>(<span class="ident">id</span>, <span class="ident">components</span>);
+
         <span class="ident">Entity::new_allocated</span>(<span class="ident">id</span>)
     }
 
@@ -327,6 +366,7 @@
         <span class="ident">entity</span>: <span class="ident">E</span>,
     ) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;mut</span> <span class="ident">C</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">typed</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">components</span>.<span class="ident">archetype_mut</span>::<span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>();
+        <span class="macro">log::debug!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">typed</span>.<span class="ident">simple_storages</span>.<span class="ident">keys</span>().<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>());
         <span class="kw">let</span> <span class="ident">storage</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">typed</span>.<span class="ident">simple_storages</span>.<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">TypeId::of</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>()) {
             <span class="prelude-val">Some</span>(<span class="ident">storage</span>) =&gt; <span class="ident">storage</span>,
             <span class="prelude-val">None</span> =&gt; <span class="macro">panic!</span>(
@@ -339,7 +379,7 @@
         <span class="kw">let</span> <span class="ident">storage</span> <span class="op">=</span> <span class="ident">storage</span>.<span class="ident">get_mut</span>();
         <span class="kw">let</span> <span class="ident">storage</span> <span class="op">=</span>
             <span class="ident">storage</span>.<span class="ident">as_any_mut</span>().<span class="ident">downcast_mut</span>::<span class="op">&lt;</span><span class="ident">storage::Storage</span><span class="op">&lt;</span><span class="ident">A</span>, <span class="ident">C</span><span class="op">&gt;</span><span class="op">&gt;</span>().<span class="ident">expect</span>(<span class="string">&quot;TypeId mismatch&quot;</span>);
-        <span class="ident">storage</span>.<span class="ident">get_mut</span>(<span class="ident">entity</span>.<span class="ident">id</span>().<span class="number">0</span>)
+        <span class="ident">storage</span>.<span class="ident">get_mut</span>(<span class="ident">entity</span>.<span class="ident">id</span>())
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_global</span><span class="op">&lt;</span><span class="ident">G</span>: <span class="ident">Global</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut</span> <span class="ident">G</span> {
@@ -366,7 +406,7 @@
 }
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-<span class="kw">mod</span> <span class="ident">tests</span>;
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod</span> <span class="ident">tests</span>;
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (70b3681bf 2022-05-14)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.63.0-nightly (9257f5aad 2022-05-21)" ></div>
 </body></html>

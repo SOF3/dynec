@@ -3,7 +3,9 @@
         </a><h2 class="location"></h2>
     </nav>
     <nav class="sidebar"><a class="sidebar-logo" href="../../dynec_codegen/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../dynec_codegen/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><div class="theme-picker hidden"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="22" height="22" alt="Pick another theme!" src="../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../dynec_codegen/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><div id="settings-menu" tabindex="-1">
+                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
+                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -715,28 +717,8 @@
 <span id="710">710</span>
 <span id="711">711</span>
 <span id="712">712</span>
-<span id="713">713</span>
-<span id="714">714</span>
-<span id="715">715</span>
-<span id="716">716</span>
-<span id="717">717</span>
-<span id="718">718</span>
-<span id="719">719</span>
-<span id="720">720</span>
-<span id="721">721</span>
-<span id="722">722</span>
-<span id="723">723</span>
-<span id="724">724</span>
-<span id="725">725</span>
-<span id="726">726</span>
-<span id="727">727</span>
-<span id="728">728</span>
-<span id="729">729</span>
-<span id="730">730</span>
-<span id="731">731</span>
-<span id="732">732</span>
-<span id="733">733</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">proc_macro2::TokenStream</span>;
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">matches2::option_match</span>;
+<span class="kw">use</span> <span class="ident">proc_macro2::TokenStream</span>;
 <span class="kw">use</span> <span class="ident">quote::quote</span>;
 <span class="kw">use</span> <span class="ident">syn::parse</span>::{<span class="ident">Parse</span>, <span class="ident">ParseStream</span>};
 <span class="kw">use</span> <span class="ident">syn::punctuated::Punctuated</span>;
@@ -760,19 +742,14 @@
     <span class="kw">if</span> <span class="op">!</span><span class="ident">args</span>.<span class="ident">is_empty</span>() {
         <span class="kw">let</span> <span class="ident">args</span> <span class="op">=</span> <span class="ident">syn::parse2</span>::<span class="op">&lt;</span><span class="ident">Attr</span><span class="op">&lt;</span><span class="ident">FnOpt</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="ident">args</span>)<span class="question-mark">?</span>;
 
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="kw">_</span>, <span class="ident">ts</span>)) <span class="op">=</span> <span class="ident">args</span>.<span class="ident">find_one</span>(<span class="op">|</span><span class="ident">opt</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">opt</span> {
-            <span class="ident">FnOpt::DynecAs</span>(<span class="kw">_</span>, <span class="ident">ts</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">ts</span>),
-            <span class="kw">_</span> =&gt; <span class="prelude-val">None</span>,
-        })<span class="question-mark">?</span> {
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="kw">_</span>, <span class="ident">ts</span>)) <span class="op">=</span>
+            <span class="ident">args</span>.<span class="ident">find_one</span>(<span class="op">|</span><span class="ident">opt</span><span class="op">|</span> <span class="macro">option_match!</span>(<span class="ident">opt</span>, <span class="ident">FnOpt::DynecAs</span>(<span class="kw">_</span>, <span class="ident">ts</span>) =&gt; <span class="ident">ts</span>))<span class="question-mark">?</span>
+        {
             <span class="ident">crate_name</span> <span class="op">=</span> <span class="ident">ts</span>.<span class="ident">clone</span>();
         }
 
-        <span class="ident">system_thread_local</span> <span class="op">=</span> <span class="ident">args</span>
-            .<span class="ident">find_one</span>(<span class="op">|</span><span class="ident">opt</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">opt</span> {
-                <span class="ident">FnOpt::ThreadLocal</span> =&gt; <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>()),
-                <span class="kw">_</span> =&gt; <span class="prelude-val">None</span>,
-            })<span class="question-mark">?</span>
-            .<span class="ident">is_some</span>();
+        <span class="ident">system_thread_local</span> <span class="op">=</span>
+            <span class="ident">args</span>.<span class="ident">find_one</span>(<span class="op">|</span><span class="ident">opt</span><span class="op">|</span> <span class="macro">option_match!</span>(<span class="ident">opt</span>, <span class="ident">FnOpt::ThreadLocal</span> =&gt; <span class="kw-2">&amp;</span>()))<span class="question-mark">?</span>.<span class="ident">is_some</span>();
 
         <span class="kw">for</span> <span class="ident">named</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">args</span>.<span class="ident">items</span> {
             <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">named</span>.<span class="ident">value</span> {
@@ -902,32 +879,21 @@
                     }
                     <span class="ident">ArgOpt::Global</span>(<span class="kw">_</span>, <span class="ident">global_opts</span>) =&gt; {
                         <span class="kw">let</span> <span class="ident">thread_local</span> <span class="op">=</span> <span class="ident">global_opts</span>
-                            .<span class="ident">find_one</span>(<span class="op">|</span><span class="ident">opt</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">opt</span> {
-                                <span class="ident">GlobalArgOpt::ThreadLocal</span> =&gt; <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>()),
-                            })<span class="question-mark">?</span>
+                            .<span class="ident">find_one</span>(<span class="op">|</span><span class="ident">opt</span><span class="op">|</span> <span class="macro">option_match!</span>(<span class="ident">opt</span>, <span class="ident">GlobalArgOpt::ThreadLocal</span> =&gt; <span class="kw-2">&amp;</span>()))<span class="question-mark">?</span>
                             .<span class="ident">is_some</span>();
                         <span class="ident">set_arg_type</span>(<span class="kw-2">&amp;mut</span> <span class="ident">arg_type</span>, <span class="ident">arg</span>.<span class="ident">name</span>, <span class="ident">ArgType::Global</span> { <span class="ident">thread_local</span> })<span class="question-mark">?</span>;
                     }
                     <span class="ident">ArgOpt::Simple</span>(<span class="kw">_</span>, <span class="ident">simple_opts</span>) =&gt; {
                         <span class="kw">let</span> <span class="ident">mutable</span> <span class="op">=</span> <span class="ident">simple_opts</span>
-                            .<span class="ident">find_one</span>(<span class="op">|</span><span class="ident">opt</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">opt</span> {
-                                <span class="ident">SimpleArgOpt::Mutable</span> =&gt; <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>()),
-                                <span class="kw">_</span> =&gt; <span class="prelude-val">None</span>,
-                            })<span class="question-mark">?</span>
+                            .<span class="ident">find_one</span>(<span class="op">|</span><span class="ident">opt</span><span class="op">|</span> <span class="macro">option_match!</span>(<span class="ident">opt</span>, <span class="ident">SimpleArgOpt::Mutable</span> =&gt; <span class="kw-2">&amp;</span>()))<span class="question-mark">?</span>
                             .<span class="ident">is_some</span>();
                         <span class="kw">let</span> (<span class="kw">_</span>, <span class="ident">arch</span>) <span class="op">=</span> <span class="ident">simple_opts</span>
-                            .<span class="ident">find_one</span>(<span class="op">|</span><span class="ident">opt</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">opt</span> {
-                                <span class="ident">SimpleArgOpt::Arch</span>(<span class="kw">_</span>, <span class="ident">ty</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">ty</span>),
-                                <span class="kw">_</span> =&gt; <span class="prelude-val">None</span>,
-                            })<span class="question-mark">?</span>
+                            .<span class="ident">find_one</span>(<span class="op">|</span><span class="ident">opt</span><span class="op">|</span> <span class="macro">option_match!</span>(<span class="ident">opt</span>, <span class="ident">SimpleArgOpt::Arch</span>(<span class="kw">_</span>, <span class="ident">ty</span>) =&gt; <span class="ident">ty</span>))<span class="question-mark">?</span>
                             .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> {
                                 <span class="ident">Error::new_spanned</span>(<span class="kw-2">&amp;</span><span class="ident">arg</span>.<span class="ident">name</span>, <span class="string">&quot;Simple arguments must have a type&quot;</span>)
                             })<span class="question-mark">?</span>;
                         <span class="kw">let</span> (<span class="kw">_</span>, <span class="ident">comp</span>) <span class="op">=</span> <span class="ident">simple_opts</span>
-                            .<span class="ident">find_one</span>(<span class="op">|</span><span class="ident">opt</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">opt</span> {
-                                <span class="ident">SimpleArgOpt::Comp</span>(<span class="kw">_</span>, <span class="ident">ty</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">ty</span>),
-                                <span class="kw">_</span> =&gt; <span class="prelude-val">None</span>,
-                            })<span class="question-mark">?</span>
+                            .<span class="ident">find_one</span>(<span class="op">|</span><span class="ident">opt</span><span class="op">|</span> <span class="macro">option_match!</span>(<span class="ident">opt</span>, <span class="ident">SimpleArgOpt::Comp</span>(<span class="kw">_</span>, <span class="ident">ty</span>) =&gt; <span class="ident">ty</span>))<span class="question-mark">?</span>
                             .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> {
                                 <span class="ident">Error::new_spanned</span>(<span class="kw-2">&amp;</span><span class="ident">arg</span>.<span class="ident">name</span>, <span class="string">&quot;Simple arguments must have a type&quot;</span>)
                             })<span class="question-mark">?</span>;
@@ -940,25 +906,17 @@
                     }
                     <span class="ident">ArgOpt::Isotope</span>(<span class="kw">_</span>, <span class="ident">isotope_opts</span>) =&gt; {
                         <span class="kw">let</span> <span class="ident">mutable</span> <span class="op">=</span> <span class="ident">isotope_opts</span>
-                            .<span class="ident">find_one</span>(<span class="op">|</span><span class="ident">opt</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">opt</span> {
-                                <span class="ident">IsotopeArgOpt::Mutable</span> =&gt; <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>()),
-                                <span class="kw">_</span> =&gt; <span class="prelude-val">None</span>,
-                            })<span class="question-mark">?</span>
+                            .<span class="ident">find_one</span>(<span class="op">|</span><span class="ident">opt</span><span class="op">|</span> <span class="macro">option_match!</span>(<span class="ident">opt</span>, <span class="ident">IsotopeArgOpt::Mutable</span> =&gt; <span class="kw-2">&amp;</span>()))<span class="question-mark">?</span>
                             .<span class="ident">is_some</span>();
 
-                        <span class="kw">let</span> <span class="ident">discrim</span> <span class="op">=</span> <span class="ident">isotope_opts</span>.<span class="ident">find_one</span>(<span class="op">|</span><span class="ident">opt</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">opt</span> {
-                            <span class="ident">IsotopeArgOpt::Discrim</span>(<span class="kw">_</span>, <span class="ident">discrim</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">discrim</span>),
-                            <span class="kw">_</span> =&gt; <span class="prelude-val">None</span>,
-                        })<span class="question-mark">?</span>;
+                        <span class="kw">let</span> <span class="ident">discrim</span> <span class="op">=</span> <span class="ident">isotope_opts</span>.<span class="ident">find_one</span>(
+                            <span class="op">|</span><span class="ident">opt</span><span class="op">|</span> <span class="macro">option_match!</span>(<span class="ident">opt</span>, <span class="ident">IsotopeArgOpt::Discrim</span>(<span class="kw">_</span>, <span class="ident">discrim</span>) =&gt; <span class="ident">discrim</span>),
+                        )<span class="question-mark">?</span>;
 
-                        <span class="kw">let</span> <span class="ident">arch</span> <span class="op">=</span> <span class="ident">isotope_opts</span>.<span class="ident">find_one</span>(<span class="op">|</span><span class="ident">opt</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">opt</span> {
-                            <span class="ident">IsotopeArgOpt::Arch</span>(<span class="kw">_</span>, <span class="ident">ty</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">ty</span>),
-                            <span class="kw">_</span> =&gt; <span class="prelude-val">None</span>,
-                        })<span class="question-mark">?</span>;
-                        <span class="kw">let</span> <span class="ident">comp</span> <span class="op">=</span> <span class="ident">isotope_opts</span>.<span class="ident">find_one</span>(<span class="op">|</span><span class="ident">opt</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">opt</span> {
-                            <span class="ident">IsotopeArgOpt::Comp</span>(<span class="kw">_</span>, <span class="ident">ty</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">ty</span>),
-                            <span class="kw">_</span> =&gt; <span class="prelude-val">None</span>,
-                        })<span class="question-mark">?</span>;
+                        <span class="kw">let</span> <span class="ident">arch</span> <span class="op">=</span> <span class="ident">isotope_opts</span>
+                            .<span class="ident">find_one</span>(<span class="op">|</span><span class="ident">opt</span><span class="op">|</span> <span class="macro">option_match!</span>(<span class="ident">opt</span>, <span class="ident">IsotopeArgOpt::Arch</span>(<span class="kw">_</span>, <span class="ident">ty</span>) =&gt; <span class="ident">ty</span>))<span class="question-mark">?</span>;
+                        <span class="kw">let</span> <span class="ident">comp</span> <span class="op">=</span> <span class="ident">isotope_opts</span>
+                            .<span class="ident">find_one</span>(<span class="op">|</span><span class="ident">opt</span><span class="op">|</span> <span class="macro">option_match!</span>(<span class="ident">opt</span>, <span class="ident">IsotopeArgOpt::Comp</span>(<span class="kw">_</span>, <span class="ident">ty</span>) =&gt; <span class="ident">ty</span>))<span class="question-mark">?</span>;
 
                         <span class="kw">match</span> (<span class="ident">arch</span>, <span class="ident">comp</span>, <span class="ident">discrim</span>, <span class="ident">mutable</span>) {
                             (<span class="prelude-val">Some</span>((<span class="kw">_</span>, <span class="ident">arch</span>)), <span class="prelude-val">Some</span>((<span class="kw">_</span>, <span class="ident">comp</span>)), <span class="ident">discrim</span>, <span class="ident">mutable</span>) =&gt; {
@@ -1202,6 +1160,7 @@
                 <span class="ident">sync_globals</span>: <span class="kw-2">&amp;</span>#<span class="ident">crate_name::world::SyncGlobals</span>,
                 <span class="ident">unsync_globals</span>: <span class="kw-2">&amp;</span>#<span class="ident">crate_name::world::UnsyncGlobals</span>,
                 <span class="ident">components</span>: <span class="kw-2">&amp;</span>#<span class="ident">crate_name::world::Components</span>,
+                <span class="ident">ealloc_shard_map</span>: <span class="kw-2">&amp;mut</span> #<span class="ident">crate_name::entity::ealloc::ShardMap</span>,
             },
         ),
         <span class="bool-val">false</span> =&gt; (
@@ -1209,6 +1168,7 @@
             <span class="macro">quote!</span> {
                 <span class="ident">sync_globals</span>: <span class="kw-2">&amp;</span>#<span class="ident">crate_name::world::SyncGlobals</span>,
                 <span class="ident">components</span>: <span class="kw-2">&amp;</span>#<span class="ident">crate_name::world::Components</span>,
+                <span class="ident">ealloc_shard_map</span>: <span class="kw-2">&amp;mut</span> #<span class="ident">crate_name::entity::ealloc::ShardMap</span>,
             },
         ),
     };
@@ -1470,5 +1430,5 @@
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec_codegen" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (70b3681bf 2022-05-14)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec_codegen" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.63.0-nightly (9257f5aad 2022-05-21)" ></div>
 </body></html>

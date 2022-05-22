@@ -1,1 +1,0 @@
-initSidebarItems({"struct":[["Original",""],["Permutation","A permutation of entities."],["Permuted",""]]});

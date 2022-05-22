@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["Raw","Sealed-public wrapper for `Raw`."],["RefMutRaw","Sealed-public wrapper for `&mut Raw`."]],"trait":[["Ref",""]]});
+initSidebarItems({"trait":[["Sealed",""]]});

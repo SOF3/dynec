@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["imp",""]],"struct":[["Input",""],["Inputs",""]]});
+initSidebarItems({"enum":[["Opt",""]],"fn":[["imp",""]],"struct":[["Input",""],["Inputs",""]]});

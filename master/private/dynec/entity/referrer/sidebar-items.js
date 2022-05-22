@@ -1,1 +1,1 @@
-initSidebarItems({"trait":[["Referrer","A type that may own entity references (no matter strong or weak)."],["Visitor","A value used to visit each entity reference."]]});
+initSidebarItems({"struct":[["ReferrerArg","The opaque argument passed through [`Referrer::visit`]."]],"trait":[["Referrer","A type that may own entity references (no matter strong or weak)."]]});

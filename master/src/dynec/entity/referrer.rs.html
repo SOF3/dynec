@@ -3,7 +3,9 @@
         </a><h2 class="location"></h2>
     </nav>
     <nav class="sidebar"><a class="sidebar-logo" href="../../../dynec/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../dynec/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><div class="theme-picker hidden"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="22" height="22" alt="Pick another theme!" src="../../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../dynec/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><div id="settings-menu" tabindex="-1">
+                                <a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div>
+                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -57,60 +59,62 @@
 <span id="52">52</span>
 <span id="53">53</span>
 <span id="54">54</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">super</span>::sealed</span>;
+<span id="55">55</span>
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::any::TypeId</span>;
+
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::util::DbgTypeId</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::Archetype</span>;
 
 <span class="doccomment">/// A type that may own entity references (no matter strong or weak).</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Referrer</span> {
-    <span class="doccomment">/// Executes the given function for each entity reference.</span>
+    <span class="doccomment">/// Performs the mapping and increments the counter for each entity.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Each entity reference must be visited only exactly once for each visitor.</span>
     <span class="doccomment">/// As a result, `Referrer` is not implemented for [`std::sync::Arc`]</span>
     <span class="doccomment">/// because it may result in visiting the same entity reference multiple times,</span>
     <span class="doccomment">/// which will lead to incorrect behaviour.</span>
-    <span class="kw">fn</span> <span class="ident">visit_each</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span>, <span class="ident">F</span>: <span class="ident">Visitor</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;s</span> <span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">archetype</span>: <span class="ident">DbgTypeId</span>, <span class="ident">visitor</span>: <span class="kw-2">&amp;mut</span> <span class="ident">F</span>);
+    <span class="kw">fn</span> <span class="ident">visit</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">arg</span>: <span class="kw-2">&amp;mut</span> <span class="ident">ReferrerArg</span>);
 }
 
-<span class="doccomment">/// A value used to visit each entity reference.</span>
+<span class="doccomment">/// The opaque argument passed through [`Referrer::visit`].</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// This trait shall not be implemented or called by user code.</span>
-<span class="doccomment">/// The only use of this trait is as an opaque wrapper for visitors passed in [`Referrer`]</span>
-<span class="doccomment">/// implementations.</span>
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Visitor</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span><span class="op">&gt;</span> {
-    <span class="doccomment">/// Visits an entity reference.</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// This method shall not be called by user code.</span>
-    <span class="kw">fn</span> <span class="ident">visit</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">raw</span>: <span class="ident">sealed::RefMutRaw</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span><span class="op">&gt;</span>);
-}
-
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span>, <span class="ident">F</span>: <span class="ident">FnMut</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;s</span> <span class="kw-2">mut</span> <span class="ident"><span class="kw">super</span>::Raw</span>)<span class="op">&gt;</span> <span class="ident">Visitor</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">F</span> {
-    <span class="kw">fn</span> <span class="ident">visit</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">raw</span>: <span class="ident">sealed::RefMutRaw</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span><span class="op">&gt;</span>) { <span class="self">self</span>(<span class="ident">raw</span>.<span class="number">0</span>) }
+<span class="doccomment">/// This type is used to hide the implementation detail from users</span>
+<span class="doccomment">/// such that the actual arguments are only visible to the internals.</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ReferrerArg</span><span class="op">&lt;</span><span class="lifetime">&#39;t</span><span class="op">&gt;</span> {
+    <span class="ident">archetype</span>: <span class="ident">DbgTypeId</span>,
+    <span class="ident">mapping</span>:   <span class="kw-2">&amp;</span><span class="lifetime">&#39;t</span> [<span class="ident">usize</span>],
+    <span class="ident">counter</span>:   <span class="kw-2">&amp;</span><span class="lifetime">&#39;t</span> <span class="kw-2">mut</span> <span class="ident">usize</span>,
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span><span class="op">&gt;</span> <span class="ident">Referrer</span> <span class="kw">for</span> <span class="ident"><span class="kw">super</span>::Weak</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">visit_each</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span>, <span class="ident">F</span>: <span class="ident">Visitor</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;s</span> <span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">ty</span>: <span class="ident">DbgTypeId</span>, <span class="ident">visitor</span>: <span class="kw-2">&amp;mut</span> <span class="ident">F</span>) {
-        <span class="kw">if</span> <span class="ident">ty</span> <span class="op">==</span> <span class="ident">DbgTypeId::of</span>::<span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>() {
-            <span class="ident">visitor</span>.<span class="ident">visit</span>(<span class="ident">sealed::RefMutRaw</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>.<span class="ident">id</span>));
+    <span class="kw">fn</span> <span class="ident">visit</span>(
+        <span class="kw-2">&amp;mut</span> <span class="self">self</span>,
+        <span class="kw-2">&amp;mut</span> <span class="ident">ReferrerArg</span> { <span class="ident">archetype</span>, <span class="ident">mapping</span>, <span class="kw-2">ref</span> <span class="kw-2">mut</span> <span class="ident">counter</span> }: <span class="kw-2">&amp;mut</span> <span class="ident">ReferrerArg</span>,
+    ) {
+        <span class="kw">if</span> <span class="ident">archetype</span> <span class="op">==</span> <span class="ident">TypeId::of</span>::<span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>() {
+            <span class="kw">let</span> <span class="kw-2">&amp;</span><span class="ident">new</span> <span class="op">=</span> <span class="ident">mapping</span>
+                .<span class="ident">get</span>(<span class="ident"><span class="kw">super</span>::Raw::to_primitive</span>(<span class="self">self</span>.<span class="ident">id</span>))
+                .<span class="ident">expect</span>(<span class="string">&quot;Weak reference not in entity. &quot;</span>);
+            <span class="self">self</span>.<span class="ident">id</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">A::RawEntity</span> <span class="kw">as</span> <span class="ident"><span class="kw">super</span>::Raw</span><span class="op">&gt;</span><span class="ident">::from_primitive</span>(<span class="ident">new</span>);
+            <span class="kw-2">*</span><span class="kw-2">*</span><span class="ident">counter</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
         }
     }
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span><span class="op">&gt;</span> <span class="ident">Referrer</span> <span class="kw">for</span> <span class="ident"><span class="kw">super</span>::Entity</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">visit_each</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span>, <span class="ident">F</span>: <span class="ident">Visitor</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;s</span> <span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">ty</span>: <span class="ident">DbgTypeId</span>, <span class="ident">visitor</span>: <span class="kw-2">&amp;mut</span> <span class="ident">F</span>) {
-        <span class="kw">if</span> <span class="ident">ty</span> <span class="op">==</span> <span class="ident">DbgTypeId::of</span>::<span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>() {
-            <span class="ident">visitor</span>.<span class="ident">visit</span>(<span class="ident">sealed::RefMutRaw</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>.<span class="ident">id</span>));
+    <span class="kw">fn</span> <span class="ident">visit</span>(
+        <span class="kw-2">&amp;mut</span> <span class="self">self</span>,
+        <span class="kw-2">&amp;mut</span> <span class="ident">ReferrerArg</span> { <span class="ident">archetype</span>, <span class="ident">mapping</span>, <span class="kw-2">ref</span> <span class="kw-2">mut</span> <span class="ident">counter</span> }: <span class="kw-2">&amp;mut</span> <span class="ident">ReferrerArg</span>,
+    ) {
+        <span class="kw">if</span> <span class="ident">archetype</span> <span class="op">==</span> <span class="ident">TypeId::of</span>::<span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>() {
+            <span class="kw">let</span> <span class="kw-2">&amp;</span><span class="ident">new</span> <span class="op">=</span> <span class="ident">mapping</span>
+                .<span class="ident">get</span>(<span class="ident"><span class="kw">super</span>::Raw::to_primitive</span>(<span class="self">self</span>.<span class="ident">id</span>))
+                .<span class="ident">expect</span>(<span class="string">&quot;Weak reference not in entity. &quot;</span>);
+            <span class="self">self</span>.<span class="ident">id</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">A::RawEntity</span> <span class="kw">as</span> <span class="ident"><span class="kw">super</span>::Raw</span><span class="op">&gt;</span><span class="ident">::from_primitive</span>(<span class="ident">new</span>);
+            <span class="kw-2">*</span><span class="kw-2">*</span><span class="ident">counter</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
         }
     }
 }
-
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-<span class="kw">mod</span> <span class="ident">tests</span> {
-    <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::Visitor</span>;
-
-    <span class="comment">// assert that `Visitor&lt;&#39;s&gt;` is object-safe.</span>
-    <span class="kw">fn</span> <span class="ident">_accepts_visitor</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span><span class="op">&gt;</span>(<span class="ident">_object</span>: <span class="kw-2">&amp;</span><span class="kw">dyn</span> <span class="ident">Visitor</span><span class="op">&lt;</span><span class="lifetime">&#39;s</span><span class="op">&gt;</span>) {}
-}
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0-nightly (70b3681bf 2022-05-14)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.63.0-nightly (9257f5aad 2022-05-21)" ></div>
 </body></html>

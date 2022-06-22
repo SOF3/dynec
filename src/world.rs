@@ -1,7 +1,6 @@
 //! The world stores the states of the game.
 
 use std::any::{self, TypeId};
-use std::sync::Arc;
 
 use crate::entity::ealloc;
 use crate::util::DbgTypeId;
@@ -14,7 +13,8 @@ mod state;
 use ealloc::Ealloc;
 pub use state::{Components, SyncGlobals, UnsyncGlobals};
 
-pub(crate) mod storage;
+pub mod storage;
+pub use storage::Storage;
 pub(crate) mod typed;
 
 mod scheduler;
@@ -165,11 +165,7 @@ impl World {
                 any::type_name::<C>()
             ),
         };
-        let storage =
-            Arc::get_mut(storage).expect("Storage Arc clones should not outlive system execution");
-        let storage = storage.get_mut();
-        let storage =
-            storage.as_any_mut().downcast_mut::<storage::Storage<A, C>>().expect("TypeId mismatch");
+        let storage = storage.get_storage::<C>();
         storage.get_mut(entity.id())
     }
 

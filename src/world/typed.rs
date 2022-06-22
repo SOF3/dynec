@@ -25,8 +25,8 @@ pub(crate) fn builder<A: Archetype>() -> impl AnyBuilder {
 }
 
 struct Builder<A: Archetype> {
-    simple_storages:   HashMap<DbgTypeId, storage::SharedSimple<A>>,
-    isotope_factories: HashMap<DbgTypeId, Box<dyn storage::AnyIsotopeFactory<A>>>,
+    simple_storages:   HashMap<DbgTypeId, storage::Simple<A>>,
+    isotope_factories: HashMap<DbgTypeId, storage::IsotopeFactory<A>>,
 }
 
 impl<A: Archetype> AnyBuilder for Builder<A> {
@@ -35,7 +35,7 @@ impl<A: Archetype> AnyBuilder for Builder<A> {
         component: DbgTypeId,
         shared: fn() -> Box<dyn Any>,
     ) {
-        let shared: storage::SharedSimple<A> = match shared().downcast() {
+        let shared: storage::Simple<A> = match shared().downcast() {
             Ok(ss) => *ss,
             Err(_) => panic!(
                 "Expected storage::SharedSimple<{}>, got {:?}",
@@ -67,7 +67,7 @@ impl<A: Archetype> AnyBuilder for Builder<A> {
 }
 
 fn toposort_populators<A: Archetype>(
-    storages: &mut HashMap<DbgTypeId, storage::SharedSimple<A>>,
+    storages: &mut HashMap<DbgTypeId, storage::Simple<A>>,
 ) -> Vec<Box<dyn Fn(&mut comp::Map<A>) + Send + Sync>> {
     let mut populators = Vec::new();
 
@@ -78,10 +78,7 @@ fn toposort_populators<A: Archetype>(
 
     let mut unprocessed = Vec::new();
     for (&ty, storage) in storages {
-        let storage =
-            Arc::get_mut(storage).expect("builder should own unique reference to storages");
-        let storage = storage.get_mut();
-        match storage.init_strategy() {
+        match &storage.init_strategy {
             comp::SimpleInitStrategy::None => continue, /* direct requirement, does not affect population */
             comp::SimpleInitStrategy::Auto(initer) => unprocessed.push((ty, initer.f)),
         };
@@ -150,22 +147,22 @@ fn toposort_populators<A: Archetype>(
 /// Stores everything related to a specific archetype.
 #[derive(Default)]
 pub(crate) struct Typed<A: Archetype> {
-    pub(crate) simple_storages:   HashMap<DbgTypeId, storage::SharedSimple<A>>,
-    pub(crate) isotope_storages:  RwLock<HashMap<comp::any::Identifier, storage::SharedSimple<A>>>,
-    pub(crate) isotope_factories: HashMap<DbgTypeId, Box<dyn storage::AnyIsotopeFactory<A>>>,
+    pub(crate) simple_storages:   HashMap<DbgTypeId, storage::Simple<A>>,
+    pub(crate) isotope_storages:  RwLock<HashMap<comp::any::Identifier, storage::Isotope<A>>>,
+    pub(crate) isotope_factories: HashMap<DbgTypeId, storage::IsotopeFactory<A>>,
     pub(crate) populators:        Vec<Box<dyn Fn(&mut comp::Map<A>) + Send + Sync>>,
 }
 
 impl<A: Archetype> Typed<A> {
+    /// Initialize an entity. This function should only be called offline.
     pub(crate) fn init_entity(&mut self, id: A::RawEntity, mut components: comp::Map<A>) {
         for populate in &self.populators {
             populate(&mut components);
         }
 
         for storage in self.simple_storages.values_mut() {
-            let storage = Arc::get_mut(storage).expect("storage arc was leaked");
-            let storage = storage.get_mut();
-            storage.init_with(id, &mut components);
+            let any_storage = Arc::get_mut(&mut storage.storage).expect("storage arc was leaked");
+            (storage.fill_init_simple)(any_storage.get_mut(), id, &mut components);
         }
 
         // TODO extract isotope components

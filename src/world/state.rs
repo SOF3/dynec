@@ -49,7 +49,7 @@ impl Components {
     pub fn read_simple_storage<A: Archetype, C: comp::Simple<A>>(
         &self,
     ) -> impl system::ReadSimple<A, C> + '_ {
-        let storage_lock = match self.archetype::<A>().simple_storages.get(&TypeId::of::<C>()) {
+        let storage = match self.archetype::<A>().simple_storages.get(&TypeId::of::<C>()) {
             Some(storage) => storage,
             None => panic!(
                 "The component {}/{} cannot be used because it is not used in any systems",
@@ -57,7 +57,7 @@ impl Components {
                 any::type_name::<C>()
             ),
         };
-        let guard = match storage_lock.try_read() {
+        let guard = match storage.storage.try_read() {
             Some(guard) => guard,
             None => panic!(
                 "The component {}/{} is currently exclusively locked by another system. Maybe \
@@ -67,15 +67,15 @@ impl Components {
             ),
         };
         let guard = RwLockReadGuard::map(guard, |storage| {
-            storage.as_any().downcast_ref::<Storage<A, C>>().expect("TypeId mismatch")
+            storage.downcast_ref::<C::Storage>().expect("TypeId mismatch")
         });
 
-        struct Ret<A: Archetype, C: comp::Simple<A>, S: ops::Deref<Target = Storage<A, C>>> {
-            storage: S,
+        struct Ret<R: ops::Deref> {
+            storage: R,
         }
 
-        impl<A: Archetype, C: comp::Simple<A>, S: ops::Deref<Target = Storage<A, C>>>
-            system::ReadSimple<A, C> for Ret<A, C, S>
+        impl<A: Archetype, C: comp::Simple<A>, R: ops::Deref<Target = C::Storage>>
+            system::ReadSimple<A, C> for Ret<R>
         {
             fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Option<&C> {
                 self.storage.get(entity.id())
@@ -93,7 +93,7 @@ impl Components {
     pub fn write_simple_storage<A: Archetype, C: comp::Simple<A>>(
         &self,
     ) -> impl system::WriteSimple<A, C> + '_ {
-        let storage_lock = match self.archetype::<A>().simple_storages.get(&TypeId::of::<C>()) {
+        let storage = match self.archetype::<A>().simple_storages.get(&TypeId::of::<C>()) {
             Some(storage) => storage,
             None => panic!(
                 "The component {}/{} cannot be used because it is not used in any systems",
@@ -101,7 +101,7 @@ impl Components {
                 any::type_name::<C>()
             ),
         };
-        let guard = match storage_lock.try_write() {
+        let guard = match storage.storage.try_write() {
             Some(guard) => guard,
             None => panic!(
                 "The component {}/{} is currently used by another system. Maybe scheduler bug?",
@@ -110,22 +110,18 @@ impl Components {
             ),
         };
         let guard = RwLockWriteGuard::map(guard, |storage| {
-            storage.as_any_mut().downcast_mut::<Storage<A, C>>().expect("TypeId mismatch")
+            storage.downcast_mut::<C::Storage>().expect("TypeId mismatch")
         });
 
-        struct Ret<
-            A: Archetype,
-            C: comp::Simple<A>,
-            S: ops::Deref<Target = Storage<A, C>> + ops::DerefMut,
-        > {
-            storage: S,
+        struct Ret<R: ops::Deref + ops::DerefMut> {
+            storage: R,
         }
 
         impl<
                 A: Archetype,
                 C: comp::Simple<A>,
-                S: ops::Deref<Target = Storage<A, C>> + ops::DerefMut,
-            > system::ReadSimple<A, C> for Ret<A, C, S>
+                S: ops::Deref<Target = C::Storage> + ops::DerefMut,
+            > system::ReadSimple<A, C> for Ret<S>
         {
             fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Option<&C> {
                 self.storage.get(entity.id())
@@ -134,8 +130,8 @@ impl Components {
         impl<
                 A: Archetype,
                 C: comp::Simple<A>,
-                S: ops::Deref<Target = Storage<A, C>> + ops::DerefMut,
-            > system::WriteSimple<A, C> for Ret<A, C, S>
+                S: ops::Deref<Target = C::Storage> + ops::DerefMut,
+            > system::WriteSimple<A, C> for Ret<S>
         {
             fn try_get_mut<E: entity::Ref<Archetype = A>>(&mut self, entity: E) -> Option<&mut C> {
                 self.storage.get_mut(entity.id())

@@ -45,7 +45,7 @@
 //!
 //! Isotope components are never instantiated on entity creation.
 
-use crate::{entity, Archetype};
+use crate::{entity, world, Archetype};
 
 /// A simple component has only one instance per entity.
 ///
@@ -62,6 +62,9 @@ pub trait Simple<A: Archetype>: entity::Referrer + Send + Sync + Sized + 'static
     /// Finalizer components must be [optional](SimplePresence::Optional).
     /// Entities are not removed until all finalizer components have been removed.
     const IS_FINALIZER: bool = false;
+
+    /// The storage type used for storing this simple component.
+    type Storage: world::Storage<RawEntity = A::RawEntity, Comp = Self>;
 }
 
 /// Describes whether a component must be present.
@@ -97,11 +100,14 @@ impl<A: Archetype> SimpleInitStrategy<A> {
 ///
 /// See the [module-level documentation](mod@crate::comp) for more information.
 pub trait Isotope<A: Archetype>: entity::Referrer + Send + Sync + Sized + 'static {
+    /// The initialzation strategy for this component.
+    const INIT_STRATEGY: IsotopeInitStrategy<Self>;
+
     /// The discriminant type.
     type Discrim: Discrim;
 
-    /// The initialzation strategy for this component.
-    const INIT_STRATEGY: IsotopeInitStrategy<Self>;
+    /// The storage type used for storing this simple component.
+    type Storage: world::Storage<RawEntity = A::RawEntity, Comp = Self>;
 }
 
 /// Describes how an isotope component is auto-initialized.

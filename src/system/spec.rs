@@ -113,7 +113,7 @@ impl SimpleRequest {
             arch: ArchetypeDescriptor::of::<A>(),
             comp: DbgTypeId::of::<C>(),
             mutable,
-            storage_builder: || Box::new(storage::shared_simple::<A, C>()),
+            storage_builder: || Box::new(storage::Simple::<A>::new::<C>()),
         }
     }
 }
@@ -145,7 +145,7 @@ impl IsotopeRequest {
             comp: DbgTypeId::of::<C>(),
             discrim,
             mutable,
-            factory_builder: || Box::new(storage::isotope_factory::<A, C>()),
+            factory_builder: || Box::new(storage::Isotope::<A>::new::<C>()) as Box<dyn Any>,
         }
     }
 }

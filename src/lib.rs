@@ -72,17 +72,14 @@ mod macros;
 pub use macros::*;
 
 pub mod archetype;
-#[doc(inline)]
 pub use archetype::Archetype;
 
 pub mod comp;
 
 pub mod entity;
-#[doc(inline)]
 pub use entity::Entity;
 
 mod global;
-#[doc(inline)]
 pub use global::Global;
 
 pub mod system;
@@ -93,9 +90,6 @@ mod test_util;
 use test_util::TestArch;
 
 pub mod world;
-#[doc(inline)]
-pub use world::new;
-#[doc(inline)]
-pub use world::World;
+pub use world::{new, storage, tracer, World};
 
 pub mod util;

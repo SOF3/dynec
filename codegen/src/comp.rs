@@ -28,6 +28,11 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
         .collect();
 
     let isotope = args.find_one(|arg| option_match!(arg, FnOpt::Isotope(_, discrim) => discrim))?;
+    let storage =
+        match args.find_one(|arg| option_match!(arg, FnOpt::Storage(_, discrim) => discrim))? {
+            Some((_, ty)) => quote!(#ty),
+            None => quote!(#crate_name::storage::MapVecMux),
+        };
 
     let presence = args.find_one(|arg| option_match!(arg, FnOpt::Required => &()))?;
     if let (Some((isotope_span, _)), Some((presence_span, _))) = (isotope, presence) {
@@ -72,6 +77,8 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                     type Discrim = #discrim;
 
                     const INIT_STRATEGY: #crate_name::comp::IsotopeInitStrategy<Self> = #init;
+
+                    type Storage = #storage<<#archetype as #crate_name::Archetype>::RawEntity, Self>;
                 },
             ));
         } else {
@@ -91,6 +98,8 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                     const PRESENCE: #crate_name::comp::SimplePresence = #presence;
                     const INIT_STRATEGY: #crate_name::comp::SimpleInitStrategy<#archetype> = #init;
                     const IS_FINALIZER: bool = #finalizer;
+
+                    type Storage = #storage<<#archetype as #crate_name::Archetype>::RawEntity, Self>;
                 },
             ));
 
@@ -114,6 +123,7 @@ enum FnOpt {
     DynecAs(syn::token::Paren, TokenStream),
     Of(syn::Token![=], syn::Type),
     Isotope(syn::Token![=], syn::Type),
+    Storage(syn::Token![=], syn::Type),
     Required,
     Finalizer,
     Init(syn::Token![=], Box<FunctionRefWithArity>),
@@ -139,6 +149,11 @@ impl Parse for Named<FnOpt> {
                 let eq: syn::Token![=] = input.parse()?;
                 let ty = input.parse::<syn::Type>()?;
                 FnOpt::Isotope(eq, ty)
+            }
+            "storage" => {
+                let eq: syn::Token![=] = input.parse()?;
+                let ty = input.parse::<syn::Type>()?;
+                FnOpt::Storage(eq, ty)
             }
             "required" => FnOpt::Required,
             "finalizer" => FnOpt::Finalizer,

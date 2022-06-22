@@ -118,6 +118,10 @@
 <span id="112">112</span>
 <span id="113">113</span>
 <span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
+<span id="118">118</span>
 </pre><pre class="rust"><code><span class="doccomment">//! A storage that can switch between two implementations in offline mode.</span>
 <span class="doccomment">//! See [`Mux`] for more information.</span>
 
@@ -130,11 +134,13 @@
 
 <span class="doccomment">/// A storage that can switched to another storage.</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Source</span>: <span class="ident">Storage</span> {
+    <span class="doccomment">/// Moves out all stored components in an iterator.</span>
     <span class="kw">fn</span> <span class="ident">into_iter</span>(<span class="self">self</span>) -&gt; <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> (<span class="ident"><span class="self">Self</span>::RawEntity</span>, <span class="ident"><span class="self">Self</span>::Comp</span>)<span class="op">&gt;</span><span class="op">&gt;</span>;
 }
 
 <span class="doccomment">/// A storage that can switched from another storage.</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Sink</span>: <span class="ident">Storage</span> {
+    <span class="doccomment">/// Construct the storage from components in an iterator.</span>
     <span class="kw">fn</span> <span class="ident">from_iter</span>(<span class="ident">iter</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> (<span class="ident"><span class="self">Self</span>::RawEntity</span>, <span class="ident"><span class="self">Self</span>::Comp</span>)<span class="op">&gt;</span><span class="op">&gt;</span>) -&gt; <span class="self">Self</span>;
 }
 
@@ -206,6 +212,7 @@
     <span class="ident">P</span>: <span class="ident">Storage</span><span class="op">&lt;</span><span class="ident">RawEntity</span> <span class="op">=</span> <span class="ident">E</span>, <span class="ident">Comp</span> <span class="op">=</span> <span class="ident">C</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Sink</span>,
     <span class="ident">Q</span>: <span class="ident">Storage</span><span class="op">&lt;</span><span class="ident">RawEntity</span> <span class="op">=</span> <span class="ident">E</span>, <span class="ident">Comp</span> <span class="op">=</span> <span class="ident">C</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Source</span>,
 {
+    <span class="doccomment">/// Sets the backend to [`P`](Mux::P).</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_p</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
         <span class="ident">replace_with_or_abort</span>(<span class="self">self</span>, <span class="op">|</span><span class="ident">mux</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">mux</span> {
             <span class="ident"><span class="self">Self</span>::P</span>(..) =&gt; <span class="ident">mux</span>,
@@ -222,6 +229,7 @@
     <span class="ident">P</span>: <span class="ident">Storage</span><span class="op">&lt;</span><span class="ident">RawEntity</span> <span class="op">=</span> <span class="ident">E</span>, <span class="ident">Comp</span> <span class="op">=</span> <span class="ident">C</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Source</span>,
     <span class="ident">Q</span>: <span class="ident">Storage</span><span class="op">&lt;</span><span class="ident">RawEntity</span> <span class="op">=</span> <span class="ident">E</span>, <span class="ident">Comp</span> <span class="op">=</span> <span class="ident">C</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Sink</span>,
 {
+    <span class="doccomment">/// Sets the backend to [`Q`](Mux::Q).</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_q</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
         <span class="ident">replace_with_or_abort</span>(<span class="self">self</span>, <span class="op">|</span><span class="ident">mux</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">mux</span> {
             <span class="ident"><span class="self">Self</span>::P</span>(<span class="ident">p</span>, <span class="ident">PhantomData</span>) =&gt; {

@@ -145,6 +145,8 @@
 <span id="139">139</span>
 <span id="140">140</span>
 <span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
 </pre><pre class="rust"><code><span class="doccomment">//! A storage is the data structure where components of the same type for all entities are stored.</span>
 
 <span class="kw">use</span> <span class="ident">std::any</span>::{<span class="self">self</span>, <span class="ident">Any</span>};
@@ -170,7 +172,9 @@
 
 <span class="doccomment">/// A storage for storing component data.</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Storage</span>: <span class="ident">Default</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span> {
+    <span class="doccomment">/// The type of entity ID used for identification.</span>
     <span class="kw">type</span> <span class="ident">RawEntity</span>: <span class="ident">entity::Raw</span>;
+    <span class="doccomment">/// The component type stored.</span>
     <span class="kw">type</span> <span class="ident">Comp</span>;
 
     <span class="doccomment">/// Gets a shared reference to the component for a specific entity if it is present.</span>

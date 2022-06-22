@@ -10,11 +10,13 @@ use crate::entity;
 
 /// A storage that can switched to another storage.
 pub trait Source: Storage {
+    /// Moves out all stored components in an iterator.
     fn into_iter(self) -> Box<dyn Iterator<Item = (Self::RawEntity, Self::Comp)>>;
 }
 
 /// A storage that can switched from another storage.
 pub trait Sink: Storage {
+    /// Construct the storage from components in an iterator.
     fn from_iter(iter: Box<dyn Iterator<Item = (Self::RawEntity, Self::Comp)>>) -> Self;
 }
 
@@ -86,6 +88,7 @@ where
     P: Storage<RawEntity = E, Comp = C> + Sink,
     Q: Storage<RawEntity = E, Comp = C> + Source,
 {
+    /// Sets the backend to [`P`](Mux::P).
     pub fn set_p(&mut self) {
         replace_with_or_abort(self, |mux| match mux {
             Self::P(..) => mux,
@@ -102,6 +105,7 @@ where
     P: Storage<RawEntity = E, Comp = C> + Source,
     Q: Storage<RawEntity = E, Comp = C> + Sink,
 {
+    /// Sets the backend to [`Q`](Mux::Q).
     pub fn set_q(&mut self) {
         replace_with_or_abort(self, |mux| match mux {
             Self::P(p, PhantomData) => {

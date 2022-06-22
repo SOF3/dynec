@@ -23,7 +23,9 @@ pub type MapVecMux<E, C> = Mux<E, C, Tree<E, C>, Vec<E, C>>;
 
 /// A storage for storing component data.
 pub trait Storage: Default + Send + Sync + 'static {
+    /// The type of entity ID used for identification.
     type RawEntity: entity::Raw;
+    /// The component type stored.
     type Comp;
 
     /// Gets a shared reference to the component for a specific entity if it is present.

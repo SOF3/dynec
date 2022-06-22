@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["SyncState",""],["UnsyncState",""]]});
+window.SIDEBAR_ITEMS = {"struct":[["SyncState",""],["UnsyncState",""]]};

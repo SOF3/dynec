@@ -1,1 +1,1 @@
-initSidebarItems({"trait":[["BitStore","Bit Storage"]]});
+window.SIDEBAR_ITEMS = {"trait":[["BitStore","Bit Storage"]]};

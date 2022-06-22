@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["Mux","A storage that can switch between two implementations in offline mode."]],"trait":[["Sink","A storage that can switched from another storage."],["Source","A storage that can switched to another storage."]]};

@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["btreeset_remove_first",""]],"struct":[["DbgTypeId","A TypeId that may include type name for debugging."]],"trait":[["Ref","A generic mutable/immutable reference type."]]});
+window.SIDEBAR_ITEMS = {"fn":[["btreeset_remove_first",""]],"struct":[["DbgTypeId","A TypeId that may include type name for debugging."]],"trait":[["Ref","A generic mutable/immutable reference type."]]};

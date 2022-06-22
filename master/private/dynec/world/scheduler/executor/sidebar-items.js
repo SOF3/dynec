@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["main_worker",""],["threaded_worker",""]],"struct":[["Context",""],["Executor",""]]});
+window.SIDEBAR_ITEMS = {"fn":[["main_worker",""],["threaded_worker",""]],"struct":[["Context",""],["Executor",""]]};

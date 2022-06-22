@@ -1,1 +1,1 @@
-initSidebarItems({"trait":[["AsBits","Immutable Bit View"],["AsMutBits","Mutable Bit View"],["BitView","Bit View"],["BitViewSized","Helper trait for scalars and arrays, but not slices."]]});
+window.SIDEBAR_ITEMS = {"trait":[["AsBits","Immutable Bit View"],["AsMutBits","Mutable Bit View"],["BitView","Bit View"],["BitViewSized","Helper trait for scalars and arrays, but not slices."]]};

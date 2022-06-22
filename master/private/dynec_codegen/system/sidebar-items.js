@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["ArgOpt",""],["FnOpt",""],["GlobalArgOpt",""],["IsotopeArgOpt",""],["SimpleArgOpt",""]],"fn":[["imp",""]]});
+window.SIDEBAR_ITEMS = {"enum":[["ArgOpt",""],["FnOpt",""],["GlobalArgOpt",""],["IsotopeArgOpt",""],["SimpleArgOpt",""]],"fn":[["imp",""]]};

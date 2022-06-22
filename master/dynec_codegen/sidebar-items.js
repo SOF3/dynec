@@ -1,1 +1,1 @@
-initSidebarItems({"attr":[["comp",""],["global",""],["system",""]],"derive":[["EntityRef",""]],"macro":[["archetype",""],["comps",""]]});
+window.SIDEBAR_ITEMS = {"attr":[["comp",""],["global",""],["system",""]],"derive":[["EntityRef",""]],"macro":[["archetype",""],["comps",""]]};

@@ -1,1 +1,1 @@
-initSidebarItems({"trait":[["BitField","C-Style Bit-Field Access"]]});
+window.SIDEBAR_ITEMS = {"trait":[["BitField","C-Style Bit-Field Access"]]};

@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["ReferrerArg","The opaque argument passed through [`Referrer::visit`]."]],"trait":[["Referrer","A type that may own entity references (no matter strong or weak)."]]});
+window.SIDEBAR_ITEMS = {"struct":[["ReferrerArg","The opaque argument passed through [`Referrer::visit`]."]],"trait":[["Referrer","A type that may own entity references (no matter strong or weak)."]]};

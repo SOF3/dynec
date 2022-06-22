@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["FnOpt",""]],"fn":[["imp",""]]});
+window.SIDEBAR_ITEMS = {"enum":[["FnOpt",""]],"fn":[["imp",""]]};

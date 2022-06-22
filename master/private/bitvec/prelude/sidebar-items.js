@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["BitPtr","Single-Bit Pointer"],["BitPtrRange","Bit-Pointer Range"],["BitRef","Proxy Bit-Reference"]]});
+window.SIDEBAR_ITEMS = {"struct":[["BitPtr","Single-Bit Pointer"],["BitPtrRange","Bit-Pointer Range"],["BitRef","Proxy Bit-Reference"]]};

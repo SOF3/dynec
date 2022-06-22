@@ -1,1 +1,1 @@
-initSidebarItems({"trait":[["Global","A global state that can be requested by all systems."]]});
+window.SIDEBAR_ITEMS = {"trait":[["Global","A global state that can be requested by all systems."]]};

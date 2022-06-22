@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["Components","Stores the component states in a world."],["SyncGlobals","Stores the thread-safe global states in a world."],["UnsyncGlobals","Stores the thread-unsafe global states in a world."]]});
+window.SIDEBAR_ITEMS = {"struct":[["Components","Stores the component states in a world."],["SyncGlobals","Stores the thread-safe global states in a world."],["UnsyncGlobals","Stores the thread-unsafe global states in a world."]]};

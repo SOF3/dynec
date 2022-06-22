@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["builder",""],["toposort_populators",""]],"struct":[["Builder",""],["Typed","Stores everything related to a specific archetype."]],"trait":[["AnyBuilder",""],["AnyTyped",""]]});
+window.SIDEBAR_ITEMS = {"fn":[["builder",""],["toposort_populators",""]],"struct":[["Builder",""],["Typed","Stores everything related to a specific archetype."]],"trait":[["AnyBuilder",""],["AnyTyped",""]]};

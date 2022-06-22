@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["FnOpt",""],["FunctionRefWithArity","Either a closure or a function reference in the form `path / arity` (e.g. `count/1`)."]],"fn":[["imp",""]]});
+window.SIDEBAR_ITEMS = {"enum":[["FnOpt",""],["FunctionRefWithArity","Either a closure or a function reference in the form `path / arity` (e.g. `count/1`)."]],"fn":[["imp",""]]};

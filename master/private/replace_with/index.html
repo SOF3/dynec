@@ -1,0 +1,75 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Temporarily take ownership of a value at a mutable location, and replace it with a new value based on the old one."><meta name="keywords" content="rust, rustlang, rust-lang, replace_with"><title>replace_with - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../normalize.css"><link rel="stylesheet" type="text/css" href="../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../dark.css" disabled><link rel="stylesheet" type="text/css" href="../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../storage.js"></script><script defer src="../crates.js"></script><script defer src="../main.js"></script><noscript><link rel="stylesheet" href="../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../favicon.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../replace_with/index.html"><div class="logo-container"><img class="rust-logo" src="../rust-logo.svg" alt="logo"></div>
+        </a><h2 class="location"></h2>
+    </nav>
+    <nav class="sidebar"><a class="sidebar-logo" href="../replace_with/index.html"><div class="logo-container"><img class="rust-logo" src="../rust-logo.svg" alt="logo"></div>
+        </a><h2 class="location"><a href="#">Crate replace_with</a></h2><div class="sidebar-elems"><div class="block"><ul><li class="version">Version 0.1.7</li><li><a id="all-types" href="all.html">All Items</a></li></ul></div><section><div class="block"><ul><li><a href="#functions">Functions</a></li></ul></div></section></div></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../replace_with/index.html"><img class="rust-logo" src="../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><div id="settings-menu" tabindex="-1">
+                                <a href="../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../wheel.svg"></a></div>
+                        </div></form></nav></div><section id="main-content" class="content"><div class="main-heading">
+    <h1 class="fqn"><span class="in-band">Crate <a class="mod" href="#">replace_with</a><button id="copy-path" onclick="copy_path(this)" title="Copy item path to clipboard"><img src="../clipboard.svg" width="19" height="18" alt="Copy item path"></button></span></h1><span class="out-of-band"><a class="srclink" href="../src/replace_with/lib.rs.html#1-596">source</a> · <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span></div><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Temporarily take ownership of a value at a mutable location, and replace it with a new value
+based on the old one.</p>
+<p style="font-family: 'Fira Sans',sans-serif;padding:0.3em 0"><strong>
+<a href="https://crates.io/crates/replace_with">📦&nbsp;&nbsp;Crates.io</a>&nbsp;&nbsp;│&nbsp;&nbsp;<a href="https://github.com/alecmocatta/replace_with">📑&nbsp;&nbsp;GitHub</a>&nbsp;&nbsp;│&nbsp;&nbsp;<a href="https://constellation.zulipchat.com/#narrow/stream/213236-subprojects">💬&nbsp;&nbsp;Chat</a>
+</strong></p>
+<p>This crate provides the function <a href="fn.replace_with.html" title="replace_with()"><code>replace_with()</code></a>, which is like <a href="https://doc.rust-lang.org/nightly/core/mem/fn.replace.html" title="std::mem::replace()"><code>std::mem::replace()</code></a>
+except it allows the replacement value to be mapped from the original value.</p>
+<p>See <a href="https://github.com/rust-lang/rfcs/pull/1736">RFC 1736</a> for a lot of discussion as to its
+merits. It was never merged, and the desired ability to temporarily move out of <code>&amp;mut T</code> doesn’t
+exist yet, so this crate is my interim solution.</p>
+<p>It’s very akin to <a href="https://github.com/Sgeo/take_mut"><code>take_mut</code></a>, though uses <code>Drop</code> instead of
+<a href="https://doc.rust-lang.org/nightly/std/panic/fn.catch_unwind.html" title="std::panic::catch_unwind()"><code>std::panic::catch_unwind()</code></a> to react to unwinding, which avoids the optimisation barrier of
+calling the <code>extern &quot;C&quot; __rust_maybe_catch_panic()</code>. As such it’s up to ∞x faster. The API also
+attempts to make slightly more explicit the behavior on panic – <a href="fn.replace_with.html" title="replace_with()"><code>replace_with()</code></a> accepts two
+closures such that aborting in the “standard case” where the mapping closure (<code>FnOnce(T) -&gt; T</code>)
+panics (as <a href="https://docs.rs/take_mut/0.2.2/take_mut/fn.take.html"><code>take_mut::take()</code></a> does) is
+avoided. If the second closure (<code>FnOnce() -&gt; T</code>) panics, however, then it does indeed abort.
+The “abort on first panic” behaviour is available with <a href="fn.replace_with_or_abort.html" title="replace_with_or_abort()"><code>replace_with_or_abort()</code></a>.</p>
+<h2 id="example"><a href="#example">Example</a></h2>
+<p>Consider this motivating example:</p>
+
+<div class='information'><div class='tooltip compile_fail'>ⓘ</div></div><div class="example-wrap"><pre class="rust rust-example-rendered compile_fail"><code><span class="kw">enum</span> <span class="ident">States</span> {
+    <span class="ident">A</span>(<span class="ident">String</span>),
+    <span class="ident">B</span>(<span class="ident">String</span>),
+}
+
+<span class="kw">impl</span> <span class="ident">States</span> {
+    <span class="kw">fn</span> <span class="ident">poll</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
+        <span class="comment">// error[E0507]: cannot move out of borrowed content</span>
+        <span class="kw-2">*</span><span class="self">self</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">*</span><span class="self">self</span> {
+        <span class="comment">//            ^^^^^ cannot move out of borrowed content</span>
+            <span class="ident">States::A</span>(<span class="ident">a</span>) =&gt; <span class="ident">States::B</span>(<span class="ident">a</span>),
+            <span class="ident">States::B</span>(<span class="ident">a</span>) =&gt; <span class="ident">States::A</span>(<span class="ident">a</span>),
+        };
+    }
+}</code></pre></div>
+<p>Depending on context this can be quite tricky to work around. With this crate, however:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">enum</span> <span class="ident">States</span> {
+    <span class="ident">A</span>(<span class="ident">String</span>),
+    <span class="ident">B</span>(<span class="ident">String</span>),
+}
+
+<span class="kw">impl</span> <span class="ident">States</span> {
+    <span class="kw">fn</span> <span class="ident">poll</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
+        <span class="ident">replace_with_or_abort</span>(<span class="self">self</span>, <span class="op">|</span><span class="ident">self_</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">self_</span> {
+            <span class="ident">States::A</span>(<span class="ident">a</span>) =&gt; <span class="ident">States::B</span>(<span class="ident">a</span>),
+            <span class="ident">States::B</span>(<span class="ident">a</span>) =&gt; <span class="ident">States::A</span>(<span class="ident">a</span>),
+        });
+    }
+}</code></pre></div>
+<p>Huzzah!</p>
+</div></details><h2 id="functions" class="small-section-header"><a href="#functions">Functions</a></h2>
+<div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="fn" href="fn.replace_with.html" title="replace_with::replace_with fn">replace_with</a></div><div class="item-right docblock-short"><p>Temporarily takes ownership of a value at a mutable location, and replace it with a new value
+based on the old one.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="fn" href="fn.replace_with_and_return.html" title="replace_with::replace_with_and_return fn">replace_with_and_return</a></div><div class="item-right docblock-short"><p>Temporarily takes ownership of a value at a mutable location, and replace it with a new value
+based on the old one. Lets the closure return a custom value as well.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="fn" href="fn.replace_with_or_abort.html" title="replace_with::replace_with_or_abort fn">replace_with_or_abort</a></div><div class="item-right docblock-short"><p>Temporarily takes ownership of a value at a mutable location, and replace it with a new value
+based on the old one. Aborts on panic.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="fn" href="fn.replace_with_or_abort_and_return.html" title="replace_with::replace_with_or_abort_and_return fn">replace_with_or_abort_and_return</a></div><div class="item-right docblock-short"><p>Temporarily takes ownership of a value at a mutable location, and replace it with a new value
+based on the old one. Aborts on panic. Lets the closure return a custom value as well.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="fn" href="fn.replace_with_or_default.html" title="replace_with::replace_with_or_default fn">replace_with_or_default</a></div><div class="item-right docblock-short"><p>Temporarily takes ownership of a value at a mutable location, and replace it with a new value
+based on the old one. Replaces with <a href="https://doc.rust-lang.org/nightly/core/default/trait.Default.html#tymethod.default" title="Default::default()"><code>Default::default()</code></a> on panic.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="fn" href="fn.replace_with_or_default_and_return.html" title="replace_with::replace_with_or_default_and_return fn">replace_with_or_default_and_return</a></div><div class="item-right docblock-short"><p>Temporarily takes ownership of a value at a mutable location, and replace it with a new value
+based on the old one. Replaces with <a href="https://doc.rust-lang.org/nightly/core/default/trait.Default.html#tymethod.default" title="Default::default()"><code>Default::default()</code></a> on panic.
+Lets the closure return a custom value as well.</p>
+</div></div></div></section></div></main><div id="rustdoc-vars" data-root-path="../" data-current-crate="replace_with" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.63.0-nightly (dc80ca78b 2022-06-21)" ></div>
+</body></html>

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["VecStorage","The basic storage indexed by entity IDs directly."]]};

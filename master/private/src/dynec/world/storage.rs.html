@@ -147,6 +147,31 @@
 <span id="141">141</span>
 <span id="142">142</span>
 <span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
 </pre><pre class="rust"><code><span class="doccomment">//! A storage is the data structure where components of the same type for all entities are stored.</span>
 
 <span class="kw">use</span> <span class="ident">std::any</span>::{<span class="self">self</span>, <span class="ident">Any</span>};
@@ -280,16 +305,41 @@
 <span class="comment">// TODO: isotope components</span>
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">Isotope</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span><span class="op">&gt;</span> {
-    <span class="ident">init_strategy</span>: <span class="ident">comp::IsotopeInitStrategy</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>, <span class="comment">// TODO</span>
+    <span class="doccomment">/// The actual storage object. Downcasts to `C::Storage`.</span>
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">storage</span>:           <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">RwLock</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Any</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// This is a function pointer to [`fn@fill_init_isotope`] with the correct type parameters.</span>
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">fill_init_isotope</span>: <span class="kw">fn</span>(<span class="kw-2">&amp;mut</span> <span class="kw">dyn</span> <span class="ident">Any</span>, <span class="ident">A::RawEntity</span>, <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Any</span><span class="op">&gt;</span>),
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span><span class="op">&gt;</span> <span class="ident">Isotope</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span> {
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">comp::Isotope</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span><span class="op">&gt;</span>() -&gt; <span class="self">Self</span> { <span class="macro">todo!</span>() }
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">comp::Isotope</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span><span class="op">&gt;</span>() -&gt; <span class="self">Self</span> {
+        <span class="self">Self</span> {
+            <span class="ident">storage</span>:           <span class="ident">Arc::new</span>(<span class="ident">RwLock::new</span>(<span class="ident">C::Storage::default</span>()))
+                <span class="kw">as</span> <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">RwLock</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Any</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+            <span class="ident">fill_init_isotope</span>: <span class="ident">fill_init_isotope</span>::<span class="op">&lt;</span><span class="ident">A</span>, <span class="ident">C</span><span class="op">&gt;</span>,
+        }
+    }
+}
+
+<span class="kw">fn</span> <span class="ident">fill_init_isotope</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span>, <span class="ident">C</span>: <span class="ident">comp::Isotope</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span><span class="op">&gt;</span>(
+    <span class="ident">storage</span>: <span class="kw-2">&amp;mut</span> <span class="kw">dyn</span> <span class="ident">Any</span>,
+    <span class="ident">entity</span>: <span class="ident">A::RawEntity</span>,
+    <span class="ident">comp</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Any</span><span class="op">&gt;</span>,
+) {
+    <span class="kw">let</span> <span class="ident">storage</span>: <span class="kw-2">&amp;mut</span> <span class="ident">C::Storage</span> <span class="op">=</span> <span class="ident">storage</span>.<span class="ident">downcast_mut</span>().<span class="ident">expect</span>(<span class="string">&quot;function pointer mismatch&quot;</span>);
+    <span class="kw">let</span> <span class="ident">comp</span> <span class="op">=</span> <span class="kw-2">*</span><span class="ident">comp</span>.<span class="ident">downcast</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>().<span class="ident">expect</span>(<span class="string">&quot;function pointer and TypeId mismatch&quot;</span>);
+    <span class="ident">storage</span>.<span class="ident">set</span>(<span class="ident">entity</span>, <span class="prelude-val">Some</span>(<span class="ident">comp</span>));
 }
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">IsotopeFactory</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span><span class="op">&gt;</span> {
     <span class="ident">builder</span>: <span class="kw">fn</span>() -&gt; <span class="ident">Isotope</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>, <span class="comment">// TODO</span>
 }
+
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">Archetype</span><span class="op">&gt;</span> <span class="ident">IsotopeFactory</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">comp::Isotope</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span><span class="op">&gt;</span>() -&gt; <span class="self">Self</span> { <span class="self">Self</span> { <span class="ident">builder</span>: <span class="ident">Isotope</span>::<span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span><span class="ident">::new</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span> } }
+
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">build</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Isotope</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span> { (<span class="self">self</span>.<span class="ident">builder</span>)() }
+}
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.63.0-nightly (dc80ca78b 2022-06-21)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (20a6f3a8a 2022-06-25)" ></div>
 </body></html>

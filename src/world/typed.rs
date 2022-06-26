@@ -165,7 +165,18 @@ impl<A: Archetype> Typed<A> {
             (storage.fill_init_simple)(any_storage.get_mut(), id, &mut components);
         }
 
-        // TODO extract isotope components
+        for (ty, value) in components.into_isotopes() {
+            let storages = self.isotope_storages.get_mut();
+            let storage = storages.entry(ty).or_insert_with(|| {
+                let factory = match self.isotope_factories.get(&ty.id) {
+                    Some(factory) => factory,
+                    None => panic!("Isotope type `{}` is not used in any systems", ty.id),
+                };
+                factory.build()
+            });
+            let any_storage = Arc::get_mut(&mut storage.storage).expect("storage arc was leaked");
+            (storage.fill_init_isotope)(any_storage.get_mut(), id, value);
+        }
     }
 }
 
@@ -176,6 +187,5 @@ pub(crate) trait AnyTyped: Send + Sync {
 
 impl<A: Archetype> AnyTyped for Typed<A> {
     fn as_any(&self) -> &(dyn Any + Send + Sync) { self }
-
     fn as_any_mut(&mut self) -> &mut (dyn Any + Send + Sync) { self }
 }

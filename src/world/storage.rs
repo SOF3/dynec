@@ -131,13 +131,38 @@ fn fill_init_simple<A: Archetype, C: comp::Simple<A>>(
 // TODO: isotope components
 
 pub(crate) struct Isotope<A: Archetype> {
-    init_strategy: comp::IsotopeInitStrategy<A>, // TODO
+    /// The actual storage object. Downcasts to `C::Storage`.
+    pub(crate) storage:           Arc<RwLock<dyn Any + Send + Sync>>,
+    /// This is a function pointer to [`fn@fill_init_isotope`] with the correct type parameters.
+    pub(crate) fill_init_isotope: fn(&mut dyn Any, A::RawEntity, Box<dyn Any>),
 }
 
 impl<A: Archetype> Isotope<A> {
-    pub(crate) fn new<C: comp::Isotope<A>>() -> Self { todo!() }
+    pub(crate) fn new<C: comp::Isotope<A>>() -> Self {
+        Self {
+            storage:           Arc::new(RwLock::new(C::Storage::default()))
+                as Arc<RwLock<dyn Any + Send + Sync>>,
+            fill_init_isotope: fill_init_isotope::<A, C>,
+        }
+    }
+}
+
+fn fill_init_isotope<A: Archetype, C: comp::Isotope<A>>(
+    storage: &mut dyn Any,
+    entity: A::RawEntity,
+    comp: Box<dyn Any>,
+) {
+    let storage: &mut C::Storage = storage.downcast_mut().expect("function pointer mismatch");
+    let comp = *comp.downcast::<C>().expect("function pointer and TypeId mismatch");
+    storage.set(entity, Some(comp));
 }
 
 pub(crate) struct IsotopeFactory<A: Archetype> {
     builder: fn() -> Isotope<A>, // TODO
+}
+
+impl<A: Archetype> IsotopeFactory<A> {
+    pub(crate) fn new<C: comp::Isotope<A>>() -> Self { Self { builder: Isotope::<A>::new::<C> } }
+
+    pub(crate) fn build(&self) -> Isotope<A> { (self.builder)() }
 }

@@ -145,7 +145,7 @@ impl IsotopeRequest {
             comp: DbgTypeId::of::<C>(),
             discrim,
             mutable,
-            factory_builder: || Box::new(storage::Isotope::<A>::new::<C>()) as Box<dyn Any>,
+            factory_builder: || Box::new(storage::IsotopeFactory::<A>::new::<C>()),
         }
     }
 }

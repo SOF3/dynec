@@ -71,6 +71,18 @@ impl<A: Archetype> Map<A> {
         }
     }
 
+    /// Gets a simple component from the map.
+    pub(crate) fn get_simple<C: comp::Simple<A>>(&self) -> Option<&C> {
+        self.map.get(&Identifier::simple::<A, C>()).and_then(|c| c.downcast_ref())
+    }
+
+    /// Gets a simple component from the map.
+    pub(crate) fn remove_simple<C: comp::Simple<A>>(&mut self) -> Option<C> {
+        let comp = self.map.remove(&Identifier::simple::<A, C>())?;
+        let comp = comp.downcast::<C>().expect("TypeId mismatch");
+        Some(*comp)
+    }
+
     /// Inserts an isotope component into the map.
     pub fn insert_isotope<C: comp::Isotope<A>>(&mut self, discrim: C::Discrim, comp: C) {
         let prev = self.map.insert(Identifier::isotope::<A, C>(discrim), Box::new(comp));
@@ -82,16 +94,11 @@ impl<A: Archetype> Map<A> {
         }
     }
 
-    /// Gets a simple component from the map.
-    pub(crate) fn get_simple<C: comp::Simple<A>>(&self) -> Option<&C> {
-        self.map.get(&Identifier::simple::<A, C>()).and_then(|c| c.downcast_ref())
-    }
-
-    /// Gets a simple component from the map.
-    pub(crate) fn remove_simple<C: comp::Simple<A>>(&mut self) -> Option<C> {
-        let comp = self.map.remove(&Identifier::simple::<A, C>())?;
-        let comp = comp.downcast::<C>().expect("TypeId mismatch");
-        Some(*comp)
+    /// Drops this map, returning an iterator of all isotope components.
+    ///
+    /// This should be changed to `drain_filter` when it is stable.
+    pub(crate) fn into_isotopes(self) -> impl Iterator<Item = (Identifier, Box<dyn Any>)> {
+        self.map.into_iter().filter(|(id, _)| id.discrim.is_some())
     }
 
     /// Returns the number of components in the map.

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["fill_init_isotope",""]],"struct":[["Factory",""],["Isotope",""]]};

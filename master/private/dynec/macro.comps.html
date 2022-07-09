@@ -2,10 +2,29 @@
         </a><h2 class="location"></h2>
     </nav>
     <nav class="sidebar"><a class="sidebar-logo" href="../dynec/index.html"><div class="logo-container"><img class="rust-logo" src="../rust-logo.svg" alt="logo"></div>
-        </a><div class="sidebar-elems"><h2 class="location"><a href="index.html">In dynec</a></h2></div></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../dynec/index.html"><img class="rust-logo" src="../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><div id="settings-menu" tabindex="-1">
+        </a><div class="sidebar-elems"><h2 class="location"><a href="index.html">In dynec</a></h2></div></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../dynec/index.html"><img class="rust-logo" src="../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
                                 <a href="../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../wheel.svg"></a></div>
                         </div></form></nav></div><section id="main-content" class="content"><div class="main-heading">
     <h1 class="fqn"><span class="in-band">Macro <a href="index.html">dynec</a>::<wbr><a class="macro" href="#">comps</a><button id="copy-path" onclick="copy_path(this)" title="Copy item path to clipboard"><img src="../clipboard.svg" width="19" height="18" alt="Copy item path"></button></span></h1><span class="out-of-band"><a class="srclink" href="../src/dynec_codegen/lib.rs.html#24">source</a> · <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span></div><div class="docblock item-decl"><pre class="rust macro"><code>comps!() { /* proc-macro */ }</code></pre></div><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Creates a map of components for a given archetype.</p>
+<h2 id="syntax"><a href="#syntax">Syntax</a></h2>
+<p>The macro starts with the archetype, followed by <code>=&gt;</code>,
+then a comma-delimited list of simple and isotope components.</p>
+<h3 id="simple-components"><a href="#simple-components">Simple components</a></h3>
+<p>Simple components can be passed in the list directly.</p>
+<p>If it is not known whether a component should be added to the list at compile time,
+start with <code>@?</code>, followed by a value of type <code>Option&lt;Simple&gt;</code>, e.g.
+<code>@?flag.then_with(|| value)</code>.</p>
+<h3 id="isotope-components"><a href="#isotope-components">Isotope components</a></h3>
+<p>For each isotope component, start with a <code>@</code>,
+followed by a tuple of type <code>(Discrim, Isotope)</code>,
+e.g. <code>@(discrim, value)</code>.</p>
+<p>Since there can be multiple isotope components for the same entity,
+an iterator of isotope tuples is also allowed.
+Start with <code>@?</code>, followed by a value that implements
+<code><a href="https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.IntoIterator.html" title="IntoIterator">IntoIterator</a>&lt;Item = (Discrim, Isotope)&gt;</code>.
+<code><a href="https://doc.rust-lang.org/nightly/std/collections/hash/map/struct.HashMap.html">HashMap</a>&lt;Discrim, Isotope&gt;</code> and
+<code><a href="https://doc.rust-lang.org/nightly/alloc/collections/btree/map/struct.BTreeMap.html">BTreeMap</a>&lt;Discrim, Isotope&gt;</code>
+satisfy this requirement automatically.</p>
 <h2 id="example"><a href="#example">Example</a></h2>
 <div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="macro">dynec::archetype!</span>(<span class="ident">Foo</span>);
 <span class="kw">let</span> <span class="ident">empty</span> <span class="op">=</span> <span class="macro">dynec::comps!</span>[<span class="ident">Foo</span> =&gt;];
@@ -16,9 +35,29 @@
 <span class="attribute">#[<span class="ident">dynec::comp</span>(<span class="ident">of</span> <span class="op">=</span> <span class="ident">Foo</span>)]</span>
 <span class="kw">struct</span> <span class="ident">Comp2</span>(<span class="ident">i32</span>);
 <span class="attribute">#[<span class="ident">dynec::comp</span>(<span class="ident">of</span> <span class="op">=</span> <span class="ident">Foo</span>)]</span>
-<span class="kw">struct</span> <span class="ident">Comp3</span>{ <span class="ident">value</span>: <span class="ident">i32</span> };
+<span class="kw">struct</span> <span class="ident">Comp3</span> { <span class="ident">value</span>: <span class="ident">i32</span> }
+<span class="attribute">#[<span class="ident">dynec::comp</span>(<span class="ident">of</span> <span class="op">=</span> <span class="ident">Foo</span>)]</span>
+<span class="kw">struct</span> <span class="ident">Comp4</span> { <span class="ident">value</span>: <span class="ident">i32</span> }
 
-<span class="kw">let</span> <span class="ident">empty</span> <span class="op">=</span> <span class="macro">dynec::comps!</span>[<span class="ident">Foo</span> =&gt; <span class="ident">Comp1</span>, <span class="ident">Comp2</span>(<span class="number">2</span>), <span class="ident">Comp3</span>{ <span class="ident">value</span>: <span class="number">3</span> }];
-<span class="macro">assert_eq!</span>(<span class="ident">empty</span>.<span class="ident">len</span>(), <span class="number">3</span>);</code></pre></div>
-</div></details></section></div></main><div id="rustdoc-vars" data-root-path="../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (20a6f3a8a 2022-06-25)" ></div>
+<span class="attribute">#[<span class="ident">dynec::comp</span>(<span class="ident">of</span> <span class="op">=</span> <span class="ident">Foo</span>, <span class="ident">isotope</span> <span class="op">=</span> <span class="ident">usize</span>)]</span>
+<span class="kw">struct</span> <span class="ident">Iso</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span>);
+
+<span class="attribute">#[<span class="ident">dynec::comp</span>(<span class="ident">of</span> <span class="op">=</span> <span class="ident">Foo</span>, <span class="ident">isotope</span> <span class="op">=</span> <span class="ident">usize</span>)]</span>
+<span class="kw">struct</span> <span class="ident">Carbon</span> { <span class="ident">neutrons</span>: <span class="ident">i32</span> };
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">hashed</span> <span class="op">=</span> <span class="ident">std::collections::HashMap::new</span>();
+<span class="ident">hashed</span>.<span class="ident">insert</span>(<span class="number">10</span>, <span class="ident">Carbon</span> { <span class="ident">neutrons</span>: <span class="number">4</span> });
+<span class="ident">hashed</span>.<span class="ident">insert</span>(<span class="number">11</span>, <span class="ident">Carbon</span> { <span class="ident">neutrons</span>: <span class="number">5</span> });
+<span class="ident">hashed</span>.<span class="ident">insert</span>(<span class="number">12</span>, <span class="ident">Carbon</span> { <span class="ident">neutrons</span>: <span class="number">6</span> });
+
+<span class="kw">let</span> <span class="ident">map</span> <span class="op">=</span> <span class="macro">dynec::comps!</span>[<span class="ident">Foo</span> =&gt;
+    <span class="ident">Comp1</span>,
+    <span class="ident">Comp2</span>(<span class="number">2</span>),
+    <span class="question-mark">?</span><span class="prelude-val">Some</span>(<span class="ident">Comp3</span>{ <span class="ident">value</span>: <span class="number">3</span> }),
+    <span class="question-mark">?</span><span class="prelude-val">None</span>::<span class="op">&lt;</span><span class="ident">Comp4</span><span class="op">&gt;</span>,
+    @(<span class="number">4</span>, <span class="ident">Iso</span>(<span class="string">&quot;xxx&quot;</span>)),
+    @<span class="question-mark">?</span><span class="ident">hashed</span> ,
+];
+<span class="macro">assert_eq!</span>(<span class="ident">map</span>.<span class="ident">len</span>(), <span class="number">7</span>);</code></pre></div>
+</div></details></section></div></main><div id="rustdoc-vars" data-root-path="../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (06754d885 2022-07-08)" ></div>
 </body></html>

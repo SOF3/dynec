@@ -87,7 +87,7 @@ pub mod system;
 #[cfg(test)]
 mod test_util;
 #[cfg(test)]
-use test_util::TestArch;
+use test_util::{TestArch, TestDiscrim1, TestDiscrim2};
 
 pub mod world;
 pub use world::{new, storage, tracer, World};

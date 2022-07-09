@@ -83,7 +83,7 @@ mod archetype_tests {}
 /// struct Id(usize);
 /// impl comp::Discrim for Id {
 ///     fn from_usize(usize: usize) -> Self { Self(usize) }
-///     fn to_usize(self) -> usize { self.0 }
+///     fn into_usize(self) -> usize { self.0 }
 /// }
 ///
 /// #[comp(of = Foo, isotope = Id, init = Corge::make/0)]
@@ -101,6 +101,30 @@ mod comp_tests {}
 
 /// Creates a map of components for a given archetype.
 ///
+/// # Syntax
+/// The macro starts with the archetype, followed by `=>`,
+/// then a comma-delimited list of simple and isotope components.
+///
+/// ## Simple components
+/// Simple components can be passed in the list directly.
+///
+/// If it is not known whether a component should be added to the list at compile time,
+/// start with `@?`, followed by a value of type `Option<Simple>`, e.g.
+/// `@?flag.then_with(|| value)`.
+///
+/// ## Isotope components
+/// For each isotope component, start with a `@`,
+/// followed by a tuple of type `(Discrim, Isotope)`,
+/// e.g. `@(discrim, value)`.
+///
+/// Since there can be multiple isotope components for the same entity,
+/// an iterator of isotope tuples is also allowed.
+/// Start with `@?`, followed by a value that implements
+/// <code>[IntoIterator]&lt;Item = (Discrim, Isotope)&gt;</code>.
+/// <code>[HashMap](std::collections::HashMap)&lt;Discrim, Isotope&gt;</code> and
+/// <code>[BTreeMap](std::collections::BTreeMap)&lt;Discrim, Isotope&gt;</code>
+/// satisfy this requirement automatically.
+///
 /// # Example
 /// ```
 /// dynec::archetype!(Foo);
@@ -112,10 +136,30 @@ mod comp_tests {}
 /// #[dynec::comp(of = Foo)]
 /// struct Comp2(i32);
 /// #[dynec::comp(of = Foo)]
-/// struct Comp3{ value: i32 };
+/// struct Comp3 { value: i32 }
+/// #[dynec::comp(of = Foo)]
+/// struct Comp4 { value: i32 }
 ///
-/// let empty = dynec::comps![Foo => Comp1, Comp2(2), Comp3{ value: 3 }];
-/// assert_eq!(empty.len(), 3);
+/// #[dynec::comp(of = Foo, isotope = usize)]
+/// struct Iso(&'static str);
+///
+/// #[dynec::comp(of = Foo, isotope = usize)]
+/// struct Carbon { neutrons: i32 };
+///
+/// let mut hashed = std::collections::HashMap::new();
+/// hashed.insert(10, Carbon { neutrons: 4 });
+/// hashed.insert(11, Carbon { neutrons: 5 });
+/// hashed.insert(12, Carbon { neutrons: 6 });
+///
+/// let map = dynec::comps![Foo =>
+///     Comp1,
+///     Comp2(2),
+///     ?Some(Comp3{ value: 3 }),
+///     ?None::<Comp4>,
+///     @(4, Iso("xxx")),
+///     @?hashed ,
+/// ];
+/// assert_eq!(map.len(), 7);
 /// ```
 #[doc(inline)]
 pub use dynec_codegen::comps;
@@ -288,7 +332,7 @@ mod global_tests {}
 /// struct SkillId(usize);
 /// impl dynec::comp::Discrim for SkillId {
 ///     fn from_usize(id: usize) -> Self { Self(id) }
-///     fn to_usize(self) -> usize { self.0 }
+///     fn into_usize(self) -> usize { self.0 }
 /// }
 ///
 /// #[dynec::comp(of = Player, isotope = SkillId, init = || SkillLevel(1))]

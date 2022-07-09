@@ -1,13 +1,6 @@
 //! A storage is the data structure where components of the same type for all entities are stored.
 
-use std::any::{self, Any};
-use std::sync::Arc;
-
-use parking_lot::{
-    MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard,
-};
-
-use crate::{comp, entity, Archetype};
+use crate::entity;
 
 mod vec;
 pub use vec::VecStorage as Vec;
@@ -17,6 +10,11 @@ pub use tree::Tree;
 
 pub mod mux;
 pub use mux::Mux;
+
+mod simple;
+pub(crate) use simple::Simple;
+mod isotope;
+pub(crate) use isotope::{Factory as IsotopeFactory, Isotope};
 
 /// A [`Mux`] that uses a [`Tree`] and [`Vec`] as the backends.
 pub type MapVecMux<E, C> = Mux<E, C, Tree<E, C>, Vec<E, C>>;
@@ -43,126 +41,4 @@ pub trait Storage: Default + Send + Sync + 'static {
 
     /// Returns a mutable iterator over the storage, ordered by entity index order.
     fn iter_mut(&mut self) -> Box<dyn Iterator<Item = (Self::RawEntity, &mut Self::Comp)> + '_>;
-}
-
-pub(crate) struct Simple<A: Archetype> {
-    /// The init strategy of the component.
-    pub(crate) init_strategy:    comp::SimpleInitStrategy<A>,
-    /// The actual storage object. Downcasts to `C::Storage`.
-    pub(crate) storage:          Arc<RwLock<dyn Any + Send + Sync>>,
-    /// This is a function pointer to [`fn@fill_init_simple`] with the correct type parameters.
-    pub(crate) fill_init_simple: fn(&mut dyn Any, A::RawEntity, &mut comp::Map<A>),
-}
-
-impl<A: Archetype> Simple<A> {
-    pub(crate) fn new<C: comp::Simple<A>>() -> Self {
-        Self {
-            init_strategy:    C::INIT_STRATEGY,
-            storage:          Arc::new(RwLock::new(C::Storage::default()))
-                as Arc<RwLock<dyn Any + Send + Sync>>,
-            fill_init_simple: fill_init_simple::<A, C>,
-        }
-    }
-
-    /// Acquires a shared lock on the storage in online mode.
-    pub(crate) fn read_storage<C: comp::Simple<A>>(&self) -> MappedRwLockReadGuard<'_, C::Storage> {
-        match self.storage.try_read() {
-            Some(storage) => match RwLockReadGuard::try_map(storage, |storage| {
-                storage.downcast_ref::<C::Storage>()
-            }) {
-                Ok(storage) => storage,
-                Err(_) => panic!("TypeId mismatch"),
-            },
-            None => panic!(
-                "Storage for `{}`/`{}` is locked exclusively. Maybe scheduler bug?",
-                any::type_name::<A>(),
-                any::type_name::<C>(),
-            ),
-        }
-    }
-
-    /// Acquires an exclusive lock on the storage in online mode.
-    pub(crate) fn write_storage<C: comp::Simple<A>>(
-        &self,
-    ) -> MappedRwLockWriteGuard<'_, C::Storage> {
-        match self.storage.try_write() {
-            Some(storage) => match RwLockWriteGuard::try_map(storage, |storage| {
-                storage.downcast_mut::<C::Storage>()
-            }) {
-                Ok(storage) => storage,
-                Err(_) => panic!("TypeId mismatch"),
-            },
-            None => panic!(
-                "Storage for `{}`/`{}` is already locked. Maybe scheduler bug?",
-                any::type_name::<A>(),
-                any::type_name::<C>(),
-            ),
-        }
-    }
-
-    /// Gets the inner storage in offline mode.
-    pub(crate) fn get_storage<C: comp::Simple<A>>(&mut self) -> &mut C::Storage {
-        let storage = Arc::get_mut(&mut self.storage)
-            .expect("Storage Arc clones should not outlive system execution")
-            .get_mut();
-        storage.downcast_mut::<C::Storage>().expect("TypeId mismatch")
-    }
-}
-
-fn fill_init_simple<A: Archetype, C: comp::Simple<A>>(
-    storage: &mut dyn Any,
-    entity: A::RawEntity,
-    components: &mut comp::Map<A>,
-) {
-    let storage: &mut C::Storage = storage.downcast_mut().expect("function pointer mismatch");
-
-    if let Some(comp) = components.remove_simple::<C>() {
-        storage.set(entity, Some(comp));
-    } else if let comp::SimplePresence::Required = C::PRESENCE {
-        panic!(
-            "Cannot create an entity of type `{}` without explicitly passing a component of type \
-             `{}`",
-            any::type_name::<A>(),
-            any::type_name::<C>(),
-        );
-    }
-}
-
-// TODO: isotope components
-
-pub(crate) struct Isotope<A: Archetype> {
-    /// The actual storage object. Downcasts to `C::Storage`.
-    pub(crate) storage:           Arc<RwLock<dyn Any + Send + Sync>>,
-    /// This is a function pointer to [`fn@fill_init_isotope`] with the correct type parameters.
-    pub(crate) fill_init_isotope: fn(&mut dyn Any, A::RawEntity, Box<dyn Any>),
-}
-
-impl<A: Archetype> Isotope<A> {
-    pub(crate) fn new<C: comp::Isotope<A>>() -> Self {
-        Self {
-            storage:           Arc::new(RwLock::new(C::Storage::default()))
-                as Arc<RwLock<dyn Any + Send + Sync>>,
-            fill_init_isotope: fill_init_isotope::<A, C>,
-        }
-    }
-}
-
-fn fill_init_isotope<A: Archetype, C: comp::Isotope<A>>(
-    storage: &mut dyn Any,
-    entity: A::RawEntity,
-    comp: Box<dyn Any>,
-) {
-    let storage: &mut C::Storage = storage.downcast_mut().expect("function pointer mismatch");
-    let comp = *comp.downcast::<C>().expect("function pointer and TypeId mismatch");
-    storage.set(entity, Some(comp));
-}
-
-pub(crate) struct IsotopeFactory<A: Archetype> {
-    builder: fn() -> Isotope<A>, // TODO
-}
-
-impl<A: Archetype> IsotopeFactory<A> {
-    pub(crate) fn new<C: comp::Isotope<A>>() -> Self { Self { builder: Isotope::<A>::new::<C> } }
-
-    pub(crate) fn build(&self) -> Isotope<A> { (self.builder)() }
 }

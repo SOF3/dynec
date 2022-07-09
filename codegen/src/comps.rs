@@ -1,7 +1,8 @@
 use proc_macro2::TokenStream;
-use quote::quote;
+use quote::{quote, quote_spanned};
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
+use syn::spanned::Spanned;
 use syn::Result;
 
 pub(crate) fn imp(input: TokenStream) -> Result<TokenStream> {
@@ -12,21 +13,36 @@ pub(crate) fn imp(input: TokenStream) -> Result<TokenStream> {
         None => quote!(::dynec),
     };
 
-    let components = components.iter().map(|component| match component {
-        Component::Simple(expr) => quote! {
-            __dynec_map.insert_simple(#expr);
-        },
-        Component::Isotope(_, expr) => quote! {
-            for (discrim, value) in #expr {
-                __dynec_map.insert_isotope(discrim, value);
-            }
-        },
+    let comp_map = quote!(__dynec_map);
+
+    let components = components.iter().map(|component| {
+        let expr = &component.expr;
+
+        let item = match component.iso {
+            None => quote_spanned! { expr.span() =>
+                |expr| #comp_map.insert_simple(expr)
+            },
+            Some(iso) => quote_spanned! { iso.span() =>
+                |(discrim, value)| {
+                    #comp_map.insert_isotope(discrim, value);
+                }
+            },
+        };
+
+        let iter_expr = match component.iter {
+            None => quote_spanned!(expr.span() => [#expr]),
+            Some(iter) => quote_spanned!(iter.span() => #expr),
+        };
+
+        quote_spanned! { expr.span() =>
+            (#iter_expr).into_iter().for_each(#item);
+        }
     });
 
     let output = quote! {{
-        let mut __dynec_map = #crate_name::comp::Map::<#archetype>::default();
+        let mut #comp_map = #crate_name::comp::Map::<#archetype>::default();
         #(#components)*
-        __dynec_map
+        #comp_map
     }};
 
     Ok(output)
@@ -59,20 +75,30 @@ impl Parse for Input {
     }
 }
 
-enum Component {
-    Simple(syn::Expr),
-    Isotope(syn::Token![@], syn::Expr),
+struct Component {
+    iso:  Option<syn::Token![@]>,
+    iter: Option<syn::Token![?]>,
+    expr: syn::Expr,
 }
 
 impl Parse for Component {
     fn parse(input: ParseStream) -> Result<Self> {
-        if input.peek(syn::Token![@]) {
-            let at = input.parse::<syn::Token![@]>()?;
-            let expr = syn::Expr::parse(input)?;
-            Ok(Self::Isotope(at, expr))
+        let iso = if input.peek(syn::Token![@]) {
+            let token: syn::Token![@] = input.parse()?;
+            Some(token)
         } else {
-            let expr = syn::Expr::parse(input)?;
-            Ok(Self::Simple(expr))
-        }
+            None
+        };
+
+        let iter = if input.peek(syn::Token![?]) {
+            let token: syn::Token![?] = input.parse()?;
+            Some(token)
+        } else {
+            None
+        };
+
+        let expr: syn::Expr = input.parse()?;
+
+        Ok(Self { iso, iter, expr })
     }
 }

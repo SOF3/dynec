@@ -158,8 +158,8 @@ impl<R: Raw, T: Recycler<R>, S: ShardAssigner, const BLOCK_SIZE: usize> Ealloc
     fn new(num_shards: usize) -> Self { Self::new_with_shard_assigner(num_shards, S::default()) }
 
     fn shards<U, F: Fn(Self::Shard) -> U>(&mut self, vec: &mut Vec<U>, f: F) {
-        // TODO optimization: see if we can optimize away the arc cloning cost by reusing the same
-        // shard instances in every loop
+        // TODO optimization: see if we can optimize away the arc cloning cost
+        // by reusing the same shard instances in every loop
         let slice_start = vec.len();
         vec.extend(
             self.shards

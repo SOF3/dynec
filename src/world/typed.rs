@@ -33,25 +33,37 @@ impl<A: Archetype> AnyBuilder for Builder<A> {
     fn add_simple_storage_if_missing(
         &mut self,
         component: DbgTypeId,
-        shared: fn() -> Box<dyn Any>,
+        box_fn: fn() -> Box<dyn Any>,
     ) {
-        let shared: storage::Simple<A> = match shared().downcast() {
-            Ok(ss) => *ss,
-            Err(_) => panic!(
-                "Expected storage::SharedSimple<{}>, got {:?}",
-                any::type_name::<A>(),
-                shared.type_id(),
-            ),
-        };
-        self.simple_storages.entry(component).or_insert_with(|| shared);
+        self.simple_storages.entry(component).or_insert_with(|| {
+            let boxed = box_fn();
+            match boxed.downcast::<storage::Simple<A>>() {
+                Ok(ss) => *ss,
+                Err(boxed) => panic!(
+                    "Expected storage::Simple<{}>, got {:?}",
+                    any::type_name::<A>(),
+                    boxed.type_id(),
+                ),
+            }
+        });
     }
 
     fn add_isotope_factory_if_missing(
         &mut self,
         component: DbgTypeId,
-        shared: fn() -> Box<dyn Any>,
+        box_fn: fn() -> Box<dyn Any>,
     ) {
-        todo!()
+        self.isotope_factories.entry(component).or_insert_with(|| {
+            let boxed = box_fn();
+            match boxed.downcast::<storage::IsotopeFactory<A>>() {
+                Ok(factory) => *factory,
+                Err(boxed) => panic!(
+                    "Expected storage::IsotopeFactory<{}>, got {:?}",
+                    any::type_name::<A>(),
+                    boxed.type_id(),
+                ),
+            }
+        });
     }
 
     fn build(mut self: Box<Self>) -> Box<dyn AnyTyped> {
@@ -167,13 +179,26 @@ impl<A: Archetype> Typed<A> {
 
         for (ty, value) in components.into_isotopes() {
             let storages = self.isotope_storages.get_mut();
-            let storage = storages.entry(ty).or_insert_with(|| {
-                let factory = match self.isotope_factories.get(&ty.id) {
-                    Some(factory) => factory,
-                    None => panic!("Isotope type `{}` is not used in any systems", ty.id),
-                };
-                factory.build()
-            });
+
+            let mut storage_entry = storages.entry(ty);
+            let storage = match storage_entry {
+                hash_map::Entry::Occupied(ref mut entry) => entry.get_mut(),
+                hash_map::Entry::Vacant(entry) => entry.insert({
+                    let factory = match self.isotope_factories.get(&ty.id) {
+                        Some(factory) => factory,
+                        None => {
+                            // Let's just discard the object,
+                            // because user may simply have disabled a certain system
+                            // without modifying the initialization code,
+                            // instead of panicking with:
+                            // panic!("Isotope type `{}` is not used in any systems", ty.id)
+
+                            continue;
+                        }
+                    };
+                    factory.build()
+                }),
+            };
             let any_storage = Arc::get_mut(&mut storage.storage).expect("storage arc was leaked");
             (storage.fill_init_isotope)(any_storage.get_mut(), id, value);
         }

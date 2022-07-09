@@ -24,9 +24,9 @@ impl dynec::world::Bundle for Bundle {
             // indexed by a small integer of type `Capacity::Discrim` (`ItemType`).
             // The syntax is `@v`, where `v` is a value whose type implements
             // `Iterator<Item = (C::Discrim, C)>` where `C` is the component type.
-            @[(CROPS, Capacity(100))],
+            @(CROPS, Capacity(100)),
             // Similarly, `Volume` is a multi-component.
-            @[(CROPS, Volume(50))]
+            @(CROPS, Volume(50))
         ]);
 
         // The `world.create_near` method allows providing an entity
@@ -36,24 +36,24 @@ impl dynec::world::Bundle for Bundle {
         // so entities are always allocated in the same order they are created.
         let factory = world.create::<Node>(dynec::comps![ Node =>
             Position([0.0, 1.0]),
-            @[(CROPS, Capacity(100)), (FOOD, Capacity(100))],
-            @[(FOOD, Volume(100))],
+            @?[(CROPS, Capacity(100)), (FOOD, Capacity(100))],
+            @(FOOD, Volume(100)),
         ]);
         let market = world.create::<Node>(dynec::comps![ Node =>
             Position([1.0, 2.0]),
-            @[(FOOD, Capacity(200))],
+            @(FOOD, Capacity(200)),
         ]);
 
         // Then, we populate the world with entities with archetype `Edge`.
         world.create::<Edge>(dynec::comps![ Edge =>
             Endpoints{from: farm, to: factory.clone()},
             Power(1.),
-            @[(CROPS, Flow(10))],
+            @(CROPS, Flow(10)),
         ]);
         world.create::<Edge>(dynec::comps![ Edge =>
             Endpoints{from: factory, to: market},
             Power(2.),
-            @[(CROPS, Flow(10))],
+            @(CROPS, Flow(10)),
         ]);
     }
 }
@@ -114,7 +114,7 @@ pub struct ItemType(usize);
 
 impl dynec::comp::Discrim for ItemType {
     fn from_usize(usize: usize) -> Self { Self(usize) }
-    fn to_usize(self) -> usize { self.0 }
+    fn into_usize(self) -> usize { self.0 }
 }
 
 // Here are a few constants for the different item types.

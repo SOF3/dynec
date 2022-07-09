@@ -103,9 +103,9 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 },
             ));
 
-            let must_impl =
-                generics.impl_trait(quote!(#crate_name::comp::Must<#archetype>), quote! {});
-            output.extend(quote!(unsafe #must_impl));
+            output.extend(
+                generics.impl_trait(quote!(#crate_name::comp::Must<#archetype>), quote! {}),
+            );
         }
     }
 

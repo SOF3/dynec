@@ -142,28 +142,24 @@ pub trait Discrim: Copy {
     fn from_usize(usize: usize) -> Self;
 
     /// Converts the discriminant to a usize.
-    fn to_usize(self) -> usize;
+    fn into_usize(self) -> usize;
 }
 
 impl Discrim for usize {
     fn from_usize(usize: usize) -> Self { usize }
 
-    fn to_usize(self) -> usize { self }
+    fn into_usize(self) -> usize { self }
 }
 
 /// Marks that a component type is always present.
 ///
-/// # Safety
 /// This trait must only be implemented by components that
 /// either implement [`Simple`] with [`Simple::PRESENCE`] set to [`SimplePresence::Required`]
 /// or implement [`Isotope`] with [`Isotope::INIT_STRATEGY`] set to [`IsotopeInitStrategy::Default`].
 ///
-/// Implementing this trait incorrectly currently only causes a panic
-/// and does not result in UB, but it may cause UB in the future.
-///
-/// Not implementing this trait does not cause any issues
-/// except for ergonomic problems when using getters on storages.
-pub unsafe trait Must<A: Archetype> {}
+/// Not implementing this trait does not result in any issues
+/// except for ergonomic inconvenience when using getters on storages.
+pub trait Must<A: Archetype> {}
 
 pub(crate) mod any;
 pub use any::{AutoInitFn, AutoIniter, Map};

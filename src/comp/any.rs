@@ -22,7 +22,7 @@ impl Identifier {
     }
 
     pub(crate) fn isotope<A: Archetype, C: comp::Isotope<A>>(discrim: C::Discrim) -> Self {
-        Identifier { id: DbgTypeId::of::<C>(), discrim: Some(discrim.to_usize()) }
+        Identifier { id: DbgTypeId::of::<C>(), discrim: Some(discrim.into_usize()) }
     }
 }
 

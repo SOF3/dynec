@@ -84,7 +84,6 @@ pub(crate) struct ArchComp {
 /// Describes a simple component type.
 pub(crate) struct SimpleSpec {
     presence:     comp::SimplePresence,
-    // TODO wrap SimpleInitStrategy in a trait object
     is_finalizer: bool,
 }
 

@@ -70,7 +70,6 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
     let mut isotope_discrim_idents = Vec::new();
     let mut isotope_discrim_values = Vec::new();
 
-    let mut input_pats = Vec::new();
     let mut input_types = Vec::new();
     let mut system_run_args = Vec::new();
 
@@ -86,7 +85,6 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             syn::FnArg::Typed(typed) => typed,
         };
 
-        input_pats.push(syn::Pat::clone(&param.pat));
         input_types.push(syn::Type::clone(&param.ty));
 
         enum ArgType {
@@ -382,7 +380,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                         let __iter = ::std::iter::IntoIterator::into_iter(#discrim);
                         let __iter = ::std::iter::Iterator::map(__iter, |d| {
                             let _: &(<#comp as #crate_name::comp::Isotope<#arch>>::Discrim) = &d; // type check
-                            #crate_name::comp::Discrim::to_usize(d)
+                            #crate_name::comp::Discrim::into_usize(d)
                         });
                         ::std::iter::Iterator::collect::<::std::vec::Vec<_>>(__iter)
                     })
@@ -423,6 +421,9 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
     let fn_body = &*input.block;
 
     let input_args: Vec<_> = input.sig.inputs.iter().collect();
+
+    let input_proxy_args: Vec<_> =
+        (0..input.sig.inputs.len()).map(|i| quote::format_ident!("arg_{}", i)).collect();
 
     let destructure_local_states = quote! {
         let (#(#local_state_field_pats,)*) = {
@@ -485,8 +486,8 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             }
 
             impl #ident {
-                #vis fn call(#(#input_args),*) {
-                    __dynec_original(#(#input_pats),*)
+                #vis fn call(#(#input_proxy_args: #input_types),*) {
+                    __dynec_original(#(#input_proxy_args),*)
                 }
             }
             /*

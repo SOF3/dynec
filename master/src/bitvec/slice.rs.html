@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/github.com-1ecc6299db9ec823/bitvec-1.0.0/src/slice.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>slice.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../bitvec/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/github.com-1ecc6299db9ec823/bitvec-1.0.1/src/slice.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>slice.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../bitvec/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
         </a><h2 class="location"></h2>
     </nav>
     <nav class="sidebar"><a class="sidebar-logo" href="../../bitvec/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
@@ -1737,6 +1737,92 @@
 <span id="1731">1731</span>
 <span id="1732">1732</span>
 <span id="1733">1733</span>
+<span id="1734">1734</span>
+<span id="1735">1735</span>
+<span id="1736">1736</span>
+<span id="1737">1737</span>
+<span id="1738">1738</span>
+<span id="1739">1739</span>
+<span id="1740">1740</span>
+<span id="1741">1741</span>
+<span id="1742">1742</span>
+<span id="1743">1743</span>
+<span id="1744">1744</span>
+<span id="1745">1745</span>
+<span id="1746">1746</span>
+<span id="1747">1747</span>
+<span id="1748">1748</span>
+<span id="1749">1749</span>
+<span id="1750">1750</span>
+<span id="1751">1751</span>
+<span id="1752">1752</span>
+<span id="1753">1753</span>
+<span id="1754">1754</span>
+<span id="1755">1755</span>
+<span id="1756">1756</span>
+<span id="1757">1757</span>
+<span id="1758">1758</span>
+<span id="1759">1759</span>
+<span id="1760">1760</span>
+<span id="1761">1761</span>
+<span id="1762">1762</span>
+<span id="1763">1763</span>
+<span id="1764">1764</span>
+<span id="1765">1765</span>
+<span id="1766">1766</span>
+<span id="1767">1767</span>
+<span id="1768">1768</span>
+<span id="1769">1769</span>
+<span id="1770">1770</span>
+<span id="1771">1771</span>
+<span id="1772">1772</span>
+<span id="1773">1773</span>
+<span id="1774">1774</span>
+<span id="1775">1775</span>
+<span id="1776">1776</span>
+<span id="1777">1777</span>
+<span id="1778">1778</span>
+<span id="1779">1779</span>
+<span id="1780">1780</span>
+<span id="1781">1781</span>
+<span id="1782">1782</span>
+<span id="1783">1783</span>
+<span id="1784">1784</span>
+<span id="1785">1785</span>
+<span id="1786">1786</span>
+<span id="1787">1787</span>
+<span id="1788">1788</span>
+<span id="1789">1789</span>
+<span id="1790">1790</span>
+<span id="1791">1791</span>
+<span id="1792">1792</span>
+<span id="1793">1793</span>
+<span id="1794">1794</span>
+<span id="1795">1795</span>
+<span id="1796">1796</span>
+<span id="1797">1797</span>
+<span id="1798">1798</span>
+<span id="1799">1799</span>
+<span id="1800">1800</span>
+<span id="1801">1801</span>
+<span id="1802">1802</span>
+<span id="1803">1803</span>
+<span id="1804">1804</span>
+<span id="1805">1805</span>
+<span id="1806">1806</span>
+<span id="1807">1807</span>
+<span id="1808">1808</span>
+<span id="1809">1809</span>
+<span id="1810">1810</span>
+<span id="1811">1811</span>
+<span id="1812">1812</span>
+<span id="1813">1813</span>
+<span id="1814">1814</span>
+<span id="1815">1815</span>
+<span id="1816">1816</span>
+<span id="1817">1817</span>
+<span id="1818">1818</span>
+<span id="1819">1819</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">doc</span> <span class="op">=</span> <span class="macro">include_str!</span>(<span class="string">&quot;../doc/slice.md&quot;</span>)]</span>
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;alloc&quot;</span>)]</span>
@@ -1844,6 +1930,7 @@
 	<span class="doccomment">/// assert!(BitSlice::&lt;u16, LocalBits&gt;::empty().is_empty());</span>
 	<span class="doccomment">/// assert_eq!(bits![], BitSlice::&lt;u8, Msb0&gt;::empty());</span>
 	<span class="doccomment">/// ```</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">empty</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>() -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="self">Self</span> {
 		<span class="kw">unsafe</span> { <span class="ident">BitSpan</span>::<span class="op">&lt;</span><span class="ident">Const</span>, <span class="ident">T</span>, <span class="ident">O</span><span class="op">&gt;</span><span class="ident">::EMPTY</span>.<span class="ident">into_bitslice_ref</span>() }
 	}
@@ -1862,6 +1949,7 @@
 	<span class="doccomment">/// assert!(BitSlice::&lt;u16, LocalBits&gt;::empty_mut().is_empty());</span>
 	<span class="doccomment">/// assert_eq!(bits![mut], BitSlice::&lt;u8, Msb0&gt;::empty_mut());</span>
 	<span class="doccomment">/// ```</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">empty_mut</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>() -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="kw-2">mut</span> <span class="self">Self</span> {
 		<span class="kw">unsafe</span> { <span class="ident">BitSpan</span>::<span class="op">&lt;</span><span class="ident">Mut</span>, <span class="ident">T</span>, <span class="ident">O</span><span class="op">&gt;</span><span class="ident">::EMPTY</span>.<span class="ident">into_bitslice_mut</span>() }
 	}
@@ -1895,6 +1983,7 @@
 	<span class="doccomment">/// [`BitStore`]: crate::store::BitStore</span>
 	<span class="doccomment">/// [`BitView`]: crate::view::BitView</span>
 	<span class="doccomment">/// [`.view_bits::&lt;O&gt;()`]: crate::view::BitView::view_bits</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_element</span>(<span class="ident">elem</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>) -&gt; <span class="kw-2">&amp;</span><span class="self">Self</span> {
 		<span class="kw">unsafe</span> {
 			<span class="ident">BitPtr::from_ref</span>(<span class="ident">elem</span>)
@@ -1937,6 +2026,7 @@
 	<span class="doccomment">/// [`BitStore`]: crate::store::BitStore</span>
 	<span class="doccomment">/// [`BitView`]: crate::view::BitView</span>
 	<span class="doccomment">/// [`.view_bits_mut::&lt;O&gt;()`]: crate::view::BitView::view_bits_mut</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_element_mut</span>(<span class="ident">elem</span>: <span class="kw-2">&amp;mut</span> <span class="ident">T</span>) -&gt; <span class="kw-2">&amp;mut</span> <span class="self">Self</span> {
 		<span class="kw">unsafe</span> {
 			<span class="ident">BitPtr::from_mut</span>(<span class="ident">elem</span>)
@@ -1977,6 +2067,7 @@
 	<span class="doccomment">///</span>
 	<span class="doccomment">/// [`BitView`]: crate::view::BitView</span>
 	<span class="doccomment">/// [`.view_bits::&lt;O&gt;()`]: crate::view::BitView::view_bits</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_slice</span>(<span class="ident">slice</span>: <span class="kw-2">&amp;</span>[<span class="ident">T</span>]) -&gt; <span class="kw-2">&amp;</span><span class="self">Self</span> {
 		<span class="ident"><span class="self">Self</span>::try_from_slice</span>(<span class="ident">slice</span>).<span class="ident">unwrap</span>()
 	}
@@ -2016,6 +2107,7 @@
 	<span class="doccomment">/// [`BitView`]: crate::view::BitView</span>
 	<span class="doccomment">/// [`MAX_ELTS`]: Self::MAX_ELTS</span>
 	<span class="doccomment">/// [`.try_view_bits::&lt;O&gt;()`]: crate::view::BitView::try_view_bits</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">try_from_slice</span>(<span class="ident">slice</span>: <span class="kw-2">&amp;</span>[<span class="ident">T</span>]) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="self">Self</span>, <span class="ident">BitSpanError</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="ident">elts</span> <span class="op">=</span> <span class="ident">slice</span>.<span class="ident">len</span>();
 		<span class="kw">if</span> <span class="ident">elts</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident"><span class="self">Self</span>::MAX_ELTS</span> {
@@ -2063,6 +2155,7 @@
 	<span class="doccomment">///</span>
 	<span class="doccomment">/// [`BitView`]: crate::view::BitView</span>
 	<span class="doccomment">/// [`.view_bits_mut::&lt;O&gt;()`]: crate::view::BitView::view_bits_mut</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_slice_mut</span>(<span class="ident">slice</span>: <span class="kw-2">&amp;mut</span> [<span class="ident">T</span>]) -&gt; <span class="kw-2">&amp;mut</span> <span class="self">Self</span> {
 		<span class="ident"><span class="self">Self</span>::try_from_slice_mut</span>(<span class="ident">slice</span>).<span class="ident">unwrap</span>()
 	}
@@ -2101,6 +2194,7 @@
 	<span class="doccomment">/// [`BitView`]: crate::view::BitView</span>
 	<span class="doccomment">/// [`MAX_ELTS`]: Self::MAX_ELTS</span>
 	<span class="doccomment">/// [`.try_view_bits_mut::&lt;O&gt;()`]: crate::view::BitView::try_view_bits_mut</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">try_from_slice_mut</span>(
 		<span class="ident">slice</span>: <span class="kw-2">&amp;mut</span> [<span class="ident">T</span>],
 	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;mut</span> <span class="self">Self</span>, <span class="ident">BitSpanError</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> {
@@ -2129,6 +2223,7 @@
 	<span class="doccomment">/// undefined behavior. You may not assume anything about its implementation</span>
 	<span class="doccomment">/// or behavior, and must conservatively assume that over-long slices cause</span>
 	<span class="doccomment">/// compiler UB.</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">from_slice_unchecked</span>(<span class="ident">slice</span>: <span class="kw-2">&amp;</span>[<span class="ident">T</span>]) -&gt; <span class="kw-2">&amp;</span><span class="self">Self</span> {
 		<span class="kw">let</span> <span class="ident">bits</span> <span class="op">=</span> <span class="ident">slice</span>.<span class="ident">len</span>().<span class="ident">wrapping_mul</span>(<span class="ident">mem::bits_of</span>::<span class="op">&lt;</span><span class="ident">T::Mem</span><span class="op">&gt;</span>());
 		<span class="ident">BitPtr::from_slice</span>(<span class="ident">slice</span>)
@@ -2150,6 +2245,7 @@
 	<span class="doccomment">/// undefined behavior. You may not assume anything about its implementation</span>
 	<span class="doccomment">/// or behavior, and must conservatively assume that over-long slices cause</span>
 	<span class="doccomment">/// compiler UB.</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">from_slice_unchecked_mut</span>(<span class="ident">slice</span>: <span class="kw-2">&amp;mut</span> [<span class="ident">T</span>]) -&gt; <span class="kw-2">&amp;mut</span> <span class="self">Self</span> {
 		<span class="kw">let</span> <span class="ident">bits</span> <span class="op">=</span> <span class="ident">slice</span>.<span class="ident">len</span>().<span class="ident">wrapping_mul</span>(<span class="ident">mem::bits_of</span>::<span class="op">&lt;</span><span class="ident">T::Mem</span><span class="op">&gt;</span>());
 		<span class="ident">BitPtr::from_slice_mut</span>(<span class="ident">slice</span>)
@@ -2174,6 +2270,7 @@
 	<span class="doccomment">///</span>
 	<span class="doccomment">/// This is renamed in order to indicate that it is returning a `bitvec`</span>
 	<span class="doccomment">/// structure, not a raw pointer.</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">as_bitptr</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">BitPtr</span><span class="op">&lt;</span><span class="ident">Const</span>, <span class="ident">T</span>, <span class="ident">O</span><span class="op">&gt;</span> {
 		<span class="self">self</span>.<span class="ident">as_bitspan</span>().<span class="ident">to_bitptr</span>()
 	}
@@ -2188,6 +2285,7 @@
 	<span class="doccomment">///</span>
 	<span class="doccomment">/// This is renamed in order to indicate that it is returning a `bitvec`</span>
 	<span class="doccomment">/// structure, not a raw pointer.</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">as_mut_bitptr</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="ident">BitPtr</span><span class="op">&lt;</span><span class="ident">Mut</span>, <span class="ident">T</span>, <span class="ident">O</span><span class="op">&gt;</span> {
 		<span class="self">self</span>.<span class="ident">as_mut_bitspan</span>().<span class="ident">to_bitptr</span>()
 	}
@@ -2211,6 +2309,7 @@
 	<span class="doccomment">/// `Range&lt;*const T&gt;` and `Range&lt;BitPtr&gt;` do not.</span>
 	<span class="doccomment">///</span>
 	<span class="doccomment">/// [`.as_ptr_range()`]: Self::as_ptr_range</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">as_bitptr_range</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">BitPtrRange</span><span class="op">&lt;</span><span class="ident">Const</span>, <span class="ident">T</span>, <span class="ident">O</span><span class="op">&gt;</span> {
 		<span class="self">self</span>.<span class="ident">as_bitspan</span>().<span class="ident">to_bitptr_range</span>()
 	}
@@ -2232,6 +2331,7 @@
 	<span class="doccomment">/// `BitSlice` does define a [`.as_mut_ptr_range()`], which returns a</span>
 	<span class="doccomment">/// `Range&lt;BitPtr&gt;`. `BitPtrRange` has additional capabilities that</span>
 	<span class="doccomment">/// `Range&lt;*mut T&gt;` and `Range&lt;BitPtr&gt;` do not.</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">as_mut_bitptr_range</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="ident">BitPtrRange</span><span class="op">&lt;</span><span class="ident">Mut</span>, <span class="ident">T</span>, <span class="ident">O</span><span class="op">&gt;</span> {
 		<span class="self">self</span>.<span class="ident">as_mut_bitspan</span>().<span class="ident">to_bitptr_range</span>()
 	}
@@ -2273,6 +2373,7 @@
 	<span class="doccomment">/// ```</span>
 	<span class="doccomment">///</span>
 	<span class="doccomment">/// [`.copy_from_bitslice()`]: Self::copy_from_bitslice</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">clone_from_bitslice</span><span class="op">&lt;</span><span class="ident">T2</span>, <span class="ident">O2</span><span class="op">&gt;</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">src</span>: <span class="kw-2">&amp;</span><span class="ident">BitSlice</span><span class="op">&lt;</span><span class="ident">T2</span>, <span class="ident">O2</span><span class="op">&gt;</span>)
 	<span class="kw">where</span>
 		<span class="ident">T2</span>: <span class="ident">BitStore</span>,
@@ -2317,6 +2418,7 @@
 	<span class="doccomment">/// ```rust</span>
 	<span class="doccomment">/// use bitvec::prelude::*;</span>
 	<span class="doccomment">/// ```</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">copy_from_bitslice</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">src</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) {
 		<span class="macro">assert_eq!</span>(
 			<span class="self">self</span>.<span class="ident">len</span>(),
@@ -2410,6 +2512,7 @@
 	<span class="doccomment">/// assert_eq!(two, 0x96A5);</span>
 	<span class="doccomment">/// # }</span>
 	<span class="doccomment">/// ```</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">swap_with_bitslice</span><span class="op">&lt;</span><span class="ident">T2</span>, <span class="ident">O2</span><span class="op">&gt;</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;mut</span> <span class="ident">BitSlice</span><span class="op">&lt;</span><span class="ident">T2</span>, <span class="ident">O2</span><span class="op">&gt;</span>)
 	<span class="kw">where</span>
 		<span class="ident">T2</span>: <span class="ident">BitStore</span>,
@@ -2471,6 +2574,7 @@
 	<span class="doccomment">///</span>
 	<span class="doccomment">/// assert_eq!(bits, bits![1, 0]);</span>
 	<span class="doccomment">/// ```</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">index</span>: <span class="ident">usize</span>, <span class="ident">value</span>: <span class="ident">bool</span>) {
 		<span class="self">self</span>.<span class="ident">replace</span>(<span class="ident">index</span>, <span class="ident">value</span>);
 	}
@@ -2504,6 +2608,7 @@
 	<span class="doccomment">/// }</span>
 	<span class="doccomment">/// assert_eq!(data, 8);</span>
 	<span class="doccomment">/// ```</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">set_unchecked</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">index</span>: <span class="ident">usize</span>, <span class="ident">value</span>: <span class="ident">bool</span>) {
 		<span class="self">self</span>.<span class="ident">replace_unchecked</span>(<span class="ident">index</span>, <span class="ident">value</span>);
 	}
@@ -2523,6 +2628,7 @@
 	<span class="doccomment">/// assert!(!bits.replace(0, true));</span>
 	<span class="doccomment">/// assert!(bits[0]);</span>
 	<span class="doccomment">/// ```</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">replace</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">index</span>: <span class="ident">usize</span>, <span class="ident">value</span>: <span class="ident">bool</span>) -&gt; <span class="ident">bool</span> {
 		<span class="self">self</span>.<span class="ident">assert_in_bounds</span>(<span class="ident">index</span>, <span class="number">0</span> .. <span class="self">self</span>.<span class="ident">len</span>());
 		<span class="kw">unsafe</span> { <span class="self">self</span>.<span class="ident">replace_unchecked</span>(<span class="ident">index</span>, <span class="ident">value</span>) }
@@ -2548,6 +2654,7 @@
 	<span class="doccomment">/// assert!(!old);</span>
 	<span class="doccomment">/// assert!(bits[1]);</span>
 	<span class="doccomment">/// ```</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">replace_unchecked</span>(
 		<span class="kw-2">&amp;mut</span> <span class="self">self</span>,
 		<span class="ident">index</span>: <span class="ident">usize</span>,
@@ -2570,6 +2677,7 @@
 	<span class="doccomment">/// out-of-bounds access and will trigger memory unsafety.</span>
 	<span class="doccomment">///</span>
 	<span class="doccomment">/// [`.swap()`]: Self::swap</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">swap_unchecked</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">a</span>: <span class="ident">usize</span>, <span class="ident">b</span>: <span class="ident">usize</span>) {
 		<span class="kw">let</span> <span class="ident">a</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">as_mut_bitptr</span>().<span class="ident">add</span>(<span class="ident">a</span>);
 		<span class="kw">let</span> <span class="ident">b</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">as_mut_bitptr</span>().<span class="ident">add</span>(<span class="ident">b</span>);
@@ -2590,6 +2698,7 @@
 	<span class="doccomment">/// compiler-level UB.</span>
 	<span class="doccomment">///</span>
 	<span class="doccomment">/// [`.split_at()`]: Self::split_at</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">split_at_unchecked</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">mid</span>: <span class="ident">usize</span>) -&gt; (<span class="kw-2">&amp;</span><span class="self">Self</span>, <span class="kw-2">&amp;</span><span class="self">Self</span>) {
 		<span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">len</span>();
 		<span class="kw">let</span> <span class="ident">left</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">as_bitptr</span>();
@@ -2615,6 +2724,7 @@
 	<span class="doccomment">/// compiler-level UB.</span>
 	<span class="doccomment">///</span>
 	<span class="doccomment">/// [`.split_at_mut()`]: Self::split_at_mut</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">split_at_unchecked_mut</span>(
 		<span class="kw-2">&amp;mut</span> <span class="self">self</span>,
 		<span class="ident">mid</span>: <span class="ident">usize</span>,
@@ -2661,6 +2771,7 @@
 	<span class="doccomment">/// }</span>
 	<span class="doccomment">/// assert_eq!(data, 0b1010_1100);</span>
 	<span class="doccomment">/// ```</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">copy_within_unchecked</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">src</span>: <span class="ident">R</span>, <span class="ident">dest</span>: <span class="ident">usize</span>)
 	<span class="kw">where</span> <span class="ident">R</span>: <span class="ident">RangeExt</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span> {
 		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">this</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">coerce_mut</span>::<span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">Lsb0</span><span class="op">&gt;</span>() {
@@ -2683,6 +2794,7 @@
 		}
 	}
 
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="attribute">#[<span class="ident">doc</span>(<span class="ident">hidden</span>)]</span>
 	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">tarpaulin_include</span>))]</span>
 	<span class="attribute">#[<span class="ident">deprecated</span> <span class="op">=</span> <span class="string">&quot;use `.iter_mut().enumerate()`&quot;</span>]</span>
@@ -2707,6 +2819,7 @@
 	<span class="doccomment">/// short, this produces a `&amp;BitSlice` that is as large as possible without</span>
 	<span class="doccomment">/// requiring alias protection, as well as any bits that were not able to be</span>
 	<span class="doccomment">/// included in the unaliased bit-slice.</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">tarpaulin_include</span>))]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">bit_domain</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">BitDomain</span><span class="op">&lt;</span><span class="ident">Const</span>, <span class="ident">T</span>, <span class="ident">O</span><span class="op">&gt;</span> {
 		<span class="self">self</span>.<span class="ident">domain</span>().<span class="ident">into_bit_domain</span>()
@@ -2719,6 +2832,7 @@
 	<span class="doccomment">/// short, this produces a `&amp;mut BitSlice` that is as large as possible</span>
 	<span class="doccomment">/// without requiring alias protection, as well as any bits that were not</span>
 	<span class="doccomment">/// able to be included in the unaliased bit-slice.</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">tarpaulin_include</span>))]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">bit_domain_mut</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="ident">BitDomain</span><span class="op">&lt;</span><span class="ident">Mut</span>, <span class="ident">T</span>, <span class="ident">O</span><span class="op">&gt;</span> {
 		<span class="self">self</span>.<span class="ident">domain_mut</span>().<span class="ident">into_bit_domain</span>()
@@ -2731,6 +2845,7 @@
 	<span class="doccomment">/// this produces a `&amp;[T]` slice with alias protections removed, covering</span>
 	<span class="doccomment">/// all elements that `self` completely fills. Partially-used elements on</span>
 	<span class="doccomment">/// either the front or back edge of the slice are returned separately.</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">tarpaulin_include</span>))]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">domain</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Domain</span><span class="op">&lt;</span><span class="ident">Const</span>, <span class="ident">T</span>, <span class="ident">O</span><span class="op">&gt;</span> {
 		<span class="ident">Domain::new</span>(<span class="self">self</span>)
@@ -2743,6 +2858,7 @@
 	<span class="doccomment">/// this produces a `&amp;mut [T]` slice with alias protections removed,</span>
 	<span class="doccomment">/// covering all elements that `self` completely fills. Partially-used</span>
 	<span class="doccomment">/// elements on the front or back edge of the slice are returned separately.</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">tarpaulin_include</span>))]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">domain_mut</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="ident">Domain</span><span class="op">&lt;</span><span class="ident">Mut</span>, <span class="ident">T</span>, <span class="ident">O</span><span class="op">&gt;</span> {
 		<span class="ident">Domain::new</span>(<span class="self">self</span>)
@@ -2767,6 +2883,7 @@
 	<span class="doccomment">/// assert_eq!(bits[2 ..].count_ones(), 0);</span>
 	<span class="doccomment">/// assert_eq!(bits![].count_ones(), 0);</span>
 	<span class="doccomment">/// ```</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">count_ones</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">usize</span> {
 		<span class="kw">match</span> <span class="self">self</span>.<span class="ident">domain</span>() {
 			<span class="ident">Domain::Enclave</span>(<span class="ident">elem</span>) =&gt; <span class="ident">elem</span>.<span class="ident">load_value</span>().<span class="ident">count_ones</span>() <span class="kw">as</span> <span class="ident">usize</span>,
@@ -2794,6 +2911,7 @@
 	<span class="doccomment">/// assert_eq!(bits[2 ..].count_zeros(), 2);</span>
 	<span class="doccomment">/// assert_eq!(bits![].count_zeros(), 0);</span>
 	<span class="doccomment">/// ```</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">count_zeros</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">usize</span> {
 		<span class="kw">match</span> <span class="self">self</span>.<span class="ident">domain</span>() {
 			<span class="ident">Domain::Enclave</span>(<span class="ident">elem</span>) =&gt; (<span class="ident">elem</span>.<span class="ident">load_value</span>()
@@ -2849,6 +2967,7 @@
 	<span class="doccomment">///   assert_eq!(known, filtered);</span>
 	<span class="doccomment">/// }</span>
 	<span class="doccomment">/// ```</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">iter_ones</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">IterOnes</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">O</span><span class="op">&gt;</span> {
 		<span class="ident">IterOnes::new</span>(<span class="self">self</span>)
 	}
@@ -2887,6 +3006,7 @@
 	<span class="doccomment">///   assert_eq!(known, filtered);</span>
 	<span class="doccomment">/// }</span>
 	<span class="doccomment">/// ```</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">iter_zeros</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">IterZeros</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">O</span><span class="op">&gt;</span> {
 		<span class="ident">IterZeros::new</span>(<span class="self">self</span>)
 	}
@@ -2904,6 +3024,7 @@
 	<span class="doccomment">/// assert!(bits![0].first_one().is_none());</span>
 	<span class="doccomment">/// assert_eq!(bits![0, 1].first_one(), Some(1));</span>
 	<span class="doccomment">/// ```</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">first_one</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span> {
 		<span class="self">self</span>.<span class="ident">iter_ones</span>().<span class="ident">next</span>()
 	}
@@ -2921,6 +3042,7 @@
 	<span class="doccomment">/// assert!(bits![1].first_zero().is_none());</span>
 	<span class="doccomment">/// assert_eq!(bits![1, 0].first_zero(), Some(1));</span>
 	<span class="doccomment">/// ```</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">first_zero</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span> {
 		<span class="self">self</span>.<span class="ident">iter_zeros</span>().<span class="ident">next</span>()
 	}
@@ -2938,6 +3060,7 @@
 	<span class="doccomment">/// assert!(bits![0].last_one().is_none());</span>
 	<span class="doccomment">/// assert_eq!(bits![1, 0].last_one(), Some(0));</span>
 	<span class="doccomment">/// ```</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">last_one</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span> {
 		<span class="self">self</span>.<span class="ident">iter_ones</span>().<span class="ident">next_back</span>()
 	}
@@ -2955,6 +3078,7 @@
 	<span class="doccomment">/// assert!(bits![1].last_zero().is_none());</span>
 	<span class="doccomment">/// assert_eq!(bits![0, 1].last_zero(), Some(0));</span>
 	<span class="doccomment">/// ```</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">last_zero</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span> {
 		<span class="self">self</span>.<span class="ident">iter_zeros</span>().<span class="ident">next_back</span>()
 	}
@@ -2973,6 +3097,7 @@
 	<span class="doccomment">/// assert_eq!(bits![0].leading_ones(), 0);</span>
 	<span class="doccomment">/// assert_eq!(bits![1, 0].leading_ones(), 1);</span>
 	<span class="doccomment">/// ```</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">leading_ones</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">usize</span> {
 		<span class="self">self</span>.<span class="ident">first_zero</span>().<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">len</span>())
 	}
@@ -2991,6 +3116,7 @@
 	<span class="doccomment">/// assert_eq!(bits![1].leading_zeros(), 0);</span>
 	<span class="doccomment">/// assert_eq!(bits![0, 1].leading_zeros(), 1);</span>
 	<span class="doccomment">/// ```</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">leading_zeros</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">usize</span> {
 		<span class="self">self</span>.<span class="ident">first_one</span>().<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">len</span>())
 	}
@@ -3009,6 +3135,7 @@
 	<span class="doccomment">/// assert_eq!(bits![0].trailing_ones(), 0);</span>
 	<span class="doccomment">/// assert_eq!(bits![0, 1].trailing_ones(), 1);</span>
 	<span class="doccomment">/// ```</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">trailing_ones</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">usize</span> {
 		<span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">len</span>();
 		<span class="self">self</span>.<span class="ident">last_zero</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">idx</span><span class="op">|</span> <span class="ident">len</span> <span class="op">-</span> <span class="number">1</span> <span class="op">-</span> <span class="ident">idx</span>).<span class="ident">unwrap_or</span>(<span class="ident">len</span>)
@@ -3028,6 +3155,7 @@
 	<span class="doccomment">/// assert_eq!(bits![1].trailing_zeros(), 0);</span>
 	<span class="doccomment">/// assert_eq!(bits![1, 0].trailing_zeros(), 1);</span>
 	<span class="doccomment">/// ```</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">trailing_zeros</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">usize</span> {
 		<span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">len</span>();
 		<span class="self">self</span>.<span class="ident">last_one</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">idx</span><span class="op">|</span> <span class="ident">len</span> <span class="op">-</span> <span class="number">1</span> <span class="op">-</span> <span class="ident">idx</span>).<span class="ident">unwrap_or</span>(<span class="ident">len</span>)
@@ -3046,6 +3174,7 @@
 	<span class="doccomment">/// assert!(!bits![0].any());</span>
 	<span class="doccomment">/// assert!(bits![0, 1].any());</span>
 	<span class="doccomment">/// ```</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">any</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
 		<span class="self">self</span>.<span class="ident">count_ones</span>() <span class="op">&gt;</span> <span class="number">0</span>
 	}
@@ -3063,6 +3192,7 @@
 	<span class="doccomment">/// assert!(!bits![0].all());</span>
 	<span class="doccomment">/// assert!( bits![1].all());</span>
 	<span class="doccomment">/// ```</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">all</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
 		<span class="self">self</span>.<span class="ident">count_zeros</span>() <span class="op">==</span> <span class="number">0</span>
 	}
@@ -3080,6 +3210,7 @@
 	<span class="doccomment">/// assert!(!bits![1].not_any());</span>
 	<span class="doccomment">/// assert!( bits![0].not_any());</span>
 	<span class="doccomment">/// ```</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">not_any</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
 		<span class="self">self</span>.<span class="ident">count_ones</span>() <span class="op">==</span> <span class="number">0</span>
 	}
@@ -3097,6 +3228,7 @@
 	<span class="doccomment">/// assert!(!bits![1].not_all());</span>
 	<span class="doccomment">/// assert!( bits![0].not_all());</span>
 	<span class="doccomment">/// ```</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">not_all</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
 		<span class="self">self</span>.<span class="ident">count_zeros</span>() <span class="op">&gt;</span> <span class="number">0</span>
 	}
@@ -3116,6 +3248,7 @@
 	<span class="doccomment">/// assert!(!bits![1].some());</span>
 	<span class="doccomment">/// assert!( bits![0, 1].some());</span>
 	<span class="doccomment">/// ```</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">some</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
 		<span class="self">self</span>.<span class="ident">any</span>() <span class="op">&amp;&amp;</span> <span class="self">self</span>.<span class="ident">not_all</span>()
 	}
@@ -3127,14 +3260,21 @@
 	<span class="ident">T</span>: <span class="ident">BitStore</span>,
 	<span class="ident">O</span>: <span class="ident">BitOrder</span>,
 {
-	<span class="doccomment">/// Shifts the contents of a bit-slice down (towards the zero-index),</span>
-	<span class="doccomment">/// clearing the top bits to `0`.</span>
+	<span class="doccomment">/// Shifts the contents of a bit-slice “left” (towards the zero-index),</span>
+	<span class="doccomment">/// clearing the “right” bits to `0`.</span>
 	<span class="doccomment">///</span>
-	<span class="doccomment">/// This is a more-expensive version of taking `&amp;bits[by ..]`; unless you</span>
-	<span class="doccomment">/// want to directly affect the memory representation, you should use that</span>
-	<span class="doccomment">/// instead.</span>
+	<span class="doccomment">/// This is a strictly-worse analogue to taking `bits = &amp;bits[by ..]`: it</span>
+	<span class="doccomment">/// has to modify the entire memory region that `bits` governs, and destroys</span>
+	<span class="doccomment">/// contained information. Unless the actual memory layout and contents of</span>
+	<span class="doccomment">/// your bit-slice matters to your program, you should *probably* prefer to</span>
+	<span class="doccomment">/// munch your way forward through a bit-slice handle.</span>
 	<span class="doccomment">///</span>
-	<span class="doccomment">/// Has no effect when `by` is `0`.</span>
+	<span class="doccomment">/// Note also that the “left” here is semantic only, and **does not**</span>
+	<span class="doccomment">/// necessarily correspond to a left-shift instruction applied to the</span>
+	<span class="doccomment">/// underlying integer storage.</span>
+	<span class="doccomment">///</span>
+	<span class="doccomment">/// This has no effect when `by` is `0`. When `by` is `self.len()`, the</span>
+	<span class="doccomment">/// bit-slice is entirely cleared to `0`.</span>
 	<span class="doccomment">///</span>
 	<span class="doccomment">/// ## Panics</span>
 	<span class="doccomment">///</span>
@@ -3146,18 +3286,28 @@
 	<span class="doccomment">/// use bitvec::prelude::*;</span>
 	<span class="doccomment">///</span>
 	<span class="doccomment">/// let bits = bits![mut 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 1];</span>
+	<span class="doccomment">/// // these bits are retained ^--------------------------^</span>
 	<span class="doccomment">/// bits.shift_left(2);</span>
 	<span class="doccomment">/// assert_eq!(bits, bits![1, 1, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0]);</span>
+	<span class="doccomment">/// // and move here       ^--------------------------^</span>
+	<span class="doccomment">///</span>
+	<span class="doccomment">/// let bits = bits![mut 1; 2];</span>
+	<span class="doccomment">/// bits.shift_left(2);</span>
+	<span class="doccomment">/// assert_eq!(bits, bits![0; 2]);</span>
 	<span class="doccomment">/// ```</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">shift_left</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">by</span>: <span class="ident">usize</span>) {
 		<span class="kw">if</span> <span class="ident">by</span> <span class="op">==</span> <span class="number">0</span> {
 			<span class="kw">return</span>;
 		}
 
 		<span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">len</span>();
+		<span class="kw">if</span> <span class="ident">by</span> <span class="op">==</span> <span class="ident">len</span> {
+			<span class="kw">return</span> <span class="self">self</span>.<span class="ident">fill</span>(<span class="bool-val">false</span>);
+		}
 		<span class="macro">assert!</span>(
-			<span class="ident">by</span> <span class="op">&lt;</span> <span class="ident">len</span>,
-			<span class="string">&quot;cannot shift a bit-slice by more than its length: {} &gt; {}&quot;</span>,
+			<span class="ident">by</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">len</span>,
+			<span class="string">&quot;shift must be less than the length of the bit-slice: {} &gt;= {}&quot;</span>,
 			<span class="ident">by</span>,
 			<span class="ident">len</span>,
 		);
@@ -3168,14 +3318,21 @@
 		}
 	}
 
-	<span class="doccomment">/// Shifts the contents of a bit-slice up (away from the zero-index),</span>
-	<span class="doccomment">/// clearing the bottom bits to `0`.</span>
+	<span class="doccomment">/// Shifts the contents of a bit-slice “right” (away from the zero-index),</span>
+	<span class="doccomment">/// clearing the “left” bits to `0`.</span>
 	<span class="doccomment">///</span>
-	<span class="doccomment">/// This is a more-expensive version of taking `&amp;bits[.. bits.len() - by]`;</span>
-	<span class="doccomment">/// unless you want to directly affect the memory representation, you should</span>
-	<span class="doccomment">/// just use that instead.</span>
+	<span class="doccomment">/// This is a strictly-worse analogue to taking `bits = &amp;bits[.. bits.len()</span>
+	<span class="doccomment">/// - by]`: it must modify the entire memory region that `bits` governs, and</span>
+	<span class="doccomment">/// destroys contained information. Unless the actual memory layout and</span>
+	<span class="doccomment">/// contents of your bit-slice matters to your program, you should</span>
+	<span class="doccomment">/// *probably* prefer to munch your way backward through a bit-slice handle.</span>
 	<span class="doccomment">///</span>
-	<span class="doccomment">/// Has no effect when `by` is `0`.</span>
+	<span class="doccomment">/// Note also that the “right” here is semantic only, and **does not**</span>
+	<span class="doccomment">/// necessarily correspond to a right-shift instruction applied to the</span>
+	<span class="doccomment">/// underlying integer storage.</span>
+	<span class="doccomment">///</span>
+	<span class="doccomment">/// This has no effect when `by` is `0`. When `by` is `self.len()`, the</span>
+	<span class="doccomment">/// bit-slice is entirely cleared to `0`.</span>
 	<span class="doccomment">///</span>
 	<span class="doccomment">/// ## Panics</span>
 	<span class="doccomment">///</span>
@@ -3187,18 +3344,28 @@
 	<span class="doccomment">/// use bitvec::prelude::*;</span>
 	<span class="doccomment">///</span>
 	<span class="doccomment">/// let bits = bits![mut 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 1];</span>
+	<span class="doccomment">/// // these bits stay   ^--------------------------^</span>
 	<span class="doccomment">/// bits.shift_right(2);</span>
 	<span class="doccomment">/// assert_eq!(bits, bits![0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1]);</span>
+	<span class="doccomment">/// // and move here             ^--------------------------^</span>
+	<span class="doccomment">///</span>
+	<span class="doccomment">/// let bits = bits![mut 1; 2];</span>
+	<span class="doccomment">/// bits.shift_right(2);</span>
+	<span class="doccomment">/// assert_eq!(bits, bits![0; 2]);</span>
 	<span class="doccomment">/// ```</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">shift_right</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">by</span>: <span class="ident">usize</span>) {
 		<span class="kw">if</span> <span class="ident">by</span> <span class="op">==</span> <span class="number">0</span> {
 			<span class="kw">return</span>;
 		}
 
 		<span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">len</span>();
+		<span class="kw">if</span> <span class="ident">by</span> <span class="op">==</span> <span class="ident">len</span> {
+			<span class="kw">return</span> <span class="self">self</span>.<span class="ident">fill</span>(<span class="bool-val">false</span>);
+		}
 		<span class="macro">assert!</span>(
-			<span class="ident">by</span> <span class="op">&lt;</span> <span class="ident">len</span>,
-			<span class="string">&quot;cannot shift a bit-slice by more than its length: {} &gt; {}&quot;</span>,
+			<span class="ident">by</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">len</span>,
+			<span class="string">&quot;shift must be less than the length of the bit-slice: {} &gt;= {}&quot;</span>,
 			<span class="ident">by</span>,
 			<span class="ident">len</span>,
 		);
@@ -3328,6 +3495,7 @@
 	<span class="doccomment">/// ```</span>
 	<span class="doccomment">///</span>
 	<span class="doccomment">/// [`.set()`]: Self::set</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_aliased</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">index</span>: <span class="ident">usize</span>, <span class="ident">value</span>: <span class="ident">bool</span>) {
 		<span class="self">self</span>.<span class="ident">assert_in_bounds</span>(<span class="ident">index</span>, <span class="number">0</span> .. <span class="self">self</span>.<span class="ident">len</span>());
 		<span class="kw">unsafe</span> {
@@ -3368,6 +3536,7 @@
 	<span class="doccomment">/// ```</span>
 	<span class="doccomment">///</span>
 	<span class="doccomment">/// [`.set_unchecked()`]: Self::set_unchecked</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">set_aliased_unchecked</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">index</span>: <span class="ident">usize</span>, <span class="ident">value</span>: <span class="ident">bool</span>) {
 		<span class="self">self</span>.<span class="ident">as_bitptr</span>().<span class="ident">add</span>(<span class="ident">index</span>).<span class="ident">freeze</span>().<span class="ident">frozen_write_bit</span>(<span class="ident">value</span>);
 	}
@@ -3435,6 +3604,7 @@
 	<span class="doccomment">/// let bv = bits.to_bitvec();</span>
 	<span class="doccomment">/// assert_eq!(bits, bv);</span>
 	<span class="doccomment">/// ```</span>
+	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_bitvec</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">BitVec</span><span class="op">&lt;</span><span class="ident">T::Unalias</span>, <span class="ident">O</span><span class="op">&gt;</span> {
 		<span class="self">self</span>.<span class="ident">domain</span>()
 			.<span class="ident">map</span>(<span class="op">&lt;</span><span class="ident">T::Unalias</span> <span class="kw">as</span> <span class="ident">BitStore</span><span class="op">&gt;</span><span class="ident">::new</span>)
@@ -3447,6 +3617,7 @@
 	}
 }
 
+<span class="attribute">#[<span class="ident">inline</span>]</span>
 <span class="attribute">#[<span class="ident">doc</span> <span class="op">=</span> <span class="macro">include_str!</span>(<span class="string">&quot;../doc/slice/from_raw_parts_unchecked.md&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">from_raw_parts_unchecked</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">T</span>, <span class="ident">O</span><span class="op">&gt;</span>(
 	<span class="ident">ptr</span>: <span class="ident">BitPtr</span><span class="op">&lt;</span><span class="ident">Const</span>, <span class="ident">T</span>, <span class="ident">O</span><span class="op">&gt;</span>,
@@ -3459,6 +3630,7 @@
 	<span class="ident">ptr</span>.<span class="ident">span_unchecked</span>(<span class="ident">len</span>).<span class="ident">into_bitslice_ref</span>()
 }
 
+<span class="attribute">#[<span class="ident">inline</span>]</span>
 <span class="attribute">#[<span class="ident">doc</span> <span class="op">=</span> <span class="macro">include_str!</span>(<span class="string">&quot;../doc/slice/from_raw_parts_unchecked_mut.md&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">from_raw_parts_unchecked_mut</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">T</span>, <span class="ident">O</span><span class="op">&gt;</span>(
 	<span class="ident">ptr</span>: <span class="ident">BitPtr</span><span class="op">&lt;</span><span class="ident">Mut</span>, <span class="ident">T</span>, <span class="ident">O</span><span class="op">&gt;</span>,
@@ -3471,5 +3643,5 @@
 	<span class="ident">ptr</span>.<span class="ident">span_unchecked</span>(<span class="ident">len</span>).<span class="ident">into_bitslice_mut</span>()
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="bitvec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (06754d885 2022-07-08)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="bitvec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (d5e7f4782 2022-07-16)" ></div>
 </body></html>

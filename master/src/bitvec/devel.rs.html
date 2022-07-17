@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/github.com-1ecc6299db9ec823/bitvec-1.0.0/src/devel.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>devel.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../bitvec/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/github.com-1ecc6299db9ec823/bitvec-1.0.1/src/devel.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>devel.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../bitvec/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
         </a><h2 class="location"></h2>
     </nav>
     <nav class="sidebar"><a class="sidebar-logo" href="../../bitvec/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
@@ -109,6 +109,16 @@
 <span id="103">103</span>
 <span id="104">104</span>
 <span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Support utilities for crate development.</span>
 
 <span class="kw">use</span> <span class="ident">core::any::TypeId</span>;
@@ -126,6 +136,7 @@
 			<span class="ident">O</span>: <span class="macro-nonterminal">$</span><span class="macro-nonterminal">crate::order::BitOrder</span>,
 			<span class="ident">A</span>: <span class="macro-nonterminal">$</span><span class="macro-nonterminal">crate::view::BitViewSized</span>,
 		{
+			<span class="attribute">#[<span class="ident">inline</span>]</span>
 			<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">tarpaulin_include</span>))]</span>
 			<span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">fmt</span>: <span class="kw-2">&amp;mut</span> <span class="ident">core::fmt::Formatter</span>) -&gt; <span class="ident">core::fmt::Result</span> {
 				<span class="ident">core::fmt</span>::<span class="macro-nonterminal">$</span><span class="macro-nonterminal">fmt::fmt</span>(<span class="self">self</span>.<span class="ident">as_bitslice</span>(), <span class="ident">fmt</span>)
@@ -138,6 +149,7 @@
 			<span class="ident">O</span>: <span class="macro-nonterminal">$</span><span class="macro-nonterminal">crate::order::BitOrder</span>,
 			<span class="ident">T</span>: <span class="macro-nonterminal">$</span><span class="macro-nonterminal">crate::store::BitStore</span>,
 		{
+			<span class="attribute">#[<span class="ident">inline</span>]</span>
 			<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">tarpaulin_include</span>))]</span>
 			<span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">fmt</span>: <span class="kw-2">&amp;mut</span> <span class="ident">core::fmt::Formatter</span>) -&gt; <span class="ident">core::fmt::Result</span> {
 				<span class="ident">core::fmt</span>::<span class="macro-nonterminal">$</span><span class="macro-nonterminal">fmt::fmt</span>(<span class="self">self</span>.<span class="ident">as_bitslice</span>(), <span class="ident">fmt</span>)
@@ -149,15 +161,18 @@
 <span class="doccomment">/// Implements some `Iterator` functions that have boilerplate behavior.</span>
 <span class="macro">macro_rules!</span> <span class="ident">easy_iter</span> {
 	() =&gt; {
+		<span class="attribute">#[<span class="ident">inline</span>]</span>
 		<span class="kw">fn</span> <span class="ident">size_hint</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; (<span class="ident">usize</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>) {
 			<span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">len</span>();
 			(<span class="ident">len</span>, <span class="prelude-val">Some</span>(<span class="ident">len</span>))
 		}
 
+		<span class="attribute">#[<span class="ident">inline</span>]</span>
 		<span class="kw">fn</span> <span class="ident">count</span>(<span class="self">self</span>) -&gt; <span class="ident">usize</span> {
 			<span class="self">self</span>.<span class="ident">len</span>()
 		}
 
+		<span class="attribute">#[<span class="ident">inline</span>]</span>
 		<span class="kw">fn</span> <span class="ident">last</span>(<span class="kw-2">mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Item</span><span class="op">&gt;</span> {
 			<span class="self">self</span>.<span class="ident">next_back</span>()
 		}
@@ -165,6 +180,7 @@
 }
 
 <span class="doccomment">/// Tests if two `BitOrder` implementors are the same.</span>
+<span class="attribute">#[<span class="ident">inline</span>]</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">match_order</span><span class="op">&lt;</span><span class="ident">O</span>, <span class="ident">P</span><span class="op">&gt;</span>() -&gt; <span class="ident">bool</span>
 <span class="kw">where</span>
 	<span class="ident">O</span>: <span class="ident">BitOrder</span>,
@@ -174,6 +190,7 @@
 }
 
 <span class="doccomment">/// Tests if two `BitStore` implementors are the same.</span>
+<span class="attribute">#[<span class="ident">inline</span>]</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">match_store</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">U</span><span class="op">&gt;</span>() -&gt; <span class="ident">bool</span>
 <span class="kw">where</span>
 	<span class="ident">T</span>: <span class="ident">BitStore</span>,
@@ -183,6 +200,7 @@
 }
 
 <span class="doccomment">/// Tests if two `BitSlice` type parameter pairs match each other.</span>
+<span class="attribute">#[<span class="ident">inline</span>]</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">match_types</span><span class="op">&lt;</span><span class="ident">T1</span>, <span class="ident">O1</span>, <span class="ident">T2</span>, <span class="ident">O2</span><span class="op">&gt;</span>() -&gt; <span class="ident">bool</span>
 <span class="kw">where</span>
 	<span class="ident">O1</span>: <span class="ident">BitOrder</span>,
@@ -196,6 +214,7 @@
 <span class="doccomment">/// Tests if a type is known to be an unsigned integer.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// Returns `true` for `u{8,16,32,64,128,size}` and `false` for all others.</span>
+<span class="attribute">#[<span class="ident">inline</span>]</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_unsigned</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>() -&gt; <span class="ident">bool</span>
 <span class="kw">where</span> <span class="ident">T</span>: <span class="lifetime">&#39;static</span> {
 	<span class="ident">eq_types</span>::<span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">u8</span><span class="op">&gt;</span>()
@@ -207,6 +226,7 @@
 }
 
 <span class="doccomment">/// Tests if two types are identical, even through different names.</span>
+<span class="attribute">#[<span class="ident">inline</span>]</span>
 <span class="kw">fn</span> <span class="ident">eq_types</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">U</span><span class="op">&gt;</span>() -&gt; <span class="ident">bool</span>
 <span class="kw">where</span>
 	<span class="ident">T</span>: <span class="lifetime">&#39;static</span>,
@@ -215,5 +235,5 @@
 	<span class="ident">TypeId::of</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>() <span class="op">==</span> <span class="ident">TypeId::of</span>::<span class="op">&lt;</span><span class="ident">U</span><span class="op">&gt;</span>()
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="bitvec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (06754d885 2022-07-08)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="bitvec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (d5e7f4782 2022-07-16)" ></div>
 </body></html>

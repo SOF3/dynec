@@ -203,13 +203,6 @@
 <span id="197">197</span>
 <span id="198">198</span>
 <span id="199">199</span>
-<span id="200">200</span>
-<span id="201">201</span>
-<span id="202">202</span>
-<span id="203">203</span>
-<span id="204">204</span>
-<span id="205">205</span>
-<span id="206">206</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::any::Any</span>;
 <span class="kw">use</span> <span class="ident">std::collections::HashMap</span>;
 
@@ -219,7 +212,7 @@
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::entity::ealloc</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::system::spec</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::util::DbgTypeId</span>;
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">comp</span>, <span class="ident">system</span>, <span class="ident">Global</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">system</span>, <span class="ident">Global</span>};
 
 <span class="doccomment">/// This type is used to build a world.</span>
 <span class="doccomment">/// No more systems can be scheduled after the builder is built.</span>
@@ -409,13 +402,6 @@
         }
     }
 }
-
-<span class="doccomment">/// Identifies an archetype + component type + discriminant.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Hash</span>)]</span>
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">ComponentIdentifier</span> {
-    <span class="ident">arch</span>: <span class="ident">DbgTypeId</span>,
-    <span class="ident">comp</span>: <span class="ident">comp::any::Identifier</span>,
-}
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (06754d885 2022-07-08)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (d5e7f4782 2022-07-16)" ></div>
 </body></html>

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["builder",""],["toposort_populators",""]],"struct":[["Builder",""],["Typed","Stores everything related to a specific archetype."]],"trait":[["AnyBuilder",""],["AnyTyped",""]]};
+window.SIDEBAR_ITEMS = {"enum":[["PaddedIsotopeDiscrim",""]],"fn":[["builder",""],["toposort_populators",""]],"struct":[["Builder",""],["PaddedIsotopeIdentifier","Key type used for indexing isotope storages."],["Typed","Stores everything related to a specific archetype."]],"trait":[["AnyBuilder",""],["AnyTyped",""]]};

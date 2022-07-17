@@ -7,7 +7,7 @@ use super::{scheduler, typed};
 use crate::entity::ealloc;
 use crate::system::spec;
 use crate::util::DbgTypeId;
-use crate::{comp, system, Global};
+use crate::{system, Global};
 
 /// This type is used to build a world.
 /// No more systems can be scheduled after the builder is built.
@@ -196,11 +196,4 @@ impl Builder {
             scheduler: self.scheduler.build(),
         }
     }
-}
-
-/// Identifies an archetype + component type + discriminant.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub(crate) struct ComponentIdentifier {
-    arch: DbgTypeId,
-    comp: comp::any::Identifier,
 }

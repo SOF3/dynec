@@ -1,5 +1,6 @@
 use std::any::{self, Any};
-use std::collections::{hash_map, HashMap};
+use std::collections::{btree_map, hash_map, BTreeMap, HashMap};
+use std::ops;
 use std::sync::Arc;
 
 use parking_lot::RwLock;
@@ -71,7 +72,7 @@ impl<A: Archetype> AnyBuilder for Builder<A> {
 
         Box::new(Typed::<A> {
             simple_storages: self.simple_storages,
-            isotope_storages: RwLock::new(HashMap::new()),
+            isotope_storages: RwLock::new(BTreeMap::new()),
             isotope_factories: self.isotope_factories,
             populators,
         })
@@ -156,11 +157,41 @@ fn toposort_populators<A: Archetype>(
 }
 // TODO unit test toposort_populators
 
+/// Key type used for indexing isotope storages.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) struct PaddedIsotopeIdentifier {
+    pub(crate) id:      DbgTypeId,
+    pub(crate) discrim: PaddedIsotopeDiscrim,
+}
+
+impl PaddedIsotopeIdentifier {
+    pub(crate) fn expect_discrim(&self) -> usize {
+        match self.discrim {
+            PaddedIsotopeDiscrim::Item(discrim) => discrim,
+            _ => panic!("expect_discrim() called on {:?}", self.discrim),
+        }
+    }
+
+    pub(crate) fn range<C: 'static>() -> ops::Range<Self> {
+        let comp = DbgTypeId::of::<C>();
+        let head = Self { id: comp, discrim: PaddedIsotopeDiscrim::Head };
+        let tail = Self { id: comp, discrim: PaddedIsotopeDiscrim::Tail };
+        head..tail
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) enum PaddedIsotopeDiscrim {
+    Head,
+    Item(usize),
+    Tail,
+}
+
 /// Stores everything related to a specific archetype.
 #[derive(Default)]
 pub(crate) struct Typed<A: Archetype> {
     pub(crate) simple_storages:   HashMap<DbgTypeId, storage::Simple<A>>,
-    pub(crate) isotope_storages:  RwLock<HashMap<comp::any::Identifier, storage::Isotope<A>>>,
+    pub(crate) isotope_storages:  RwLock<BTreeMap<PaddedIsotopeIdentifier, storage::Isotope<A>>>,
     pub(crate) isotope_factories: HashMap<DbgTypeId, storage::IsotopeFactory<A>>,
     pub(crate) populators:        Vec<Box<dyn Fn(&mut comp::Map<A>) + Send + Sync>>,
 }
@@ -178,12 +209,19 @@ impl<A: Archetype> Typed<A> {
         }
 
         for (ty, value) in components.into_isotopes() {
+            let ty = PaddedIsotopeIdentifier {
+                id:      ty.id,
+                discrim: PaddedIsotopeDiscrim::Item(
+                    ty.discrim.expect("Map::into_isotopes() should filter away None discrims"),
+                ),
+            };
+
             let storages = self.isotope_storages.get_mut();
 
             let mut storage_entry = storages.entry(ty);
             let storage = match storage_entry {
-                hash_map::Entry::Occupied(ref mut entry) => entry.get_mut(),
-                hash_map::Entry::Vacant(entry) => entry.insert({
+                btree_map::Entry::Occupied(ref mut entry) => entry.get_mut(),
+                btree_map::Entry::Vacant(entry) => entry.insert({
                     let factory = match self.isotope_factories.get(&ty.id) {
                         Some(factory) => factory,
                         None => {

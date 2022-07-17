@@ -9,7 +9,7 @@ use crate::{comp, entity, Archetype, Entity, Global};
 mod builder;
 pub use builder::Builder;
 
-mod state;
+pub(crate) mod state;
 use ealloc::Ealloc;
 pub use state::{Components, SyncGlobals, UnsyncGlobals};
 

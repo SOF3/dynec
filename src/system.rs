@@ -8,11 +8,13 @@
 //! Systems that use thread-unsafe resources (systems that are not [`Send`])
 //! are always executed on the main thread.
 
-use std::any::{self, TypeId};
+use std::any::{self, Any, TypeId};
 use std::collections::hash_map::DefaultHasher;
+use std::sync::Arc;
 use std::{fmt, hash};
 
 use crate::entity::ealloc;
+use crate::world::Storage;
 use crate::{comp, entity, world, Archetype};
 
 /// Provides access to a simple component in a specific archetype.
@@ -76,7 +78,68 @@ pub trait WriteSimple<A: Archetype, C: comp::Simple<A>>: ReadSimple<A, C> {
 }
 
 /// Provides access to an isotope component in a specific archetype.
-pub trait ReadIsotope<A: Archetype, C: comp::Isotope<A>> {}
+pub trait ReadIsotope<A: Archetype, C: comp::Isotope<A>> {
+    fn get<E: entity::Ref<Archetype = A>>(&self, entity: E, discrim: C::Discrim) -> Option<&C>;
+
+    fn get_all<E: entity::Ref<Archetype = A>>(&self, entity: E) -> IsotopeRefMap<'_, A, C>; // TODO abstract to a trait when GATs are stable
+}
+
+/// Provides immutable access to all isotopes of the same type for an entity.
+pub struct IsotopeRefMap<'t, A: Archetype, C: comp::Isotope<A>> {
+    pub(crate) storages: <&'t [(usize, StorageRefType<C::Storage>)] as IntoIterator>::IntoIter,
+    pub(crate) index:    A::RawEntity,
+}
+
+impl<'t, A: Archetype, C: comp::Isotope<A>> Iterator for IsotopeRefMap<'t, A, C> {
+    type Item = (C::Discrim, &'t C);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        for (discrim, storage) in self.storages.by_ref() {
+            let discrim = <C::Discrim as comp::Discrim>::from_usize(*discrim);
+            let value = match storage.get(self.index) {
+                Some(value) => value,
+                None => continue,
+            };
+
+            return Some((discrim, value));
+        }
+
+        None
+    }
+}
+
+/// Provides mutable access to all isotopes of the same type for an entity.
+pub struct IsotopeMutMap<'t, A: Archetype, C: comp::Isotope<A>> {
+    pub(crate) storages: <&'t mut [(usize, StorageMutType<C::Storage>)] as IntoIterator>::IntoIter,
+    pub(crate) index:    A::RawEntity,
+}
+
+impl<'t, A: Archetype, C: comp::Isotope<A>> Iterator for IsotopeMutMap<'t, A, C> {
+    type Item = (C::Discrim, &'t mut C);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        while let Some((discrim, storage)) = self.storages.next() {
+            let discrim = <C::Discrim as comp::Discrim>::from_usize(*discrim);
+
+            // safety: TODO idk...
+            let value = unsafe { storage.borrow_guard_mut().get_mut(self.index) };
+            let value = match value {
+                Some(value) => value,
+                None => continue,
+            };
+
+            return Some((discrim, value));
+        }
+
+        None
+    }
+}
+
+// we won't need this anymore if IsotopeRefMap turns into a trait.
+pub(crate) type StorageRefType<T> =
+    world::state::OwningMappedRwLockReadGuard<Arc<RwLock<dyn Any + Send + Sync>>, T>;
+pub(crate) type StorageMutType<T> =
+    world::state::OwningMappedRwLockWriteGuard<Arc<RwLock<dyn Any + Send + Sync>>, T>;
 
 /// Provides access to an isotope component in a specific archetype.
 pub trait WriteIsotope<A: Archetype, C: comp::Isotope<A>> {}
@@ -192,5 +255,6 @@ pub trait Unsendable {
 }
 
 pub mod spec;
+use parking_lot::RwLock;
 #[doc(inline)]
 pub use spec::Spec;

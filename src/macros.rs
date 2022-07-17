@@ -157,7 +157,7 @@ mod comp_tests {}
 ///     ?Some(Comp3{ value: 3 }),
 ///     ?None::<Comp4>,
 ///     @(4, Iso("xxx")),
-///     @?hashed ,
+///     @?hashed,
 /// ];
 /// assert_eq!(map.len(), 7);
 /// ```

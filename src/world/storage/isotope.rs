@@ -23,6 +23,15 @@ impl<A: Archetype> Isotope<A> {
     }
 }
 
+impl<A: Archetype> Clone for Isotope<A> {
+    fn clone(&self) -> Self {
+        Self {
+            storage:           Arc::clone(&self.storage),
+            fill_init_isotope: self.fill_init_isotope,
+        }
+    }
+}
+
 fn fill_init_isotope<A: Archetype, C: comp::Isotope<A>>(
     storage: &mut dyn Any,
     entity: A::RawEntity,

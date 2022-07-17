@@ -27,14 +27,14 @@ struct Comp3(i32, i32);
 struct Comp4(i32, i32);
 
 #[comp(dynec_as(crate), of = TestArch, required)]
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 struct Comp5(i32);
 #[comp(dynec_as(crate), of = TestArch, required, init = || Comp6(9))]
 #[derive(Debug)]
 struct Comp6(i32);
 
 #[comp(dynec_as(crate), of = TestArch, isotope = TestDiscrim1)]
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 struct Iso1(i32);
 #[comp(dynec_as(crate), of = TestArch, isotope = TestDiscrim2)]
 #[derive(Debug)]
@@ -57,36 +57,50 @@ struct InitialEntities {
 }
 
 #[system(dynec_as(crate))]
-fn my_system(
+fn test_system(
     comp3: impl system::ReadSimple<TestArch, Comp3>,
     mut comp4: impl system::WriteSimple<TestArch, Comp4>,
     comp5: impl system::ReadSimple<TestArch, Comp5>,
     comp6: impl system::ReadSimple<TestArch, Comp6>,
-    iso1: impl system::ReadIsotope<TestArch, Iso1>,
+    #[dynec(isotope(discrim = [TestDiscrim1(11), TestDiscrim1(17)]))] iso1: impl system::ReadIsotope<
+        TestArch,
+        Iso1,
+    >,
     #[dynec(global)] aggregator: &mut Aggregator,
     #[dynec(global)] initials: &InitialEntities,
 ) {
     aggregator.comp30_sum = 1;
 
     let ent1 = initials.ent1.as_ref().expect("ent1 is None");
+
+    // test component fetch
     {
         let comp = comp4.get_mut(ent1);
-
         assert_eq!(comp.0, 14);
         assert_eq!(comp.1, 32);
         comp.1 += comp.0;
     }
 
-    // TODO test iterators
+    // test specific isotope fetch
+    {
+        let iso = iso1.get(ent1, TestDiscrim1(11));
+        assert_eq!(iso, Some(&Iso1(4)));
+    }
+
+    // TODO test simple iterators
+    // TODO test isotope iterators
 }
 
 #[test]
 #[should_panic(expected = "The component dynec::world::tests::Comp2 cannot be retrieved because \
                            it is not used in any systems")]
 fn test_dependencies_successful() {
-    let mut world = system_test!(my_system.build(););
-    let entity = world.create::<TestArch>(crate::comps![
-        @(crate) TestArch => Comp1(1), Comp5(1), @(TestDiscrim1(9), Iso1(1)),
+    let mut world = system_test!(test_system.build(););
+    let entity = world.create::<TestArch>(crate::comps![ @(crate) TestArch =>
+        Comp1(1), Comp5(1),
+        @(TestDiscrim1(11), Iso1(1)),
+        @(TestDiscrim1(13), Iso1(2)),
+        @(TestDiscrim1(17), Iso1(3)),
     ]);
 
     match world.get_simple::<TestArch, Comp4, _>(&entity) {
@@ -104,7 +118,7 @@ fn test_dependencies_successful() {
 #[should_panic(expected = "Cannot create an entity of type `dynec::test_util::TestArch` without \
                            explicitly passing a component of type `dynec::world::tests::Comp5`")]
 fn test_dependencies_missing_required_simple() {
-    let mut world = system_test!(my_system.build(););
+    let mut world = system_test!(test_system.build(););
     world.create::<TestArch>(crate::comps![@(crate) TestArch => Comp1(1)]);
 }
 
@@ -113,24 +127,90 @@ fn test_dependencies_missing_required_simple() {
                            explicitly passing a component of type `dynec::world::tests::Comp1`, \
                            which is required for `dynec::world::tests::Comp2`")]
 fn test_dependencies_missing_required_dep() {
-    let mut world = system_test!(my_system.build(););
+    let mut world = system_test!(test_system.build(););
     world.create::<TestArch>(crate::comps![@(crate) TestArch => Comp5(1)]);
 }
 
 #[test]
-fn test_world_run() {
-    let mut world = system_test!(my_system.build(););
+fn test_global_update() {
+    #[system(dynec_as(crate))]
+    fn test_system(#[dynec(global)] aggregator: &mut Aggregator) { aggregator.comp30_sum = 1; }
 
-    let ent1 = world.create(crate::comps![@(crate) TestArch =>
-        Comp1(2), Comp5(3), @(TestDiscrim1(9), Iso1(4)),
-    ]);
-    world.get_global::<InitialEntities>().ent1 = Some(ent1.clone());
+    let mut world = system_test!(test_system.build(););
 
     world.execute(&tracer::Log(log::Level::Trace));
 
     let aggregator = world.get_global::<Aggregator>();
     assert_eq!(aggregator.comp30_sum, 1);
+}
 
-    let comp = world.get_simple::<TestArch, Comp4, _>(ent1);
-    assert_eq!(comp, Some(&mut Comp4(14, 46)));
+#[test]
+fn test_simple_fetch() {
+    #[system(dynec_as(crate))]
+    fn test_system(
+        mut comp5: impl system::WriteSimple<TestArch, Comp5>,
+        #[dynec(global)] initials: &InitialEntities,
+    ) {
+        let ent1 = initials.ent1.as_ref().expect("ent1 is None");
+
+        let comp = comp5.get_mut(ent1);
+        assert_eq!(comp.0, 7);
+        comp.0 += 13;
+    }
+
+    let mut world = system_test!(test_system.build(););
+
+    let ent1 = world.create(crate::comps![@(crate) TestArch => Comp5(7)]);
+    world.get_global::<InitialEntities>().ent1 = Some(ent1.clone());
+
+    world.execute(&tracer::Log(log::Level::Trace));
+
+    let comp = world.get_simple::<TestArch, Comp5, _>(ent1);
+    assert_eq!(comp, Some(&mut Comp5(20)));
+}
+
+#[test]
+fn test_isotope_discrim_fetch() {
+    #[system(dynec_as(crate))]
+    fn test_system(
+        #[dynec(isotope(discrim = [
+            TestDiscrim1(11),
+            TestDiscrim1(17),
+            TestDiscrim1(19),
+        ]))]
+        iso1: impl system::ReadIsotope<TestArch, Iso1>,
+        #[dynec(global)] initials: &InitialEntities,
+    ) {
+        let ent1 = initials.ent1.as_ref().expect("ent1 is None");
+
+        {
+            let iso = iso1.get(ent1, TestDiscrim1(11));
+            assert_eq!(iso, Some(&Iso1(3)));
+        }
+
+        {
+            let iso = iso1.get(ent1, TestDiscrim1(13));
+            assert!(iso.is_none());
+        }
+
+        {
+            let iso = iso1.get(ent1, TestDiscrim1(19));
+            assert!(iso.is_none());
+        }
+
+        // should only include requested discriminants
+        let map = iso1.get_all(ent1).collect::<Vec<_>>();
+        assert_eq!(map.len(), 2);
+    }
+
+    let mut world = system_test!(test_system.build(););
+
+    let ent1 = world.create(crate::comps![@(crate) TestArch =>
+        @(TestDiscrim1(11), Iso1(3)),
+        @(TestDiscrim1(13), Iso1(5)),
+        @(TestDiscrim1(17), Iso1(7)),
+    ]);
+    world.get_global::<InitialEntities>().ent1 = Some(ent1.clone());
+
+    world.execute(&tracer::Log(log::Level::Trace));
 }

@@ -2,11 +2,15 @@ use std::any::{self, Any, TypeId};
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::ops;
+use std::sync::Arc;
 
-use parking_lot::{RwLock, RwLockReadGuard, RwLockWriteGuard};
+use parking_lot::{
+    MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard,
+};
 
 use super::storage::Storage;
-use super::typed;
+use super::typed::{self, PaddedIsotopeIdentifier};
+use crate::comp::Discrim;
 use crate::util::DbgTypeId;
 use crate::{comp, entity, system, Archetype, Global};
 
@@ -156,14 +160,87 @@ impl Components {
     /// - if another thread is exclusively accessing the same archetyped component.
     pub fn read_isotope_storage<A: Archetype, C: comp::Isotope<A>>(
         &self,
-        discrim: Option<&[usize]>,
+        discrims: Option<&[usize]>,
     ) -> impl system::ReadIsotope<A, C> + '_ {
-        struct Ret<A: Archetype, C: comp::Isotope<A>>(PhantomData<(A, C)>);
+        let storages: Vec<_> = {
+            let storages = self.archetype::<A>().isotope_storages.read();
+            storages
+                .range(PaddedIsotopeIdentifier::range::<C>())
+                .filter_map(|(ty, storage)| {
+                    Some((
+                        {
+                            let discrim = ty.expect_discrim();
+                            if let Some(discrims) = discrims {
+                                if !discrims.contains(&discrim) {
+                                    return None;
+                                }
+                            }
+                            discrim
+                        },
+                        storage,
+                    ))
+                })
+                .map(|(discrim, storage)| {
+                    (discrim, {
+                        let storage = Arc::clone(&storage.storage);
+                        OwningMappedRwLockReadGuard::new(storage, |storage| {
+                            let guard = match storage.try_read() {
+                                Some(guard) => guard,
+                                None => panic!(
+                                    "The component {}/{}/{} is currently used by another system. \
+                                     Maybe scheduler bug?",
+                                    any::type_name::<A>(),
+                                    any::type_name::<C>(),
+                                    discrim,
+                                ),
+                            };
+                            RwLockReadGuard::map(guard, |storage| {
+                                storage.downcast_ref::<C::Storage>().expect("TypeId mismatch")
+                            })
+                        })
+                    })
+                })
+                .collect()
+        };
 
-        impl<A: Archetype, C: comp::Isotope<A>> system::ReadIsotope<A, C> for Ret<A, C> {}
-        impl<A: Archetype, C: comp::Isotope<A>> system::WriteIsotope<A, C> for Ret<A, C> {}
+        struct Ret<C, S: ops::Deref> {
+            // TODO customize the implementation of discriminant lookup to allow O(1) indexing in
+            // small universe of concourse
+            storages: Vec<(usize, S)>,
+            default:  Option<fn() -> C>,
+        }
 
-        Ret(PhantomData)
+        impl<A: Archetype, C: comp::Isotope<A>> system::ReadIsotope<A, C>
+            for Ret<C, system::StorageRefType<C::Storage>>
+        {
+            fn get<E: entity::Ref<Archetype = A>>(
+                &self,
+                entity: E,
+                discrim: C::Discrim,
+            ) -> Option<&C> {
+                let discrim = discrim.into_usize();
+
+                // if storage does not exist, the component does not exist yet.
+                let (_, storage) = self.storages.iter().find(|(k, v)| *k == discrim)?;
+
+                storage.get(entity.id())
+            }
+
+            fn get_all<E: entity::Ref<Archetype = A>>(
+                &self,
+                entity: E,
+            ) -> system::IsotopeRefMap<'_, A, C> {
+                system::IsotopeRefMap { storages: self.storages.iter(), index: entity.id() }
+            }
+        }
+
+        Ret {
+            storages,
+            default: match C::INIT_STRATEGY {
+                comp::IsotopeInitStrategy::None => None,
+                comp::IsotopeInitStrategy::Default(factory) => Some(factory),
+            },
+        }
     }
 
     /// Creates a writable, exclusive accessor to the given archetyped isotope component.
@@ -177,7 +254,22 @@ impl Components {
     ) -> impl system::WriteIsotope<A, C> + '_ {
         struct Ret<A: Archetype, C: comp::Isotope<A>>(PhantomData<(A, C)>);
 
-        impl<A: Archetype, C: comp::Isotope<A>> system::ReadIsotope<A, C> for Ret<A, C> {}
+        impl<A: Archetype, C: comp::Isotope<A>> system::ReadIsotope<A, C> for Ret<A, C> {
+            fn get<E: entity::Ref<Archetype = A>>(
+                &self,
+                entity: E,
+                discrim: C::Discrim,
+            ) -> Option<&C> {
+                todo!()
+            }
+
+            fn get_all<E: entity::Ref<Archetype = A>>(
+                &self,
+                entity: E,
+            ) -> system::IsotopeRefMap<'_, A, C> {
+                todo!()
+            }
+        }
         impl<A: Archetype, C: comp::Isotope<A>> system::WriteIsotope<A, C> for Ret<A, C> {}
 
         Ret(PhantomData)
@@ -271,5 +363,37 @@ impl UnsyncGlobals {
                 any::type_name::<G>()
             ),
         }
+    }
+}
+
+#[ouroboros::self_referencing]
+pub(crate) struct OwningMappedRwLockReadGuard<L: 'static, U: 'static> {
+    lock:  L,
+    #[borrows(lock)]
+    #[covariant]
+    guard: MappedRwLockReadGuard<'this, U>,
+}
+
+impl<L: 'static, U: 'static> ops::Deref for OwningMappedRwLockReadGuard<L, U> {
+    type Target = U;
+
+    fn deref(&self) -> &Self::Target { self.borrow_guard() }
+}
+
+#[ouroboros::self_referencing]
+pub(crate) struct OwningMappedRwLockWriteGuard<L: 'static, U: 'static> {
+    lock:  L,
+    #[borrows(lock)]
+    #[covariant]
+    guard: MappedRwLockWriteGuard<'this, U>,
+}
+
+impl<L: 'static, U: 'static> OwningMappedRwLockWriteGuard<L, U> {
+    /// Gets `U` mutably.
+    ///
+    /// # Safety
+    /// TODO idk...
+    pub(crate) unsafe fn borrow_guard_mut(&mut self) -> &mut U {
+        &mut *self.with_guard_mut(|guard| &mut **guard as *mut U)
     }
 }

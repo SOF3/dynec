@@ -86,6 +86,7 @@ pub trait ReadIsotope<A: Archetype, C: comp::Isotope<A>> {
 
 /// Provides immutable access to all isotopes of the same type for an entity.
 pub struct IsotopeRefMap<'t, A: Archetype, C: comp::Isotope<A>> {
+    #[allow(clippy::type_complexity)]
     pub(crate) storages: <&'t [(usize, StorageRefType<C::Storage>)] as IntoIterator>::IntoIter,
     pub(crate) index:    A::RawEntity,
 }
@@ -110,6 +111,7 @@ impl<'t, A: Archetype, C: comp::Isotope<A>> Iterator for IsotopeRefMap<'t, A, C>
 
 /// Provides mutable access to all isotopes of the same type for an entity.
 pub struct IsotopeMutMap<'t, A: Archetype, C: comp::Isotope<A>> {
+    #[allow(clippy::type_complexity)]
     pub(crate) storages: <&'t mut [(usize, StorageMutType<C::Storage>)] as IntoIterator>::IntoIter,
     pub(crate) index:    A::RawEntity,
 }
@@ -118,7 +120,7 @@ impl<'t, A: Archetype, C: comp::Isotope<A>> Iterator for IsotopeMutMap<'t, A, C>
     type Item = (C::Discrim, &'t mut C);
 
     fn next(&mut self) -> Option<Self::Item> {
-        while let Some((discrim, storage)) = self.storages.next() {
+        for (discrim, storage) in self.storages.by_ref() {
             let discrim = <C::Discrim as comp::Discrim>::from_usize(*discrim);
 
             // safety: TODO idk...

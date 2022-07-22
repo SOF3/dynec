@@ -248,10 +248,12 @@
 <span id="242">242</span>
 <span id="243">243</span>
 <span id="244">244</span>
+<span id="245">245</span>
+<span id="246">246</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">parking_lot</span>::{<span class="ident">Condvar</span>, <span class="ident">Mutex</span>, <span class="ident">MutexGuard</span>};
 
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::planner::StealResult</span>;
-<span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">Node</span>, <span class="ident">Planner</span>, <span class="ident">SendArgs</span>, <span class="ident">Topology</span>, <span class="ident">UnsendArgs</span>, <span class="ident">WakeupState</span>};
+<span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">Node</span>, <span class="ident">Planner</span>, <span class="ident">SendArgs</span>, <span class="ident">Topology</span>, <span class="ident">UnsendArgs</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::entity::ealloc</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::world</span>;
 
@@ -337,6 +339,8 @@
 
         <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">debug_assertions</span>)]</span>
         {
+            <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::WakeupState</span>;
+
             <span class="kw">for</span> (<span class="ident">node</span>, <span class="ident">state</span>) <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">planner</span>.<span class="ident">get_mut</span>().<span class="ident">wakeup_state</span> {
                 <span class="kw">let</span> <span class="ident">is_complete</span> <span class="op">=</span> <span class="macro">matches!</span>(<span class="ident">state</span>, <span class="ident">WakeupState::Completed</span>);
                 <span class="kw">if</span> <span class="op">!</span><span class="ident">is_complete</span> {
@@ -493,5 +497,5 @@
     <span class="ident">condvar</span>:  <span class="kw-2">&amp;</span><span class="lifetime">&#39;t</span> <span class="ident">Condvar</span>,
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (d5e7f4782 2022-07-16)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (62b272d25 2022-07-21)" ></div>
 </body></html>

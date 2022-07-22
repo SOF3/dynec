@@ -187,20 +187,6 @@
 <span id="181">181</span>
 <span id="182">182</span>
 <span id="183">183</span>
-<span id="184">184</span>
-<span id="185">185</span>
-<span id="186">186</span>
-<span id="187">187</span>
-<span id="188">188</span>
-<span id="189">189</span>
-<span id="190">190</span>
-<span id="191">191</span>
-<span id="192">192</span>
-<span id="193">193</span>
-<span id="194">194</span>
-<span id="195">195</span>
-<span id="196">196</span>
-<span id="197">197</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::fmt</span>;
 <span class="kw">use</span> <span class="ident">std::num::NonZeroUsize</span>;
 
@@ -265,20 +251,6 @@
     <span class="ident">Started</span>,
     <span class="doccomment">/// The node has already completed.</span>
     <span class="ident">Completed</span>,
-}
-
-<span class="kw">impl</span> <span class="ident">WakeupState</span> {
-    <span class="kw">fn</span> <span class="ident">increment</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
-        <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident"><span class="self">Self</span>::Blocked</span> { <span class="ident">count</span> } =&gt; {
-                <span class="kw-2">*</span><span class="ident">count</span> <span class="op">=</span> <span class="ident">NonZeroUsize::new</span>(<span class="ident">count</span>.<span class="ident">get</span>() <span class="op">+</span> <span class="number">1</span>).<span class="ident">expect</span>(<span class="string">&quot;integer overflow&quot;</span>)
-            }
-            <span class="ident">state</span> @ <span class="ident"><span class="self">Self</span>::Pending</span> =&gt; {
-                <span class="kw-2">*</span><span class="ident">state</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::Blocked</span> { <span class="ident">count</span>: <span class="ident">NonZeroUsize::new</span>(<span class="number">1</span>).<span class="ident">expect</span>(<span class="string">&quot;1 != 0&quot;</span>) }
-            }
-            <span class="ident"><span class="self">Self</span>::Started</span> <span class="op">|</span> <span class="ident"><span class="self">Self</span>::Completed</span> =&gt; <span class="macro">panic!</span>(<span class="string">&quot;Cannot increment started node&quot;</span>),
-        }
-    }
 }
 
 <span class="doccomment">/// Identifies a topological node in the schedule of a cycle.</span>
@@ -361,17 +333,17 @@
                     <span class="prelude-val">Ok</span>(())
                 }
             }
-            (<span class="prelude-val">Some</span>(<span class="ident">this</span>), <span class="prelude-val">None</span>) =&gt; <span class="prelude-val">Err</span>(<span class="macro">format!</span>(
+            (<span class="prelude-val">Some</span>(<span class="ident">_this</span>), <span class="prelude-val">None</span>) =&gt; <span class="prelude-val">Err</span>(<span class="macro">format!</span>(
                 <span class="string">&quot;unique access to discriminants {this:?} requested but {that_mut_str} access is \
                  requested again for the same isotope component in the same system; multiple \
                  isotope component requests on the same type are only allowed when they do not \
-                 overlapped&quot;</span>
+                 overlap&quot;</span>
             )),
-            (<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="ident">that</span>)) =&gt; <span class="prelude-val">Err</span>(<span class="macro">format!</span>(
+            (<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="ident">_that</span>)) =&gt; <span class="prelude-val">Err</span>(<span class="macro">format!</span>(
                 <span class="string">&quot;unique access to all discriminants is requested but {that_mut_str} access is \
                  requested again for the same isotope component in the same system; multiple \
                  isotope component requests on the same type are only allowed when they do not \
-                 overlapped&quot;</span>
+                 overlap&quot;</span>
             )),
             (<span class="prelude-val">None</span>, <span class="prelude-val">None</span>) =&gt; <span class="prelude-val">Err</span>(<span class="macro">format!</span>(
                 <span class="string">&quot;unique access is requested but {that_mut_str} access is requested again in the \
@@ -399,5 +371,5 @@
     <span class="ident">globals</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;t</span> <span class="kw-2">mut</span> <span class="ident">world::UnsyncGlobals</span>,
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (d5e7f4782 2022-07-16)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (62b272d25 2022-07-21)" ></div>
 </body></html>

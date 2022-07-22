@@ -584,6 +584,7 @@
 <span id="578">578</span>
 <span id="579">579</span>
 <span id="580">580</span>
+<span id="581">581</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Manages entity ID allocation and deallocation.</span>
 
 <span class="kw">use</span> <span class="ident">std::any::Any</span>;
@@ -727,6 +728,7 @@
     }
 
     <span class="doccomment">/// Gets a shard state in offline mode.</span>
+    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
     <span class="kw">fn</span> <span class="ident">offline_shard</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">i</span>: <span class="ident">usize</span>) -&gt; <span class="kw-2">&amp;mut</span> <span class="ident">RecyclingShardState</span><span class="op">&lt;</span><span class="ident">R</span>, <span class="ident">T</span><span class="op">&gt;</span> {
         <span class="ident">Arc::get_mut</span>(<span class="self">self</span>.<span class="ident">shards</span>.<span class="ident">get_mut</span>(<span class="ident">i</span>).<span class="ident">expect</span>(<span class="string">&quot;Undefined shard index&quot;</span>))
             .<span class="ident">expect</span>(<span class="string">&quot;Offline Arc leak&quot;</span>)
@@ -1028,11 +1030,11 @@
 }
 
 <span class="kw">impl</span> <span class="ident">ShardAssigner</span> <span class="kw">for</span> <span class="ident">StaticShardAssigner</span> {
-    <span class="kw">fn</span> <span class="ident">select_for_offline_allocation</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">num_shards</span>: <span class="ident">usize</span>) -&gt; <span class="ident">usize</span> {
+    <span class="kw">fn</span> <span class="ident">select_for_offline_allocation</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">_num_shards</span>: <span class="ident">usize</span>) -&gt; <span class="ident">usize</span> {
         <span class="self">self</span>.<span class="ident">allocating_shard</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">shuffle_shards</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">shards</span>: <span class="kw-2">&amp;mut</span> [<span class="ident">T</span>]) {
+    <span class="kw">fn</span> <span class="ident">shuffle_shards</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">_shards</span>: <span class="kw-2">&amp;mut</span> [<span class="ident">T</span>]) {
         <span class="comment">// no shuffling</span>
     }
 }
@@ -1165,5 +1167,5 @@
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (d5e7f4782 2022-07-16)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (62b272d25 2022-07-21)" ></div>
 </body></html>

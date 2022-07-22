@@ -97,11 +97,18 @@
 <span id="91">91</span>
 <span id="92">92</span>
 <span id="93">93</span>
+<span id="94">94</span>
+<span id="95">95</span>
+<span id="96">96</span>
+<span id="97">97</span>
+<span id="98">98</span>
+<span id="99">99</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::any</span>::{<span class="self">self</span>, <span class="ident">Any</span>};
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">use</span> <span class="ident">std::ops</span>;
 <span class="kw">use</span> <span class="ident">std::sync::Arc</span>;
 
-<span class="kw">use</span> <span class="ident">parking_lot</span>::{<span class="ident">RwLock</span>, <span class="ident">RwLockReadGuard</span>, <span class="ident">RwLockWriteGuard</span>};
+<span class="kw">use</span> <span class="ident">parking_lot::RwLock</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::Storage</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">comp</span>, <span class="ident">Archetype</span>};
@@ -126,9 +133,12 @@
     }
 
     <span class="doccomment">/// Acquires a shared lock on the storage in online mode.</span>
+    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">read_storage</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">comp::Simple</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
     ) -&gt; <span class="kw">impl</span> <span class="ident">ops::Deref</span><span class="op">&lt;</span><span class="ident">Target</span> <span class="op">=</span> <span class="ident">C::Storage</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;_</span> {
+        <span class="kw">use</span> <span class="ident">parking_lot::RwLockReadGuard</span>;
+
         <span class="kw">match</span> <span class="self">self</span>.<span class="ident">storage</span>.<span class="ident">try_read</span>() {
             <span class="prelude-val">Some</span>(<span class="ident">storage</span>) =&gt; <span class="kw">match</span> <span class="ident">RwLockReadGuard::try_map</span>(<span class="ident">storage</span>, <span class="op">|</span><span class="ident">storage</span><span class="op">|</span> {
                 <span class="ident">storage</span>.<span class="ident">downcast_ref</span>::<span class="op">&lt;</span><span class="ident">C::Storage</span><span class="op">&gt;</span>()
@@ -145,9 +155,11 @@
     }
 
     <span class="doccomment">/// Acquires an exclusive lock on the storage in online mode.</span>
+    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">write_storage</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">comp::Simple</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
     ) -&gt; <span class="kw">impl</span> <span class="ident">ops::Deref</span><span class="op">&lt;</span><span class="ident">Target</span> <span class="op">=</span> <span class="ident">C::Storage</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">ops::DerefMut</span> <span class="op">+</span> <span class="lifetime">&#39;_</span> {
+        <span class="kw">use</span> <span class="ident">parking_lot::RwLockWriteGuard</span>;
         <span class="kw">match</span> <span class="self">self</span>.<span class="ident">storage</span>.<span class="ident">try_write</span>() {
             <span class="prelude-val">Some</span>(<span class="ident">storage</span>) =&gt; <span class="kw">match</span> <span class="ident">RwLockWriteGuard::try_map</span>(<span class="ident">storage</span>, <span class="op">|</span><span class="ident">storage</span><span class="op">|</span> {
                 <span class="ident">storage</span>.<span class="ident">downcast_mut</span>::<span class="op">&lt;</span><span class="ident">C::Storage</span><span class="op">&gt;</span>()
@@ -191,5 +203,5 @@
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (d5e7f4782 2022-07-16)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (62b272d25 2022-07-21)" ></div>
 </body></html>

@@ -201,8 +201,6 @@
 <span id="195">195</span>
 <span id="196">196</span>
 <span id="197">197</span>
-<span id="198">198</span>
-<span id="199">199</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Utilties for dynamic dispatch related to components.</span>
 
 <span class="kw">use</span> <span class="ident">std::any</span>::{<span class="self">self</span>, <span class="ident">Any</span>};
@@ -331,8 +329,6 @@
     <span class="kw">fn</span> <span class="ident">deps</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">DbgTypeId</span>, <span class="ident">comp::SimpleInitStrategy</span><span class="op">&lt;</span><span class="ident">A</span><span class="op">&gt;</span>)<span class="op">&gt;</span>;
 }
 
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ComponentDescriptor</span> {}
-
 <span class="macro">macro_rules!</span> <span class="ident">impl_auto_init_fn</span> {
     ($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">deps</span>:<span class="ident">ident</span>),<span class="op">*</span> $(,)<span class="question-mark">?</span>) =&gt; {
         <span class="kw">impl</span><span class="op">&lt;</span>
@@ -403,5 +399,5 @@
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (d5e7f4782 2022-07-16)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (62b272d25 2022-07-21)" ></div>
 </body></html>

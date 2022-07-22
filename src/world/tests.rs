@@ -59,7 +59,7 @@ struct InitialEntities {
 #[system(dynec_as(crate))]
 fn test_system(
     comp3: impl system::ReadSimple<TestArch, Comp3>,
-    mut comp4: impl system::WriteSimple<TestArch, Comp4>,
+    comp4: impl system::WriteSimple<TestArch, Comp4>,
     comp5: impl system::ReadSimple<TestArch, Comp5>,
     comp6: impl system::ReadSimple<TestArch, Comp6>,
     #[dynec(isotope(discrim = [TestDiscrim1(11), TestDiscrim1(17)]))] iso1: impl system::ReadIsotope<
@@ -69,26 +69,6 @@ fn test_system(
     #[dynec(global)] aggregator: &mut Aggregator,
     #[dynec(global)] initials: &InitialEntities,
 ) {
-    aggregator.comp30_sum = 1;
-
-    let ent1 = initials.ent1.as_ref().expect("ent1 is None");
-
-    // test component fetch
-    {
-        let comp = comp4.get_mut(ent1);
-        assert_eq!(comp.0, 14);
-        assert_eq!(comp.1, 32);
-        comp.1 += comp.0;
-    }
-
-    // test specific isotope fetch
-    {
-        let iso = iso1.get(ent1, TestDiscrim1(11));
-        assert_eq!(iso, Some(&Iso1(4)));
-    }
-
-    // TODO test simple iterators
-    // TODO test isotope iterators
 }
 
 #[test]
@@ -184,17 +164,17 @@ fn test_isotope_discrim_fetch() {
         let ent1 = initials.ent1.as_ref().expect("ent1 is None");
 
         {
-            let iso = iso1.get(ent1, TestDiscrim1(11));
+            let iso = iso1.try_get(ent1, TestDiscrim1(11));
             assert_eq!(iso, Some(&Iso1(3)));
         }
 
         {
-            let iso = iso1.get(ent1, TestDiscrim1(13));
+            let iso = iso1.try_get(ent1, TestDiscrim1(13));
             assert!(iso.is_none());
         }
 
         {
-            let iso = iso1.get(ent1, TestDiscrim1(19));
+            let iso = iso1.try_get(ent1, TestDiscrim1(19));
             assert!(iso.is_none());
         }
 

@@ -11,7 +11,7 @@
 use std::any::{self, Any, TypeId};
 use std::collections::hash_map::DefaultHasher;
 use std::sync::Arc;
-use std::{fmt, hash};
+use std::{fmt, hash, ops};
 
 use crate::entity::ealloc;
 use crate::world::Storage;
@@ -79,10 +79,39 @@ pub trait WriteSimple<A: Archetype, C: comp::Simple<A>>: ReadSimple<A, C> {
 
 /// Provides access to an isotope component in a specific archetype.
 pub trait ReadIsotope<A: Archetype, C: comp::Isotope<A>> {
-    fn get<E: entity::Ref<Archetype = A>>(&self, entity: E, discrim: C::Discrim) -> Option<&C>;
+    fn get<E: entity::Ref<Archetype = A>>(
+        &self,
+        entity: E,
+        discrim: C::Discrim,
+    ) -> RefOrDefault<'_, C>
+    where
+        C: comp::Must<A>;
+
+    fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E, discrim: C::Discrim) -> Option<&C>;
 
     fn get_all<E: entity::Ref<Archetype = A>>(&self, entity: E) -> IsotopeRefMap<'_, A, C>; // TODO abstract to a trait when GATs are stable
 }
+
+pub struct RefOrDefault<'t, C>(pub(crate) BorrowedOwned<'t, C>);
+
+pub(crate) enum BorrowedOwned<'t, C> {
+    Borrowed(&'t C),
+    Owned(C),
+}
+
+impl<'t, C> ops::Deref for RefOrDefault<'t, C> {
+    type Target = C;
+
+    fn deref(&self) -> &C {
+        match self.0 {
+            BorrowedOwned::Borrowed(ref_) => ref_,
+            BorrowedOwned::Owned(ref owned) => owned,
+        }
+    }
+}
+
+/// Provides access to an isotope component in a specific archetype.
+pub trait WriteIsotope<A: Archetype, C: comp::Isotope<A>> {}
 
 /// Provides immutable access to all isotopes of the same type for an entity.
 pub struct IsotopeRefMap<'t, A: Archetype, C: comp::Isotope<A>> {
@@ -142,9 +171,6 @@ pub(crate) type StorageRefType<T> =
     world::state::OwningMappedRwLockReadGuard<Arc<RwLock<dyn Any + Send + Sync>>, T>;
 pub(crate) type StorageMutType<T> =
     world::state::OwningMappedRwLockWriteGuard<Arc<RwLock<dyn Any + Send + Sync>>, T>;
-
-/// Provides access to an isotope component in a specific archetype.
-pub trait WriteIsotope<A: Archetype, C: comp::Isotope<A>> {}
 
 /// A partition is a hashable type constructed by system specifications
 /// used to constrain system execution order.

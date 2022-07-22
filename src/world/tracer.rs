@@ -30,12 +30,14 @@ macro_rules! define_tracer {
         pub trait Tracer: Sync {
             $(
                 $(#[$meta])*
+                #[allow(unused_variables)]
                 fn $name(&self, $($logged_ident: $logged_ty,)* $($($nolog_ident: $nolog_ty,)*)?) {}
             )*
         }
 
         impl Tracer for Log {
             $(
+                #[allow(unused_variables)]
                 fn $name(&self, $($logged_ident: $logged_ty,)* $($($nolog_ident: $nolog_ty,)*)?) {
                     log::log!(self.0, concat!(stringify!($name), "(", $(
                         stringify!($logged_ident),
@@ -83,9 +85,10 @@ macro_rules! impl_tuple {
         impl<$($ty: Tracer),*> Tracer for Aggregate<($($ty,)*)> {
             $(
                 fn $name(&self, $($arg_ident: $arg_ty),*) {
-                    #[allow(unused_mut)]
+                    #[allow(unused_mut, unused_variables)]
                     let mut args = ($($arg_ident,)*);
 
+                    #[allow(dead_code)]
                     fn call_with_args(tracer: &impl Tracer, ($($arg_ident,)*): &mut ($($arg_ty,)*)) {
                         tracer.$name($(*$arg_ident,)*);
                     }

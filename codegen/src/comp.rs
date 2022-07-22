@@ -82,7 +82,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 },
             ));
         } else {
-            let init = match init {
+            let init_strategy = match init {
                 Some((_, func)) => {
                     let func = func.as_fn_ptr(&generics)?;
                     quote!(#crate_name::comp::SimpleInitStrategy::Auto(
@@ -96,7 +96,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 quote!(#crate_name::comp::Simple<#archetype>),
                 quote! {
                     const PRESENCE: #crate_name::comp::SimplePresence = #presence;
-                    const INIT_STRATEGY: #crate_name::comp::SimpleInitStrategy<#archetype> = #init;
+                    const INIT_STRATEGY: #crate_name::comp::SimpleInitStrategy<#archetype> = #init_strategy;
                     const IS_FINALIZER: bool = #finalizer;
 
                     type Storage = #storage<<#archetype as #crate_name::Archetype>::RawEntity, Self>;

@@ -155,7 +155,7 @@ fn build_exclusions(
     let mut exclusions: HashMap<Node, HashSet<Node>> =
         nodes.map(|node| (node, HashSet::new())).collect();
 
-    for (resource_ty, nodes) in resources {
+    for nodes in resources.values() {
         for (&node1, accesses1) in nodes {
             for (&node2, accesses2) in nodes {
                 if node1 == node2 {

@@ -1,7 +1,7 @@
 use parking_lot::{Condvar, Mutex, MutexGuard};
 
 use super::planner::StealResult;
-use super::{Node, Planner, SendArgs, Topology, UnsendArgs, WakeupState};
+use super::{Node, Planner, SendArgs, Topology, UnsendArgs};
 use crate::entity::ealloc;
 use crate::world;
 
@@ -87,6 +87,8 @@ impl Executor {
 
         #[cfg(debug_assertions)]
         {
+            use super::WakeupState;
+
             for (node, state) in &planner.get_mut().wakeup_state {
                 let is_complete = matches!(state, WakeupState::Completed);
                 if !is_complete {

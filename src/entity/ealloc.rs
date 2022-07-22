@@ -141,6 +141,7 @@ impl<R: Raw, T: Recycler<R>, S: ShardAssigner, const BLOCK_SIZE: usize>
     }
 
     /// Gets a shard state in offline mode.
+    #[cfg(test)]
     fn offline_shard(&mut self, i: usize) -> &mut RecyclingShardState<R, T> {
         Arc::get_mut(self.shards.get_mut(i).expect("Undefined shard index"))
             .expect("Offline Arc leak")
@@ -442,11 +443,11 @@ pub struct StaticShardAssigner {
 }
 
 impl ShardAssigner for StaticShardAssigner {
-    fn select_for_offline_allocation(&mut self, num_shards: usize) -> usize {
+    fn select_for_offline_allocation(&mut self, _num_shards: usize) -> usize {
         self.allocating_shard
     }
 
-    fn shuffle_shards<T>(&mut self, shards: &mut [T]) {
+    fn shuffle_shards<T>(&mut self, _shards: &mut [T]) {
         // no shuffling
     }
 }

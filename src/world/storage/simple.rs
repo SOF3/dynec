@@ -1,8 +1,9 @@
 use std::any::{self, Any};
+#[cfg(test)]
 use std::ops;
 use std::sync::Arc;
 
-use parking_lot::{RwLock, RwLockReadGuard, RwLockWriteGuard};
+use parking_lot::RwLock;
 
 use super::Storage;
 use crate::{comp, Archetype};
@@ -27,9 +28,12 @@ impl<A: Archetype> Simple<A> {
     }
 
     /// Acquires a shared lock on the storage in online mode.
+    #[cfg(test)]
     pub(crate) fn read_storage<C: comp::Simple<A>>(
         &self,
     ) -> impl ops::Deref<Target = C::Storage> + '_ {
+        use parking_lot::RwLockReadGuard;
+
         match self.storage.try_read() {
             Some(storage) => match RwLockReadGuard::try_map(storage, |storage| {
                 storage.downcast_ref::<C::Storage>()
@@ -46,9 +50,11 @@ impl<A: Archetype> Simple<A> {
     }
 
     /// Acquires an exclusive lock on the storage in online mode.
+    #[cfg(test)]
     pub(crate) fn write_storage<C: comp::Simple<A>>(
         &self,
     ) -> impl ops::Deref<Target = C::Storage> + ops::DerefMut + '_ {
+        use parking_lot::RwLockWriteGuard;
         match self.storage.try_write() {
             Some(storage) => match RwLockWriteGuard::try_map(storage, |storage| {
                 storage.downcast_mut::<C::Storage>()

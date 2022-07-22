@@ -126,8 +126,6 @@ pub trait AutoInitFn<A: Archetype>: Send + Sync + 'static {
     fn deps(&self) -> Vec<(DbgTypeId, comp::SimpleInitStrategy<A>)>;
 }
 
-pub struct ComponentDescriptor {}
-
 macro_rules! impl_auto_init_fn {
     ($($deps:ident),* $(,)?) => {
         impl<

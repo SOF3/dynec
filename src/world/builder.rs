@@ -118,14 +118,14 @@ impl Builder {
     /// Schedules a thread-safe system.
     pub fn schedule(&mut self, system: Box<dyn system::Sendable>) {
         let spec = system.get_spec();
-        let (node, system) = self.scheduler.push_send_system(system);
+        let (node, _spec) = self.scheduler.push_send_system(system);
         self.register_resources(spec, true, node);
     }
 
     /// Schedules a system that must be run on the main thread.
     pub fn schedule_thread_unsafe(&mut self, system: Box<dyn system::Unsendable>) {
         let spec = system.get_spec();
-        let (node, system) = self.scheduler.push_unsend_system(system);
+        let (node, _spec) = self.scheduler.push_unsend_system(system);
         self.register_resources(spec, false, node);
     }
 

@@ -64,20 +64,6 @@ enum WakeupState {
     Completed,
 }
 
-impl WakeupState {
-    fn increment(&mut self) {
-        match self {
-            Self::Blocked { count } => {
-                *count = NonZeroUsize::new(count.get() + 1).expect("integer overflow")
-            }
-            state @ Self::Pending => {
-                *state = Self::Blocked { count: NonZeroUsize::new(1).expect("1 != 0") }
-            }
-            Self::Started | Self::Completed => panic!("Cannot increment started node"),
-        }
-    }
-}
-
 /// Identifies a topological node in the schedule of a cycle.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Node {
@@ -158,17 +144,17 @@ impl ResourceAccess {
                     Ok(())
                 }
             }
-            (Some(this), None) => Err(format!(
+            (Some(_this), None) => Err(format!(
                 "unique access to discriminants {this:?} requested but {that_mut_str} access is \
                  requested again for the same isotope component in the same system; multiple \
                  isotope component requests on the same type are only allowed when they do not \
-                 overlapped"
+                 overlap"
             )),
-            (None, Some(that)) => Err(format!(
+            (None, Some(_that)) => Err(format!(
                 "unique access to all discriminants is requested but {that_mut_str} access is \
                  requested again for the same isotope component in the same system; multiple \
                  isotope component requests on the same type are only allowed when they do not \
-                 overlapped"
+                 overlap"
             )),
             (None, None) => Err(format!(
                 "unique access is requested but {that_mut_str} access is requested again in the \

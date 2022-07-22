@@ -3,7 +3,6 @@
 use std::any::{self, TypeId};
 
 use crate::entity::ealloc;
-use crate::util::DbgTypeId;
 use crate::{comp, entity, Archetype, Entity, Global};
 
 mod builder;
@@ -29,10 +28,10 @@ pub trait Bundle {
     /// Schedules the systems used by this bundle.
     ///
     /// Scheduling a system automatically registers the archetypes and components used by the system.
-    fn register(&self, builder: &mut Builder) {}
+    fn register(&self, _builder: &mut Builder) {}
 
     /// Populates the world with entities and global states.
-    fn populate(&self, world: &mut World) {}
+    fn populate(&self, _world: &mut World) {}
 }
 
 /// Creates a dynec world from bundles.
@@ -42,7 +41,7 @@ pub fn new<'t>(bundles: impl IntoIterator<Item = &'t dyn Bundle> + Copy) -> Worl
         match std::thread::available_parallelism() {
             Ok(c) => c.get(),
             Err(err) => {
-                log::error!("Cannot detect number of CPUs, parallelism disabled");
+                log::error!("Cannot detect number of CPUs ({err}), parallelism disabled");
                 0
             }
         },
@@ -73,24 +72,6 @@ pub fn new_with_concurrency<'t>(
     }
 
     world
-}
-
-/// Identifies an archetype + component type.
-pub(crate) struct ArchComp {
-    arch: DbgTypeId,
-    comp: DbgTypeId,
-}
-
-/// Describes a simple component type.
-pub(crate) struct SimpleSpec {
-    presence:     comp::SimplePresence,
-    is_finalizer: bool,
-}
-
-impl SimpleSpec {
-    fn of<A: Archetype, C: comp::Simple<A>>() -> Self {
-        Self { presence: C::PRESENCE, is_finalizer: C::IS_FINALIZER }
-    }
 }
 
 /// The data structure that stores all states in the game.

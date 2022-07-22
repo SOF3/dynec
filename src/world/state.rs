@@ -217,11 +217,28 @@ impl Components {
                 &self,
                 entity: E,
                 discrim: C::Discrim,
+            ) -> system::RefOrDefault<'_, C>
+            where
+                C: comp::Must<A>,
+            {
+                match self.try_get(entity, discrim) {
+                    Some(value) => system::RefOrDefault(system::BorrowedOwned::Borrowed(value)),
+                    None => system::RefOrDefault(system::BorrowedOwned::Owned(self
+                        .default
+                        .expect("C: comp::Must<A>")(
+                    ))),
+                }
+            }
+
+            fn try_get<E: entity::Ref<Archetype = A>>(
+                &self,
+                entity: E,
+                discrim: C::Discrim,
             ) -> Option<&C> {
                 let discrim = discrim.into_usize();
 
                 // if storage does not exist, the component does not exist yet.
-                let (_, storage) = self.storages.iter().find(|(k, v)| *k == discrim)?;
+                let (_, storage) = self.storages.iter().find(|(key, _)| *key == discrim)?;
 
                 storage.get(entity.id())
             }
@@ -256,6 +273,17 @@ impl Components {
 
         impl<A: Archetype, C: comp::Isotope<A>> system::ReadIsotope<A, C> for Ret<A, C> {
             fn get<E: entity::Ref<Archetype = A>>(
+                &self,
+                entity: E,
+                discrim: C::Discrim,
+            ) -> system::RefOrDefault<'_, C>
+            where
+                C: comp::Must<A>,
+            {
+                todo!()
+            }
+
+            fn try_get<E: entity::Ref<Archetype = A>>(
                 &self,
                 entity: E,
                 discrim: C::Discrim,

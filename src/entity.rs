@@ -8,12 +8,11 @@
 //!
 //! All strong references to an entity must be dropped before it gets deleted.
 
-use std::num;
 #[cfg(any(
     all(debug_assertions, feature = "debug-entity-rc"),
     all(not(debug_assertions), feature = "release-entity-rc"),
 ))]
-use std::sync::Arc;
+use std::sync;
 
 use crate::Archetype;
 
@@ -22,6 +21,9 @@ pub use raw::Raw;
 
 pub mod ealloc;
 pub use ealloc::Ealloc;
+
+pub mod generation;
+pub use generation::Generation;
 
 mod referrer;
 pub use referrer::{Referrer, ReferrerArg};
@@ -48,6 +50,8 @@ pub trait Ref: sealed::Sealed {
 /// It is only used as a short-lived pointer passed from the dynec API
 /// for entity references that should not outlive a short scope (e.g. an API callback).
 /// Thus, it is always passed to users as a reference and cannot be cloned.
+///
+/// This type deliberately does **not** implement [`Clone`] and [`Copy`] for the reasons above.
 #[repr(transparent)]
 pub struct UnclonableRef<A: Archetype> {
     value: A::RawEntity,
@@ -64,7 +68,7 @@ impl<A: Archetype> Ref for UnclonableRef<A> {
     fn id(&self) -> A::RawEntity { self.value }
 }
 
-/// A counted reference to an entity.
+/// A strong reference to an entity.
 ///
 /// This reference must be dropped before an entity is deleted
 /// (after all finalizers have been unset).
@@ -76,7 +80,7 @@ pub struct Entity<A: Archetype> {
         all(debug_assertions, feature = "debug-entity-rc"),
         all(not(debug_assertions), feature = "release-entity-rc"),
     ))]
-    rc: Arc<()>,
+    rc: sync::Arc<()>,
 }
 
 impl<A: Archetype> Entity<A> {
@@ -91,7 +95,23 @@ impl<A: Archetype> Entity<A> {
                 all(debug_assertions, feature = "debug-entity-rc"),
                 all(not(debug_assertions), feature = "release-entity-rc"),
             ))]
-            rc: Arc::new(()),
+            rc: sync::Arc::new(()),
+        }
+    }
+
+    pub fn weak(&self, store: &generation::Store) -> Weak<A> {
+        // since this strong reference is still valid,
+        // the current state of the generation store is the actual generation.
+        let generation = store.get(self.id.to_primitive());
+
+        Weak {
+            id: self.id,
+            generation,
+            #[cfg(any(
+                all(debug_assertions, feature = "debug-entity-rc"),
+                all(not(debug_assertions), feature = "release-entity-rc"),
+            ))]
+            rc: sync::Arc::downgrade(&self.rc),
         }
     }
 }
@@ -111,7 +131,7 @@ impl<A: Archetype> Clone for Entity<A> {
                 all(debug_assertions, feature = "debug-entity-rc"),
                 all(not(debug_assertions), feature = "release-entity-rc"),
             ))]
-            rc: Arc::clone(&self.rc),
+            rc: sync::Arc::clone(&self.rc),
         }
     }
 }
@@ -138,7 +158,7 @@ pub struct Weak<A: Archetype> {
         all(debug_assertions, feature = "debug-entity-rc"),
         all(not(debug_assertions), feature = "release-entity-rc"),
     ))]
-    rc: Arc<()>,
+    rc: sync::Weak<()>,
 }
 
 impl<A: Archetype> sealed::Sealed for Weak<A> {}
@@ -157,13 +177,10 @@ impl<A: Archetype> Clone for Weak<A> {
                 all(debug_assertions, feature = "debug-entity-rc"),
                 all(not(debug_assertions), feature = "release-entity-rc"),
             ))]
-            rc: Arc::clone(&self.rc),
+            rc: sync::Weak::clone(&self.rc),
         }
     }
 }
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-struct Generation(num::Wrapping<u32>);
 
 #[cfg(test)]
 mod tests {

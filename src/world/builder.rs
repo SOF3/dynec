@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use parking_lot::RwLock;
 
 use super::{scheduler, typed};
-use crate::entity::ealloc;
+use crate::entity::{ealloc, generation};
 use crate::system::spec;
 use crate::util::DbgTypeId;
 use crate::{system, Global};
@@ -156,6 +156,7 @@ impl Builder {
             .unzip();
 
         let ealloc_map = ealloc::Map::new(ealloc_map);
+        let generation_store = generation::Store::default();
         let storages = super::Components { archetypes: storages };
 
         let sync_globals = self
@@ -190,6 +191,7 @@ impl Builder {
 
         super::World {
             ealloc_map,
+            generation_store,
             components: storages,
             sync_globals,
             unsync_globals,

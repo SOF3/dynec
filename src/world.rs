@@ -2,7 +2,7 @@
 
 use std::any::{self, TypeId};
 
-use crate::entity::ealloc;
+use crate::entity::{ealloc, Raw};
 use crate::{comp, entity, Archetype, Entity, Global};
 
 mod builder;
@@ -76,15 +76,18 @@ pub fn new_with_concurrency<'t>(
 
 /// The data structure that stores all states in the game.
 pub struct World {
-    ealloc_map:     ealloc::Map,
+    /// Stores the [`entity::Ealloc`] implementations for each archetype.
+    ealloc_map:       ealloc::Map,
+    /// Stores the number of generations for each entity.
+    generation_store: entity::generation::Store,
     /// Stores the component states in a world.
-    components:     Components,
+    components:       Components,
     /// Stores the system-local states and the scheduler topology.
-    scheduler:      scheduler::Scheduler,
+    scheduler:        scheduler::Scheduler,
     /// Global states that can be concurrently accessed by systems on other threads.
-    sync_globals:   SyncGlobals,
+    sync_globals:     SyncGlobals,
     /// Global states that must be accessed on the main thread.
-    unsync_globals: UnsyncGlobals,
+    unsync_globals:   UnsyncGlobals,
 }
 
 impl World {
@@ -122,6 +125,8 @@ impl World {
             .downcast_mut::<<E::Archetype as Archetype>::Ealloc>()
             .expect("TypeId mismatch");
         let id = ealloc.allocate(hint);
+
+        self.generation_store.next(id.to_primitive());
 
         let typed = self.components.archetype_mut::<E::Archetype>();
         typed.init_entity(id, components);

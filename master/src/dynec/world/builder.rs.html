@@ -203,13 +203,15 @@
 <span id="197">197</span>
 <span id="198">198</span>
 <span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::any::Any</span>;
 <span class="kw">use</span> <span class="ident">std::collections::HashMap</span>;
 
 <span class="kw">use</span> <span class="ident">parking_lot::RwLock</span>;
 
 <span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">scheduler</span>, <span class="ident">typed</span>};
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::entity::ealloc</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::entity</span>::{<span class="ident">ealloc</span>, <span class="ident">generation</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::system::spec</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::util::DbgTypeId</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">system</span>, <span class="ident">Global</span>};
@@ -361,6 +363,7 @@
             .<span class="ident">unzip</span>();
 
         <span class="kw">let</span> <span class="ident">ealloc_map</span> <span class="op">=</span> <span class="ident">ealloc::Map::new</span>(<span class="ident">ealloc_map</span>);
+        <span class="kw">let</span> <span class="ident">generation_store</span> <span class="op">=</span> <span class="ident">generation::Store::default</span>();
         <span class="kw">let</span> <span class="ident">storages</span> <span class="op">=</span> <span class="ident"><span class="kw">super</span>::Components</span> { <span class="ident">archetypes</span>: <span class="ident">storages</span> };
 
         <span class="kw">let</span> <span class="ident">sync_globals</span> <span class="op">=</span> <span class="self">self</span>
@@ -395,6 +398,7 @@
 
         <span class="ident"><span class="kw">super</span>::World</span> {
             <span class="ident">ealloc_map</span>,
+            <span class="ident">generation_store</span>,
             <span class="ident">components</span>: <span class="ident">storages</span>,
             <span class="ident">sync_globals</span>,
             <span class="ident">unsync_globals</span>,
@@ -403,5 +407,5 @@
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (62b272d25 2022-07-21)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (848090dcd 2022-07-22)" ></div>
 </body></html>

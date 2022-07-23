@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["Generation","The number of times the same entry has been used for allocating an entity. This type is fully ordered, where a greater generation implies newer version."],["Store","Stores generations of entities."]]};

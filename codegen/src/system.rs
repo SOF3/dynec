@@ -443,6 +443,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 unsync_globals: &#crate_name::world::UnsyncGlobals,
                 components: &#crate_name::world::Components,
                 ealloc_shard_map: &mut #crate_name::entity::ealloc::ShardMap,
+                offline_buffer: &mut #crate_name::world::offline::BufferShard,
             },
         ),
         false => (
@@ -451,6 +452,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 sync_globals: &#crate_name::world::SyncGlobals,
                 components: &#crate_name::world::Components,
                 ealloc_shard_map: &mut #crate_name::entity::ealloc::ShardMap,
+                offline_buffer: &mut #crate_name::world::offline::BufferShard,
             },
         ),
     };

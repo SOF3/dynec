@@ -8,6 +8,7 @@ pub struct Generation(u32);
 
 /// Stores generations of entities.
 #[derive(Default)]
+#[dynec_codegen::global(dynec_as(crate))]
 pub struct Store {
     vec: Vec<Generation>,
 }

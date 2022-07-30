@@ -36,8 +36,8 @@ impl Scheduler {
     pub(in crate::world) fn execute(
         &mut self,
         tracer: &impl world::Tracer,
-        components: &world::Components,
-        sync_globals: &world::SyncGlobals,
+        components: &mut world::Components,
+        sync_globals: &mut world::SyncGlobals,
         unsync_globals: &mut world::UnsyncGlobals,
         ealloc_map: &mut ealloc::Map,
     ) {
@@ -45,7 +45,9 @@ impl Scheduler {
             tracer,
             &self.topology,
             &mut self.planner,
-            SendArgs { state: &self.sync_state, components, globals: sync_globals },
+            &self.sync_state,
+            components,
+            sync_globals,
             UnsendArgs { state: &mut self.unsync_state, globals: unsync_globals },
             ealloc_map,
         );
@@ -168,13 +170,6 @@ impl ResourceAccess {
 struct Order {
     before: Node,
     after:  Node,
-}
-
-#[derive(Clone, Copy)]
-struct SendArgs<'t> {
-    state:      &'t SyncState,
-    components: &'t world::Components,
-    globals:    &'t world::SyncGlobals,
 }
 
 struct UnsendArgs<'t> {

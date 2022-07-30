@@ -14,7 +14,7 @@ use std::sync::Arc;
 use std::{fmt, hash, ops};
 
 use crate::entity::ealloc;
-use crate::world::Storage;
+use crate::world::{offline, Storage};
 use crate::{comp, entity, world, Archetype};
 
 /// Provides access to a simple component in a specific archetype.
@@ -259,6 +259,7 @@ pub trait Sendable: Send {
         globals: &world::SyncGlobals,
         components: &world::Components,
         ealloc_shard_map: &mut ealloc::ShardMap,
+        offline_shard: &mut offline::BufferShard,
     );
 }
 
@@ -279,6 +280,7 @@ pub trait Unsendable {
         unsync_globals: &mut world::UnsyncGlobals,
         components: &world::Components,
         ealloc_shard_map: &mut ealloc::ShardMap,
+        offline_shard: &mut offline::BufferShard,
     );
 }
 

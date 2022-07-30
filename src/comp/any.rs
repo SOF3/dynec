@@ -53,7 +53,7 @@ impl hash::Hash for Identifier {
 ///
 /// This type is only used in parameter passing, not in the actual storage.
 pub struct Map<A: Archetype> {
-    map: BTreeMap<Identifier, Box<dyn Any>>,
+    map: BTreeMap<Identifier, Box<dyn Any + Send + Sync>>,
 
     _ph: PhantomData<A>,
 }
@@ -97,7 +97,9 @@ impl<A: Archetype> Map<A> {
     /// Drops this map, returning an iterator of all isotope components.
     ///
     /// This should be changed to `drain_filter` when it is stable.
-    pub(crate) fn into_isotopes(self) -> impl Iterator<Item = (Identifier, Box<dyn Any>)> {
+    pub(crate) fn into_isotopes(
+        self,
+    ) -> impl Iterator<Item = (Identifier, Box<dyn Any + Send + Sync>)> {
         self.map.into_iter().filter(|(id, _)| id.discrim.is_some())
     }
 

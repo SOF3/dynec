@@ -29,7 +29,11 @@ impl Builder {
         Self {
             scheduler:      scheduler::Builder::new(concurrency),
             archetypes:     HashMap::new(),
-            sync_globals:   HashMap::new(),
+            sync_globals:   {
+                let mut map = HashMap::new();
+                populate_default_globals(&mut map);
+                map
+            },
             unsync_globals: HashMap::new(),
         }
     }
@@ -156,7 +160,6 @@ impl Builder {
             .unzip();
 
         let ealloc_map = ealloc::Map::new(ealloc_map);
-        let generation_store = generation::Store::default();
         let storages = super::Components { archetypes: storages };
 
         let sync_globals = self
@@ -191,11 +194,21 @@ impl Builder {
 
         super::World {
             ealloc_map,
-            generation_store,
             components: storages,
             sync_globals,
             unsync_globals,
             scheduler: self.scheduler.build(),
         }
     }
+}
+
+fn populate_default_globals(map: &mut HashMap<DbgTypeId, GlobalBuilder<dyn Any + Send + Sync>>) {
+    fn put_global<T: Any + Send + Sync>(
+        map: &mut HashMap<DbgTypeId, GlobalBuilder<dyn Any + Send + Sync>>,
+        value: T,
+    ) {
+        map.insert(DbgTypeId::of::<T>(), GlobalBuilder::Provided(Box::new(value)));
+    }
+
+    put_global(map, generation::Store::default());
 }

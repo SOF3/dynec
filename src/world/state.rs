@@ -366,6 +366,17 @@ impl SyncGlobals {
         };
         RwLockWriteGuard::map(guard, |guard| guard.downcast_mut::<G>().expect("TypeId mismatch"))
     }
+
+    pub(crate) fn get_mut<G: Global + Send + Sync>(&mut self) -> &mut G {
+        let lock = match self.sync_globals.get_mut(&TypeId::of::<G>()) {
+            Some(lock) => lock,
+            None => panic!(
+                "The global state {} cannot be used because it is not used in any systems",
+                any::type_name::<G>()
+            ),
+        };
+        lock.get_mut().downcast_mut::<G>().expect("TypeId mismatch")
+    }
 }
 
 /// Stores the thread-unsafe global states in a world.

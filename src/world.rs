@@ -2,7 +2,7 @@
 
 use std::any::{self, TypeId};
 
-use crate::entity::{ealloc, Raw};
+use crate::entity::{ealloc, generation, Raw};
 use crate::{comp, entity, Archetype, Entity, Global};
 
 mod builder;
@@ -21,6 +21,8 @@ pub use scheduler::{Node as ScheduleNode, PartitionIndex, SendSystemIndex, Unsen
 
 pub mod tracer;
 pub use tracer::Tracer;
+
+pub mod offline;
 
 /// A bundle encapsulates the systems and resources for a specific feature.
 /// This can be used by library crates to expose their features as a single API.
@@ -77,17 +79,15 @@ pub fn new_with_concurrency<'t>(
 /// The data structure that stores all states in the game.
 pub struct World {
     /// Stores the [`entity::Ealloc`] implementations for each archetype.
-    ealloc_map:       ealloc::Map,
-    /// Stores the number of generations for each entity.
-    generation_store: entity::generation::Store,
+    ealloc_map:     ealloc::Map,
     /// Stores the component states in a world.
-    components:       Components,
+    components:     Components,
     /// Stores the system-local states and the scheduler topology.
-    scheduler:        scheduler::Scheduler,
+    scheduler:      scheduler::Scheduler,
     /// Global states that can be concurrently accessed by systems on other threads.
-    sync_globals:     SyncGlobals,
+    sync_globals:   SyncGlobals,
     /// Global states that must be accessed on the main thread.
-    unsync_globals:   UnsyncGlobals,
+    unsync_globals: UnsyncGlobals,
 }
 
 impl World {
@@ -95,8 +95,8 @@ impl World {
     pub fn execute(&mut self, tracer: &impl Tracer) {
         self.scheduler.execute(
             tracer,
-            &self.components,
-            &self.sync_globals,
+            &mut self.components,
+            &mut self.sync_globals,
             &mut self.unsync_globals,
             &mut self.ealloc_map,
         );
@@ -104,34 +104,37 @@ impl World {
 
     /// Adds an entity to the world.
     pub fn create<A: Archetype>(&mut self, components: comp::Map<A>) -> Entity<A> {
-        self.create_near::<entity::Entity<A>>(Default::default(), components)
+        self.create_with_hint::<A>(Default::default(), components)
     }
 
     /// Adds an entity to the world near another entity.
-    pub fn create_near<E: entity::Ref>(
+    pub fn create_with_hint<A: Archetype>(
         &mut self,
-        hint: <<<E as entity::Ref>::Archetype as Archetype>::Ealloc as Ealloc>::AllocHint,
-        components: comp::Map<<E as entity::Ref>::Archetype>,
-    ) -> Entity<<E as entity::Ref>::Archetype> {
-        let ealloc = match self.ealloc_map.map.get_mut(&TypeId::of::<E::Archetype>()) {
+        hint: <A::Ealloc as Ealloc>::AllocHint,
+        components: comp::Map<A>,
+    ) -> Entity<A> {
+        let ealloc = match self.ealloc_map.map.get_mut(&TypeId::of::<A>()) {
             Some(ealloc) => ealloc,
             None => panic!(
                 "Cannot create entity for archetype {} because it is not used in any systems",
-                any::type_name::<E::Archetype>()
+                any::type_name::<A>()
             ),
         };
-        let ealloc = ealloc
-            .as_any_mut()
-            .downcast_mut::<<E::Archetype as Archetype>::Ealloc>()
-            .expect("TypeId mismatch");
+        let ealloc = ealloc.as_any_mut().downcast_mut::<A::Ealloc>().expect("TypeId mismatch");
         let id = ealloc.allocate(hint);
 
-        self.generation_store.next(id.to_primitive());
-
-        let typed = self.components.archetype_mut::<E::Archetype>();
-        typed.init_entity(id, components);
+        let sync_globals = &mut self.sync_globals;
+        let world_components = &mut self.components;
+        init_entity(&mut self.sync_globals, id, &mut self.components, components);
 
         Entity::new_allocated(id)
+    }
+
+    pub(crate) fn create_at_allocated<A: Archetype>(
+        &mut self,
+        id: A::RawEntity,
+        components: comp::Map<A>,
+    ) {
     }
 
     /// Gets a reference to an entity component in offline mode.
@@ -180,6 +183,18 @@ impl World {
         };
         global.downcast_mut::<G>().expect("TypeId mismatch")
     }
+}
+
+/// Initializes an entity after allocation
+fn init_entity<A: Archetype>(
+    sync_globals: &mut SyncGlobals,
+    id: A::RawEntity,
+    components: &mut Components,
+    comp_map: comp::Map<A>,
+) {
+    sync_globals.get_mut::<generation::Store>().next(id.to_primitive());
+    let typed = components.archetype_mut::<A>();
+    typed.init_entity(id, comp_map);
 }
 
 #[cfg(test)]

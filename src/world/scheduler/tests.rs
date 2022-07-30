@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use super::*;
 use crate::test_util::{self, AntiSemaphore};
-use crate::world::tracer;
+use crate::world::{offline, tracer};
 use crate::{comp, system, world, TestArch};
 
 // Repeat concurrent tests to increase the chance of catching random bugs.
@@ -44,6 +44,7 @@ impl system::Sendable for SendSystem {
         globals: &world::SyncGlobals,
         components: &world::Components,
         ealloc_shard_map: &mut ealloc::ShardMap,
+        offline_buffer: &mut offline::BufferShard,
     ) {
         self.1();
     }
@@ -58,6 +59,7 @@ impl system::Unsendable for UnsendSystem {
         unsync_globals: &mut world::UnsyncGlobals,
         components: &world::Components,
         ealloc_shard_map: &mut ealloc::ShardMap,
+        offline_buffer: &mut offline::BufferShard,
     ) {
         self.1();
     }
@@ -708,8 +710,8 @@ fn test_bootstrap<const S: usize, const U: usize, T, C, R, V>(
 
         scheduler.execute(
             &tracer,
-            &world::Components::empty(),
-            &world::SyncGlobals::empty(),
+            &mut world::Components::empty(),
+            &mut world::SyncGlobals::empty(),
             &mut world::UnsyncGlobals::empty(),
             &mut ealloc::Map::default(),
         );

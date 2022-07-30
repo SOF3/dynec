@@ -1,6 +1,6 @@
 //! Manages entity ID allocation and deallocation.
 
-use std::any::Any;
+use std::any::{Any, TypeId};
 use std::collections::{BTreeSet, HashMap};
 use std::sync::Arc;
 
@@ -490,6 +490,17 @@ impl Map {
 #[derive(Default)]
 pub struct ShardMap {
     map: HashMap<DbgTypeId, Box<dyn AnyShard>>,
+}
+
+impl ShardMap {
+    pub fn get<A: Archetype>(
+        &mut self,
+    ) -> &mut impl Shard<Raw = A::RawEntity, Hint = <A::Ealloc as Ealloc>::AllocHint> {
+        let shard = self.map.get_mut(&TypeId::of::<A>()).expect("Use of unregistered archetype");
+        let shard: &mut <A::Ealloc as Ealloc>::Shard =
+            shard.as_any_mut().downcast_mut().expect("TypeId mismatch");
+        shard
+    }
 }
 
 #[cfg(test)]

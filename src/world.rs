@@ -1,8 +1,9 @@
 //! The world stores the states of the game.
 
 use std::any::{self, TypeId};
+use std::sync::Arc;
 
-use crate::entity::{ealloc, generation, Raw};
+use crate::entity::{deletion, ealloc, generation, Raw};
 use crate::{comp, entity, Archetype, Entity, Global};
 
 mod builder;
@@ -130,13 +131,6 @@ impl World {
         Entity::new_allocated(id)
     }
 
-    pub(crate) fn create_at_allocated<A: Archetype>(
-        &mut self,
-        id: A::RawEntity,
-        components: comp::Map<A>,
-    ) {
-    }
-
     /// Gets a reference to an entity component in offline mode.
     ///
     /// Requires a mutable reference to the world to ensure that the world is offline.
@@ -185,16 +179,62 @@ impl World {
     }
 }
 
-/// Initializes an entity after allocation
+/// Initializes an entity after allocation.
 fn init_entity<A: Archetype>(
     sync_globals: &mut SyncGlobals,
     id: A::RawEntity,
     components: &mut Components,
     comp_map: comp::Map<A>,
 ) {
-    sync_globals.get_mut::<generation::Store>().next(id.to_primitive());
+    sync_globals.get_mut::<generation::StoreMap>().next::<A>(id.to_primitive());
+    sync_globals.get_mut::<deletion::Flags>().set::<A>(id, false);
     let typed = components.archetype_mut::<A>();
     typed.init_entity(id, comp_map);
+}
+
+/// Flags an entity for deletion, and deletes it immediately if there are no finalizers.
+fn flag_delete_entity<A: Archetype>(
+    id: A::RawEntity,
+    components: &mut Components,
+    sync_globals: &mut SyncGlobals,
+    ealloc_map: &mut ealloc::Map,
+) {
+    sync_globals.get_mut::<deletion::Flags>().set::<A>(id, true);
+
+    try_real_delete_entity::<A>(components, id, ealloc_map);
+}
+
+/// Deletes an entity immediately if there are no finalizers.
+fn try_real_delete_entity<A: Archetype>(
+    components: &mut Components,
+    entity: <A as Archetype>::RawEntity,
+    ealloc_map: &mut ealloc::Map,
+) {
+    let storages = &mut components.archetype_mut::<A>().simple_storages;
+    let has_finalizer = storages.values_mut().any(|storage| {
+        Arc::get_mut(&mut storage.storage)
+            .expect("storage arc was leaked")
+            .get_mut()
+            .has_finalizer(entity)
+    });
+    if has_finalizer {
+        return;
+    }
+
+    for storage in storages.values_mut() {
+        Arc::get_mut(&mut storage.storage)
+            .expect("storage arc was leaked")
+            .get_mut()
+            .clear_entry(entity);
+    }
+
+    let ealloc = ealloc_map
+        .map
+        .get_mut(&TypeId::of::<A>())
+        .expect("Attempted to delete entity of unknown archetype");
+    let ealloc: &mut A::Ealloc = ealloc.as_any_mut().downcast_mut().expect("TypeId mismatch");
+
+    ealloc.queue_deallocate(entity);
 }
 
 #[cfg(test)]

@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use parking_lot::RwLock;
 
 use super::{scheduler, typed};
-use crate::entity::{ealloc, generation};
+use crate::entity::{deletion, ealloc, generation};
 use crate::system::spec;
 use crate::util::DbgTypeId;
 use crate::{system, Global};
@@ -210,5 +210,6 @@ fn populate_default_globals(map: &mut HashMap<DbgTypeId, GlobalBuilder<dyn Any +
         map.insert(DbgTypeId::of::<T>(), GlobalBuilder::Provided(Box::new(value)));
     }
 
-    put_global(map, generation::Store::default());
+    put_global(map, generation::StoreMap::default());
+    put_global(map, deletion::Flags::default());
 }

@@ -133,10 +133,16 @@ impl Executor {
             }
         }
 
-        ealloc_map.reconcile_shards(ealloc_shards);
+        // ealloc_shards contains clones of the ShardState Arc,
+        // which causes panic when flush_deallocate() is called
+        drop(ealloc_shards);
 
         for operation in self.offline_buffer.drain() {
-            operation.run(components, globals, unsend.globals);
+            operation.run(components, globals, ealloc_map);
+        }
+
+        for ealloc in ealloc_map.map.values_mut() {
+            ealloc.flush_deallocate();
         }
 
         tracer.end_cycle();

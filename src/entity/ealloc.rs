@@ -43,8 +43,11 @@ pub trait Ealloc: 'static {
     /// Can only be used between out-of-cycle.
     fn allocate(&mut self, hint: Self::AllocHint) -> Self::Raw;
 
-    /// Deallocates the IDs, allowing them to be reused in future calls to [`Shard::allocate`].
-    fn deallocate(&mut self, ids: Vec<Self::Raw>);
+    /// Queues the deallocation of an ID.
+    fn queue_deallocate(&mut self, id: Self::Raw);
+
+    /// Flushes the ID deallocation queue.
+    fn flush_deallocate(&mut self);
 }
 
 pub(crate) trait AnyEalloc {
@@ -52,7 +55,7 @@ pub(crate) trait AnyEalloc {
 
     fn shards(&mut self, vec: &mut Vec<Box<dyn AnyShard>>);
 
-    fn reconcile(&mut self, shards: Box<dyn Iterator<Item = Box<dyn AnyShard>> + '_>);
+    fn flush_deallocate(&mut self);
 }
 
 impl<T: Ealloc> AnyEalloc for T {
@@ -62,16 +65,7 @@ impl<T: Ealloc> AnyEalloc for T {
         Ealloc::shards(self, vec, |shard| Box::new(shard) as Box<dyn AnyShard>)
     }
 
-    fn reconcile(&mut self, shards: Box<dyn Iterator<Item = Box<dyn AnyShard>> + '_>) {
-        let mut buf = Vec::new();
-
-        for shard in shards {
-            let shard: Box<T::Shard> = shard.as_any_box().downcast().expect("Shard type mismatch");
-            shard.get_free_buffer(&mut buf);
-        }
-
-        self.deallocate(buf);
-    }
+    fn flush_deallocate(&mut self) { Ealloc::flush_deallocate(self); }
 }
 
 /// A sharded entity ID allocator.
@@ -87,12 +81,6 @@ pub trait Shard: Send + 'static {
 
     /// Allocates an ID from the shard.
     fn allocate(&mut self, hint: Self::Hint) -> Self::Raw;
-
-    /// Deallocates an ID.
-    fn deallocate(&mut self, id: Self::Raw);
-
-    /// Moves the buffer of deallocated IDs into the given vec.
-    fn get_free_buffer(self: Box<Self>, buf: &mut Vec<Self::Raw>);
 }
 
 pub(crate) trait AnyShard: Send + 'static {
@@ -116,6 +104,8 @@ pub struct Recycling<R: Raw, T: Recycler<R>, S: ShardAssigner, const BLOCK_SIZE:
     shards:         Vec<Arc<Mutex<RecyclingShardState<R, T>>>>,
     /// The assigned shard.
     shard_assigner: S,
+    /// The queue of deallocated IDs to distribute.
+    dealloc_queue:  Vec<R>,
 }
 
 impl<R: Raw, T: Recycler<R>, S: ShardAssigner, const BLOCK_SIZE: usize>
@@ -137,7 +127,12 @@ impl<R: Raw, T: Recycler<R>, S: ShardAssigner, const BLOCK_SIZE: usize>
                 }))
             })
             .collect();
-        Self { global_gauge: Arc::new(global_gauge), shard_assigner, shards }
+        Self {
+            global_gauge: Arc::new(global_gauge),
+            shard_assigner,
+            shards,
+            dealloc_queue: Vec::new(),
+        }
     }
 
     /// Gets a shard state in offline mode.
@@ -168,7 +163,6 @@ impl<R: Raw, T: Recycler<R>, S: ShardAssigner, const BLOCK_SIZE: usize> Ealloc
                 .map(|state| RecyclingShard {
                     global_gauge: Arc::clone(&self.global_gauge),
                     state:        Arc::clone(state),
-                    freed_buf:    Vec::new(),
                 })
                 .map(f),
         );
@@ -184,17 +178,20 @@ impl<R: Raw, T: Recycler<R>, S: ShardAssigner, const BLOCK_SIZE: usize> Ealloc
         let mut shard = RecyclingShard::<R, T, BLOCK_SIZE> {
             global_gauge: Arc::clone(&self.global_gauge),
             state:        Arc::clone(shard),
-            freed_buf:    Vec::new(),
         };
         shard.allocate(hint)
     }
 
-    fn deallocate(&mut self, ids: Vec<R>) {
+    fn queue_deallocate(&mut self, id: R) { self.dealloc_queue.push(id); }
+
+    fn flush_deallocate(&mut self) {
         let mut shards: Vec<&mut RecyclingShardState<R, T>> = self
             .shards
             .iter_mut()
             .map(|shard| Arc::get_mut(shard).expect("Leaked Arc").get_mut())
             .collect();
+
+        let mut ids = &self.dealloc_queue[..];
 
         // try to distribute `ids` to all shards evenly.
 
@@ -205,7 +202,6 @@ impl<R: Raw, T: Recycler<R>, S: ShardAssigner, const BLOCK_SIZE: usize> Ealloc
         let mut target_sizes: Vec<_> = shards.iter().map(|shard| shard.recycler.len()).collect();
         distribute_sorted(&mut target_sizes, ids.len());
 
-        let mut ids = &ids[..];
         for (i, shard) in shards.iter_mut().enumerate() {
             let take: usize =
                 *target_sizes.get(i).expect("target_sizes collected from shards.iter()")
@@ -216,6 +212,8 @@ impl<R: Raw, T: Recycler<R>, S: ShardAssigner, const BLOCK_SIZE: usize> Ealloc
             shard.recycler.extend(left.iter().copied());
             ids = right;
         }
+
+        self.dealloc_queue.clear();
     }
 }
 
@@ -314,7 +312,6 @@ struct RecyclingShardState<R: Raw, T: Recycler<R>> {
 pub struct RecyclingShard<R: Raw, T: Recycler<R>, const BLOCK_SIZE: usize> {
     global_gauge: Arc<R::Atomic>,
     state:        Arc<Mutex<RecyclingShardState<R, T>>>,
-    freed_buf:    Vec<R>,
 }
 
 impl<R: Raw, T: Recycler<R>, const BLOCK_SIZE: usize> Shard for RecyclingShard<R, T, BLOCK_SIZE> {
@@ -337,10 +334,6 @@ impl<R: Raw, T: Recycler<R>, const BLOCK_SIZE: usize> Shard for RecyclingShard<R
             ret
         }
     }
-
-    fn deallocate(&mut self, id: Self::Raw) { self.freed_buf.push(id); }
-
-    fn get_free_buffer(self: Box<Self>, buf: &mut Vec<Self::Raw>) { buf.extend(self.freed_buf); }
 }
 
 /// A data structure that provides the ability to recycle entity IDs.
@@ -475,15 +468,6 @@ impl Map {
 
         shard_maps
     }
-
-    pub(crate) fn reconcile_shards(&mut self, mut shard_maps: Vec<ShardMap>) {
-        // TODO optimization: parallelize this loop, since each type is processed independently
-        for (ty, ealloc) in &mut self.map {
-            let shards =
-                shard_maps.iter_mut().map(|map| map.map.remove(ty).expect("type missing in shard"));
-            ealloc.reconcile(Box::new(shards));
-        }
-    }
 }
 
 /// A map of shards assigned to a single worker thread.
@@ -543,7 +527,10 @@ mod tests {
             "Shard 0 should reallocate block 9..11 because shards 1,2 are still using blocks 3..7",
         );
 
-        ealloc.deallocate(alloc1.clone());
+        for &id in &alloc1 {
+            ealloc.queue_deallocate(id);
+        }
+        ealloc.flush_deallocate();
         log::trace!("deallocated all");
 
         // expected similar result as test_distribute_sorted

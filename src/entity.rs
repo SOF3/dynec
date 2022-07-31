@@ -19,6 +19,8 @@ use crate::Archetype;
 mod raw;
 pub use raw::Raw;
 
+pub mod deletion;
+
 pub mod ealloc;
 pub use ealloc::Ealloc;
 

@@ -1,19 +1,25 @@
 //! Tracks the number of times an entity ID is allocated,
 //! used for distinguishment of dangling weak references.
 
+use std::any::TypeId;
+use std::collections::HashMap;
+
+use crate::util::DbgTypeId;
+use crate::Archetype;
+
 /// The number of times the same entry has been used for allocating an entity.
 /// This type is fully ordered, where a greater generation implies newer version.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Generation(u32);
 
-/// Stores generations of entities.
+/// Stores generations of entities for a specific archetype.
 #[derive(Default)]
-#[dynec_codegen::global(dynec_as(crate))]
 pub struct Store {
     vec: Vec<Generation>,
 }
 
 impl Store {
+    /// Bumps the generation of the entity.
     pub fn next(&mut self, id: usize) -> Generation {
         if self.vec.len() <= id {
             self.vec.resize(id + 1, Generation::default());
@@ -24,5 +30,28 @@ impl Store {
         *generation
     }
 
+    /// Gets the generation of the last created entity with the given `id`.
     pub fn get(&self, id: usize) -> Generation { self.vec.get(id).copied().unwrap_or_default() }
+}
+
+/// A map of generation stores for each archetype.
+#[crate::global(dynec_as(crate))]
+#[derive(Default)]
+pub struct StoreMap {
+    map: HashMap<DbgTypeId, Store>,
+}
+
+impl StoreMap {
+    /// Bumps the generation of the entity with the given archetype.
+    pub fn next<A: Archetype>(&mut self, id: usize) -> Generation {
+        self.map.entry(DbgTypeId::of::<A>()).or_default().next(id)
+    }
+
+    /// Gets the generation of the last created entity with the given archetype and `id`.
+    pub fn get<A: Archetype>(&self, id: usize) -> Generation {
+        match self.map.get(&TypeId::of::<A>()) {
+            Some(store) => store.get(id),
+            None => Generation::default(),
+        }
+    }
 }

@@ -7,7 +7,7 @@ pub(crate) trait Operation: Send {
         self: Box<Self>,
         components: &mut world::Components,
         sync_globals: &mut world::SyncGlobals,
-        unsync_globals: &mut world::UnsyncGlobals,
+        ealloc_map: &mut ealloc::Map,
     );
 }
 
@@ -24,7 +24,7 @@ impl<A: Archetype> Operation for CreateEntity<A> {
         self: Box<Self>,
         components: &mut world::Components,
         sync_globals: &mut world::SyncGlobals,
-        unsync_globals: &mut world::UnsyncGlobals,
+        ealloc_map: &mut ealloc::Map,
     ) {
         world::init_entity(sync_globals, self.entity, components, self.components);
     }

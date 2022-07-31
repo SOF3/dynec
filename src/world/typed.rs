@@ -205,7 +205,7 @@ impl<A: Archetype> Typed<A> {
 
         for storage in self.simple_storages.values_mut() {
             let any_storage = Arc::get_mut(&mut storage.storage).expect("storage arc was leaked");
-            (storage.fill_init_simple)(any_storage.get_mut(), id, &mut components);
+            any_storage.get_mut().fill_init_simple(id, &mut components);
         }
 
         for (ty, value) in components.into_isotopes() {

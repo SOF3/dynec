@@ -70,9 +70,7 @@ impl Components {
                 any::type_name::<C>()
             ),
         };
-        let guard = RwLockReadGuard::map(guard, |storage| {
-            storage.downcast_ref::<C::Storage>().expect("TypeId mismatch")
-        });
+        let guard = RwLockReadGuard::map(guard, |storage| storage.downcast_ref::<C>());
 
         struct Ret<R: ops::Deref> {
             storage: R,
@@ -113,9 +111,7 @@ impl Components {
                 any::type_name::<C>()
             ),
         };
-        let guard = RwLockWriteGuard::map(guard, |storage| {
-            storage.downcast_mut::<C::Storage>().expect("TypeId mismatch")
-        });
+        let guard = RwLockWriteGuard::map(guard, |storage| storage.downcast_mut::<C>());
 
         struct Ret<R: ops::Deref + ops::DerefMut> {
             storage: R,

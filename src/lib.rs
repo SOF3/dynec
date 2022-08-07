@@ -37,14 +37,14 @@
 //!   - Dangling entity references are detected as soon as possible.
 //!   - This is implemented by conditionally storing an `Arc<()>` in debug mode.
 //!
-//! ## Multi-components
+//! ## Isotope components
 //! - Motivation: sometimes we want a finite, small but dynamic number of components of the same
 //! type for the same entity.
 //! - This is typically implemented with `Vec<T>`/`SmallVec<[T; N]>`,
 //!   - But it is difficult to determine `N` at compile time.
 //!   - All `T` are closely packed together, but perhaps we want to pack `T`s of the same index
 //!     together instead for better cache locality.
-//! - Multi-components are treated as components with the type `(TypeId::of::<T>(), discriminant)`
+//! - Isotope components are treated as components with the type `(TypeId::of::<T>(), discriminant)`
 //! - The discriminant is a small number similar to what you would use in a `SmallVec<[T; N]>`.
 //! - Expected use case: Each discriminant is a relatively independent system where components with
 //!   that discriminant interact closely.

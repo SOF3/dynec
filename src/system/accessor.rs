@@ -15,8 +15,9 @@ pub trait ReadSimple<A: Archetype, C: comp::Simple<A>> {
 
     /// Returns an immutable reference to the component for the specified entity.
     ///
-    /// This method is infallible, assuming [`comp::Must`] is only implemented
-    /// for components with [`comp::SimplePresence::Required`] presence.
+    /// # Panics
+    /// This method panics if the entity is not fully initialized yet.
+    /// This happens when an entity is newly created and the cycle hasn't joined yet.
     fn get<E: entity::Ref<Archetype = A>>(&self, entity: E) -> &C
     where
         C: comp::Must<A>,
@@ -69,6 +70,10 @@ pub trait WriteSimple<A: Archetype, C: comp::Simple<A>>: ReadSimple<A, C> {
 
 /// Provides access to an isotope component in a specific archetype.
 pub trait ReadIsotope<A: Archetype, C: comp::Isotope<A>> {
+    /// Retrieves the component for the given entity and discriminant.
+    ///
+    /// This method is infallible for correctly implemented `comp::Must`,
+    /// which returns the auto-initialized value for missing components.
     fn get<E: entity::Ref<Archetype = A>>(
         &self,
         entity: E,
@@ -77,9 +82,17 @@ pub trait ReadIsotope<A: Archetype, C: comp::Isotope<A>> {
     where
         C: comp::Must<A>;
 
+    /// Returns an immutable reference to the component for the specified entity and ,
+    /// or `None` if the component is not present in the entity.
     fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E, discrim: C::Discrim) -> Option<&C>;
 
+    /// Iterates over all isotopes of the component type for the given entity.
     fn get_all<E: entity::Ref<Archetype = A>>(&self, entity: E) -> IsotopeRefMap<'_, A, C>; // TODO abstract to a trait when GATs are stable
+
+    /// Creates an accessor with fixed discriminant.
+    fn with(&self, discrim: C::Discrim) -> FixedIsotope<&'_ Self, A, C> {
+        FixedIsotope { discrim, accessor: self }
+    }
 }
 
 pub struct RefOrDefault<'t, C>(pub(crate) BorrowedOwned<'t, C>);
@@ -126,7 +139,12 @@ impl<'t, A: Archetype, C: comp::Isotope<A>> Iterator for IsotopeRefMap<'t, A, C>
 }
 
 /// Provides access to an isotope component in a specific archetype.
-pub trait WriteIsotope<A: Archetype, C: comp::Isotope<A>> {}
+pub trait WriteIsotope<A: Archetype, C: comp::Isotope<A>> {
+    /// Creates an accessor with fixed discriminant.
+    fn with(&self, discrim: C::Discrim) -> FixedIsotope<&'_ Self, A, C> {
+        FixedIsotope { discrim, accessor: self }
+    }
+}
 
 /// Provides mutable access to all isotopes of the same type for an entity.
 pub struct IsotopeMutMap<'t, A: Archetype, C: comp::Isotope<A>> {
@@ -154,6 +172,12 @@ impl<'t, A: Archetype, C: comp::Isotope<A>> Iterator for IsotopeMutMap<'t, A, C>
 
         None
     }
+}
+
+/// An isotope component accessor that only uses a specific isotope known at runtime.
+pub struct FixedIsotope<X, A: Archetype, C: comp::Isotope<A>> {
+    discrim:  C::Discrim,
+    accessor: X,
 }
 
 // we won't need this anymore if IsotopeRefMap turns into a trait.

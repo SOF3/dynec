@@ -68,6 +68,13 @@ where
         }
     }
 
+    fn cardinality(&self) -> usize {
+        match self {
+            Self::P(p, PhantomData) => p.cardinality(),
+            Self::Q(q) => q.cardinality(),
+        }
+    }
+
     fn iter(&self) -> Box<dyn Iterator<Item = (E, &Self::Comp)> + '_> {
         match self {
             Self::P(p, PhantomData) => p.iter(),

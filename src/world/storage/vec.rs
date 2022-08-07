@@ -8,9 +8,10 @@ use crate::entity;
 
 /// The basic storage indexed by entity IDs directly.
 pub struct VecStorage<E: entity::Raw, T> {
-    bits: BitVec,
-    data: Vec<MaybeUninit<T>>,
-    _ph:  PhantomData<E>,
+    cardinality: usize,
+    bits:        BitVec,
+    data:        Vec<MaybeUninit<T>>,
+    _ph:         PhantomData<E>,
 }
 
 impl<E: entity::Raw, T> VecStorage<E, T> {
@@ -26,12 +27,31 @@ impl<E: entity::Raw, T> VecStorage<E, T> {
             self.bits.resize(index + 1, false);
         }
 
+        let delta_old = match *self.bits.get(index).expect("resized len >= index+1") {
+            false => 0,
+            true => 1,
+        };
+        let delta_new = match bit {
+            false => 0,
+            true => 1,
+        };
         self.bits.set(index, bit);
+
+        // split into two separate statements to avoid integer underflow
+        self.cardinality -= delta_old;
+        self.cardinality += delta_new;
     }
 }
 
 impl<E: entity::Raw, T> Default for VecStorage<E, T> {
-    fn default() -> Self { Self { bits: BitVec::new(), data: Vec::new(), _ph: PhantomData } }
+    fn default() -> Self {
+        Self {
+            cardinality: 0,
+            bits:        BitVec::new(),
+            data:        Vec::new(),
+            _ph:         PhantomData,
+        }
+    }
 }
 
 impl<E: entity::Raw, C: Send + Sync + 'static> Storage for VecStorage<E, C> {
@@ -89,6 +109,8 @@ impl<E: entity::Raw, C: Send + Sync + 'static> Storage for VecStorage<E, C> {
 
         old
     }
+
+    fn cardinality(&self) -> usize { self.cardinality }
 
     fn iter(&self) -> Box<dyn Iterator<Item = (E, &C)> + '_> {
         let indices = self.bits.iter_ones();

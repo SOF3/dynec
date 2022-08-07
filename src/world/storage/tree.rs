@@ -27,6 +27,8 @@ impl<E: entity::Raw, C: Send + Sync + 'static> Storage for Tree<E, C> {
         }
     }
 
+    fn cardinality(&self) -> usize { self.data.len() }
+
     fn iter(&self) -> Box<dyn Iterator<Item = (Self::RawEntity, &C)> + '_> {
         Box::new(self.data.iter().map(|(&k, v)| (k, v)))
     }

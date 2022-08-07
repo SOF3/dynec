@@ -36,6 +36,9 @@ pub trait Storage: Default + Send + Sync + 'static {
     /// returning the original value if it was present.
     fn set(&mut self, id: Self::RawEntity, value: Option<Self::Comp>) -> Option<Self::Comp>;
 
+    /// Returns the number of components that exist in this storage.
+    fn cardinality(&self) -> usize;
+
     /// Returns an immutable iterator over the storage, ordered by entity index order.
     fn iter(&self) -> Box<dyn Iterator<Item = (Self::RawEntity, &Self::Comp)> + '_>;
 

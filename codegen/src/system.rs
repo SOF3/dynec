@@ -105,6 +105,12 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 comp:    Box<syn::Type>,
                 discrim: Option<Box<syn::Expr>>,
             },
+            EntityCreator {
+                arch: Box<syn::Type>,
+            },
+            EntityDeleter {
+                arch: Box<syn::Type>,
+            },
         }
 
         enum MaybeArgType {
@@ -222,6 +228,12 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                             }
                         }
                     }
+                    ArgOpt::EntityCreator(_, arch) => {
+                        set_arg_type(&mut arg_type, arg.name, ArgType::EntityCreator { arch })?;
+                    }
+                    ArgOpt::EntityDeleter(_, arch) => {
+                        set_arg_type(&mut arg_type, arg.name, ArgType::EntityCreator { arch })?;
+                    }
                 }
             }
         }
@@ -231,15 +243,9 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             _ => {
                 const USAGE_INFERENCE_ERROR: &str =
                     "Cannot infer parameter usage. Specify explicitly with `#[dynec(...)]`, or \
-                     use the form `impl dynec::Trait<Arch, Comp>` where `Trait` is one of \
-                     `ReadSimple`, `WriteSimple`, `ReadIsotope` or `WriteIsotope`.";
+                     use the form `impl system::(Read|Write)(Simple|Isotope)<Arch, Comp>` or \
+                     `impl system::Entity(Creator|Deleter)`.";
                 let bail_inference = || Err(Error::new_spanned(&param, USAGE_INFERENCE_ERROR));
-
-                let isotope_discrim_hint = match arg_type {
-                    MaybeArgType::Some(_) => unreachable!("inside match arm"),
-                    MaybeArgType::IsotopeDiscrimHint(hint) => Some(hint.value),
-                    MaybeArgType::None => None,
-                };
 
                 let impl_ty = match &*param.ty {
                     syn::Type::ImplTrait(ty) => ty,
@@ -258,39 +264,63 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 let trait_name = bound.path.segments.last().expect("path should not be empty");
                 let trait_name_string = trait_name.ident.to_string();
 
-                let (mutable, isotope) = match trait_name_string.as_str() {
-                    "ReadSimple" => (false, false),
-                    "WriteSimple" => (true, false),
-                    "ReadIsotope" => (false, true),
-                    "WriteIsotope" => (true, true),
-                    _ => return bail_inference(),
-                };
+                if let Some(builder) = match trait_name_string.as_str() {
+                    "EntityCreator" => Some((|arch| ArgType::EntityCreator { arch }) as fn(_) -> _),
+                    "EntityDeleter" => Some((|arch| ArgType::EntityDeleter { arch }) as fn(_) -> _),
+                    _ => None,
+                } {
+                    let type_args = match &trait_name.arguments {
+                        syn::PathArguments::AngleBracketed(args) if args.args.len() == 1 => args,
+                        _ => return bail_inference(),
+                    };
 
-                if !isotope && isotope_discrim_hint.is_some() {
-                    return Err(Error::new_spanned(
-                        param,
-                        "`#[dynec(isotope)]` cannot be used with `impl Simple`.",
-                    ));
-                }
+                    let arch = match type_args.args.first().expect("type_args.args.len() == 2") {
+                        syn::GenericArgument::Type(ty) => Box::new(ty.clone()),
+                        _ => return bail_inference(),
+                    };
 
-                let type_args = match &trait_name.arguments {
-                    syn::PathArguments::AngleBracketed(args) if args.args.len() == 2 => args,
-                    _ => return bail_inference(),
-                };
-
-                let arch = match type_args.args.first().expect("type_args.args.len() == 2") {
-                    syn::GenericArgument::Type(ty) => Box::new(ty.clone()),
-                    _ => return bail_inference(),
-                };
-                let comp = match type_args.args.last().expect("type_args.args.len() == 2") {
-                    syn::GenericArgument::Type(ty) => Box::new(ty.clone()),
-                    _ => return bail_inference(),
-                };
-
-                if isotope {
-                    ArgType::Isotope { mutable, arch, comp, discrim: isotope_discrim_hint }
+                    builder(arch)
                 } else {
-                    ArgType::Simple { mutable, arch, comp }
+                    let isotope_discrim_hint = match arg_type {
+                        MaybeArgType::Some(_) => unreachable!("inside match arm"),
+                        MaybeArgType::IsotopeDiscrimHint(hint) => Some(hint.value),
+                        MaybeArgType::None => None,
+                    };
+
+                    let (mutable, isotope) = match trait_name_string.as_str() {
+                        "ReadSimple" => (false, false),
+                        "WriteSimple" => (true, false),
+                        "ReadIsotope" => (false, true),
+                        "WriteIsotope" => (true, true),
+                        _ => return bail_inference(),
+                    };
+
+                    if !isotope && isotope_discrim_hint.is_some() {
+                        return Err(Error::new_spanned(
+                            param,
+                            "`#[dynec(isotope)]` cannot be used with `impl Simple`.",
+                        ));
+                    }
+
+                    let type_args = match &trait_name.arguments {
+                        syn::PathArguments::AngleBracketed(args) if args.args.len() == 2 => args,
+                        _ => return bail_inference(),
+                    };
+
+                    let arch = match type_args.args.first().expect("type_args.args.len() == 2") {
+                        syn::GenericArgument::Type(ty) => Box::new(ty.clone()),
+                        _ => return bail_inference(),
+                    };
+                    let comp = match type_args.args.last().expect("type_args.args.len() == 2") {
+                        syn::GenericArgument::Type(ty) => Box::new(ty.clone()),
+                        _ => return bail_inference(),
+                    };
+
+                    if isotope {
+                        ArgType::Isotope { mutable, arch, comp, discrim: isotope_discrim_hint }
+                    } else {
+                        ArgType::Simple { mutable, arch, comp }
+                    }
                 }
             }
         };
@@ -414,6 +444,18 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                     }
                 }
             }
+            ArgType::EntityCreator { arch } => {
+                quote!(#crate_name::system::EntityCreatorImpl {
+                    buffer: &offline_buffer,
+                    ealloc: ealloc_shard_map.borrow::<#arch>(),
+                })
+            }
+            ArgType::EntityDeleter { arch } => {
+                quote!(#crate_name::system::EntityDeleterImpl::<#arch> {
+                    buffer: &offline_buffer,
+                    _ph: ::std::marker::PhantomData,
+                })
+            }
         };
         system_run_args.push(run_arg);
     }
@@ -519,6 +561,8 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 }
 
                 fn run(&mut self, #system_run_params) {
+                    let offline_buffer = ::std::cell::RefCell::new(offline_buffer);
+
                     __dynec_original(#(#system_run_args),*)
                 }
             }
@@ -577,6 +621,8 @@ enum ArgOpt {
     Global(Option<syn::token::Paren>, Attr<GlobalArgOpt>),
     Simple(Option<syn::token::Paren>, Attr<SimpleArgOpt>),
     Isotope(Option<syn::token::Paren>, Attr<IsotopeArgOpt>),
+    EntityCreator(syn::Token![=], Box<syn::Type>),
+    EntityDeleter(syn::Token![=], Box<syn::Type>),
 }
 
 impl Parse for Named<ArgOpt> {
@@ -626,6 +672,16 @@ impl Parse for Named<ArgOpt> {
                 }
 
                 ArgOpt::Isotope(paren, opts)
+            }
+            "entity_creator" => {
+                let eq = input.parse::<syn::Token![=]>()?;
+                let ty = input.parse::<syn::Type>()?;
+                ArgOpt::EntityCreator(eq, Box::new(ty))
+            }
+            "entity_deleter" => {
+                let eq = input.parse::<syn::Token![=]>()?;
+                let ty = input.parse::<syn::Type>()?;
+                ArgOpt::EntityDeleter(eq, Box::new(ty))
             }
             _ => return Err(Error::new_spanned(&name, "Unknown attribute")),
         };

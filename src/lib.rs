@@ -66,6 +66,7 @@
 #![cfg_attr(debug_assertions, allow(dead_code, unused_variables))]
 #![cfg_attr(doc, warn(missing_docs))]
 #![cfg_attr(feature = "map-first-last", feature(map_first_last))]
+#![cfg_attr(feature = "vec-drain-filter", feature(vec_drain_filter))]
 
 mod macros;
 #[doc(inline)]

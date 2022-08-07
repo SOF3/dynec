@@ -192,16 +192,23 @@ fn init_entity<A: Archetype>(
     typed.init_entity(id, comp_map);
 }
 
+enum DeleteResult {
+    /// Deleted
+    Deleted,
+    /// Finalizers pending
+    Terminating,
+}
+
 /// Flags an entity for deletion, and deletes it immediately if there are no finalizers.
 fn flag_delete_entity<A: Archetype>(
     id: A::RawEntity,
     components: &mut Components,
     sync_globals: &mut SyncGlobals,
     ealloc_map: &mut ealloc::Map,
-) {
+) -> DeleteResult {
     sync_globals.get_mut::<deletion::Flags>().set::<A>(id, true);
 
-    try_real_delete_entity::<A>(components, id, ealloc_map);
+    try_real_delete_entity::<A>(components, id, ealloc_map)
 }
 
 /// Deletes an entity immediately if there are no finalizers.
@@ -209,7 +216,7 @@ fn try_real_delete_entity<A: Archetype>(
     components: &mut Components,
     entity: <A as Archetype>::RawEntity,
     ealloc_map: &mut ealloc::Map,
-) {
+) -> DeleteResult {
     let storages = &mut components.archetype_mut::<A>().simple_storages;
     let has_finalizer = storages.values_mut().any(|storage| {
         Arc::get_mut(&mut storage.storage)
@@ -218,7 +225,7 @@ fn try_real_delete_entity<A: Archetype>(
             .has_finalizer(entity)
     });
     if has_finalizer {
-        return;
+        return DeleteResult::Terminating;
     }
 
     for storage in storages.values_mut() {
@@ -235,6 +242,8 @@ fn try_real_delete_entity<A: Archetype>(
     let ealloc: &mut A::Ealloc = ealloc.as_any_mut().downcast_mut().expect("TypeId mismatch");
 
     ealloc.queue_deallocate(entity);
+
+    DeleteResult::Deleted
 }
 
 #[cfg(test)]

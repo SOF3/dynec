@@ -14,7 +14,7 @@ pub(crate) struct Builder {
     pub(in crate::world) concurrency: usize,
     send_systems:                     Vec<(String, Box<dyn system::Sendable>)>,
     unsend_systems:                   Vec<(String, Box<dyn system::Unsendable>)>,
-    partitions:                       IndexSet<system::PartitionWrapper>,
+    partitions:                       IndexSet<system::partition::Wrapper>,
     resources:                        HashMap<ResourceType, HashMap<Node, Vec<ResourceAccess>>>,
     orders:                           Vec<Order>,
 }
@@ -53,8 +53,8 @@ impl Builder {
 
     pub(crate) fn push_partition(
         &mut self,
-        par: system::PartitionWrapper,
-    ) -> (Node, &system::PartitionWrapper) {
+        par: system::partition::Wrapper,
+    ) -> (Node, &system::partition::Wrapper) {
         let (index, _is_new) = self.partitions.insert_full(par);
         (
             Node::Partition(PartitionIndex(index)),
@@ -88,12 +88,12 @@ impl Builder {
             match dep {
                 spec::Dependency::Before(partition) => {
                     let (partition_node, _) =
-                        self.push_partition(system::PartitionWrapper(partition));
+                        self.push_partition(system::partition::Wrapper(partition));
                     self.add_dependency(system_node, partition_node);
                 }
                 spec::Dependency::After(partition) => {
                     let (partition_node, _) =
-                        self.push_partition(system::PartitionWrapper(partition));
+                        self.push_partition(system::partition::Wrapper(partition));
                     self.add_dependency(partition_node, system_node);
                 }
             }

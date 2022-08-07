@@ -1,14 +1,24 @@
-use crate::entity::ealloc::{self, Shard};
-use crate::{comp, entity, world, Archetype};
+use crate::entity::{self, ealloc};
+use crate::{comp, world, Archetype};
 
 /// An operation to be executed after join.
 pub(crate) trait Operation: Send {
+    /// Performs the opreation during offline.
     fn run(
         self: Box<Self>,
         components: &mut world::Components,
         sync_globals: &mut world::SyncGlobals,
         ealloc_map: &mut ealloc::Map,
-    );
+    ) -> OperationResult;
+}
+
+/// Result of an opreation.
+pub(crate) enum OperationResult {
+    /// The operation completed.
+    Ok,
+    /// The operation should be rerun after the next cycle.
+    /// This should return self.
+    QueueForRerun(Box<dyn Operation>),
 }
 
 /// Create an entity.
@@ -25,24 +35,57 @@ impl<A: Archetype> Operation for CreateEntity<A> {
         components: &mut world::Components,
         sync_globals: &mut world::SyncGlobals,
         ealloc_map: &mut ealloc::Map,
-    ) {
+    ) -> OperationResult {
         world::init_entity(sync_globals, self.entity, components, self.components);
+        OperationResult::Ok
+    }
+}
+
+pub(crate) struct DeleteEntity<A: Archetype> {
+    entity: A::RawEntity,
+}
+
+impl<A: Archetype> Operation for DeleteEntity<A> {
+    fn run(
+        self: Box<Self>,
+        components: &mut world::Components,
+        sync_globals: &mut world::SyncGlobals,
+        ealloc_map: &mut ealloc::Map,
+    ) -> OperationResult {
+        match world::flag_delete_entity::<A>(self.entity, components, sync_globals, ealloc_map) {
+            world::DeleteResult::Deleted => OperationResult::Ok,
+            world::DeleteResult::Terminating => OperationResult::QueueForRerun(self),
+        }
     }
 }
 
 /// A sharded store for offline operations.
 pub(crate) struct Buffer {
+    /// Queue of operations to rerun in the next drain cycle.
+    rerun_queue:       Vec<Box<dyn Operation>>,
+    /// Shards of queues for each worker thread.
     pub(crate) shards: Vec<BufferShard>,
 }
 
 impl Buffer {
     pub(crate) fn new(num_shards: usize) -> Self {
         let shards = (0..num_shards).map(|_| BufferShard::default()).collect();
-        Self { shards }
+        Self { rerun_queue: Vec::new(), shards }
     }
 
-    pub(crate) fn drain(&mut self) -> impl Iterator<Item = Box<dyn Operation>> + '_ {
-        self.shards.iter_mut().flat_map(|shard| shard.items.drain(..))
+    pub(crate) fn drain_cycle(
+        &mut self,
+        mut run: impl FnMut(Box<dyn Operation>) -> OperationResult,
+    ) {
+        self.rerun_queue = self
+            .rerun_queue
+            .drain(..)
+            .chain(self.shards.iter_mut().flat_map(|shard| shard.items.drain(..)))
+            .filter_map(|op| match run(op) {
+                OperationResult::Ok => None,
+                OperationResult::QueueForRerun(op) => Some(op),
+            })
+            .collect();
     }
 }
 
@@ -53,17 +96,58 @@ pub struct BufferShard {
 }
 
 impl BufferShard {
+    /// Creates an entity and queues for initialization.
+    pub fn create_entity<A: Archetype>(
+        &mut self,
+        components: comp::Map<A>,
+        ealloc_map: &mut ealloc::ShardMap,
+    ) -> entity::Entity<A> {
+        self.create_entity_with_hint::<A>(components, ealloc_map, Default::default())
+    }
+
+    /// Creates an entity and queues for initialization.
     pub fn create_entity_with_hint<A: Archetype>(
         &mut self,
         components: comp::Map<A>,
         ealloc_map: &mut ealloc::ShardMap,
-        hint: <A::Ealloc as ealloc::Ealloc>::AllocHint,
+        hint: <A::Ealloc as entity::Ealloc>::AllocHint,
     ) -> entity::Entity<A> {
-        let ealloc_shard = ealloc_map.get::<A>();
+        self.create_entity_with_hint_and_shard(components, ealloc_map.get::<A>(), hint)
+    }
+
+    /// Creates an entity and queues for initialization.
+    pub fn create_entity_with_shard<
+        A: Archetype,
+        S: ealloc::Shard<Raw = A::RawEntity, Hint = <A::Ealloc as entity::Ealloc>::AllocHint> + ?Sized,
+    >(
+        &mut self,
+        components: comp::Map<A>,
+        ealloc_shard: &mut S,
+    ) -> entity::Entity<A> {
+        self.create_entity_with_hint_and_shard(components, ealloc_shard, Default::default())
+    }
+
+    /// Creates an entity and queues for initialization.
+    pub fn create_entity_with_hint_and_shard<
+        A: Archetype,
+        S: ealloc::Shard<Raw = A::RawEntity, Hint = <A::Ealloc as entity::Ealloc>::AllocHint> + ?Sized,
+    >(
+        &mut self,
+        components: comp::Map<A>,
+        ealloc_shard: &mut S,
+        hint: <A::Ealloc as entity::Ealloc>::AllocHint,
+    ) -> entity::Entity<A> {
         let entity = ealloc_shard.allocate(hint);
 
         self.items.push(Box::new(CreateEntity { entity, components }));
 
         entity::Entity::new_allocated(entity)
+    }
+
+    /// Queues an entity deletion.
+    pub fn delete_entity<A: Archetype, E: entity::Ref<Archetype = A>>(&mut self, entity: E) {
+        let entity = entity.id();
+
+        self.items.push(Box::new(DeleteEntity::<A> { entity }));
     }
 }

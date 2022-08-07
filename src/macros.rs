@@ -43,6 +43,7 @@ mod archetype_tests {}
 ///
 /// ## `of = $ty`
 /// Implements the applied type as a component of the archetype `$ty`.
+/// Can be applied multiple times in the same attribute.
 ///
 /// ## `isotope = $ty`
 /// Indicates that the applied type is an [isotope component](crate::comp::Isotope)

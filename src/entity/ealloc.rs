@@ -1,7 +1,9 @@
 //! Manages entity ID allocation and deallocation.
 
 use std::any::{Any, TypeId};
+use std::cell::{self, RefCell};
 use std::collections::{BTreeSet, HashMap};
+use std::ops;
 use std::sync::Arc;
 
 use parking_lot::Mutex;
@@ -462,7 +464,7 @@ impl Map {
 
             for (shard_id, shard) in shard_buf.drain(..).enumerate() {
                 let map = shard_maps.get_mut(shard_id).expect("inconsistent num_shards");
-                map.map.insert(ty, shard);
+                map.map.insert(ty, RefCell::new(shard));
             }
         }
 
@@ -473,17 +475,33 @@ impl Map {
 /// A map of shards assigned to a single worker thread.
 #[derive(Default)]
 pub struct ShardMap {
-    map: HashMap<DbgTypeId, Box<dyn AnyShard>>,
+    map: HashMap<DbgTypeId, RefCell<Box<dyn AnyShard>>>,
 }
 
 impl ShardMap {
+    /// Gets the mutable shard reference.
     pub fn get<A: Archetype>(
         &mut self,
     ) -> &mut impl Shard<Raw = A::RawEntity, Hint = <A::Ealloc as Ealloc>::AllocHint> {
         let shard = self.map.get_mut(&TypeId::of::<A>()).expect("Use of unregistered archetype");
         let shard: &mut <A::Ealloc as Ealloc>::Shard =
-            shard.as_any_mut().downcast_mut().expect("TypeId mismatch");
+            shard.get_mut().as_any_mut().downcast_mut().expect("TypeId mismatch");
         shard
+    }
+
+    /// Borrows the shard for an archetype through a [`RefCell`].
+    pub fn borrow<A: Archetype>(
+        &self,
+    ) -> impl ops::DerefMut<
+        Target = impl Shard<Raw = A::RawEntity, Hint = <A::Ealloc as Ealloc>::AllocHint>,
+    > + '_ {
+        let shard = self.map.get(&TypeId::of::<A>()).expect("Use of unregistered archetype");
+        let shard = shard.borrow_mut();
+        cell::RefMut::map(shard, |shard| {
+            let shard: &mut <A::Ealloc as Ealloc>::Shard =
+                shard.as_any_mut().downcast_mut().expect("TypeId mismatch");
+            shard
+        })
     }
 }
 

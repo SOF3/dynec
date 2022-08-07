@@ -137,9 +137,7 @@ impl Executor {
         // which causes panic when flush_deallocate() is called
         drop(ealloc_shards);
 
-        for operation in self.offline_buffer.drain() {
-            operation.run(components, globals, ealloc_map);
-        }
+        self.offline_buffer.drain_cycle(|operation| operation.run(components, globals, ealloc_map));
 
         for ealloc in ealloc_map.map.values_mut() {
             ealloc.flush_deallocate();

@@ -56,18 +56,18 @@ impl<T: fmt::Debug + Eq + hash::Hash + Send + Sync + 'static> Partition for T {
 
 /// A wrapper type for trait objects of [`Partition`]
 /// that implements [`Eq`] and [`hash::Hash`] in a type-dependent manner.
-pub(crate) struct PartitionWrapper(pub(crate) Box<dyn Partition>);
+pub(crate) struct Wrapper(pub(crate) Box<dyn Partition>);
 
-impl fmt::Debug for PartitionWrapper {
+impl fmt::Debug for Wrapper {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { self.0.describe(f) }
 }
 
-impl PartialEq for PartitionWrapper {
+impl PartialEq for Wrapper {
     fn eq(&self, other: &Self) -> bool { (&*self.0).equals(&*other.0) }
 }
 
-impl Eq for PartitionWrapper {}
+impl Eq for Wrapper {}
 
-impl hash::Hash for PartitionWrapper {
+impl hash::Hash for Wrapper {
     fn hash<H: hash::Hasher>(&self, state: &mut H) { self.0.compute_hash().hash(state); }
 }

@@ -1,8 +1,9 @@
 use super::tracer;
+use crate::entity::{deletion, Ref};
 use crate::{comp, global, system, system_test, Entity, TestArch, TestDiscrim1, TestDiscrim2};
 
 #[comp(dynec_as(crate), of = TestArch)]
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 struct Comp1(i32);
 
 #[comp(dynec_as(crate), of = TestArch, init = init_comp2/1)]
@@ -32,6 +33,9 @@ struct Comp5(i32);
 #[comp(dynec_as(crate), of = TestArch, required, init = || Comp6(9))]
 #[derive(Debug)]
 struct Comp6(i32);
+
+#[comp(dynec_as(crate), of = TestArch, finalizer)]
+struct CompFinal;
 
 #[comp(dynec_as(crate), of = TestArch, isotope = TestDiscrim1)]
 #[derive(Debug, PartialEq)]
@@ -193,4 +197,84 @@ fn test_isotope_discrim_fetch() {
     world.get_global::<InitialEntities>().ent1 = Some(ent1.clone());
 
     world.execute(&tracer::Log(log::Level::Trace));
+}
+
+#[test]
+fn test_offline_create() {
+    #[system(dynec_as(crate))]
+    fn test_system(
+        mut entity_creator: impl system::EntityCreator<TestArch>,
+        #[dynec(global)] initials: &mut InitialEntities,
+        _comp1: impl system::ReadSimple<TestArch, Comp1>,
+    ) {
+        initials.ent1 = Some(entity_creator.create(crate::comps![@(crate) TestArch => Comp1(5)]));
+    }
+
+    let mut world = system_test!(test_system.build(););
+
+    world.execute(&tracer::Log(log::Level::Trace));
+
+    let ent1 = {
+        let initials = world.get_global::<InitialEntities>();
+        let ent1 = initials.ent1.as_ref().expect("ent1 missing");
+        ent1.clone()
+    };
+    let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent1);
+    assert_eq!(comp1, Some(&mut Comp1(5)));
+}
+
+#[test]
+fn test_offline_delete() {
+    #[system(dynec_as(crate))]
+    fn test_system(
+        mut entity_deleter: impl system::EntityDeleter<TestArch>,
+        #[dynec(global)] initials: &InitialEntities,
+        _comp1: impl system::ReadSimple<TestArch, Comp1>,
+    ) {
+        entity_deleter.queue(initials.ent1.as_ref().expect("ent1 missing"));
+    }
+
+    let mut world = system_test!(test_system.build(););
+    let ent1 = world.create(crate::comps![@(crate) TestArch => Comp1(7)]);
+    world.get_global::<InitialEntities>().ent1 = Some(ent1.clone());
+
+    world.execute(&tracer::Log(log::Level::Trace));
+
+    let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent1);
+    assert_eq!(comp1, None);
+}
+
+#[test]
+fn test_offline_finalizer_delete() {
+    #[system(dynec_as(crate))]
+    fn test_system(
+        mut entity_deleter: impl system::EntityDeleter<TestArch>,
+        #[dynec(global)] initials: &InitialEntities,
+        #[dynec(global)] deletion_flags: &deletion::Flags,
+        mut comp_final: impl system::WriteSimple<TestArch, CompFinal>,
+        _comp1: impl system::ReadSimple<TestArch, Comp1>,
+    ) {
+        let ent1 = initials.ent1.as_ref().expect("ent1 missing");
+        if deletion_flags.get::<TestArch>(ent1.id()) {
+            comp_final.set(ent1, None);
+        } else {
+            entity_deleter.queue(ent1);
+        }
+    }
+
+    let mut world = system_test!(test_system.build(););
+    let ent1 = world.create(crate::comps![@(crate) TestArch => Comp1(13), CompFinal]);
+    world.get_global::<InitialEntities>().ent1 = Some(ent1.clone());
+
+    // first iteration
+    world.execute(&tracer::Log(log::Level::Trace));
+
+    let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent1);
+    assert_eq!(comp1, Some(&mut Comp1(13)));
+
+    // second iteration
+    world.execute(&tracer::Log(log::Level::Trace));
+
+    let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent1);
+    assert_eq!(comp1, None);
 }

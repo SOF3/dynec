@@ -18,9 +18,13 @@ pub use accessor::{
     IsotopeMutMap, IsotopeRefMap, ReadIsotope, ReadSimple, RefOrDefault, WriteIsotope, WriteSimple,
 };
 
-mod partition;
+pub(crate) mod partition;
 pub use partition::Partition;
-pub(crate) use partition::PartitionWrapper;
+
+mod entity;
+pub use entity::{EntityCreator, EntityDeleter};
+#[doc(hidden)]
+pub use entity::{EntityCreatorImpl, EntityDeleterImpl};
 
 pub mod spec;
 #[doc(inline)]

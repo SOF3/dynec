@@ -26,7 +26,7 @@ pub(in crate::world::scheduler) struct Topology {
     /// The indexable list of partitions.
     ///
     /// This field is persisted for tracing.
-    pub(in crate::world::scheduler) partitions: Vec<system::PartitionWrapper>,
+    pub(in crate::world::scheduler) partitions: Vec<system::partition::Wrapper>,
 
     /// If `exclusions[a].contains(b)`, `a` and `b` must not execute concurrently.
     /// `exclusions[a].contains(b)` if and only if `exclusions[b].contains(a)`.
@@ -37,7 +37,7 @@ impl Topology {
     pub(in crate::world::scheduler) fn init(
         send_systems_count: usize,
         unsend_systems_count: usize,
-        partitions: Vec<system::PartitionWrapper>,
+        partitions: Vec<system::partition::Wrapper>,
         orders: &[Order],
         resources: &HashMap<ResourceType, HashMap<Node, Vec<ResourceAccess>>>,
     ) -> Self {

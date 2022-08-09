@@ -49,12 +49,10 @@ pub(crate) fn entity_ref(
             let impl_referrer = generics.impl_trait(
                 quote!(#crate_name::entity::referrer::Referrer),
                 quote! {
-                    fn visit_type(arg: &mut #crate_name::entity::referrer::VisitTypeArg) -> ::std::ops::ControlFlow<(), ()> {
-                        arg.mark::<Self>()?;
-
-                        #(<#field_types as #crate_name::entity::referrer::Referrer>::visit_type(arg)?;)*
-
-                        ::std::ops::ControlFlow::Continue(())
+                    fn visit_type(arg: &mut #crate_name::entity::referrer::VisitTypeArg) {
+                        if arg.mark::<Self>().is_continue() {
+                            #(<#field_types as #crate_name::entity::referrer::Referrer>::visit_type(arg);)*
+                        }
                     }
                 },
             );
@@ -63,6 +61,8 @@ pub(crate) fn entity_ref(
         }
         syn::Data::Enum(e) => {
             let mut arms = Vec::new();
+
+            let mut all_types = Vec::new();
 
             for variant in &mut e.variants {
                 let variant_ident = &variant.ident;
@@ -79,6 +79,7 @@ pub(crate) fn entity_ref(
 
                             if drain_entity_attr(&mut field.attrs) {
                                 entity_fields.push(field_name);
+                                all_types.push(&field.ty);
                             }
                         }
 
@@ -91,6 +92,7 @@ pub(crate) fn entity_ref(
                             let field_name = field.ident.as_ref().expect("named fields");
                             if drain_entity_attr(&mut field.attrs) {
                                 entity_fields.push(field_name.clone());
+                                all_types.push(&field.ty);
                             }
                         }
 
@@ -102,7 +104,7 @@ pub(crate) fn entity_ref(
                     Self::#variant_ident #pattern => {
                         #(
                             #crate_name::entity::referrer::Dyn::visit(
-                                &mut #fields,
+                                #fields,
                                 &mut *arg,
                             );
                         )*
@@ -110,7 +112,7 @@ pub(crate) fn entity_ref(
                 })
             }
 
-            generics.impl_trait(
+            let impl_dyn = generics.impl_trait(
                 quote!(#crate_name::entity::referrer::Dyn),
                 quote! {
                     fn visit(
@@ -122,7 +124,20 @@ pub(crate) fn entity_ref(
                         }
                     }
                 },
-            )
+            );
+
+            let impl_referrer = generics.impl_trait(
+                quote!(#crate_name::entity::Referrer),
+                quote! {
+                    fn visit_type(arg: &mut #crate_name::entity::referrer::VisitTypeArg) {
+                        if arg.mark::<Self>().is_continue() {
+                            #(<#all_types as #crate_name::entity::referrer::Referrer>::visit_type(arg);)*
+                        }
+                    }
+                },
+            );
+
+            quote! ( #impl_dyn #impl_referrer )
         }
         syn::Data::Union(u) => {
             return Err(Error::new_spanned(&u.union_token, "only structs and enums are supported"))

@@ -46,12 +46,12 @@ impl dynec::world::Bundle for Bundle {
 
         // Then, we populate the world with entities with archetype `Edge`.
         world.create::<Edge>(dynec::comps![ Edge =>
-            Endpoints{from: farm, to: factory.clone()},
+            Endpoints{from: farm, to: OptionalNode::Some(factory.clone())},
             Power(1.),
             @(CROPS, Flow(10)),
         ]);
         world.create::<Edge>(dynec::comps![ Edge =>
-            Endpoints{from: factory, to: market},
+            Endpoints{from: factory, to: OptionalNode::Some(market)},
             Power(2.),
             @(CROPS, Flow(10)),
         ]);
@@ -97,8 +97,17 @@ dynec::archetype! {
 pub struct Endpoints {
     #[entity]
     from: dynec::Entity<Node>,
+    /// `#[entity]` should also be used on fields that transitively own an entity reference.
+    /// Use `derive(dynec::EntityRef)` on them.
     #[entity]
-    to:   dynec::Entity<Node>,
+    to:   OptionalNode,
+}
+
+// `#[entity]` also works for enums.
+#[derive(dynec::EntityRef)]
+pub enum OptionalNode {
+    None,
+    Some(#[entity] dynec::Entity<Node>),
 }
 
 #[dynec::comp(of = Edge, required)]

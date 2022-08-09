@@ -27,8 +27,8 @@ pub use ealloc::Ealloc;
 pub mod generation;
 pub use generation::Generation;
 
-mod referrer;
-pub use referrer::{Referrer, ReferrerArg};
+pub mod referrer;
+pub use referrer::Referrer;
 
 /// Re-export of [`dynec::EntityRef`](crate::EntityRef).
 pub use crate::macros::EntityRef as Ref;
@@ -148,7 +148,7 @@ impl<'t, T: Ref> Ref for &'t T {
 /// A weak counted reference to an entity.
 ///
 /// This reference can outlive the entity.
-/// However, it must still be visited in [`Referrer::visit`].
+/// However, it must still be visited in [`referrer::Dyn::visit`].
 ///
 /// This type additionally stores the generation of an entity
 /// in order to disambiguate new entities that uses the recycled memory.

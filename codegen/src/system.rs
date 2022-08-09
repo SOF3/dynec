@@ -76,6 +76,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
     let mut global_requests = Vec::new();
     let mut simple_requests = Vec::new();
     let mut isotope_requests = Vec::new();
+    let mut entity_creator_requests = Vec::new();
 
     for (param_index, param) in input.sig.inputs.iter_mut().enumerate() {
         let param = match param {
@@ -445,6 +446,10 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 }
             }
             ArgType::EntityCreator { arch } => {
+                entity_creator_requests.push(quote! {
+                    #crate_name::system::spec::EntityCreatorRequest::new::<#arch>()
+                });
+
                 quote!(#crate_name::system::EntityCreatorImpl {
                     buffer: &offline_buffer,
                     ealloc: ealloc_shard_map.borrow::<#arch>(),
@@ -557,6 +562,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                         global_requests: vec![#(#global_requests),*],
                         simple_requests: vec![#(#simple_requests),*],
                         isotope_requests: vec![#(#isotope_requests),*],
+                        entity_creator_requests: vec![#(#entity_creator_requests),*],
                     }
                 }
 

@@ -28,11 +28,12 @@ lazy_static::lazy_static! {
 /// so other fields can be left empty.
 fn dummy_spec(name: &str) -> system::Spec {
     system::Spec {
-        debug_name:       name.to_string(),
-        dependencies:     vec![],
-        global_requests:  vec![],
-        simple_requests:  vec![],
-        isotope_requests: vec![],
+        debug_name:              name.to_string(),
+        dependencies:            vec![],
+        global_requests:         vec![],
+        simple_requests:         vec![],
+        isotope_requests:        vec![],
+        entity_creator_requests: vec![],
     }
 }
 

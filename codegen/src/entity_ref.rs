@@ -17,33 +17,49 @@ pub(crate) fn entity_ref(
 
     let output = match &mut input.data {
         syn::Data::Struct(s) => {
-            let mut fields = Vec::new();
+            let mut field_values = Vec::new();
+            let mut field_types = Vec::new();
 
             for (i, field) in s.fields.iter_mut().enumerate() {
                 if drain_entity_attr(&mut field.attrs) {
-                    fields.push(match &field.ident {
+                    field_values.push(match &field.ident {
                         Some(ident) => quote!(self.#ident),
                         None => quote!(self.#i),
                     });
+                    field_types.push(&field.ty);
                 }
             }
 
-            generics.impl_trait(
-                quote!(#crate_name::entity::Referrer),
+            let impl_dyn = generics.impl_trait(
+                quote!(#crate_name::entity::referrer::Dyn),
                 quote! {
                     fn visit(
                         &mut self,
-                        arg: &mut #crate_name::entity::ReferrerArg,
+                        arg: &mut #crate_name::entity::referrer::VisitArg,
                     ) {
                         #(
-                            #crate_name::entity::Referrer::visit(
-                                &mut #fields,
+                            #crate_name::entity::referrer::Dyn::visit(
+                                &mut #field_values,
                                 &mut *arg,
                             );
                         )*
                     }
                 },
-            )
+            );
+            let impl_referrer = generics.impl_trait(
+                quote!(#crate_name::entity::referrer::Referrer),
+                quote! {
+                    fn visit_type(arg: &mut #crate_name::entity::referrer::VisitTypeArg) -> ::std::ops::ControlFlow<(), ()> {
+                        arg.mark::<Self>()?;
+
+                        #(<#field_types as #crate_name::entity::referrer::Referrer>::visit_type(arg)?;)*
+
+                        ::std::ops::ControlFlow::Continue(())
+                    }
+                },
+            );
+
+            quote! ( #impl_dyn #impl_referrer )
         }
         syn::Data::Enum(e) => {
             let mut arms = Vec::new();
@@ -85,7 +101,7 @@ pub(crate) fn entity_ref(
                 arms.push(quote! {
                     Self::#variant_ident #pattern => {
                         #(
-                            #crate_name::entity::Referrer::visit(
+                            #crate_name::entity::referrer::Dyn::visit(
                                 &mut #fields,
                                 &mut *arg,
                             );
@@ -95,11 +111,11 @@ pub(crate) fn entity_ref(
             }
 
             generics.impl_trait(
-                quote!(#crate_name::entity::Referrer),
+                quote!(#crate_name::entity::referrer::Dyn),
                 quote! {
                     fn visit(
                         &mut self,
-                        arg: &mut #crate_name::entity::ReferrerArg,
+                        arg: &mut #crate_name::entity::referrer::VisitArg,
                     ) {
                         match self {
                             #(#arms)*

@@ -10,15 +10,17 @@ use crate::{comp, system, Archetype, Global};
 /// Describes an instance of system.
 pub struct Spec {
     /// The debug name of the system.
-    pub debug_name:       String,
+    pub debug_name:              String,
     /// The partition dependencies related to the system.
-    pub dependencies:     Vec<Dependency>,
+    pub dependencies:            Vec<Dependency>,
     /// The global states requested by the system.
-    pub global_requests:  Vec<GlobalRequest>,
+    pub global_requests:         Vec<GlobalRequest>,
     /// The simple components requested by the system.
-    pub simple_requests:  Vec<SimpleRequest>,
+    pub simple_requests:         Vec<SimpleRequest>,
     /// The isotope components requested by the system.
-    pub isotope_requests: Vec<IsotopeRequest>,
+    pub isotope_requests:        Vec<IsotopeRequest>,
+    /// The archetypes of which entities may be created.
+    pub entity_creator_requests: Vec<EntityCreatorRequest>,
 }
 
 /// Indicates the dependency of a system.
@@ -148,4 +150,15 @@ impl IsotopeRequest {
             factory_builder: || Box::new(storage::IsotopeFactory::<A>::new::<C>()),
         }
     }
+}
+
+/// Indicates that the system may create entities for a particular archetype.
+pub struct EntityCreatorRequest {
+    /// The archetype requested.
+    pub(crate) arch: DbgTypeId,
+}
+
+impl EntityCreatorRequest {
+    /// Creates a new entity creator request with type known at compile time.
+    pub fn new<A: Archetype>() -> Self { Self { arch: DbgTypeId::of::<A>() } }
 }

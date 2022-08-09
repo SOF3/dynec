@@ -95,6 +95,7 @@ pub trait ReadIsotope<A: Archetype, C: comp::Isotope<A>> {
     }
 }
 
+/// A lazy accessor that may return an owned default value.
 pub struct RefOrDefault<'t, C>(pub(crate) BorrowedOwned<'t, C>);
 
 pub(crate) enum BorrowedOwned<'t, C> {

@@ -101,6 +101,7 @@ impl<A: Archetype> Entity<A> {
         }
     }
 
+    /// Converts the strong reference into a weak reference.
     pub fn weak(&self, store: &generation::Store) -> Weak<A> {
         // since this strong reference is still valid,
         // the current state of the generation store is the actual generation.

@@ -1,3 +1,5 @@
+//! Operations queued to be executed after the cycle joins.
+
 use crate::entity::{self, ealloc};
 use crate::{comp, world, Archetype};
 

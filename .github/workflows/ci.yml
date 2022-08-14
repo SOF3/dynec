@@ -31,7 +31,6 @@ jobs:
       matrix:
         toolchain:
           - stable
-          - beta
           - nightly
         profile:
           - ""
@@ -64,7 +63,6 @@ jobs:
       matrix:
         toolchain:
           - stable
-          - beta
           - nightly
         profile:
           - ""

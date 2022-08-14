@@ -9,8 +9,10 @@ use std::ops;
 use crate::util::DbgTypeId;
 use crate::Archetype;
 
+mod std_impl;
+
 /// The object-safe part of [`Referrer`].
-pub trait Dyn {
+pub trait Dyn: 'static {
     /// Performs the mapping and increments the counter for each entity.
     ///
     /// Each entity reference must be visited only exactly once for each visitor.

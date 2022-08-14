@@ -57,6 +57,7 @@ struct Aggregator {
 #[global(dynec_as(crate), initial)]
 #[derive(Default)]
 struct InitialEntities {
+    #[entity]
     ent1: Option<Entity<TestArch>>,
 }
 
@@ -204,7 +205,7 @@ fn test_offline_create() {
     #[system(dynec_as(crate))]
     fn test_system(
         mut entity_creator: impl system::EntityCreator<TestArch>,
-        #[dynec(global)] initials: &mut InitialEntities,
+        #[dynec(global(maybe_uninit(TestArch)))] initials: &mut InitialEntities,
         _comp1: impl system::ReadSimple<TestArch, Comp1>,
     ) {
         initials.ent1 = Some(entity_creator.create(crate::comps![@(crate) TestArch => Comp1(5)]));

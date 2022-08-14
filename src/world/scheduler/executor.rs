@@ -69,6 +69,8 @@ impl Executor {
 
         let send = SendArgs { state, components, globals };
 
+        let deadlock_counter = DeadlockCounter::new(self.concurrency + 1);
+
         if let Some(pool) = &self.thread_pool {
             pool.in_place_scope(|scope| {
                 let (main_ealloc_shard, worker_ealloc_shards) = ealloc_shards
@@ -87,6 +89,7 @@ impl Executor {
                     .zip(worker_offline_shards.iter_mut())
                     .enumerate()
                 {
+                    let deadlock_counter = &deadlock_counter;
                     scope.spawn(move |_| {
                         threaded_worker(
                             worker_id,
@@ -95,6 +98,7 @@ impl Executor {
                             send,
                             ealloc_shard,
                             offline_shard,
+                            deadlock_counter,
                         )
                     });
                 }
@@ -107,6 +111,7 @@ impl Executor {
                     false,
                     main_ealloc_shard,
                     main_offline_shard,
+                    &deadlock_counter,
                 )
             });
         } else {
@@ -118,6 +123,7 @@ impl Executor {
                 true,
                 ealloc_shards.get_mut(0).expect("concurrency = 0 in single-thread executor"),
                 self.offline_buffer.shards.get_mut(0).expect("incorrect shard count"),
+                &deadlock_counter,
             );
         }
 
@@ -155,6 +161,7 @@ fn main_worker(
     poll_send: bool,
     ealloc_shard_map: &mut ealloc::ShardMap,
     offline_buffer: &mut offline::BufferShard,
+    deadlock_counter: &DeadlockCounter,
 ) {
     let mut planner_guard = context.planner.lock();
 
@@ -169,7 +176,11 @@ fn main_worker(
                 context.topology,
             ) {
                 StealResult::CycleComplete => return,
-                StealResult::Pending => context.condvar.wait(&mut planner_guard),
+                StealResult::Pending => {
+                    deadlock_counter.start_wait();
+                    context.condvar.wait(&mut planner_guard);
+                    deadlock_counter.end_wait();
+                }
                 StealResult::Ready(index) => {
                     MutexGuard::unlocked(&mut planner_guard, || {
                         let (debug_name, system) = send.state.get_send_system(index);
@@ -207,7 +218,11 @@ fn main_worker(
                     );
                 }
             },
-            StealResult::Pending => context.condvar.wait(&mut planner_guard),
+            StealResult::Pending => {
+                deadlock_counter.start_wait();
+                context.condvar.wait(&mut planner_guard);
+                deadlock_counter.end_wait();
+            }
             StealResult::Ready(index) => {
                 MutexGuard::unlocked(&mut planner_guard, || {
                     let (debug_name, system) = unsend.state.get_unsend_system_mut(index);
@@ -251,6 +266,7 @@ fn threaded_worker(
     send: SendArgs<'_>,
     ealloc_shard_map: &mut ealloc::ShardMap,
     offline_buffer: &mut offline::BufferShard,
+    deadlock_counter: &DeadlockCounter,
 ) {
     let thread = world::tracer::Thread::Worker(id);
 
@@ -294,6 +310,38 @@ fn threaded_worker(
         }
     }
 }
+
+#[cfg(debug_assertions)]
+mod deadlock_counter {
+    use std::sync::atomic::{self, AtomicUsize};
+
+    pub(super) struct DeadlockCounter(AtomicUsize);
+
+    impl DeadlockCounter {
+        pub(super) fn new(concurrency: usize) -> Self { Self(AtomicUsize::new(concurrency)) }
+
+        pub(super) fn start_wait(&self) {
+            let cnt = self.0.fetch_sub(1, atomic::Ordering::SeqCst);
+            if cnt == 1 {
+                panic!("Deadlock detected, all workers and main are waiting for tasks");
+            }
+        }
+        pub(super) fn end_wait(&self) { self.0.fetch_add(1, atomic::Ordering::SeqCst); }
+    }
+}
+
+#[cfg(not(debug_assertions))]
+mod deadlock_counter {
+    pub(super) struct DeadlockCounter;
+
+    impl DeadlockCounter {
+        pub(super) fn new(concurrency: usize) -> Self { Self }
+        pub(super) fn start_wait(&self) {}
+        pub(super) fn end_wait(&self) {}
+    }
+}
+
+use deadlock_counter::DeadlockCounter;
 
 #[derive(Clone, Copy)]
 struct Context<'t> {

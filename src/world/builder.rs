@@ -92,6 +92,15 @@ impl Builder {
                     );
                 }
             }
+
+            for &strong_ref in &request.strong_refs {
+                self.scheduler.add_dependencies(
+                    vec![spec::Dependency::Before(Box::new(system::EntityCreationPartition {
+                        ty: strong_ref,
+                    }))],
+                    node,
+                );
+            }
         }
 
         for request in system.simple_requests {
@@ -103,6 +112,15 @@ impl Builder {
                 scheduler::ResourceType::Simple { arch: request.arch.id, comp: request.comp },
                 scheduler::ResourceAccess::new(request.mutable),
             );
+
+            for &strong_ref in &request.strong_refs {
+                self.scheduler.add_dependencies(
+                    vec![spec::Dependency::Before(Box::new(system::EntityCreationPartition {
+                        ty: strong_ref,
+                    }))],
+                    node,
+                );
+            }
         }
 
         for request in system.isotope_requests {
@@ -114,6 +132,26 @@ impl Builder {
                 scheduler::ResourceType::Isotope { arch: request.arch.id, comp: request.comp },
                 scheduler::ResourceAccess::with_discrim(request.mutable, request.discrim.clone()),
             );
+
+            for &strong_ref in &request.strong_refs {
+                self.scheduler.add_dependencies(
+                    vec![spec::Dependency::Before(Box::new(system::EntityCreationPartition {
+                        ty: strong_ref,
+                    }))],
+                    node,
+                );
+            }
+        }
+
+        for request in system.entity_creator_requests {
+            if !request.no_partition {
+                self.scheduler.add_dependencies(
+                    vec![spec::Dependency::After(Box::new(system::EntityCreationPartition {
+                        ty: request.arch,
+                    }))],
+                    node,
+                );
+            }
         }
 
         self.scheduler.add_dependencies(system.dependencies, node);

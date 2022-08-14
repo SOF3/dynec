@@ -451,8 +451,7 @@ mod system_tests {
 #[doc(inline)]
 pub use dynec_codegen::EntityRef;
 
-#[cfg(test)]
-mod entity_ref_tests {}
+// The rest are macros for testing.
 
 /// Convenience macro that constructs a new world for testing a small number of systems.
 ///
@@ -481,4 +480,20 @@ macro_rules! system_test {
 
         world
     }}
+}
+
+/// Asserts that a type is a safe partition.
+#[macro_export]
+macro_rules! assert_partition {
+    (@expr $value:expr) => {
+        const _: fn() = || {
+            let _ = $crate::system::partition::Wrapper(Box::new($value));
+        };
+    };
+
+    ($ty:ty) => {
+        const _: fn($ty) = |value| {
+            let _ = $crate::system::partition::Wrapper(Box::new(value));
+        };
+    };
 }

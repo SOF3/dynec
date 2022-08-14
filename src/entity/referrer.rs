@@ -53,13 +53,21 @@ pub trait Referrer: Dyn {
 /// This type is used to hide the implementation detail from users
 /// such that the actual arguments are only visible to the internals.
 pub struct VisitTypeArg<'t> {
-    recursion_guard: HashSet<DbgTypeId>,
-    found_archs:     HashSet<DbgTypeId>,
+    recursion_guard:        HashSet<DbgTypeId>,
+    pub(crate) found_archs: HashSet<DbgTypeId>,
     // for future compatibility
-    _ph:             PhantomData<&'t ()>,
+    _ph:                    PhantomData<&'t ()>,
 }
 
 impl<'t> VisitTypeArg<'t> {
+    pub(crate) fn new() -> Self {
+        Self {
+            recursion_guard: HashSet::new(),
+            found_archs:     HashSet::new(),
+            _ph:             PhantomData,
+        }
+    }
+
     /// All types visited by this arg must call `mark` at least once to avoid recursion.
     /// Implementors should return immediately if [`ops::ControlFlow::Break`] is returned.
     pub fn mark<T: 'static>(&mut self) -> ops::ControlFlow<(), ()> {

@@ -106,6 +106,19 @@ impl<T> Attr<T> {
 
         Ok(span)
     }
+
+    pub(crate) fn merge_all<'t, U, I: Iterator<Item = U> + 't>(
+        &'t self,
+        matcher: fn(&'t T) -> Option<I>,
+    ) -> Vec<U> {
+        let mut vec = Vec::new();
+
+        for item in &self.items {
+            vec.extend(matcher(&item.value).into_iter().flatten());
+        }
+
+        vec
+    }
 }
 
 impl<T> Parse for Attr<T>

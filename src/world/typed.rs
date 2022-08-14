@@ -79,14 +79,16 @@ impl<A: Archetype> AnyBuilder for Builder<A> {
     }
 }
 
+type Populator<A> = Box<dyn Fn(&mut comp::Map<A>) + Send + Sync>;
+
 fn toposort_populators<A: Archetype>(
     storages: &mut HashMap<DbgTypeId, storage::Simple<A>>,
-) -> Vec<Box<dyn Fn(&mut comp::Map<A>) + Send + Sync>> {
+) -> Vec<Populator<A>> {
     let mut populators = Vec::new();
 
     struct Request<A: Archetype> {
         dep_count: usize,
-        populator: Box<dyn Fn(&mut comp::Map<A>) + Send + Sync>,
+        populator: Populator<A>,
     }
 
     let mut unprocessed = Vec::new();
@@ -193,7 +195,7 @@ pub(crate) struct Typed<A: Archetype> {
     pub(crate) simple_storages:   HashMap<DbgTypeId, storage::Simple<A>>,
     pub(crate) isotope_storages:  RwLock<BTreeMap<PaddedIsotopeIdentifier, storage::Isotope<A>>>,
     pub(crate) isotope_factories: HashMap<DbgTypeId, storage::IsotopeFactory<A>>,
-    pub(crate) populators:        Vec<Box<dyn Fn(&mut comp::Map<A>) + Send + Sync>>,
+    pub(crate) populators:        Vec<Populator<A>>,
 }
 
 impl<A: Archetype> Typed<A> {

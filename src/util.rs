@@ -1,4 +1,4 @@
-//! Miscellaneous traits used for exposing type bounds in the API.
+//! Miscellaneous types used in the API.
 
 #[cfg(debug_assertions)]
 use std::any;

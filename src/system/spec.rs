@@ -1,8 +1,9 @@
 //! Specifies the requirements for a system.
 
-use std::any::Any;
+use std::any::{self, Any, TypeId};
+use std::collections::HashSet;
 
-use crate::entity::ealloc;
+use crate::entity::{ealloc, referrer};
 use crate::util::DbgTypeId;
 use crate::world::{self, storage};
 use crate::{comp, system, Archetype, Global};
@@ -42,11 +43,13 @@ impl Dependency {
 /// Indicates that the system requires a global state.
 pub struct GlobalRequest {
     /// The type of the global state.
-    pub ty:      DbgTypeId,
+    pub(crate) ty:          DbgTypeId,
     /// A closure that calls [`Global::initial`].
-    pub initial: GlobalInitial,
+    pub(crate) initial:     GlobalInitial,
     /// Whether mutable access is requested.
-    pub mutable: bool,
+    pub(crate) mutable:     bool,
+    /// The list of strongly referenced archetypes that must be initialized.
+    pub(crate) strong_refs: HashSet<DbgTypeId>,
 }
 
 /// Specifies the initializer for a global type.
@@ -61,20 +64,38 @@ pub enum GlobalInitial {
 impl GlobalRequest {
     /// Creates a new thread-safe global state request with types known at compile time.
     pub fn new_sync<G: Global + Send + Sync>(mutable: bool) -> Self {
+        let mut visitor = referrer::VisitTypeArg::new();
+        G::visit_type(&mut visitor);
+
         Self {
             ty: DbgTypeId::of::<G>(),
             initial: GlobalInitial::Sync(|| Box::new(G::initial())),
             mutable,
+            strong_refs: visitor.found_archs,
         }
     }
 
     /// Creates a new thread-unsafe global state request with types known at compile time.
     pub fn new_unsync<G: Global>(mutable: bool) -> Self {
+        let mut visitor = referrer::VisitTypeArg::new();
+        G::visit_type(&mut visitor);
+
         Self {
             ty: DbgTypeId::of::<G>(),
             initial: GlobalInitial::Unsync(|| Box::new(G::initial())),
             mutable,
+            strong_refs: visitor.found_archs,
         }
+    }
+
+    /// Asserts that strong references of `A` used in a system
+    /// are not strictly required to be initialized.
+    pub fn maybe_uninit<A: Archetype>(mut self) -> Self {
+        let present = self.strong_refs.remove(&TypeId::of::<A>());
+        if !present {
+            panic!("No strong references to `{}` detected in `{}`", any::type_name::<A>(), self.ty);
+        }
+        self
     }
 
     /// Returns whether the global is thread-safe.
@@ -106,17 +127,37 @@ pub struct SimpleRequest {
     pub(crate) storage_builder: fn() -> Box<dyn Any>,
     /// Whether mutable access is requested.
     pub(crate) mutable:         bool,
+    /// The list of strongly referenced archetypes that must be initialized.
+    pub(crate) strong_refs:     HashSet<DbgTypeId>,
 }
 
 impl SimpleRequest {
     /// Creates a new simple component request with types known at compile time.
     pub fn new<A: Archetype, C: comp::Simple<A>>(mutable: bool) -> Self {
+        let mut visitor = referrer::VisitTypeArg::new();
+        C::visit_type(&mut visitor);
+
         Self {
             arch: ArchetypeDescriptor::of::<A>(),
             comp: DbgTypeId::of::<C>(),
             mutable,
             storage_builder: || Box::new(storage::Simple::<A>::new::<C>()),
+            strong_refs: visitor.found_archs,
         }
+    }
+
+    /// Asserts that strong references of `A` used in a system
+    /// are not strictly required to be initialized.
+    pub fn maybe_uninit<A: Archetype>(mut self) -> Self {
+        let present = self.strong_refs.remove(&TypeId::of::<A>());
+        if !present {
+            panic!(
+                "No strong references to `{}` detected in `{}`",
+                any::type_name::<A>(),
+                self.comp
+            );
+        }
+        self
     }
 }
 
@@ -134,6 +175,8 @@ pub struct IsotopeRequest {
     pub(crate) discrim:         Option<Vec<usize>>,
     /// Whether mutable access is requested.
     pub(crate) mutable:         bool,
+    /// The list of strongly referenced archetypes that must be initialized.
+    pub(crate) strong_refs:     HashSet<DbgTypeId>,
 }
 
 impl IsotopeRequest {
@@ -142,23 +185,46 @@ impl IsotopeRequest {
         discrim: Option<Vec<usize>>,
         mutable: bool,
     ) -> Self {
+        let mut visitor = referrer::VisitTypeArg::new();
+        C::visit_type(&mut visitor);
+
         Self {
             arch: ArchetypeDescriptor::of::<A>(),
             comp: DbgTypeId::of::<C>(),
             discrim,
             mutable,
             factory_builder: || Box::new(storage::IsotopeFactory::<A>::new::<C>()),
+            strong_refs: visitor.found_archs,
         }
+    }
+
+    /// Asserts that strong references of `A` used in a system
+    /// are not strictly required to be initialized.
+    pub fn maybe_uninit<A: Archetype>(mut self) -> Self {
+        let present = self.strong_refs.remove(&TypeId::of::<A>());
+        if !present {
+            panic!(
+                "No strong references to `{}` detected in `{}`",
+                any::type_name::<A>(),
+                self.comp
+            );
+        }
+        self
     }
 }
 
 /// Indicates that the system may create entities for a particular archetype.
 pub struct EntityCreatorRequest {
     /// The archetype requested.
-    pub(crate) arch: DbgTypeId,
+    pub(crate) arch:         DbgTypeId,
+    /// Partition dependency is disabled.
+    pub(crate) no_partition: bool,
 }
 
 impl EntityCreatorRequest {
     /// Creates a new entity creator request with type known at compile time.
-    pub fn new<A: Archetype>() -> Self { Self { arch: DbgTypeId::of::<A>() } }
+    pub fn new<A: Archetype>() -> Self { Self { arch: DbgTypeId::of::<A>(), no_partition: false } }
+
+    /// Do not add [`EntityCreationPartition`](system::EntityCreationPartition) dependency for this system.
+    pub fn no_partition(self) -> Self { Self { no_partition: true, ..self } }
 }

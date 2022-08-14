@@ -1,8 +1,9 @@
 use matches2::option_match;
-use proc_macro2::TokenStream;
+use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
+use syn::spanned::Spanned;
 use syn::{Error, Result};
 
 use crate::util::{self, Attr, Named};
@@ -94,58 +95,143 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             },
             Global {
                 thread_local: bool,
+                maybe_uninit: Vec<syn::Type>,
             },
             Simple {
-                mutable: bool,
-                arch:    Box<syn::Type>,
-                comp:    Box<syn::Type>,
+                mutable:      bool,
+                arch:         Box<syn::Type>,
+                comp:         Box<syn::Type>,
+                maybe_uninit: Vec<syn::Type>,
             },
             Isotope {
-                mutable: bool,
-                arch:    Box<syn::Type>,
-                comp:    Box<syn::Type>,
-                discrim: Option<Box<syn::Expr>>,
+                mutable:      bool,
+                arch:         Box<syn::Type>,
+                comp:         Box<syn::Type>,
+                discrim:      Option<Box<syn::Expr>>,
+                maybe_uninit: Vec<syn::Type>,
             },
             EntityCreator {
-                arch: Box<syn::Type>,
+                arch:         Box<syn::Type>,
+                no_partition: bool,
             },
             EntityDeleter {
                 arch: Box<syn::Type>,
             },
         }
+        type PartialArgTypeBuilder = Box<dyn FnOnce(&str, &[&syn::Type], Span) -> Result<ArgType>>;
 
         enum MaybeArgType {
             None,
-            Some(Named<ArgType>),
-            IsotopeDiscrimHint(Named<Box<syn::Expr>>),
-        }
-        impl From<Named<ArgType>> for MaybeArgType {
-            fn from(arg: Named<ArgType>) -> Self { MaybeArgType::Some(arg) }
-        }
-        impl From<Named<Box<syn::Expr>>> for MaybeArgType {
-            fn from(arg: Named<Box<syn::Expr>>) -> Self { MaybeArgType::IsotopeDiscrimHint(arg) }
+            Some(ArgType),
+            Partial { builder: PartialArgTypeBuilder },
         }
 
         let mut arg_type: MaybeArgType = MaybeArgType::None;
 
-        fn set_arg_type<T>(arg_type: &mut MaybeArgType, ident: syn::Ident, ty: T) -> Result<()>
-        where
-            Named<T>: Into<MaybeArgType>,
-        {
-            if let Some(name) = match arg_type {
-                MaybeArgType::Some(named) => Some(&named.name),
-                MaybeArgType::IsotopeDiscrimHint(named) => Some(&named.name),
-                MaybeArgType::None => None,
-            } {
+        fn set_arg_type(
+            arg_type_ref: &mut MaybeArgType,
+            ident: syn::Ident,
+            arg_type: ArgType,
+        ) -> Result<()> {
+            set_maybe_arg_type(arg_type_ref, ident, MaybeArgType::Some(arg_type))
+        }
+        fn set_partial_arg_type(
+            arg_type_ref: &mut MaybeArgType,
+            ident: syn::Ident,
+            builder: PartialArgTypeBuilder,
+        ) -> Result<()> {
+            set_maybe_arg_type(arg_type_ref, ident, MaybeArgType::Partial { builder })
+        }
+        fn set_maybe_arg_type(
+            arg_type_ref: &mut MaybeArgType,
+            ident: syn::Ident,
+            arg_type: MaybeArgType,
+        ) -> Result<()> {
+            if !(matches!(arg_type_ref, MaybeArgType::None)) {
                 return Err(Error::new(
-                    name.span().join(ident.span()).unwrap_or_else(|| name.span()),
+                    ident.span(),
                     "Each argument can only have one argument type",
                 ));
             }
 
-            *arg_type = Named { name: ident, value: ty }.into();
-
+            *arg_type_ref = arg_type;
             Ok(())
+        }
+
+        fn simple_partial_builder(
+            mutable: bool,
+            maybe_uninit: Vec<syn::Type>,
+        ) -> PartialArgTypeBuilder {
+            Box::new(move |ident, args, args_span| {
+                let [arch, comp]: [&syn::Type; 2] = args.try_into().map_err(|_| {
+                    Error::new(
+                        args_span,
+                        "Cannot infer archetype and component for component access. Specify \
+                         explicitly with `#[dynec(simple(arch = X, comp = Y))]`, or use `impl \
+                         ReadSimple<X, Y>`/`impl WriteSimple<X, Y>`.",
+                    )
+                })?;
+
+                Ok(ArgType::Simple {
+                    mutable: mutable || ident == "WriteSimple",
+                    arch: Box::new(arch.clone()),
+                    comp: Box::new(comp.clone()),
+                    maybe_uninit,
+                })
+            })
+        }
+
+        fn isotope_partial_builder(
+            mutable: bool,
+            discrim: Option<Box<syn::Expr>>,
+            maybe_uninit: Vec<syn::Type>,
+        ) -> PartialArgTypeBuilder {
+            Box::new(move |ident, args, args_span| {
+                let [arch, comp]: [&syn::Type; 2] = args.try_into().map_err(|_| {
+                    Error::new(
+                        args_span,
+                        "Cannot infer archetype and component for component access. Specify \
+                         explicitly with `#[dynec(isotope(arch = X, comp = Y))]`, or use `impl \
+                         ReadIsotope<X, Y>`/`impl WriteIsotope<X, Y>`.",
+                    )
+                })?;
+
+                Ok(ArgType::Isotope {
+                    mutable: mutable || ident == "WriteIsotope",
+                    arch: Box::new(arch.clone()),
+                    comp: Box::new(comp.clone()),
+                    discrim,
+                    maybe_uninit,
+                })
+            })
+        }
+
+        fn entity_creator_partial_builder(no_partition: bool) -> PartialArgTypeBuilder {
+            Box::new(move |_, args, args_span| {
+                let [arch]: [&syn::Type; 1] = args.try_into().map_err(|_| {
+                    Error::new(
+                        args_span,
+                        "Cannot infer archetype for entity creation. Specify explicitly with \
+                         `#[dynec(entity_creator(arch = X))]`, or use `impl EntityCreator<X>`.",
+                    )
+                })?;
+
+                Ok(ArgType::EntityCreator { arch: Box::new(arch.clone()), no_partition })
+            })
+        }
+
+        fn entity_deleter_partial_builder() -> PartialArgTypeBuilder {
+            Box::new(move |_, args, args_span| {
+                let [arch]: [&syn::Type; 1] = args.try_into().map_err(|_| {
+                    Error::new(
+                        args_span,
+                        "Cannot infer archetype for entity deletion. Specify explicitly with \
+                         `#[dynec(entity_deleter(arch = X))]`, or use `impl EntityDeleter<X>`.",
+                    )
+                })?;
+
+                Ok(ArgType::EntityDeleter { arch: Box::new(arch.clone()) })
+            })
         }
 
         for attr in util::slow_drain_filter(&mut param.attrs, |attr| attr.path.is_ident("dynec")) {
@@ -163,49 +249,71 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                             ArgType::Local { default: Some(default) },
                         )?;
                     }
-                    ArgOpt::Global(_, global_opts) => {
-                        let thread_local = global_opts
+                    ArgOpt::Global(_, opts) => {
+                        let thread_local = opts
                             .find_one(|opt| option_match!(opt, GlobalArgOpt::ThreadLocal => &()))?
                             .is_some();
-                        set_arg_type(&mut arg_type, arg.name, ArgType::Global { thread_local })?;
-                    }
-                    ArgOpt::Simple(_, simple_opts) => {
-                        let mutable = simple_opts
-                            .find_one(|opt| option_match!(opt, SimpleArgOpt::Mutable => &()))?
-                            .is_some();
-                        let (_, arch) = simple_opts
-                            .find_one(|opt| option_match!(opt, SimpleArgOpt::Arch(_, ty) => ty))?
-                            .ok_or_else(|| {
-                                Error::new_spanned(&arg.name, "Simple arguments must have a type")
-                            })?;
-                        let (_, comp) = simple_opts
-                            .find_one(|opt| option_match!(opt, SimpleArgOpt::Comp(_, ty) => ty))?
-                            .ok_or_else(|| {
-                                Error::new_spanned(&arg.name, "Simple arguments must have a type")
-                            })?;
-
+                        let maybe_uninit = opts.merge_all(|opt| option_match!(opt, GlobalArgOpt::MaybeUninit(_, tys) => tys.iter().cloned()));
                         set_arg_type(
                             &mut arg_type,
                             arg.name,
-                            ArgType::Simple { mutable, arch: arch.clone(), comp: comp.clone() },
+                            ArgType::Global { thread_local, maybe_uninit },
                         )?;
                     }
-                    ArgOpt::Isotope(_, isotope_opts) => {
-                        let mutable = isotope_opts
+                    ArgOpt::Simple(_, opts) => {
+                        let mutable = opts
+                            .find_one(|opt| option_match!(opt, SimpleArgOpt::Mutable => &()))?
+                            .is_some();
+                        let arch = opts
+                            .find_one(|opt| option_match!(opt, SimpleArgOpt::Arch(_, ty) => ty))?;
+                        let comp = opts
+                            .find_one(|opt| option_match!(opt, SimpleArgOpt::Comp(_, ty) => ty))?;
+                        let maybe_uninit = opts.merge_all(|opt| option_match!(opt, SimpleArgOpt::MaybeUninit(_, tys) => tys.iter().cloned()));
+
+                        match (arch, comp, mutable) {
+                            (Some((_, arch)), Some((_, comp)), mutable) => {
+                                set_arg_type(
+                                    &mut arg_type,
+                                    arg.name,
+                                    ArgType::Simple {
+                                        mutable,
+                                        arch: arch.clone(),
+                                        comp: comp.clone(),
+                                        maybe_uninit,
+                                    },
+                                )?;
+                            }
+                            (None, None, false) => {
+                                set_partial_arg_type(
+                                    &mut arg_type,
+                                    arg.name,
+                                    simple_partial_builder(mutable, maybe_uninit),
+                                )?;
+                            }
+                            _ => {
+                                return Err(Error::new_spanned(
+                                    attr,
+                                    "Invalid argument. `arch`, `comp` and `mutable` have no \
+                                     effect unless both `arch` and `comp` are supplied.",
+                                ));
+                            }
+                        }
+                    }
+                    ArgOpt::Isotope(_, opts) => {
+                        let mutable = opts
                             .find_one(|opt| option_match!(opt, IsotopeArgOpt::Mutable => &()))?
                             .is_some();
-
-                        let discrim = isotope_opts.find_one(
+                        let arch = opts
+                            .find_one(|opt| option_match!(opt, IsotopeArgOpt::Arch(_, ty) => ty))?;
+                        let comp = opts
+                            .find_one(|opt| option_match!(opt, IsotopeArgOpt::Comp(_, ty) => ty))?;
+                        let discrim = opts.find_one(
                             |opt| option_match!(opt, IsotopeArgOpt::Discrim(_, discrim) => discrim),
                         )?;
+                        let maybe_uninit = opts.merge_all(|opt| option_match!(opt, IsotopeArgOpt::MaybeUninit(_, tys) => tys.iter().cloned()));
 
-                        let arch = isotope_opts
-                            .find_one(|opt| option_match!(opt, IsotopeArgOpt::Arch(_, ty) => ty))?;
-                        let comp = isotope_opts
-                            .find_one(|opt| option_match!(opt, IsotopeArgOpt::Comp(_, ty) => ty))?;
-
-                        match (arch, comp, discrim, mutable) {
-                            (Some((_, arch)), Some((_, comp)), discrim, mutable) => {
+                        match (arch, comp, mutable) {
+                            (Some((_, arch)), Some((_, comp)), mutable) => {
                                 set_arg_type(
                                     &mut arg_type,
                                     arg.name,
@@ -214,115 +322,140 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                                         arch: arch.clone(),
                                         comp: comp.clone(),
                                         discrim: discrim.map(|(_, discrim)| discrim.clone()),
+                                        maybe_uninit,
                                     },
                                 )?;
                             }
-                            (None, None, Some((_, discrim)), false) => {
-                                set_arg_type(&mut arg_type, arg.name, discrim.clone())?;
+                            (None, None, false) => {
+                                set_partial_arg_type(
+                                    &mut arg_type,
+                                    arg.name,
+                                    isotope_partial_builder(
+                                        mutable,
+                                        discrim.map(|(_, expr)| expr.clone()),
+                                        maybe_uninit,
+                                    ),
+                                )?;
                             }
                             _ => {
                                 return Err(Error::new_spanned(
-                                    &arg.name,
-                                    "Invalid isotope argument. Either provide only `discrim` or \
-                                     provide `arch` and `comp`.",
-                                ))
+                                    attr,
+                                    "Invalid argument. `arch`, `comp` and `mutable` have no \
+                                     effect unless both `arch` and `comp` are supplied.",
+                                ));
                             }
                         }
                     }
-                    ArgOpt::EntityCreator(_, arch) => {
-                        set_arg_type(&mut arg_type, arg.name, ArgType::EntityCreator { arch })?;
+                    ArgOpt::EntityCreator(_, opts) => {
+                        let arch = opts.find_one(
+                            |opt| option_match!(opt, EntityCreatorArgOpt::Arch(_, ty) => ty),
+                        )?;
+                        let no_partition = opts
+                            .find_one(
+                                |opt| option_match!(opt, EntityCreatorArgOpt::NoPartition => &()),
+                            )?
+                            .is_some();
+
+                        match arch {
+                            Some((_, arch)) => {
+                                set_arg_type(
+                                    &mut arg_type,
+                                    arg.name,
+                                    ArgType::EntityCreator { arch: arch.clone(), no_partition },
+                                )?;
+                            }
+                            None => {
+                                set_partial_arg_type(
+                                    &mut arg_type,
+                                    arg.name,
+                                    entity_creator_partial_builder(no_partition),
+                                )?;
+                            }
+                        }
                     }
-                    ArgOpt::EntityDeleter(_, arch) => {
-                        set_arg_type(&mut arg_type, arg.name, ArgType::EntityCreator { arch })?;
+                    ArgOpt::EntityDeleter(_, opts) => {
+                        let arch = opts.find_one(
+                            |opt| option_match!(opt, EntityDeleterArgOpt::Arch(_, ty) => ty),
+                        )?;
+
+                        match arch {
+                            Some((_, arch)) => {
+                                set_arg_type(
+                                    &mut arg_type,
+                                    arg.name,
+                                    ArgType::EntityDeleter { arch: arch.clone() },
+                                )?;
+                            }
+                            None => {
+                                set_partial_arg_type(
+                                    &mut arg_type,
+                                    arg.name,
+                                    entity_deleter_partial_builder(),
+                                )?;
+                            }
+                        }
                     }
                 }
             }
         }
 
         let arg_type = match arg_type {
-            MaybeArgType::Some(arg_type) => arg_type.value,
-            _ => {
+            MaybeArgType::Some(arg_type) => arg_type,
+            arg_type => {
                 const USAGE_INFERENCE_ERROR: &str =
                     "Cannot infer parameter usage. Specify explicitly with `#[dynec(...)]`, or \
                      use the form `impl system::(Read|Write)(Simple|Isotope)<Arch, Comp>` or \
                      `impl system::Entity(Creator|Deleter)`.";
-                let bail_inference = || Err(Error::new_spanned(&param, USAGE_INFERENCE_ERROR));
 
                 let impl_ty = match &*param.ty {
                     syn::Type::ImplTrait(ty) => ty,
-                    _ => return bail_inference(),
+                    _ => return Err(Error::new_spanned(&param, USAGE_INFERENCE_ERROR)),
                 };
 
                 if impl_ty.bounds.len() != 1 {
-                    return Err(Error::new_spanned(param, USAGE_INFERENCE_ERROR));
+                    return Err(Error::new_spanned(&impl_ty.bounds, USAGE_INFERENCE_ERROR));
                 }
 
-                let bound = match &*impl_ty.bounds.first().expect("bounds.len() == 1") {
+                let bound = match impl_ty.bounds.first().expect("bounds.len() == 1") {
                     syn::TypeParamBound::Trait(bound) => bound,
-                    _ => return bail_inference(),
+                    bound => return Err(Error::new_spanned(bound, USAGE_INFERENCE_ERROR)),
                 };
 
                 let trait_name = bound.path.segments.last().expect("path should not be empty");
                 let trait_name_string = trait_name.ident.to_string();
 
-                if let Some(builder) = match trait_name_string.as_str() {
-                    "EntityCreator" => Some((|arch| ArgType::EntityCreator { arch }) as fn(_) -> _),
-                    "EntityDeleter" => Some((|arch| ArgType::EntityDeleter { arch }) as fn(_) -> _),
-                    _ => None,
-                } {
-                    let type_args = match &trait_name.arguments {
-                        syn::PathArguments::AngleBracketed(args) if args.args.len() == 1 => args,
-                        _ => return bail_inference(),
-                    };
+                let builder = match arg_type {
+                    MaybeArgType::Partial { builder, .. } => builder,
+                    MaybeArgType::None => match trait_name_string.as_str() {
+                        "ReadSimple" | "WriteSimple" => simple_partial_builder(false, Vec::new()),
+                        "ReadIsotope" | "WriteIsotope" => {
+                            isotope_partial_builder(false, None, Vec::new())
+                        }
+                        "EntityCreator" => entity_creator_partial_builder(false),
+                        "EntityDeleter" => entity_deleter_partial_builder(),
+                        _ => return Err(Error::new_spanned(trait_name, USAGE_INFERENCE_ERROR)),
+                    },
+                    _ => unreachable!(),
+                };
 
-                    let arch = match type_args.args.first().expect("type_args.args.len() == 2") {
-                        syn::GenericArgument::Type(ty) => Box::new(ty.clone()),
-                        _ => return bail_inference(),
-                    };
-
-                    builder(arch)
-                } else {
-                    let isotope_discrim_hint = match arg_type {
-                        MaybeArgType::Some(_) => unreachable!("inside match arm"),
-                        MaybeArgType::IsotopeDiscrimHint(hint) => Some(hint.value),
-                        MaybeArgType::None => None,
-                    };
-
-                    let (mutable, isotope) = match trait_name_string.as_str() {
-                        "ReadSimple" => (false, false),
-                        "WriteSimple" => (true, false),
-                        "ReadIsotope" => (false, true),
-                        "WriteIsotope" => (true, true),
-                        _ => return bail_inference(),
-                    };
-
-                    if !isotope && isotope_discrim_hint.is_some() {
+                let type_args = match &trait_name.arguments {
+                    syn::PathArguments::AngleBracketed(args) => args,
+                    _ => {
                         return Err(Error::new_spanned(
-                            param,
-                            "`#[dynec(isotope)]` cannot be used with `impl Simple`.",
-                        ));
+                            &trait_name.arguments,
+                            USAGE_INFERENCE_ERROR,
+                        ))
                     }
-
-                    let type_args = match &trait_name.arguments {
-                        syn::PathArguments::AngleBracketed(args) if args.args.len() == 2 => args,
-                        _ => return bail_inference(),
-                    };
-
-                    let arch = match type_args.args.first().expect("type_args.args.len() == 2") {
-                        syn::GenericArgument::Type(ty) => Box::new(ty.clone()),
-                        _ => return bail_inference(),
-                    };
-                    let comp = match type_args.args.last().expect("type_args.args.len() == 2") {
-                        syn::GenericArgument::Type(ty) => Box::new(ty.clone()),
-                        _ => return bail_inference(),
-                    };
-
-                    if isotope {
-                        ArgType::Isotope { mutable, arch, comp, discrim: isotope_discrim_hint }
-                    } else {
-                        ArgType::Simple { mutable, arch, comp }
-                    }
-                }
+                };
+                let types: Vec<&syn::Type> = type_args
+                    .args
+                    .iter()
+                    .map(|arg| match arg {
+                        syn::GenericArgument::Type(ty) => Ok(ty),
+                        _ => Err(Error::new_spanned(arg, USAGE_INFERENCE_ERROR)),
+                    })
+                    .collect::<Result<_>>()?;
+                builder(&trait_name_string, &types, type_args.span())?
             }
         };
 
@@ -361,7 +494,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
 
                 quote!(&mut self.#field_name)
             }
-            ArgType::Global { thread_local } => {
+            ArgType::Global { thread_local, maybe_uninit } => {
                 if thread_local && !system_thread_local {
                     return Err(Error::new_spanned(
                         param,
@@ -387,6 +520,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
 
                 global_requests.push(quote! {
                     #crate_name::system::spec::GlobalRequest::#new_sync::<#param_ty>(#mutable)
+                        #(.maybe_uninit::<#maybe_uninit>())*
                 });
 
                 match (thread_local, mutable) {
@@ -395,9 +529,10 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                     (true, _) => quote!(unsync_globals.get::<#param_ty>()),
                 }
             }
-            ArgType::Simple { mutable, arch, comp } => {
+            ArgType::Simple { mutable, arch, comp, maybe_uninit } => {
                 simple_requests.push(quote! {
                     #crate_name::system::spec::SimpleRequest::new::<#arch, #comp>(#mutable)
+                        #(.maybe_uninit::<#maybe_uninit>())*
                 });
 
                 match mutable {
@@ -405,7 +540,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                     false => quote!(components.read_simple_storage::<#arch, #comp>()),
                 }
             }
-            ArgType::Isotope { mutable, arch, comp, discrim } => {
+            ArgType::Isotope { mutable, arch, comp, discrim, maybe_uninit } => {
                 let discrim_vec = discrim.as_ref().map(|discrim| {
                     quote!({
                         let __iter = ::std::iter::IntoIterator::into_iter(#discrim);
@@ -423,6 +558,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 };
                 isotope_requests.push(quote! {
                     #crate_name::system::spec::IsotopeRequest::new::<#arch, #comp>(#discrim_vec_option, #mutable)
+                        #(.maybe_uninit::<#maybe_uninit>())*
                 });
 
                 let discrim_field_option = match &discrim {
@@ -445,9 +581,11 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                     }
                 }
             }
-            ArgType::EntityCreator { arch } => {
+            ArgType::EntityCreator { arch, no_partition } => {
+                let no_partition_call = no_partition.then(|| quote!(.no_partition()));
                 entity_creator_requests.push(quote! {
                     #crate_name::system::spec::EntityCreatorRequest::new::<#arch>()
+                        #no_partition_call
                 });
 
                 quote!(#crate_name::system::EntityCreatorImpl {
@@ -627,8 +765,8 @@ enum ArgOpt {
     Global(Option<syn::token::Paren>, Attr<GlobalArgOpt>),
     Simple(Option<syn::token::Paren>, Attr<SimpleArgOpt>),
     Isotope(Option<syn::token::Paren>, Attr<IsotopeArgOpt>),
-    EntityCreator(syn::Token![=], Box<syn::Type>),
-    EntityDeleter(syn::Token![=], Box<syn::Type>),
+    EntityCreator(Option<syn::token::Paren>, Attr<EntityCreatorArgOpt>),
+    EntityDeleter(Option<syn::token::Paren>, Attr<EntityDeleterArgOpt>),
 }
 
 impl Parse for Named<ArgOpt> {
@@ -643,60 +781,39 @@ impl Parse for Named<ArgOpt> {
                 let default = input.parse::<syn::Expr>()?;
                 ArgOpt::Local(eq, Box::new(default))
             }
-            "global" => {
-                let mut paren = None;
-                let mut opts = Attr::default();
-
-                if input.peek(syn::token::Paren) {
-                    let inner;
-                    paren = Some(syn::parenthesized!(inner in input));
-                    opts = inner.parse::<Attr<GlobalArgOpt>>()?;
-                }
-
-                ArgOpt::Global(paren, opts)
-            }
-            "simple" => {
-                let mut paren = None;
-                let mut opts = Attr::default();
-
-                if input.peek(syn::token::Paren) {
-                    let inner;
-                    paren = Some(syn::parenthesized!(inner in input));
-                    opts = inner.parse::<Attr<SimpleArgOpt>>()?;
-                }
-
-                ArgOpt::Simple(paren, opts)
-            }
-            "isotope" => {
-                let mut paren = None;
-                let mut opts = Attr::default();
-
-                if input.peek(syn::token::Paren) {
-                    let inner;
-                    paren = Some(syn::parenthesized!(inner in input));
-                    opts = inner.parse::<Attr<IsotopeArgOpt>>()?;
-                }
-
-                ArgOpt::Isotope(paren, opts)
-            }
-            "entity_creator" => {
-                let eq = input.parse::<syn::Token![=]>()?;
-                let ty = input.parse::<syn::Type>()?;
-                ArgOpt::EntityCreator(eq, Box::new(ty))
-            }
-            "entity_deleter" => {
-                let eq = input.parse::<syn::Token![=]>()?;
-                let ty = input.parse::<syn::Type>()?;
-                ArgOpt::EntityDeleter(eq, Box::new(ty))
-            }
+            "global" => parse_opt_list(input, ArgOpt::Global)?,
+            "simple" => parse_opt_list(input, ArgOpt::Simple)?,
+            "isotope" => parse_opt_list(input, ArgOpt::Isotope)?,
+            "entity_creator" => parse_opt_list(input, ArgOpt::EntityCreator)?,
+            "entity_deleter" => parse_opt_list(input, ArgOpt::EntityDeleter)?,
             _ => return Err(Error::new_spanned(&name, "Unknown attribute")),
         };
         Ok(Named { name, value })
     }
 }
 
+fn parse_opt_list<T>(
+    input: ParseStream,
+    arg_opt_variant: fn(Option<syn::token::Paren>, Attr<T>) -> ArgOpt,
+) -> Result<ArgOpt>
+where
+    Named<T>: Parse,
+{
+    let mut paren = None;
+    let mut opts = Attr::default();
+
+    if input.peek(syn::token::Paren) {
+        let inner;
+        paren = Some(syn::parenthesized!(inner in input));
+        opts = inner.parse::<Attr<T>>()?;
+    }
+
+    Ok(arg_opt_variant(paren, opts))
+}
+
 enum GlobalArgOpt {
     ThreadLocal,
+    MaybeUninit(syn::token::Paren, Punctuated<syn::Type, syn::Token![,]>),
 }
 
 impl Parse for Named<GlobalArgOpt> {
@@ -706,6 +823,7 @@ impl Parse for Named<GlobalArgOpt> {
 
         let value = match name_string.as_str() {
             "thread_local" => GlobalArgOpt::ThreadLocal,
+            "maybe_uninit" => parse_maybe_uninit(input, GlobalArgOpt::MaybeUninit)?,
             _ => return Err(Error::new_spanned(&name, "Unknown option for #[dynec(global)]")),
         };
         Ok(Named { name, value })
@@ -716,6 +834,7 @@ enum SimpleArgOpt {
     Mutable,
     Arch(syn::Token![=], Box<syn::Type>),
     Comp(syn::Token![=], Box<syn::Type>),
+    MaybeUninit(syn::token::Paren, Punctuated<syn::Type, syn::Token![,]>),
 }
 
 impl Parse for Named<SimpleArgOpt> {
@@ -735,6 +854,7 @@ impl Parse for Named<SimpleArgOpt> {
                 let ty = input.parse::<syn::Type>()?;
                 SimpleArgOpt::Comp(eq, Box::new(ty))
             }
+            "maybe_uninit" => parse_maybe_uninit(input, SimpleArgOpt::MaybeUninit)?,
             _ => return Err(Error::new_spanned(&name, "Unknown option for #[dynec(simple)]")),
         };
         Ok(Named { name, value })
@@ -746,6 +866,7 @@ enum IsotopeArgOpt {
     Arch(syn::Token![=], Box<syn::Type>),
     Comp(syn::Token![=], Box<syn::Type>),
     Discrim(syn::Token![=], Box<syn::Expr>),
+    MaybeUninit(syn::token::Paren, Punctuated<syn::Type, syn::Token![,]>),
 }
 
 impl Parse for Named<IsotopeArgOpt> {
@@ -770,8 +891,73 @@ impl Parse for Named<IsotopeArgOpt> {
                 let discrim = input.parse::<syn::Expr>()?;
                 IsotopeArgOpt::Discrim(eq, Box::new(discrim))
             }
+            "maybe_uninit" => parse_maybe_uninit(input, IsotopeArgOpt::MaybeUninit)?,
             _ => return Err(Error::new_spanned(&name, "Unknown option for #[dynec(isotope)]")),
         };
         Ok(Named { name, value })
     }
+}
+
+enum EntityCreatorArgOpt {
+    Arch(syn::Token![=], Box<syn::Type>),
+    NoPartition,
+}
+
+impl Parse for Named<EntityCreatorArgOpt> {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let name = input.parse::<syn::Ident>()?;
+        let name_string = name.to_string();
+
+        let value = match name_string.as_str() {
+            "arch" => {
+                let eq = input.parse::<syn::Token![=]>()?;
+                let ty = input.parse::<syn::Type>()?;
+                EntityCreatorArgOpt::Arch(eq, Box::new(ty))
+            }
+            "no_partition" => EntityCreatorArgOpt::NoPartition,
+            _ => {
+                return Err(Error::new_spanned(
+                    &name,
+                    "Unknown option for #[dynec(entity_creator)]",
+                ))
+            }
+        };
+        Ok(Named { name, value })
+    }
+}
+
+enum EntityDeleterArgOpt {
+    Arch(syn::Token![=], Box<syn::Type>),
+}
+
+impl Parse for Named<EntityDeleterArgOpt> {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let name = input.parse::<syn::Ident>()?;
+        let name_string = name.to_string();
+
+        let value = match name_string.as_str() {
+            "arch" => {
+                let eq = input.parse::<syn::Token![=]>()?;
+                let ty = input.parse::<syn::Type>()?;
+                EntityDeleterArgOpt::Arch(eq, Box::new(ty))
+            }
+            _ => {
+                return Err(Error::new_spanned(
+                    &name,
+                    "Unknown option for #[dynec(entity_deleter)]",
+                ))
+            }
+        };
+        Ok(Named { name, value })
+    }
+}
+
+fn parse_maybe_uninit<T>(
+    input: ParseStream,
+    constructor: fn(syn::token::Paren, Punctuated<syn::Type, syn::Token![,]>) -> T,
+) -> Result<T> {
+    let inner;
+    let paren = syn::parenthesized!(inner in input);
+    let punctuated = Punctuated::parse_terminated(&inner)?;
+    Ok(constructor(paren, punctuated))
 }

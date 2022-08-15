@@ -59,12 +59,12 @@ impl fmt::Display for DbgTypeId {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         #[cfg(debug_assertions)]
         {
-            writeln!(f, "`{}`", self.name)
+            write!(f, "{}", self.name)
         }
 
         #[cfg(not(debug_assertions))]
         {
-            writeln!(f, "{:?}", self.id)
+            write!(f, "{:?}", self.id)
         }
     }
 }

@@ -118,12 +118,13 @@ fn scan_cycles_from(
         let mut panic_message = String::new();
 
         for &ancestor in stack.iter().skip_while(|&&ancestor| ancestor != node) {
-            write!(panic_message, "{} -> ", describe_node(ancestor)).expect("String write is infallible");
+            write!(panic_message, "{} -> ", describe_node(ancestor))
+                .expect("String write is infallible");
         }
 
         write!(panic_message, "{}", describe_node(node)).expect("String write is infallible");
 
-        panic!("Cycles detected! {}", panic_message);
+        panic!("Scheduled systems have a cyclic dependency: {}", panic_message);
     }
 
     stack.push(node);

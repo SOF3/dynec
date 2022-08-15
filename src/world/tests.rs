@@ -201,11 +201,15 @@ fn test_isotope_discrim_fetch() {
 }
 
 #[test]
-fn test_offline_create() {
+#[cfg_attr(
+    debug_assertions,
+    should_panic(expected = "Scheduled systems have a cyclic dependency: ")
+)]
+fn test_offline_create_conflict() {
     #[system(dynec_as(crate))]
     fn test_system(
         mut entity_creator: impl system::EntityCreator<TestArch>,
-        #[dynec(global(maybe_uninit(TestArch)))] initials: &mut InitialEntities,
+        #[dynec(global)] initials: &mut InitialEntities,
         _comp1: impl system::ReadSimple<TestArch, Comp1>,
     ) {
         initials.ent1 = Some(entity_creator.create(crate::comps![@(crate) TestArch => Comp1(5)]));

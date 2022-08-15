@@ -109,16 +109,16 @@ impl Builder {
                     Node::SendSystem(index) => {
                         let (debug_name, _) =
                             self.0.send_systems.get(index.0).expect("invalid node index");
-                        writeln!(f, "thread-safe system #{} ({})", index.0, debug_name)
+                        write!(f, "thread-safe system #{} ({})", index.0, debug_name)
                     }
                     Node::UnsendSystem(index) => {
                         let (debug_name, _) =
                             self.0.unsend_systems.get(index.0).expect("invalid node index");
-                        writeln!(f, "thread-unsafe system #{} ({})", index.0, debug_name)
+                        write!(f, "thread-unsafe system #{} ({})", index.0, debug_name)
                     }
                     Node::Partition(index) => {
                         let par = self.0.partitions.get_index(index.0).expect("invalid node index");
-                        writeln!(f, "partition #{} ({:?})", index.0, &par)
+                        write!(f, "partition #{} ({:?})", index.0, &par)
                     }
                 }
             }
@@ -132,14 +132,18 @@ impl Builder {
     }
 
     pub(crate) fn build(self) -> Scheduler {
-        let topology = Topology::init(
+        let partitions: Vec<_> = self.partitions.iter().collect();
+        let mut topology = Topology::init(
             self.send_systems.len(),
             self.unsend_systems.len(),
-            self.partitions.into_iter().collect(),
+            &partitions,
             &self.orders,
             &self.resources,
             |node| self.display_node(node).to_string(),
         );
+        // late-initialized because display_node needs to read this field
+        topology.partitions = self.partitions.into_iter().collect();
+
         let planner = Mutex::new(topology.initial_planner().clone());
         let executor = Executor::new(self.concurrency);
 

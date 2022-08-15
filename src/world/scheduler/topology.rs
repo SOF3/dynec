@@ -38,7 +38,7 @@ impl Topology {
     pub(in crate::world::scheduler) fn init(
         send_systems_count: usize,
         unsend_systems_count: usize,
-        partitions: Vec<system::partition::Wrapper>,
+        partitions: &[&system::partition::Wrapper],
         orders: &[Order],
         resources: &HashMap<ResourceType, HashMap<Node, Vec<ResourceAccess>>>,
         describe_node: impl Fn(Node) -> String,
@@ -57,7 +57,7 @@ impl Topology {
 
         let exclusions = build_exclusions(nodes_iter, resources);
 
-        Self { dependents, initial_planner, depless_pars, partitions, exclusions }
+        Self { dependents, initial_planner, depless_pars, partitions: Vec::new(), exclusions }
     }
 
     pub(in crate::world::scheduler) fn dependents_of(&self, node: Node) -> &[Node] {
@@ -96,7 +96,7 @@ fn scan_cycles(map: &HashMap<Node, Vec<Node>>, describe_node: impl Fn(Node) -> S
     }
 
     for root in map.keys().copied() {
-        scan_cycles_from(map, root, &mut entered, &mut exited, &mut stack, describe_node);
+        scan_cycles_from(map, root, &mut entered, &mut exited, &mut stack, &describe_node);
     }
 }
 
@@ -106,7 +106,7 @@ fn scan_cycles_from(
     entered: &mut HashSet<Node>,
     exited: &mut HashSet<Node>,
     stack: &mut Vec<Node>,
-    describe_node: impl Fn(Node) -> String,
+    describe_node: &impl Fn(Node) -> String,
 ) {
     if exited.contains(&node) {
         return; // already scanned
@@ -118,10 +118,10 @@ fn scan_cycles_from(
         let mut panic_message = String::new();
 
         for &ancestor in stack.iter().skip_while(|&&ancestor| ancestor != node) {
-            write!(panic_message, "{} -> ", describe_node(ancestor));
+            write!(panic_message, "{} -> ", describe_node(ancestor)).expect("String write is infallible");
         }
 
-        write!(panic_message, "{}", describe_node(node));
+        write!(panic_message, "{}", describe_node(node)).expect("String write is infallible");
 
         panic!("Cycles detected! {}", panic_message);
     }

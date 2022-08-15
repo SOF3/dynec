@@ -138,6 +138,7 @@ impl Builder {
             self.partitions.into_iter().collect(),
             &self.orders,
             &self.resources,
+            |node| self.display_node(node).to_string(),
         );
         let planner = Mutex::new(topology.initial_planner().clone());
         let executor = Executor::new(self.concurrency);

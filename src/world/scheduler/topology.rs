@@ -1,3 +1,4 @@
+use core::fmt;
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::num::NonZeroUsize;
 
@@ -40,6 +41,7 @@ impl Topology {
         partitions: Vec<system::partition::Wrapper>,
         orders: &[Order],
         resources: &HashMap<ResourceType, HashMap<Node, Vec<ResourceAccess>>>,
+        describe_node: impl Fn(Node) -> String,
     ) -> Self {
         let nodes_iter = (0..send_systems_count)
             .map(|index| Node::SendSystem(SendSystemIndex(index)))
@@ -49,6 +51,7 @@ impl Topology {
             .chain((0..partitions.len()).map(|index| Node::Partition(PartitionIndex(index))));
 
         let dependents = build_dependents_map(nodes_iter.clone(), orders.iter().copied());
+        scan_cycles(&dependents, describe_node);
         let (initial_planner, depless_pars) =
             build_initials(nodes_iter.clone(), orders.iter().copied(), &dependents);
 
@@ -77,6 +80,63 @@ fn build_dependents_map(
         dependents.get_mut(&order.before).expect("invalid node index").push(order.after);
     }
     dependents
+}
+
+fn scan_cycles(map: &HashMap<Node, Vec<Node>>, describe_node: impl Fn(Node) -> String) {
+    let mut entered = HashSet::new();
+    let mut exited = HashSet::new();
+    let mut stack = Vec::new();
+
+    let mut roots: HashSet<Node> = map.keys().copied().collect();
+    for node in map.keys() {
+        for dependent in map.get(node).expect("invalid node index") {
+            // node has dependency, so it is not a root
+            roots.remove(dependent);
+        }
+    }
+
+    for root in map.keys().copied() {
+        scan_cycles_from(map, root, &mut entered, &mut exited, &mut stack, describe_node);
+    }
+}
+
+fn scan_cycles_from(
+    map: &HashMap<Node, Vec<Node>>,
+    node: Node,
+    entered: &mut HashSet<Node>,
+    exited: &mut HashSet<Node>,
+    stack: &mut Vec<Node>,
+    describe_node: impl Fn(Node) -> String,
+) {
+    if exited.contains(&node) {
+        return; // already scanned
+    }
+
+    if !entered.insert(node) {
+        use fmt::Write;
+
+        let mut panic_message = String::new();
+
+        for &ancestor in stack.iter().skip_while(|&&ancestor| ancestor != node) {
+            write!(panic_message, "{} -> ", describe_node(ancestor));
+        }
+
+        write!(panic_message, "{}", describe_node(node));
+
+        panic!("Cycles detected! {}", panic_message);
+    }
+
+    stack.push(node);
+
+    for &dependent in map.get(&node).expect("invalid node index") {
+        scan_cycles_from(map, dependent, entered, exited, stack, describe_node);
+    }
+
+    let popped = stack.pop();
+    debug_assert_eq!(Some(node), popped);
+
+    let new_exit = exited.insert(node);
+    assert!(new_exit, "exited is inserted recursively but no cycles were detected");
 }
 
 fn build_initials(

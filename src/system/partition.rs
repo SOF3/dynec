@@ -1,10 +1,9 @@
 //! Partitions enforce execution order of systems.
 //! See [`Partition`] documentation for more.
 
-use core::fmt;
 use std::any::TypeId;
 use std::collections::hash_map::DefaultHasher;
-use std::hash;
+use std::{fmt, hash};
 
 use crate::util::DbgTypeId;
 use crate::Archetype;

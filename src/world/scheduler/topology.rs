@@ -1,5 +1,5 @@
-use core::fmt;
 use std::collections::{BTreeSet, HashMap, HashSet};
+use std::fmt;
 use std::num::NonZeroUsize;
 
 use super::{
@@ -83,27 +83,19 @@ fn build_dependents_map(
 }
 
 fn scan_cycles(map: &HashMap<Node, Vec<Node>>, describe_node: impl Fn(Node) -> String) {
-    let mut entered = HashSet::new();
+    let mut remaining: BTreeSet<Node> = map.keys().copied().collect();
     let mut exited = HashSet::new();
     let mut stack = Vec::new();
 
-    let mut roots: HashSet<Node> = map.keys().copied().collect();
-    for node in map.keys() {
-        for dependent in map.get(node).expect("invalid node index") {
-            // node has dependency, so it is not a root
-            roots.remove(dependent);
-        }
-    }
-
-    for root in map.keys().copied() {
-        scan_cycles_from(map, root, &mut entered, &mut exited, &mut stack, &describe_node);
+    while let Some(&node) = remaining.iter().next() {
+        scan_cycles_from(map, node, &mut remaining, &mut exited, &mut stack, &describe_node);
     }
 }
 
 fn scan_cycles_from(
     map: &HashMap<Node, Vec<Node>>,
     node: Node,
-    entered: &mut HashSet<Node>,
+    remaining: &mut BTreeSet<Node>,
     exited: &mut HashSet<Node>,
     stack: &mut Vec<Node>,
     describe_node: &impl Fn(Node) -> String,
@@ -112,7 +104,7 @@ fn scan_cycles_from(
         return; // already scanned
     }
 
-    if !entered.insert(node) {
+    if !remaining.remove(&node) {
         use fmt::Write;
 
         let mut panic_message = String::new();
@@ -130,7 +122,7 @@ fn scan_cycles_from(
     stack.push(node);
 
     for &dependent in map.get(&node).expect("invalid node index") {
-        scan_cycles_from(map, dependent, entered, exited, stack, describe_node);
+        scan_cycles_from(map, dependent, remaining, exited, stack, describe_node);
     }
 
     let popped = stack.pop();

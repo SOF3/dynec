@@ -202,10 +202,88 @@ fn test_isotope_discrim_fetch() {
 
 #[test]
 fn test_offline_create() {
+    #[global(dynec_as(crate), initial = Step::Create)]
+    enum Step {
+        Create,
+        Access,
+    }
+
+    #[derive(Debug, PartialEq, Eq, Hash)]
+    struct LatePartition;
+
+    #[system(dynec_as(crate), before(LatePartition))]
+    fn entity_creator_system(
+        mut entity_creator: impl system::EntityCreator<TestArch>,
+        #[dynec(global(maybe_uninit(TestArch)))] initials: &mut InitialEntities,
+        #[dynec(global)] step: &Step,
+    ) {
+        match step {
+            Step::Create => {
+                initials.ent1 =
+                    Some(entity_creator.create(crate::comps![@(crate) TestArch => Comp1(5)]));
+            }
+            Step::Access => {}
+        }
+    }
+
+    #[system(dynec_as(crate))]
+    fn comp_access_system(
+        comp1: impl system::ReadSimple<TestArch, Comp1>,
+        #[dynec(global)] initials: &InitialEntities,
+        #[dynec(global)] step: &Step,
+    ) {
+        match step {
+            Step::Create => {
+                assert!(initials.ent1.is_none());
+            }
+            Step::Access => {
+                let ent = initials.ent1.as_ref().expect("ent1 should have been set");
+                comp1.try_get(ent).expect("ent1 should have been initialized");
+            }
+        }
+    }
+
+    #[system(dynec_as(crate), after(LatePartition))]
+    fn late_comp_access_system(
+        // component storage does not require maybe_uninit unless the component has something like `Option<Box<Self>>`
+        comp1: impl system::ReadSimple<TestArch, Comp1>,
+        #[dynec(global(maybe_uninit(TestArch)))] initials: &InitialEntities,
+        #[dynec(global)] step: &Step,
+    ) {
+        match step {
+            Step::Create => {
+                let ent = initials.ent1.as_ref().expect("ent1 should have been set");
+                assert!(comp1.try_get(ent).is_none(), "entity should be in pre-initialize state");
+            }
+            Step::Access => {
+                let ent = initials.ent1.as_ref().expect("ent1 should have been set");
+                comp1.try_get(ent).expect("ent1 should have been initialized");
+            }
+        }
+    }
+
+    let mut world = system_test!(comp_access_system.build(), late_comp_access_system.build(), entity_creator_system.build(););
+
+    world.execute(&tracer::Log(log::Level::Trace));
+    *world.get_global::<Step>() = Step::Access;
+    world.execute(&tracer::Log(log::Level::Trace));
+
+    let ent1 = {
+        let initials = world.get_global::<InitialEntities>();
+        let ent1 = initials.ent1.as_ref().expect("ent1 missing");
+        ent1.clone()
+    };
+    let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent1);
+    assert_eq!(comp1, Some(&mut Comp1(5)));
+}
+
+#[test]
+#[should_panic(expected = "Scheduled systems have a cyclic dependency: ")]
+fn test_offline_create_conflict() {
     #[system(dynec_as(crate))]
     fn test_system(
         mut entity_creator: impl system::EntityCreator<TestArch>,
-        #[dynec(global(maybe_uninit(TestArch)))] initials: &mut InitialEntities,
+        #[dynec(global)] initials: &mut InitialEntities,
         _comp1: impl system::ReadSimple<TestArch, Comp1>,
     ) {
         initials.ent1 = Some(entity_creator.create(crate::comps![@(crate) TestArch => Comp1(5)]));

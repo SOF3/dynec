@@ -1,4 +1,5 @@
 use std::collections::{BTreeSet, HashMap, HashSet};
+use std::fmt;
 use std::num::NonZeroUsize;
 
 use super::{
@@ -37,9 +38,10 @@ impl Topology {
     pub(in crate::world::scheduler) fn init(
         send_systems_count: usize,
         unsend_systems_count: usize,
-        partitions: Vec<system::partition::Wrapper>,
+        partitions: &[&system::partition::Wrapper],
         orders: &[Order],
         resources: &HashMap<ResourceType, HashMap<Node, Vec<ResourceAccess>>>,
+        describe_node: impl Fn(Node) -> String,
     ) -> Self {
         let nodes_iter = (0..send_systems_count)
             .map(|index| Node::SendSystem(SendSystemIndex(index)))
@@ -49,12 +51,13 @@ impl Topology {
             .chain((0..partitions.len()).map(|index| Node::Partition(PartitionIndex(index))));
 
         let dependents = build_dependents_map(nodes_iter.clone(), orders.iter().copied());
+        scan_cycles(&dependents, describe_node);
         let (initial_planner, depless_pars) =
             build_initials(nodes_iter.clone(), orders.iter().copied(), &dependents);
 
         let exclusions = build_exclusions(nodes_iter, resources);
 
-        Self { dependents, initial_planner, depless_pars, partitions, exclusions }
+        Self { dependents, initial_planner, depless_pars, partitions: Vec::new(), exclusions }
     }
 
     pub(in crate::world::scheduler) fn dependents_of(&self, node: Node) -> &[Node] {
@@ -77,6 +80,56 @@ fn build_dependents_map(
         dependents.get_mut(&order.before).expect("invalid node index").push(order.after);
     }
     dependents
+}
+
+fn scan_cycles(map: &HashMap<Node, Vec<Node>>, describe_node: impl Fn(Node) -> String) {
+    let mut remaining: BTreeSet<Node> = map.keys().copied().collect();
+    let mut exited = HashSet::new();
+    let mut stack = Vec::new();
+
+    while let Some(&node) = remaining.iter().next() {
+        scan_cycles_from(map, node, &mut remaining, &mut exited, &mut stack, &describe_node);
+    }
+}
+
+fn scan_cycles_from(
+    map: &HashMap<Node, Vec<Node>>,
+    node: Node,
+    remaining: &mut BTreeSet<Node>,
+    exited: &mut HashSet<Node>,
+    stack: &mut Vec<Node>,
+    describe_node: &impl Fn(Node) -> String,
+) {
+    if exited.contains(&node) {
+        return; // already scanned
+    }
+
+    if !remaining.remove(&node) {
+        use fmt::Write;
+
+        let mut panic_message = String::new();
+
+        for &ancestor in stack.iter().skip_while(|&&ancestor| ancestor != node) {
+            write!(panic_message, "{} -> ", describe_node(ancestor))
+                .expect("String write is infallible");
+        }
+
+        write!(panic_message, "{}", describe_node(node)).expect("String write is infallible");
+
+        panic!("Scheduled systems have a cyclic dependency: {}", panic_message);
+    }
+
+    stack.push(node);
+
+    for &dependent in map.get(&node).expect("invalid node index") {
+        scan_cycles_from(map, dependent, remaining, exited, stack, describe_node);
+    }
+
+    let popped = stack.pop();
+    debug_assert_eq!(Some(node), popped);
+
+    let new_exit = exited.insert(node);
+    assert!(new_exit, "exited is inserted recursively but no cycles were detected");
 }
 
 fn build_initials(

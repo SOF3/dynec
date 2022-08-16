@@ -1,10 +1,9 @@
 //! Partitions enforce execution order of systems.
 //! See [`Partition`] documentation for more.
 
-use core::fmt;
 use std::any::TypeId;
 use std::collections::hash_map::DefaultHasher;
-use std::hash;
+use std::{fmt, hash};
 
 use crate::util::DbgTypeId;
 use crate::Archetype;
@@ -39,7 +38,7 @@ pub trait Partition: sealed::Sealed + Send + Sync + 'static {
 impl<T: fmt::Debug + Eq + hash::Hash + 'static> sealed::Sealed for T {}
 
 impl<T: fmt::Debug + Eq + hash::Hash + Send + Sync + 'static> Partition for T {
-    fn describe(&self, f: &mut fmt::Formatter) -> fmt::Result { writeln!(f, "{:?}", self) }
+    fn describe(&self, f: &mut fmt::Formatter) -> fmt::Result { write!(f, "{:?}", self) }
 
     fn compute_hash(&self) -> u64 {
         use hash::Hasher;
@@ -115,9 +114,15 @@ impl hash::Hash for Wrapper {
 /// Note that `A` is the archetype of the referenced entity, not of the component.
 /// For manually defined systems that do not use the macro,
 /// call [`SimpleRequest::maybe_uninit::<A>()`](crate::system::spec::SimpleRequest) or equivalent.
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(PartialEq, Eq, Hash)]
 pub struct EntityCreationPartition {
     pub(crate) ty: DbgTypeId,
+}
+
+impl fmt::Debug for EntityCreationPartition {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "EntityCreationPartition<{}>", self.ty)
+    }
 }
 
 impl EntityCreationPartition {

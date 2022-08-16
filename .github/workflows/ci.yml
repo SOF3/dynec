@@ -24,8 +24,8 @@ jobs:
           components: rustfmt
       - run: cargo fmt --all -- --check
       - run: make README.md && git diff --exit-code
-  lint:
-    name: clippy lint
+  lint-test:
+    name: clippy lint and unit tests
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -48,37 +48,6 @@ jobs:
           path: |
             /home/runner/.cargo
             **/target
-          key: ${{ matrix.toolchain }}
-      - run: test -f ~/.cargo/bin/just || cargo install just
-      - name: cargo clippy
-        uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{secrets.GITHUB_TOKEN}}
-          args: --all ${{matrix.profile}}
-          name: ${{matrix.toolchain}}${{matrix.profile}}
-  test:
-    name: unit tests
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        toolchain:
-          - stable
-          - nightly
-        profile:
-          - ""
-          - "--release"
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{matrix.toolchain}}
-          profile: default
-          default: true
-      - uses: actions/cache@v2
-        with:
-          path: |
-            /home/runner/.cargo
-            **/target
           key: ${{ matrix.toolchain }}-${{ hashFiles('**/Cargo.lock') }}
         if: ${{ matrix.profile != '' || matrix.toolchain != 'nightly' }}
       - uses: actions/cache@v2
@@ -88,6 +57,12 @@ jobs:
             **/target
           key: ${{ matrix.toolchain }}-${{ hashFiles('**/Cargo.lock') }}-cov
         if: ${{ matrix.profile == '' && matrix.toolchain == 'nightly' }}
+      - name: cargo clippy
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{secrets.GITHUB_TOKEN}}
+          args: --all ${{matrix.profile}}
+          name: ${{matrix.toolchain}}${{matrix.profile}}
       - name: cargo test
         if: ${{ matrix.profile != '' || matrix.toolchain != 'nightly' }}
         run: "cargo test --all ${{matrix.profile}}"

@@ -57,7 +57,6 @@ jobs:
             **/target
           key: ${{ matrix.toolchain }}-${{ hashFiles('**/Cargo.lock') }}-cov
         if: ${{ matrix.profile == '' && matrix.toolchain == 'nightly' }}
-      - run: test -f ~/.cargo/bin/just || cargo install just
       - name: cargo clippy
         uses: actions-rs/clippy-check@v1
         with:

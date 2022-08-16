@@ -265,6 +265,8 @@ fn test_offline_create() {
     let mut world = system_test!(comp_access_system.build(), late_comp_access_system.build(), entity_creator_system.build(););
 
     world.execute(&tracer::Log(log::Level::Trace));
+    *world.get_global::<Step>() = Step::Access;
+    world.execute(&tracer::Log(log::Level::Trace));
 
     let ent1 = {
         let initials = world.get_global::<InitialEntities>();

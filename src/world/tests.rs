@@ -276,10 +276,7 @@ fn test_offline_create() {
 }
 
 #[test]
-#[cfg_attr(
-    debug_assertions,
-    should_panic(expected = "Scheduled systems have a cyclic dependency: ")
-)]
+#[should_panic(expected = "Scheduled systems have a cyclic dependency: ")]
 fn test_offline_create_conflict() {
     #[system(dynec_as(crate))]
     fn test_system(

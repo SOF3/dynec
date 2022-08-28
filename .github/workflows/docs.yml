@@ -20,7 +20,7 @@ jobs:
           default: true
 
       - name: Install mdbook
-        run: wget https://github.com/rust-lang/mdBook/releases/download/v0.4.21/mdbook-v0.4.21-x86_64-unknown-linux-gnu.tar.gz | tar xz
+        run: wget -O - https://github.com/rust-lang/mdBook/releases/download/v0.4.21/mdbook-v0.4.21-x86_64-unknown-linux-gnu.tar.gz | tar xz
 
       - name: Build documentation without private items
         run: cargo doc && mv target/doc ..staging

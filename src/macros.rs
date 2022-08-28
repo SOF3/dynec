@@ -482,7 +482,13 @@ macro_rules! system_test {
     }}
 }
 
-/// Asserts that a type is a safe partition.
+/// Asserts that a type can be used as a partition.
+///
+/// # Example
+/// ```
+/// use dynec::system::partition::EntityCreationPartition;
+/// dynec::assert_partition!(EntityCreationPartition);
+/// ```
 #[macro_export]
 macro_rules! assert_partition {
     (@expr $value:expr) => {

@@ -6,6 +6,7 @@ name = "dynec"
 authors = ["SOFe <sofe2038@gmail.com>"]
 version = "0.2.0"
 edition = "2021"
+documentation = "https://sof3.github.io/dynec/master/dynec"
 repository = "https://github.com/SOF3/dynec"
 homepage = "https://github.com/SOF3/dynec"
 description = "An opinionated ECS-like framework"

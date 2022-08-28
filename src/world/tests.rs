@@ -2,6 +2,14 @@ use super::tracer;
 use crate::entity::{deletion, Ref};
 use crate::{comp, global, system, system_test, Entity, TestArch, TestDiscrim1, TestDiscrim2};
 
+// Test component summary:
+// Comp1: optional, depends []
+// Comp2: optional, depends on Comp2
+// Comp3: optional, depends on Comp1 and Comp2
+// Comp4: optional, depends on Comp1 and Comp2
+// Comp5: required, no init
+// Comp6: required, depends []
+
 #[comp(dynec_as(crate), of = TestArch)]
 #[derive(Debug, PartialEq)]
 struct Comp1(i32);

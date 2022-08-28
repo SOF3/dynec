@@ -26,14 +26,12 @@ Archetypes are typically represented as an unconstructable type (an empty enum)
 that is referenced as a type parameter in system declarations.
 Therefore, it is possible to reuse the same function
 for multiple systems by leaving the archetype as a type parameter.
-
-## Example
-
-In this book, we will implement a logistics simulator step by step.
-Let's represent "buildings" and the "roads" between them as entities:
+There is a convenience macro to achieve this:
 
 ```rust
-dynec::archetype! {
+use dynec::archetype;
+
+archetype! {
     /// A building entity can store goods inside.
     pub Building;
 
@@ -42,5 +40,8 @@ dynec::archetype! {
 }
 ```
 
-The `dynec::archetype!` macro just declares an empty enum that implements
-[`Archetype`](https://sof3.github.io/dynec/master/dynec/archetype/trait.Archetype.html).
+The [`archetype!` macro][macro.archetype] just declares an empty enum
+that implements [`Archetype`][trait.archetype].
+
+[macro.archetype]: https://sof3.github.io/dynec/master/dynec/macro.archetype.html
+[trait.archetype]: https://sof3.github.io/dynec/master/dynec/archetype/trait.Archetype.html

@@ -31,7 +31,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
     let storage =
         match args.find_one(|arg| option_match!(arg, FnOpt::Storage(_, discrim) => discrim))? {
             Some((_, ty)) => quote!(#ty),
-            None => quote!(#crate_name::storage::MapVecMux),
+            None => quote!(#crate_name::storage::Vec),
         };
 
     let presence = args.find_one(|arg| option_match!(arg, FnOpt::Required => &()))?;

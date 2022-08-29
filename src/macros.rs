@@ -67,6 +67,13 @@ mod archetype_tests {}
 /// This initializer should be either a closure with explicit parameter types,
 /// or a function reference with arity in the form `path/arity` (e.g. `count/1`).
 ///
+/// ## `storage`
+/// Specify the [storage](crate::world::storage) type for the component.
+/// The argument should be a path that specifies the target type.
+/// If the all segments of the path does not have type parameters,
+/// it is automatically filled with `<Arch::RawEntity, Self>`,
+/// which is the format automatically compatible with all default storage types.
+///
 /// # Example
 /// ```
 /// use dynec::comp;

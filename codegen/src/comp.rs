@@ -30,8 +30,9 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
     let isotope = args.find_one(|arg| option_match!(arg, FnOpt::Isotope(_, discrim) => discrim))?;
     let storage =
         match args.find_one(|arg| option_match!(arg, FnOpt::Storage(_, discrim) => discrim))? {
-            Some((_, ty)) => quote!(#ty),
-            None => quote!(#crate_name::storage::Vec),
+            Some((_, ty)) => ty.clone(),
+            None => syn::parse2(quote!(#crate_name::storage::Vec))
+                .expect("Cannot parse storage::Vec as a path"),
         };
 
     let presence = args.find_one(|arg| option_match!(arg, FnOpt::Required => &()))?;
@@ -62,6 +63,12 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
 
     let mut output = TokenStream::new();
     for archetype in archetypes {
+        let storage = if storage.segments.iter().all(|segment| segment.arguments.is_empty()) {
+            quote!(#storage<<#archetype as #crate_name::Archetype>::RawEntity, Self>)
+        } else {
+            quote!(#storage)
+        };
+
         if let Some((_, discrim)) = isotope {
             let init = match init {
                 Some((_, func)) => {
@@ -78,7 +85,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
 
                     const INIT_STRATEGY: #crate_name::comp::IsotopeInitStrategy<Self> = #init;
 
-                    type Storage = #storage<<#archetype as #crate_name::Archetype>::RawEntity, Self>;
+                    type Storage = #storage;
                 },
             ));
         } else {
@@ -99,7 +106,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                     const INIT_STRATEGY: #crate_name::comp::SimpleInitStrategy<#archetype> = #init_strategy;
                     const IS_FINALIZER: bool = #finalizer;
 
-                    type Storage = #storage<<#archetype as #crate_name::Archetype>::RawEntity, Self>;
+                    type Storage = #storage;
                 },
             ));
 
@@ -123,7 +130,7 @@ enum FnOpt {
     DynecAs(syn::token::Paren, TokenStream),
     Of(syn::Token![=], syn::Type),
     Isotope(syn::Token![=], syn::Type),
-    Storage(syn::Token![=], syn::Type),
+    Storage(syn::Token![=], syn::Path),
     Required,
     Finalizer,
     Init(syn::Token![=], Box<FunctionRefWithArity>),
@@ -152,7 +159,7 @@ impl Parse for Named<FnOpt> {
             }
             "storage" => {
                 let eq: syn::Token![=] = input.parse()?;
-                let ty = input.parse::<syn::Type>()?;
+                let ty = input.parse::<syn::Path>()?;
                 FnOpt::Storage(eq, ty)
             }
             "required" => FnOpt::Required,

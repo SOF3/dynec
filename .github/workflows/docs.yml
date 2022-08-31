@@ -28,7 +28,7 @@ jobs:
         run: cargo doc --document-private-items --all --all-features && mv target/doc ..staging/private
 
       - name: Build book
-        run: ./mdbook build -d ..staging/book book
+        run: ./mdbook build -d $PWD/..staging/book book
 
       - name: Clone site repo
         uses: actions/checkout@v2

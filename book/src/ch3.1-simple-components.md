@@ -121,6 +121,27 @@ To avoid impacting performance due to a growing backlog,
 finalizer components should be removed as soon as possible
 after deletion has been flagged.
 
+## Choosing the component type
+
+Systems that write to the same component type cannot execute together.
+Furthermore, most games often need to access a single component over a loop,
+so avoid putting multiple unrelated fields in the same component type.
+Instead, prefer small, often single-field structs,
+unless the multiple fields are naturally related,
+e.g. positions/RGB values that are always accessed together.
+
+Avoid using [`Option`][option] in component types;
+instead, use optional components to represent unused fields.
+dynec uses a compact bit vector to track the existence of components,
+which only takes 1 bit for each component,
+while `Option` needs to preserve alignment and could take up to 64 bits
+if the wrapped type requires an alignment of 64 bits (e.g. `u64`/`f64`).
+
+Avoid allocating heap memory for each entity component.
+In other words, use of `Box`/`Vec`/etc should be avoided in component types,
+because heap allocation is slow and results in memory fragmentation,
+which greatly deterriorates the performance gain provided by ECS.
+
 [comp.simple]: https://sof3.github.io/dynec/master/dynec/comp/trait.Simple.html
 [comp.simple.presence]: https://sof3.github.io/dynec/master/dynec/comp/trait.Simple.html#associatedconstant.PRESENCE
 [macro.comp]: https://sof3.github.io/dynec/master/dynec/attr.comp.html
@@ -128,3 +149,4 @@ after deletion has been flagged.
 [simple-presence.optional]: https://sof3.github.io/dynec/master/dynec/comp/enum.SimplePresence.html#variant.Optional
 [must]: https://sof3.github.io/dynec/master/dynec/comp/trait.Must.html
 [k8s-finalizers]: https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/
+[option]: https://doc.rust-lang.org/std/option/enum.Option.html

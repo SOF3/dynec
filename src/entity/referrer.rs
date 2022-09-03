@@ -5,10 +5,13 @@ use std::collections::HashSet;
 use std::marker::PhantomData;
 use std::ops;
 
+use self::search_single::SearchSingleStrong;
 use super::Raw;
+use crate::slice_any::AnySliceMut;
 use crate::util::DbgTypeId;
 use crate::Archetype;
 
+pub(crate) mod search_single;
 mod std_impl;
 
 /// A type that may own entity references (no matter strong or weak).
@@ -172,5 +175,31 @@ impl<A: Archetype> Referrer for super::Weak<A> {
             rc:        &mut self.rc,
         });
         self.id = A::RawEntity::from_primitive(ret.new_raw);
+    }
+}
+
+/// Virtual dispatch table that operates on slices of its target.
+pub(crate) struct Vtable {
+    search_single_strong: for<'t> fn(&'t mut AnySliceMut<'t>, &mut SearchSingleStrong),
+}
+
+impl Vtable {
+    pub(crate) fn of<T: Referrer>() -> Self {
+        Self {
+            search_single_strong: |slice, state| {
+                let slice = slice.reborrow().downcast::<T>();
+                for item in slice {
+                    item.visit_mut(state);
+                }
+            },
+        }
+    }
+
+    pub(crate) fn search_single_strong<'t>(
+        &self,
+        slice: &'t mut AnySliceMut<'t>,
+        state: &mut SearchSingleStrong,
+    ) {
+        (self.search_single_strong)(slice, state)
     }
 }

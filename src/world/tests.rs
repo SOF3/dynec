@@ -85,8 +85,8 @@ fn test_system(
 }
 
 #[test]
-#[should_panic(expected = "The component dynec::world::tests::Comp2 cannot be retrieved because \
-                           it is not used in any systems")]
+#[should_panic = "The component dynec::world::tests::Comp2 cannot be retrieved because it is not \
+                  used in any systems"]
 fn test_dependencies_successful() {
     let mut world = system_test!(test_system.build(););
     let entity = world.create::<TestArch>(crate::comps![ @(crate) TestArch =>
@@ -108,17 +108,17 @@ fn test_dependencies_successful() {
 }
 
 #[test]
-#[should_panic(expected = "Cannot create an entity of type `dynec::test_util::TestArch` without \
-                           explicitly passing a component of type `dynec::world::tests::Comp5`")]
+#[should_panic = "Cannot create an entity of type `dynec::test_util::TestArch` without explicitly \
+                  passing a component of type `dynec::world::tests::Comp5`"]
 fn test_dependencies_missing_required_simple() {
     let mut world = system_test!(test_system.build(););
     world.create::<TestArch>(crate::comps![@(crate) TestArch => Comp1(1)]);
 }
 
 #[test]
-#[should_panic(expected = "Cannot create an entity of type `dynec::test_util::TestArch` without \
-                           explicitly passing a component of type `dynec::world::tests::Comp1`, \
-                           which is required for `dynec::world::tests::Comp2`")]
+#[should_panic = "Cannot create an entity of type `dynec::test_util::TestArch` without explicitly \
+                  passing a component of type `dynec::world::tests::Comp1`, which is required for \
+                  `dynec::world::tests::Comp2`"]
 fn test_dependencies_missing_required_dep() {
     let mut world = system_test!(test_system.build(););
     world.create::<TestArch>(crate::comps![@(crate) TestArch => Comp5(1)]);
@@ -286,7 +286,7 @@ fn test_offline_create() {
 }
 
 #[test]
-#[should_panic(expected = "Scheduled systems have a cyclic dependency: ")]
+#[should_panic = "Scheduled systems have a cyclic dependency: "]
 fn test_offline_create_conflict() {
     #[system(dynec_as(crate))]
     fn test_system(
@@ -338,9 +338,10 @@ fn test_offline_delete() {
         all(debug_assertions, feature = "debug-entity-rc"),
         all(not(debug_assertions), feature = "release-entity-rc"),
     ),
-    should_panic = "Detected dangling strong reference to entity dynec::test_util::TestArch#1. \
-                    All strong references to an entity must be dropped before queuing for \
-                    deletion and removing all finalizers."
+    should_panic = "Detected dangling strong reference to entity dynec::test_util::TestArch#1 in \
+                    global state dynec::world::tests::InitialEntities. All strong references to \
+                    an entity must be dropped before queuing for deletion and removing all \
+                    finalizers."
 )]
 fn test_offline_delete_leak() {
     #[system(dynec_as(crate))]

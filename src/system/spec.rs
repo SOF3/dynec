@@ -44,6 +44,8 @@ impl Dependency {
 pub struct GlobalRequest {
     /// The type of the global state.
     pub(crate) ty:          DbgTypeId,
+    /// The referrer vtable of the type.
+    pub(crate) vtable:      referrer::Vtable,
     /// A closure that calls [`Global::initial`].
     pub(crate) initial:     GlobalInitial,
     /// Whether mutable access is requested.
@@ -69,6 +71,7 @@ impl GlobalRequest {
 
         Self {
             ty: DbgTypeId::of::<G>(),
+            vtable: referrer::Vtable::of::<G>(),
             initial: GlobalInitial::Sync(|| Box::new(G::initial())),
             mutable,
             strong_refs: visitor.found_archs,
@@ -82,6 +85,7 @@ impl GlobalRequest {
 
         Self {
             ty: DbgTypeId::of::<G>(),
+            vtable: referrer::Vtable::of::<G>(),
             initial: GlobalInitial::Unsync(|| Box::new(G::initial())),
             mutable,
             strong_refs: visitor.found_archs,

@@ -160,7 +160,7 @@ impl World {
     /// Gets a thread-safe global state in offline mode.
     pub fn get_global<G: Global + Send + Sync>(&mut self) -> &mut G {
         let global = match self.sync_globals.sync_globals.get_mut(&TypeId::of::<G>()) {
-            Some(global) => global,
+            Some((_, global)) => global,
             None => panic!(
                 "The global state {} cannot be retrieved becaues it is not used in any systems",
                 any::type_name::<G>()
@@ -175,7 +175,7 @@ impl World {
     /// registered as thread-safe global states.
     pub fn get_global_unsync<G: Global>(&mut self) -> &mut G {
         let global = match self.unsync_globals.unsync_globals.get_mut(&TypeId::of::<G>()) {
-            Some(global) => global,
+            Some((_, global)) => global,
             None => panic!(
                 "The global state {} cannot be retrieved becaues it is not used in any systems",
                 any::type_name::<G>()
@@ -263,14 +263,23 @@ fn try_real_delete_entity<A: Archetype>(
     {
         use entity::rctrack;
 
+        use crate::util::DbgTypeId;
+
         let rc = _sync_globals.get_mut::<rctrack::StoreMap>().remove::<A>(entity.to_primitive());
         if Arc::try_unwrap(rc).is_err() {
-            search_references(components, _sync_globals, _unsync_globals, entity.to_primitive());
+            let found = search_references(
+                components,
+                _sync_globals,
+                _unsync_globals,
+                DbgTypeId::of::<A>(),
+                entity.to_primitive(),
+            );
             panic!(
-                "Detected dangling strong reference to entity {}#{entity:?}. All strong \
+                "Detected dangling strong reference to entity {}#{entity:?} in {}. All strong \
                  references to an entity must be dropped before queuing for deletion and removing \
                  all finalizers.",
-                any::type_name::<A>()
+                any::type_name::<A>(),
+                found.join(", ")
             );
         }
     }
@@ -294,19 +303,42 @@ fn search_references(
     components: &mut Components,
     sync_globals: &mut SyncGlobals,
     unsync_globals: &mut UnsyncGlobals,
+    archetype: crate::util::DbgTypeId,
     entity: usize,
-) {
-    for value in sync_globals.sync_globals.values_mut() {
-        let _value = value.get_mut();
-        // TODO
-    }
-    for _value in unsync_globals.unsync_globals.values_mut() {
-        // TODO
+) -> Vec<String> {
+    use std::any::Any;
+
+    use crate::entity::referrer::search_single::SearchSingleStrong;
+    use crate::slice_any::AnySliceMut;
+
+    let mut output = Vec::new();
+
+    let globals = sync_globals
+        .sync_globals
+        .iter_mut()
+        .map(|(global_ty, (vtable, value))| {
+            (global_ty, vtable, &mut **value.get_mut() as &mut dyn Any)
+        })
+        .chain(
+            unsync_globals
+                .unsync_globals
+                .iter_mut()
+                .map(|(global_ty, (vtable, value))| (global_ty, vtable, &mut **value)),
+        );
+    for (global_ty, vtable, value) in globals {
+        let mut slice = AnySliceMut::from_any(&mut *value);
+        let mut state = SearchSingleStrong::new(archetype, entity);
+        vtable.search_single_strong(&mut slice, &mut state);
+        if state.found > 0 {
+            output.push(format!("global state {}", global_ty));
+        }
     }
 
     for typed in components.archetypes.values_mut() {
         // TODO
     }
+
+    output
 }
 
 #[cfg(test)]

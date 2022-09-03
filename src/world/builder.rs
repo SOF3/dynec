@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use parking_lot::RwLock;
 
 use super::{scheduler, typed};
-use crate::entity::{deletion, ealloc, generation};
+use crate::entity::{deletion, ealloc, generation, referrer};
 use crate::system::spec;
 use crate::util::DbgTypeId;
 use crate::{system, Global};
@@ -14,13 +14,13 @@ use crate::{system, Global};
 pub struct Builder {
     scheduler:      scheduler::Builder,
     archetypes:     HashMap<DbgTypeId, (ealloc::AnyBuilder, Box<dyn typed::AnyBuilder>)>,
-    sync_globals:   HashMap<DbgTypeId, GlobalBuilder<dyn Any + Send + Sync>>,
-    unsync_globals: HashMap<DbgTypeId, GlobalBuilder<dyn Any>>,
+    sync_globals:   GlobalBuilderMap<dyn Any + Send + Sync>,
+    unsync_globals: GlobalBuilderMap<dyn Any>,
 }
 
-enum GlobalBuilder<A: ?Sized> {
-    Provided(Box<A>),
-    Missing(fn() -> Box<A>),
+enum GlobalBuilder<G: ?Sized> {
+    Provided(Box<G>),
+    Missing(fn() -> Box<G>),
 }
 
 impl Builder {
@@ -58,7 +58,7 @@ impl Builder {
 
                     self.sync_globals
                         .entry(request.ty)
-                        .or_insert_with(|| GlobalBuilder::Missing(initial));
+                        .or_insert_with(|| (request.vtable, GlobalBuilder::Missing(initial)));
 
                     self.scheduler.use_resource(
                         node,
@@ -83,7 +83,7 @@ impl Builder {
 
                     self.unsync_globals
                         .entry(request.ty)
-                        .or_insert_with(|| GlobalBuilder::Missing(initial));
+                        .or_insert_with(|| (request.vtable, GlobalBuilder::Missing(initial)));
 
                     self.scheduler.use_resource(
                         node,
@@ -173,12 +173,18 @@ impl Builder {
 
     /// Provides a thread-safe global resource.
     pub fn global<G: Global + Send + Sync>(&mut self, value: G) {
-        self.sync_globals.insert(DbgTypeId::of::<G>(), GlobalBuilder::Provided(Box::new(value)));
+        self.sync_globals.insert(
+            DbgTypeId::of::<G>(),
+            (referrer::Vtable::of::<G>(), GlobalBuilder::Provided(Box::new(value))),
+        );
     }
 
     /// Provides a thread-unsafe global resource.
     pub fn global_thread_unsafe<G: Global>(&mut self, value: G) {
-        self.unsync_globals.insert(DbgTypeId::of::<G>(), GlobalBuilder::Provided(Box::new(value)));
+        self.unsync_globals.insert(
+            DbgTypeId::of::<G>(),
+            (referrer::Vtable::of::<G>(), GlobalBuilder::Provided(Box::new(value))),
+        );
     }
 
     /// Adjust the concurrency of the scheduler.
@@ -203,13 +209,16 @@ impl Builder {
         let sync_globals = self
             .sync_globals
             .into_iter()
-            .map(|(ty, da)| {
+            .map(|(ty, (vtable, global_builder))| {
                 (
                     ty,
-                    RwLock::new(match da {
-                        GlobalBuilder::Provided(value) => value,
-                        GlobalBuilder::Missing(default) => default(),
-                    }),
+                    (
+                        vtable,
+                        RwLock::new(match global_builder {
+                            GlobalBuilder::Provided(value) => value,
+                            GlobalBuilder::Missing(default) => default(),
+                        }),
+                    ),
                 )
             })
             .collect();
@@ -218,13 +227,16 @@ impl Builder {
         let unsync_globals = self
             .unsync_globals
             .into_iter()
-            .map(|(ty, da)| {
+            .map(|(ty, (vtable, global_builder))| {
                 (
                     ty,
-                    match da {
-                        GlobalBuilder::Provided(value) => value,
-                        GlobalBuilder::Missing(default) => default(),
-                    },
+                    (
+                        vtable,
+                        match global_builder {
+                            GlobalBuilder::Provided(value) => value,
+                            GlobalBuilder::Missing(default) => default(),
+                        },
+                    ),
                 )
             })
             .collect();
@@ -240,12 +252,15 @@ impl Builder {
     }
 }
 
-fn populate_default_globals(map: &mut HashMap<DbgTypeId, GlobalBuilder<dyn Any + Send + Sync>>) {
-    fn put_global<T: Any + Send + Sync>(
-        map: &mut HashMap<DbgTypeId, GlobalBuilder<dyn Any + Send + Sync>>,
+fn populate_default_globals(map: &mut GlobalBuilderMap<dyn Any + Send + Sync>) {
+    fn put_global<T: Any + Send + Sync + referrer::Referrer>(
+        map: &mut GlobalBuilderMap<dyn Any + Send + Sync>,
         value: T,
     ) {
-        map.insert(DbgTypeId::of::<T>(), GlobalBuilder::Provided(Box::new(value)));
+        map.insert(
+            DbgTypeId::of::<T>(),
+            (referrer::Vtable::of::<T>(), GlobalBuilder::Provided(Box::new(value))),
+        );
     }
 
     put_global(map, generation::StoreMap::default());
@@ -261,3 +276,5 @@ fn populate_default_globals(map: &mut HashMap<DbgTypeId, GlobalBuilder<dyn Any +
         put_global(map, rctrack::StoreMap::default());
     }
 }
+
+type GlobalBuilderMap<T> = HashMap<DbgTypeId, (referrer::Vtable, GlobalBuilder<T>)>;

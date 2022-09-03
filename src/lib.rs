@@ -93,4 +93,5 @@ use test_util::{TestArch, TestDiscrim1, TestDiscrim2};
 pub mod world;
 pub use world::{new, storage, tracer, World};
 
+mod slice_any;
 pub mod util;

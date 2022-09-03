@@ -11,6 +11,7 @@ use parking_lot::{
 use super::storage::Storage;
 use super::typed::{self, PaddedIsotopeIdentifier};
 use crate::comp::Discrim;
+use crate::entity::referrer;
 use crate::util::DbgTypeId;
 use crate::{comp, entity, system, Archetype, Global};
 
@@ -306,7 +307,8 @@ static_assertions::assert_impl_all!(Components: Send, Sync);
 /// Stores the thread-safe global states in a world.
 pub struct SyncGlobals {
     /// Global states that can be concurrently accessed by systems on other threads.
-    pub(in crate::world) sync_globals: HashMap<DbgTypeId, RwLock<Box<dyn Any + Send + Sync>>>,
+    pub(in crate::world) sync_globals:
+        HashMap<DbgTypeId, (referrer::Vtable, RwLock<Box<dyn Any + Send + Sync>>)>,
 }
 
 impl SyncGlobals {
@@ -319,7 +321,7 @@ impl SyncGlobals {
     /// - if the global state is not used in any systems
     /// - if another thread is exclusively accessing the same archetyped component.
     pub fn read<G: Global + Send + Sync>(&self) -> impl ops::Deref<Target = G> + '_ {
-        let lock = match self.sync_globals.get(&TypeId::of::<G>()) {
+        let (_, lock) = match self.sync_globals.get(&TypeId::of::<G>()) {
             Some(lock) => lock,
             None => panic!(
                 "The global state {} cannot be used because it is not used in any systems",
@@ -345,7 +347,7 @@ impl SyncGlobals {
     pub fn write<G: Global + Send + Sync>(
         &self,
     ) -> impl ops::Deref<Target = G> + ops::DerefMut + '_ {
-        let lock = match self.sync_globals.get(&TypeId::of::<G>()) {
+        let (_, lock) = match self.sync_globals.get(&TypeId::of::<G>()) {
             Some(lock) => lock,
             None => panic!(
                 "The global state {} cannot be used because it is not used in any systems",
@@ -364,7 +366,7 @@ impl SyncGlobals {
     }
 
     pub(crate) fn get_mut<G: Global + Send + Sync>(&mut self) -> &mut G {
-        let lock = match self.sync_globals.get_mut(&TypeId::of::<G>()) {
+        let (_, lock) = match self.sync_globals.get_mut(&TypeId::of::<G>()) {
             Some(lock) => lock,
             None => panic!(
                 "The global state {} cannot be used because it is not used in any systems",
@@ -378,7 +380,7 @@ impl SyncGlobals {
 /// Stores the thread-unsafe global states in a world.
 pub struct UnsyncGlobals {
     /// Global states that must be accessed on the main thread.
-    pub(in crate::world) unsync_globals: HashMap<DbgTypeId, Box<dyn Any>>,
+    pub(in crate::world) unsync_globals: HashMap<DbgTypeId, (referrer::Vtable, Box<dyn Any>)>,
 }
 
 impl UnsyncGlobals {
@@ -392,7 +394,7 @@ impl UnsyncGlobals {
     /// it is expected that a mutable reference to `UnsyncGlobals` is available.
     pub fn get<G: Global>(&mut self) -> &mut G {
         match self.unsync_globals.get_mut(&TypeId::of::<G>()) {
-            Some(global) => global.downcast_mut::<G>().expect("TypeId mismatch"),
+            Some((_vtable, global)) => global.downcast_mut::<G>().expect("TypeId mismatch"),
             None => panic!(
                 "The global state {} cannot be used because it is not used in any systems",
                 any::type_name::<G>()

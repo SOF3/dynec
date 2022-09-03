@@ -55,3 +55,16 @@ impl StoreMap {
         }
     }
 }
+
+/// Parameter to [`super::Entity::weak`].
+pub trait WeakStore {
+    fn resolve<A: Archetype>(&self) -> Option<&Store>;
+}
+
+impl WeakStore for Store {
+    fn resolve<A: Archetype>(&self) -> Option<&Store> { Some(self) }
+}
+
+impl WeakStore for StoreMap {
+    fn resolve<A: Archetype>(&self) -> Option<&Store> { self.map.get(&TypeId::of::<A>()) }
+}

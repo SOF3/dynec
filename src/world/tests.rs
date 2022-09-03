@@ -1,5 +1,5 @@
 use super::tracer;
-use crate::entity::{deletion, Ref};
+use crate::entity::{deletion, generation, Ref};
 use crate::{comp, global, system, system_test, Entity, TestArch, TestDiscrim1, TestDiscrim2};
 
 // Test component summary:
@@ -315,7 +315,38 @@ fn test_offline_delete() {
     #[system(dynec_as(crate))]
     fn test_system(
         mut entity_deleter: impl system::EntityDeleter<TestArch>,
-        #[dynec(global)] initials: &InitialEntities,
+        #[dynec(global)] initials: &mut InitialEntities,
+        _comp1: impl system::ReadSimple<TestArch, Comp1>,
+    ) {
+        entity_deleter.queue(initials.ent1.take().expect("ent1 missing"));
+    }
+
+    let mut world = system_test!(test_system.build(););
+    let ent1 = world.create(crate::comps![@(crate) TestArch => Comp1(7)]);
+    let ent1_weak = ent1.weak(world.get_global::<generation::StoreMap>());
+    world.get_global::<InitialEntities>().ent1 = Some(ent1);
+
+    world.execute(&tracer::Log(log::Level::Trace));
+
+    let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent1_weak);
+    assert_eq!(comp1, None);
+}
+
+#[test]
+#[cfg_attr(
+    any(
+        all(debug_assertions, feature = "debug-entity-rc"),
+        all(not(debug_assertions), feature = "release-entity-rc"),
+    ),
+    should_panic = "Detected dangling strong reference to entity dynec::test_util::TestArch#1. \
+                    All strong references to an entity must be dropped before queuing for \
+                    deletion and removing all finalizers."
+)]
+fn test_offline_delete_leak() {
+    #[system(dynec_as(crate))]
+    fn test_system(
+        mut entity_deleter: impl system::EntityDeleter<TestArch>,
+        #[dynec(global)] initials: &mut InitialEntities,
         _comp1: impl system::ReadSimple<TestArch, Comp1>,
     ) {
         entity_deleter.queue(initials.ent1.as_ref().expect("ent1 missing"));
@@ -323,11 +354,12 @@ fn test_offline_delete() {
 
     let mut world = system_test!(test_system.build(););
     let ent1 = world.create(crate::comps![@(crate) TestArch => Comp1(7)]);
-    world.get_global::<InitialEntities>().ent1 = Some(ent1.clone());
+    let ent1_weak = ent1.weak(world.get_global::<generation::StoreMap>());
+    world.get_global::<InitialEntities>().ent1 = Some(ent1);
 
     world.execute(&tracer::Log(log::Level::Trace));
 
-    let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent1);
+    let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent1_weak);
     assert_eq!(comp1, None);
 }
 
@@ -336,7 +368,7 @@ fn test_offline_finalizer_delete() {
     #[system(dynec_as(crate))]
     fn test_system(
         mut entity_deleter: impl system::EntityDeleter<TestArch>,
-        #[dynec(global)] initials: &InitialEntities,
+        #[dynec(global)] initials: &mut InitialEntities,
         #[dynec(global)] deletion_flags: &deletion::Flags,
         mut comp_final: impl system::WriteSimple<TestArch, CompFinal>,
         _comp1: impl system::ReadSimple<TestArch, Comp1>,
@@ -344,6 +376,7 @@ fn test_offline_finalizer_delete() {
         let ent1 = initials.ent1.as_ref().expect("ent1 missing");
         if deletion_flags.get::<TestArch>(ent1.id()) {
             comp_final.set(ent1, None);
+            initials.ent1 = None;
         } else {
             entity_deleter.queue(ent1);
         }
@@ -351,17 +384,18 @@ fn test_offline_finalizer_delete() {
 
     let mut world = system_test!(test_system.build(););
     let ent1 = world.create(crate::comps![@(crate) TestArch => Comp1(13), CompFinal]);
-    world.get_global::<InitialEntities>().ent1 = Some(ent1.clone());
+    let ent1_weak = ent1.weak(world.get_global::<generation::StoreMap>());
+    world.get_global::<InitialEntities>().ent1 = Some(ent1);
 
     // first iteration
     world.execute(&tracer::Log(log::Level::Trace));
 
-    let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent1);
+    let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent1_weak);
     assert_eq!(comp1, Some(&mut Comp1(13)));
 
     // second iteration
     world.execute(&tracer::Log(log::Level::Trace));
 
-    let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent1);
+    let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent1_weak);
     assert_eq!(comp1, None);
 }

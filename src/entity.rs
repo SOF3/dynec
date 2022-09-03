@@ -8,12 +8,6 @@
 //!
 //! All strong references to an entity must be dropped before it gets deleted.
 
-#[cfg(any(
-    all(debug_assertions, feature = "debug-entity-rc"),
-    all(not(debug_assertions), feature = "release-entity-rc"),
-))]
-use std::sync;
-
 use crate::Archetype;
 
 mod raw;
@@ -26,6 +20,8 @@ pub use ealloc::Ealloc;
 
 pub mod generation;
 pub use generation::Generation;
+
+pub(crate) mod rctrack;
 
 pub mod referrer;
 pub use referrer::Referrer;
@@ -70,6 +66,35 @@ impl<A: Archetype> Ref for UnclonableRef<A> {
     fn id(&self) -> A::RawEntity { self.value }
 }
 
+#[cfg(any(
+    all(debug_assertions, feature = "debug-entity-rc"),
+    all(not(debug_assertions), feature = "release-entity-rc"),
+))]
+pub(crate) mod maybe {
+    use std::sync::{Arc, Weak};
+
+    pub(crate) type MaybeArc = Arc<()>;
+    pub(crate) type MaybeWeak = Weak<()>;
+
+    pub(crate) fn downgrade(arc: &MaybeArc) -> MaybeWeak { Arc::downgrade(arc) }
+}
+
+#[cfg(not(any(
+    all(debug_assertions, feature = "debug-entity-rc"),
+    all(not(debug_assertions), feature = "release-entity-rc"),
+)))]
+mod maybe {
+    #[derive(Clone, Default)]
+    pub(crate) struct MaybeArc;
+    #[derive(Clone)]
+    pub(crate) struct MaybeWeak;
+
+    #[allow(clippy::unused_unit)]
+    pub(crate) fn downgrade(&MaybeArc: &MaybeArc) -> MaybeWeak { MaybeWeak }
+}
+
+pub(crate) use maybe::MaybeArc;
+
 /// A strong reference to an entity.
 ///
 /// This reference must be dropped before an entity is deleted
@@ -78,44 +103,26 @@ impl<A: Archetype> Ref for UnclonableRef<A> {
 pub struct Entity<A: Archetype> {
     id: A::RawEntity,
 
-    #[cfg(any(
-        all(debug_assertions, feature = "debug-entity-rc"),
-        all(not(debug_assertions), feature = "release-entity-rc"),
-    ))]
-    rc: sync::Arc<()>,
+    pub(crate) rc: MaybeArc,
 }
 
 impl<A: Archetype> Entity<A> {
     /// Creates a new strong reference to an entity.
     ///
     /// This method should only be used when a completely new entity has been created.
-    pub(crate) fn new_allocated(id: A::RawEntity) -> Self {
-        Self {
-            id,
-
-            #[cfg(any(
-                all(debug_assertions, feature = "debug-entity-rc"),
-                all(not(debug_assertions), feature = "release-entity-rc"),
-            ))]
-            rc: sync::Arc::new(()),
-        }
-    }
+    pub(crate) fn new_allocated(id: A::RawEntity) -> Self { Self { id, rc: MaybeArc::default() } }
 
     /// Converts the strong reference into a weak reference.
-    pub fn weak(&self, store: &generation::Store) -> Weak<A> {
+    pub fn weak(&self, store: &impl generation::WeakStore) -> Weak<A> {
+        let store = store
+            .resolve::<A>()
+            .expect("entity was instantiated without generation store initialized");
+
         // since this strong reference is still valid,
         // the current state of the generation store is the actual generation.
         let generation = store.get(self.id.to_primitive());
 
-        Weak {
-            id: self.id,
-            generation,
-            #[cfg(any(
-                all(debug_assertions, feature = "debug-entity-rc"),
-                all(not(debug_assertions), feature = "release-entity-rc"),
-            ))]
-            rc: sync::Arc::downgrade(&self.rc),
-        }
+        Weak { id: self.id, generation, rc: maybe::downgrade(&self.rc) }
     }
 }
 
@@ -130,11 +137,7 @@ impl<A: Archetype> Clone for Entity<A> {
         Self {
             id: self.id,
 
-            #[cfg(any(
-                all(debug_assertions, feature = "debug-entity-rc"),
-                all(not(debug_assertions), feature = "release-entity-rc"),
-            ))]
-            rc: sync::Arc::clone(&self.rc),
+            rc: Clone::clone(&self.rc),
         }
     }
 }
@@ -157,11 +160,7 @@ pub struct Weak<A: Archetype> {
     id:         A::RawEntity,
     generation: Generation,
 
-    #[cfg(any(
-        all(debug_assertions, feature = "debug-entity-rc"),
-        all(not(debug_assertions), feature = "release-entity-rc"),
-    ))]
-    rc: sync::Weak<()>,
+    rc: maybe::MaybeWeak,
 }
 
 impl<A: Archetype> sealed::Sealed for Weak<A> {}
@@ -176,11 +175,7 @@ impl<A: Archetype> Clone for Weak<A> {
             id:         self.id,
             generation: self.generation,
 
-            #[cfg(any(
-                all(debug_assertions, feature = "debug-entity-rc"),
-                all(not(debug_assertions), feature = "release-entity-rc"),
-            ))]
-            rc: sync::Weak::clone(&self.rc),
+            rc: Clone::clone(&self.rc),
         }
     }
 }

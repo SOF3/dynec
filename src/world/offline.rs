@@ -10,6 +10,7 @@ pub(crate) trait Operation: Send {
         self: Box<Self>,
         components: &mut world::Components,
         sync_globals: &mut world::SyncGlobals,
+        unsync_globals: &mut world::UnsyncGlobals,
         ealloc_map: &mut ealloc::Map,
     ) -> OperationResult;
 }
@@ -27,6 +28,8 @@ pub(crate) enum OperationResult {
 pub(crate) struct CreateEntity<A: Archetype> {
     /// The entity ID, which was already allocated.
     entity:     A::RawEntity,
+    /// The entity ref count, only useful in debug mode.
+    rc:         entity::MaybeArc,
     /// The component list.
     components: comp::Map<A>,
 }
@@ -36,9 +39,10 @@ impl<A: Archetype> Operation for CreateEntity<A> {
         self: Box<Self>,
         components: &mut world::Components,
         sync_globals: &mut world::SyncGlobals,
+        _unsync_globals: &mut world::UnsyncGlobals,
         ealloc_map: &mut ealloc::Map,
     ) -> OperationResult {
-        world::init_entity(sync_globals, self.entity, components, self.components);
+        world::init_entity(sync_globals, self.entity, self.rc, components, self.components);
         OperationResult::Ok
     }
 }
@@ -52,9 +56,16 @@ impl<A: Archetype> Operation for DeleteEntity<A> {
         self: Box<Self>,
         components: &mut world::Components,
         sync_globals: &mut world::SyncGlobals,
+        unsync_globals: &mut world::UnsyncGlobals,
         ealloc_map: &mut ealloc::Map,
     ) -> OperationResult {
-        match world::flag_delete_entity::<A>(self.entity, components, sync_globals, ealloc_map) {
+        match world::flag_delete_entity::<A>(
+            self.entity,
+            components,
+            sync_globals,
+            unsync_globals,
+            ealloc_map,
+        ) {
             world::DeleteResult::Deleted => OperationResult::Ok,
             world::DeleteResult::Terminating => OperationResult::QueueForRerun(self),
         }
@@ -141,9 +152,11 @@ impl BufferShard {
     ) -> entity::Entity<A> {
         let entity = ealloc_shard.allocate(hint);
 
-        self.items.push(Box::new(CreateEntity { entity, components }));
+        let allocated = entity::Entity::new_allocated(entity);
 
-        entity::Entity::new_allocated(entity)
+        self.items.push(Box::new(CreateEntity { entity, components, rc: allocated.rc.clone() }));
+
+        allocated
     }
 
     /// Queues an entity deletion.

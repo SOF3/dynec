@@ -126,9 +126,18 @@ impl World {
 
         let sync_globals = &mut self.sync_globals;
         let world_components = &mut self.components;
-        init_entity(&mut self.sync_globals, id, &mut self.components, components);
 
-        Entity::new_allocated(id)
+        let allocated = Entity::new_allocated(id);
+
+        init_entity(
+            &mut self.sync_globals,
+            id,
+            allocated.rc.clone(),
+            &mut self.components,
+            components,
+        );
+
+        allocated
     }
 
     /// Gets a reference to an entity component in offline mode.
@@ -183,11 +192,23 @@ impl World {
 fn init_entity<A: Archetype>(
     sync_globals: &mut SyncGlobals,
     id: A::RawEntity,
+    _rc: entity::MaybeArc,
     components: &mut Components,
     comp_map: comp::Map<A>,
 ) {
     sync_globals.get_mut::<generation::StoreMap>().next::<A>(id.to_primitive());
     sync_globals.get_mut::<deletion::Flags>().set::<A>(id, false);
+
+    #[cfg(any(
+        all(debug_assertions, feature = "debug-entity-rc"),
+        all(not(debug_assertions), feature = "release-entity-rc"),
+    ))]
+    {
+        use entity::rctrack;
+
+        sync_globals.get_mut::<rctrack::StoreMap>().set::<A>(id.to_primitive(), _rc);
+    }
+
     let typed = components.archetype_mut::<A>();
     typed.init_entity(id, comp_map);
 }
@@ -204,17 +225,20 @@ fn flag_delete_entity<A: Archetype>(
     id: A::RawEntity,
     components: &mut Components,
     sync_globals: &mut SyncGlobals,
+    unsync_globals: &mut UnsyncGlobals,
     ealloc_map: &mut ealloc::Map,
 ) -> DeleteResult {
     sync_globals.get_mut::<deletion::Flags>().set::<A>(id, true);
 
-    try_real_delete_entity::<A>(components, id, ealloc_map)
+    try_real_delete_entity::<A>(components, id, sync_globals, unsync_globals, ealloc_map)
 }
 
 /// Deletes an entity immediately if there are no finalizers.
 fn try_real_delete_entity<A: Archetype>(
     components: &mut Components,
     entity: <A as Archetype>::RawEntity,
+    _sync_globals: &mut SyncGlobals,
+    _unsync_globals: &mut UnsyncGlobals,
     ealloc_map: &mut ealloc::Map,
 ) -> DeleteResult {
     let storages = &mut components.archetype_mut::<A>().simple_storages;
@@ -235,6 +259,25 @@ fn try_real_delete_entity<A: Archetype>(
             .clear_entry(entity);
     }
 
+    #[cfg(any(
+        all(debug_assertions, feature = "debug-entity-rc"),
+        all(not(debug_assertions), feature = "release-entity-rc"),
+    ))]
+    {
+        use entity::rctrack;
+
+        let rc = _sync_globals.get_mut::<rctrack::StoreMap>().remove::<A>(entity.to_primitive());
+        if Arc::try_unwrap(rc).is_err() {
+            search_references(components, _sync_globals, _unsync_globals, entity.to_primitive());
+            panic!(
+                "Detected dangling strong reference to entity {}#{entity:?}. All strong \
+                 references to an entity must be dropped before queuing for deletion and removing \
+                 all finalizers.",
+                any::type_name::<A>()
+            );
+        }
+    }
+
     let ealloc = ealloc_map
         .map
         .get_mut(&TypeId::of::<A>())
@@ -244,6 +287,29 @@ fn try_real_delete_entity<A: Archetype>(
     ealloc.queue_deallocate(entity);
 
     DeleteResult::Deleted
+}
+
+#[cfg(any(
+    all(debug_assertions, feature = "debug-entity-rc"),
+    all(not(debug_assertions), feature = "release-entity-rc"),
+))]
+fn search_references(
+    components: &mut Components,
+    sync_globals: &mut SyncGlobals,
+    unsync_globals: &mut UnsyncGlobals,
+    entity: usize,
+) {
+    for value in sync_globals.sync_globals.values_mut() {
+        let _value = value.get_mut();
+        // TODO
+    }
+    for _value in unsync_globals.unsync_globals.values_mut() {
+        // TODO
+    }
+
+    for typed in components.archetypes.values_mut() {
+        // TODO
+    }
 }
 
 #[cfg(test)]

@@ -250,4 +250,14 @@ fn populate_default_globals(map: &mut HashMap<DbgTypeId, GlobalBuilder<dyn Any +
 
     put_global(map, generation::StoreMap::default());
     put_global(map, deletion::Flags::default());
+
+    #[cfg(any(
+        all(debug_assertions, feature = "debug-entity-rc"),
+        all(not(debug_assertions), feature = "release-entity-rc"),
+    ))]
+    {
+        use crate::entity::rctrack;
+
+        put_global(map, rctrack::StoreMap::default());
+    }
 }

@@ -17,7 +17,7 @@ that distinguishes between different "weight" components,
 such that each `Weight` component refers to a different element.
 
 Like simple components, isotope components are also archetyped,
-but they implement [`comp::Isotope<A`][comp.isotope] instead,
+but they implement [`comp::Isotope<A>`][comp.isotope] instead,
 which can also be achieved through the `#[comp]` macro:
 
 ```rust

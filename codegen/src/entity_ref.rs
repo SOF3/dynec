@@ -30,34 +30,30 @@ pub(crate) fn entity_ref(
                 }
             }
 
-            let impl_dyn = generics.impl_trait(
-                quote!(#crate_name::entity::referrer::Dyn),
-                quote! {
-                    fn visit(
-                        &mut self,
-                        arg: &mut #crate_name::entity::referrer::VisitArg,
-                    ) {
-                        #(
-                            #crate_name::entity::referrer::Dyn::visit(
-                                &mut #field_values,
-                                &mut *arg,
-                            );
-                        )*
-                    }
-                },
-            );
-            let impl_referrer = generics.impl_trait(
+            generics.impl_trait(
                 quote!(#crate_name::entity::referrer::Referrer),
                 quote! {
+                    #[inline]
                     fn visit_type(arg: &mut #crate_name::entity::referrer::VisitTypeArg) {
                         if arg.mark::<Self>().is_continue() {
                             #(<#field_types as #crate_name::entity::referrer::Referrer>::visit_type(arg);)*
                         }
                     }
-                },
-            );
 
-            quote! ( #impl_dyn #impl_referrer )
+                    #[inline]
+                    fn visit_mut<V: #crate_name::entity::referrer::VisitMutArg>(
+                        &mut self,
+                        arg: &mut V,
+                    ) {
+                        #(
+                            #crate_name::entity::referrer::Referrer::visit_mut(
+                                &mut #field_values,
+                                arg,
+                            );
+                        )*
+                    }
+                },
+            )
         }
         syn::Data::Enum(e) => {
             let mut arms = Vec::new();
@@ -103,41 +99,36 @@ pub(crate) fn entity_ref(
                 arms.push(quote! {
                     Self::#variant_ident #pattern => {
                         #(
-                            #crate_name::entity::referrer::Dyn::visit(
+                            #crate_name::entity::referrer::Referrer::visit_mut(
                                 #fields,
-                                &mut *arg,
+                                arg,
                             );
                         )*
                     },
                 })
             }
 
-            let impl_dyn = generics.impl_trait(
-                quote!(#crate_name::entity::referrer::Dyn),
+            generics.impl_trait(
+                quote!(#crate_name::entity::Referrer),
                 quote! {
-                    fn visit(
+                    #[inline]
+                    fn visit_type(arg: &mut #crate_name::entity::referrer::VisitTypeArg) {
+                        if arg.mark::<Self>().is_continue() {
+                            #(<#all_types as #crate_name::entity::referrer::Referrer>::visit_type(arg);)*
+                        }
+                    }
+
+                    #[inline]
+                    fn visit_mut<V: #crate_name::entity::referrer::VisitMutArg>(
                         &mut self,
-                        arg: &mut #crate_name::entity::referrer::VisitArg,
+                        arg: &mut V,
                     ) {
                         match self {
                             #(#arms)*
                         }
                     }
                 },
-            );
-
-            let impl_referrer = generics.impl_trait(
-                quote!(#crate_name::entity::Referrer),
-                quote! {
-                    fn visit_type(arg: &mut #crate_name::entity::referrer::VisitTypeArg) {
-                        if arg.mark::<Self>().is_continue() {
-                            #(<#all_types as #crate_name::entity::referrer::Referrer>::visit_type(arg);)*
-                        }
-                    }
-                },
-            );
-
-            quote! ( #impl_dyn #impl_referrer )
+            )
         }
         syn::Data::Union(u) => {
             return Err(Error::new_spanned(&u.union_token, "only structs and enums are supported"))

@@ -1,57 +1,73 @@
 //! Tracks entity references owned by components and globals.
 //! See [`Referrer`] for more information.
 
-use std::any::TypeId;
 use std::collections::HashSet;
 use std::marker::PhantomData;
 use std::ops;
 
+use super::Raw;
 use crate::util::DbgTypeId;
 use crate::Archetype;
 
 mod std_impl;
 
-/// The object-safe part of [`Referrer`].
-pub trait Dyn: 'static {
-    /// Performs the mapping and increments the counter for each entity.
-    ///
-    /// Each entity reference must be visited only exactly once for each visitor.
-    /// As a result, `Referrer` is not implemented for [`Arc`](std::sync::Arc)
-    /// because it may result in visiting the same entity reference multiple times,
-    /// which will lead to incorrect behaviour.
-    fn visit(&mut self, arg: &mut VisitArg);
-}
-
-/// The opaque argument passed to [`Dyn::visit`].
-///
-/// This type is used to hide the implementation detail from users
-/// such that the actual arguments are only visible to the internals.
-pub struct VisitArg<'t> {
-    archetype: DbgTypeId,
-    mapping:   &'t [usize],
-    counter:   &'t mut usize,
-}
-
 /// A type that may own entity references (no matter strong or weak).
 ///
-/// The parameters passed in this trait are abstracted by the opaque type [`VisitArg`].
-/// Implementors should only forward the arg reference to the other implementors,
+/// The parameters passed in this trait are abstracted by opaque types/traits.
+/// Implementors should only forward the arg reference to implementors in its member fields,
 /// where the actual logic is eventually implemented by
 /// owned [`Entity`](super::Entity) and [`Weak`](super::Weak) fields.
 ///
-/// This trait is deliberately not implemented for [`UnclonableRef`](super::UnclonableRef),
+/// # Non-implementors
+/// ## [`UnclonableRef`](super::UnclonableRef)
+/// This trait is deliberately not implemented for `UnclonableRef`,
 /// because this trait should only be used in global states and components,
-/// whilst `UnclonableRef` should only be used in temporary variables in systems.
-pub trait Referrer: Dyn {
+/// while `UnclonableRef` should only be used in temporary variables in systems.
+///
+/// ## [`Rc`](std::rc::Rc)/[`Arc`](std::sync::Arc)
+/// Each entity reference must be visited only exactly once.
+/// Therefore, it is not possible to implement `Referrer` for ref-counted types,
+/// because multiple references would be visited multiple times.
+/// If sharing an entity reference is ever necessary,
+/// consider refactoring to store the underlying type in a separate unique global state.
+///
+/// # Example implementation
+/// ```
+/// use dynec::entity::referrer;
+///
+/// struct MyCollection<T: referrer::Referrer> {
+///     data: [T; 10],
+/// };
+///
+/// impl<T: referrer::Referrer> referrer::Referrer for MyCollection<T> {
+///     fn visit_type(arg: &mut referrer::VisitTypeArg) {
+///         if arg.mark::<Self>().is_continue() {
+///             <T as referrer::Referrer>::visit_type(arg);
+///         }
+///     }
+///
+///     fn visit_mut<V: referrer::VisitMutArg>(&mut self, arg: &mut V) {
+///         for value in &mut self.data {
+///             <T as referrer::Referrer>::visit_mut(value, arg);
+///         }
+///     }
+/// }
+/// ```
+pub trait Referrer: 'static {
     /// Visit all types that may appear under this referrer.
     ///
     /// It is OK to visit the same type twice.
     /// `arg` contains an internal hash set that avoids recursion.
     fn visit_type(arg: &mut VisitTypeArg);
+
+    /// Execute the given function on every strong and weak entity reference exactly once.
+    ///
+    /// Implementors are recommended to mark the implementation as `#[inline]`
+    /// since this function is a no-op for most implementors.
+    fn visit_mut<V: VisitMutArg>(&mut self, arg: &mut V);
 }
 
-/// The opaque argument passed to [`Dyn::visit`].
-///
+/// The opaque argument passed to [`Referrer::visit_type`].
 /// This type is used to hide the implementation detail from users
 /// such that the actual arguments are only visible to the internals.
 pub struct VisitTypeArg<'t> {
@@ -83,39 +99,78 @@ impl<'t> VisitTypeArg<'t> {
     fn add_archetype<A: Archetype>(&mut self) { self.found_archs.insert(DbgTypeId::of::<A>()); }
 }
 
-impl<A: Archetype> Dyn for super::Weak<A> {
-    fn visit(&mut self, &mut VisitArg { archetype, mapping, ref mut counter }: &mut VisitArg) {
-        if archetype == TypeId::of::<A>() {
-            let &new = mapping
-                .get(super::Raw::to_primitive(self.id))
-                .expect("Weak reference not in entity. ");
-            self.id = <A::RawEntity as super::Raw>::from_primitive(new);
-            **counter += 1;
-        }
-    }
+pub(crate) mod sealed {
+    pub trait Sealed {}
 }
 
-impl<A: Archetype> Referrer for super::Weak<A> {
-    fn visit_type(arg: &mut VisitTypeArg) { arg.mark::<Self>(); }
+/// The trait bound for arguments passed to [`Referrer::visit_mut`].
+///
+/// This is a bound-only trait.
+/// Downstream crates cannot implement this trait,
+/// nor should they call any methods on this trait.
+pub trait VisitMutArg: sealed::Sealed {
+    #[doc(hidden)]
+    fn _visit_strong(&mut self, args: VisitStrongArgs) -> VisitStrongResult;
+
+    #[doc(hidden)]
+    fn _visit_weak(&mut self, args: VisitWeakArgs) -> VisitWeakResult;
 }
 
-impl<A: Archetype> Dyn for super::Entity<A> {
-    fn visit(&mut self, &mut VisitArg { archetype, mapping, ref mut counter }: &mut VisitArg) {
-        if archetype == TypeId::of::<A>() {
-            let &new = mapping
-                .get(super::Raw::to_primitive(self.id))
-                .expect("Weak reference not in entity. ");
-            self.id = <A::RawEntity as super::Raw>::from_primitive(new);
-            **counter += 1;
-        }
-    }
+#[doc(hidden)]
+pub struct VisitStrongArgs<'t> {
+    archetype: DbgTypeId,
+    raw:       usize,
+    rc:        &'t mut super::MaybeArc,
+}
+
+#[doc(hidden)]
+pub struct VisitStrongResult {
+    new_raw: usize,
+}
+
+#[doc(hidden)]
+pub struct VisitWeakArgs<'t> {
+    archetype: DbgTypeId,
+    raw:       usize,
+    rc:        &'t mut super::MaybeWeak,
+}
+
+#[doc(hidden)]
+pub struct VisitWeakResult {
+    new_raw: usize,
 }
 
 impl<A: Archetype> Referrer for super::Entity<A> {
+    #[inline]
     fn visit_type(arg: &mut VisitTypeArg) {
         if arg.mark::<Self>().is_break() {
             return;
         }
         arg.add_archetype::<A>();
+    }
+
+    #[inline]
+    fn visit_mut<V: VisitMutArg>(&mut self, arg: &mut V) {
+        let ret = arg._visit_strong(VisitStrongArgs {
+            archetype: DbgTypeId::of::<A>(),
+            raw:       self.id.to_primitive(),
+            rc:        &mut self.rc,
+        });
+        self.id = A::RawEntity::from_primitive(ret.new_raw);
+    }
+}
+
+impl<A: Archetype> Referrer for super::Weak<A> {
+    #[inline]
+    fn visit_type(arg: &mut VisitTypeArg) { arg.mark::<Self>(); }
+
+    #[inline]
+    fn visit_mut<V: VisitMutArg>(&mut self, arg: &mut V) {
+        let ret = arg._visit_weak(VisitWeakArgs {
+            archetype: DbgTypeId::of::<A>(),
+            raw:       self.id.to_primitive(),
+            rc:        &mut self.rc,
+        });
+        self.id = A::RawEntity::from_primitive(ret.new_raw);
     }
 }

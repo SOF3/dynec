@@ -93,7 +93,7 @@ mod maybe {
     pub(crate) fn downgrade(&MaybeArc: &MaybeArc) -> MaybeWeak { MaybeWeak }
 }
 
-pub(crate) use maybe::MaybeArc;
+pub(crate) use maybe::{MaybeArc, MaybeWeak};
 
 /// A strong reference to an entity.
 ///

@@ -45,7 +45,7 @@ where
     ) -> entity::Entity<A> {
         let mut buffer = self.buffer.borrow_mut();
         let ealloc = &mut *self.ealloc;
-        buffer.create_entity_with_shard(comps, &mut *ealloc)
+        buffer.create_entity_with_hint_and_shard(comps, &mut *ealloc, hint)
     }
 }
 

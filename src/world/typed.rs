@@ -200,17 +200,17 @@ pub(crate) struct Typed<A: Archetype> {
 
 impl<A: Archetype> Typed<A> {
     /// Initialize an entity. This function should only be called offline.
-    pub(crate) fn init_entity(&mut self, id: A::RawEntity, mut components: comp::Map<A>) {
+    pub(crate) fn init_entity(&mut self, id: A::RawEntity, mut comp_map: comp::Map<A>) {
         for populate in &self.populators {
-            populate(&mut components);
+            populate(&mut comp_map);
         }
 
         for storage in self.simple_storages.values_mut() {
             let any_storage = Arc::get_mut(&mut storage.storage).expect("storage arc was leaked");
-            any_storage.get_mut().fill_init_simple(id, &mut components);
+            any_storage.get_mut().fill_init_simple(id, &mut comp_map);
         }
 
-        for (ty, value) in components.into_isotopes() {
+        for (ty, value) in comp_map.into_isotopes() {
             let ty = PaddedIsotopeIdentifier {
                 id:      ty.id,
                 discrim: PaddedIsotopeDiscrim::Item(

@@ -73,7 +73,7 @@ pub(crate) trait AnySimpleStorage<A: Archetype>: Send + Sync {
     fn as_any_mut(&mut self) -> &mut (dyn Any + Send + Sync);
 
     /// Fills a simple component of with the initial value.
-    fn fill_init_simple(&mut self, entity: A::RawEntity, components: &mut comp::Map<A>);
+    fn fill_init_simple(&mut self, entity: A::RawEntity, comp_map: &mut comp::Map<A>);
 
     /// Returns true if [`C::IS_FINALIZER`](comp::Simple::IS_FINALIZER)
     /// and the component exists for the given entity.
@@ -100,8 +100,8 @@ impl<A: Archetype, C: comp::Simple<A>> AnySimpleStorage<A> for SimpleStorage<A, 
 
     fn as_any_mut(&mut self) -> &mut (dyn Any + Send + Sync) { self }
 
-    fn fill_init_simple(&mut self, entity: A::RawEntity, components: &mut comp::Map<A>) {
-        if let Some(comp) = components.remove_simple::<C>() {
+    fn fill_init_simple(&mut self, entity: A::RawEntity, comp_map: &mut comp::Map<A>) {
+        if let Some(comp) = comp_map.remove_simple::<C>() {
             self.0.set(entity, Some(comp));
         } else if let comp::SimplePresence::Required = C::PRESENCE {
             panic!(

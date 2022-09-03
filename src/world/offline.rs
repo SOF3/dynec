@@ -27,11 +27,11 @@ pub(crate) enum OperationResult {
 /// Create an entity.
 pub(crate) struct CreateEntity<A: Archetype> {
     /// The entity ID, which was already allocated.
-    entity:     A::RawEntity,
+    entity:   A::RawEntity,
     /// The entity ref count, only useful in debug mode.
-    rc:         entity::MaybeArc,
+    rc:       entity::MaybeArc,
     /// The component list.
-    components: comp::Map<A>,
+    comp_map: comp::Map<A>,
 }
 
 impl<A: Archetype> Operation for CreateEntity<A> {
@@ -42,7 +42,7 @@ impl<A: Archetype> Operation for CreateEntity<A> {
         _unsync_globals: &mut world::UnsyncGlobals,
         ealloc_map: &mut ealloc::Map,
     ) -> OperationResult {
-        world::init_entity(sync_globals, self.entity, self.rc, components, self.components);
+        world::init_entity(sync_globals, self.entity, self.rc, components, self.comp_map);
         OperationResult::Ok
     }
 }
@@ -112,20 +112,20 @@ impl BufferShard {
     /// Creates an entity and queues for initialization.
     pub fn create_entity<A: Archetype>(
         &mut self,
-        components: comp::Map<A>,
+        comp_map: comp::Map<A>,
         ealloc_map: &mut ealloc::ShardMap,
     ) -> entity::Entity<A> {
-        self.create_entity_with_hint::<A>(components, ealloc_map, Default::default())
+        self.create_entity_with_hint::<A>(comp_map, ealloc_map, Default::default())
     }
 
     /// Creates an entity and queues for initialization.
     pub fn create_entity_with_hint<A: Archetype>(
         &mut self,
-        components: comp::Map<A>,
+        comp_map: comp::Map<A>,
         ealloc_map: &mut ealloc::ShardMap,
         hint: <A::Ealloc as entity::Ealloc>::AllocHint,
     ) -> entity::Entity<A> {
-        self.create_entity_with_hint_and_shard(components, ealloc_map.get::<A>(), hint)
+        self.create_entity_with_hint_and_shard(comp_map, ealloc_map.get::<A>(), hint)
     }
 
     /// Creates an entity and queues for initialization.
@@ -134,10 +134,10 @@ impl BufferShard {
         S: ealloc::Shard<Raw = A::RawEntity, Hint = <A::Ealloc as entity::Ealloc>::AllocHint> + ?Sized,
     >(
         &mut self,
-        components: comp::Map<A>,
+        comp_map: comp::Map<A>,
         ealloc_shard: &mut S,
     ) -> entity::Entity<A> {
-        self.create_entity_with_hint_and_shard(components, ealloc_shard, Default::default())
+        self.create_entity_with_hint_and_shard(comp_map, ealloc_shard, Default::default())
     }
 
     /// Creates an entity and queues for initialization.
@@ -146,7 +146,7 @@ impl BufferShard {
         S: ealloc::Shard<Raw = A::RawEntity, Hint = <A::Ealloc as entity::Ealloc>::AllocHint> + ?Sized,
     >(
         &mut self,
-        components: comp::Map<A>,
+        comp_map: comp::Map<A>,
         ealloc_shard: &mut S,
         hint: <A::Ealloc as entity::Ealloc>::AllocHint,
     ) -> entity::Entity<A> {
@@ -154,7 +154,7 @@ impl BufferShard {
 
         let allocated = entity::Entity::new_allocated(entity);
 
-        self.items.push(Box::new(CreateEntity { entity, components, rc: allocated.rc.clone() }));
+        self.items.push(Box::new(CreateEntity { entity, comp_map, rc: allocated.rc.clone() }));
 
         allocated
     }

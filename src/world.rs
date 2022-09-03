@@ -104,15 +104,15 @@ impl World {
     }
 
     /// Adds an entity to the world.
-    pub fn create<A: Archetype>(&mut self, components: comp::Map<A>) -> Entity<A> {
-        self.create_with_hint::<A>(Default::default(), components)
+    pub fn create<A: Archetype>(&mut self, comp_map: comp::Map<A>) -> Entity<A> {
+        self.create_with_hint::<A>(Default::default(), comp_map)
     }
 
     /// Adds an entity to the world near another entity.
     pub fn create_with_hint<A: Archetype>(
         &mut self,
         hint: <A::Ealloc as Ealloc>::AllocHint,
-        components: comp::Map<A>,
+        comp_map: comp::Map<A>,
     ) -> Entity<A> {
         let ealloc = match self.ealloc_map.map.get_mut(&TypeId::of::<A>()) {
             Some(ealloc) => ealloc,
@@ -124,9 +124,6 @@ impl World {
         let ealloc = ealloc.as_any_mut().downcast_mut::<A::Ealloc>().expect("TypeId mismatch");
         let id = ealloc.allocate(hint);
 
-        let sync_globals = &mut self.sync_globals;
-        let world_components = &mut self.components;
-
         let allocated = Entity::new_allocated(id);
 
         init_entity(
@@ -134,7 +131,7 @@ impl World {
             id,
             allocated.rc.clone(),
             &mut self.components,
-            components,
+            comp_map,
         );
 
         allocated

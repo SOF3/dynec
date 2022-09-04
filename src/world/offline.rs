@@ -40,7 +40,7 @@ impl<A: Archetype> Operation for CreateEntity<A> {
         components: &mut world::Components,
         sync_globals: &mut world::SyncGlobals,
         _unsync_globals: &mut world::UnsyncGlobals,
-        ealloc_map: &mut ealloc::Map,
+        _ealloc_map: &mut ealloc::Map,
     ) -> OperationResult {
         world::init_entity(sync_globals, self.entity, self.rc, components, self.comp_map);
         OperationResult::Ok

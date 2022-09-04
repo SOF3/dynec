@@ -262,15 +262,15 @@ impl Components {
     /// - if another thread is accessing the same archetyped component.
     pub fn write_isotope_storage<A: Archetype, C: comp::Isotope<A>>(
         &self,
-        discrim: Option<&[usize]>,
+        _discrim: Option<&[usize]>,
     ) -> impl system::WriteIsotope<A, C> + '_ {
         struct Ret<A: Archetype, C: comp::Isotope<A>>(PhantomData<(A, C)>);
 
         impl<A: Archetype, C: comp::Isotope<A>> system::ReadIsotope<A, C> for Ret<A, C> {
             fn get<E: entity::Ref<Archetype = A>>(
                 &self,
-                entity: E,
-                discrim: C::Discrim,
+                _entity: E,
+                _discrim: C::Discrim,
             ) -> system::RefOrDefault<'_, C>
             where
                 C: comp::Must<A>,
@@ -280,15 +280,15 @@ impl Components {
 
             fn try_get<E: entity::Ref<Archetype = A>>(
                 &self,
-                entity: E,
-                discrim: C::Discrim,
+                _entity: E,
+                _discrim: C::Discrim,
             ) -> Option<&C> {
                 todo!()
             }
 
             fn get_all<E: entity::Ref<Archetype = A>>(
                 &self,
-                entity: E,
+                _entity: E,
             ) -> system::IsotopeRefMap<'_, A, C> {
                 todo!()
             }

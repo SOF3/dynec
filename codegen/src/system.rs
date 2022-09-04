@@ -611,6 +611,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
         (0..input.sig.inputs.len()).map(|i| quote::format_ident!("arg_{}", i)).collect();
 
     let destructure_local_states = quote! {
+        #[allow(unused_variables, clippy::unused_unit)]
         let (#(#local_state_field_pats,)*) = {
             let &Self {
                 #(ref #local_state_field_idents,)*

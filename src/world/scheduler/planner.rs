@@ -3,6 +3,7 @@ use std::num::NonZeroUsize;
 
 use parking_lot::Condvar;
 
+use super::executor::DeadlockCounter;
 use super::{Node, SendSystemIndex, Topology, UnsendSystemIndex, WakeupState};
 use crate::{util, world};
 
@@ -129,6 +130,7 @@ impl Planner {
         node: Node,
         topology: &Topology,
         condvar: &Condvar,
+        deadlock_counter: &DeadlockCounter,
     ) {
         {
             let state = self.wakeup_state.get_mut(&node).expect("invalid node index");
@@ -143,7 +145,10 @@ impl Planner {
 
         self.remaining_systems -= 1;
 
-        condvar.notify_all();
+        tracer.complete_system(node, self.remaining_systems);
+
+        let wakeups = condvar.notify_all();
+        deadlock_counter.end_wait(wakeups);
     }
 
     /// Removes one blocker from each node in the queue iterator.

@@ -2,6 +2,8 @@
 //!
 //! The intended flowchart can be found in `flow.dot`.
 
+#![allow(dead_code)]
+
 mod render;
 mod simulation;
 mod time;

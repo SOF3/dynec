@@ -15,14 +15,12 @@ pub(crate) trait AnyBuilder {
         &mut self,
         component: DbgTypeId,
         storage_builder: fn() -> Box<dyn Any>,
-        vtable: referrer::SingleVtable,
     );
 
     fn add_isotope_factory_if_missing(
         &mut self,
         component: DbgTypeId,
         factory_builder: fn() -> Box<dyn Any>,
-        vtable: referrer::SingleVtable,
     );
 
     fn build(self: Box<Self>) -> Box<dyn AnyTyped>;
@@ -42,7 +40,6 @@ impl<A: Archetype> AnyBuilder for Builder<A> {
         &mut self,
         component: DbgTypeId,
         box_fn: fn() -> Box<dyn Any>,
-        vtable: referrer::SingleVtable,
     ) {
         self.simple_storages.entry(component).or_insert_with(|| {
             let boxed = box_fn();
@@ -61,7 +58,6 @@ impl<A: Archetype> AnyBuilder for Builder<A> {
         &mut self,
         component: DbgTypeId,
         box_fn: fn() -> Box<dyn Any>,
-        vtable: referrer::SingleVtable,
     ) {
         self.isotope_factories.entry(component).or_insert_with(|| {
             let boxed = box_fn();

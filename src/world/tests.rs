@@ -57,6 +57,12 @@ struct Iso2(i32);
 #[derive(Debug)]
 struct Iso3(i32);
 
+#[comp(dynec_as(crate), of = TestArch)]
+struct StrongRefSimple(#[entity] Entity<TestArch>);
+
+#[comp(dynec_as(crate), of = TestArch, isotope = TestDiscrim1)]
+struct StrongRefIsotope(#[entity] Entity<TestArch>);
+
 #[global(dynec_as(crate), initial)]
 #[derive(Default)]
 struct Aggregator {
@@ -73,16 +79,16 @@ struct InitialEntities {
 
 #[system(dynec_as(crate))]
 fn test_system(
-    comp3: impl system::ReadSimple<TestArch, Comp3>,
-    comp4: impl system::WriteSimple<TestArch, Comp4>,
-    comp5: impl system::ReadSimple<TestArch, Comp5>,
-    comp6: impl system::ReadSimple<TestArch, Comp6>,
-    #[dynec(isotope(discrim = [TestDiscrim1(11), TestDiscrim1(17)]))] iso1: impl system::ReadIsotope<
+    _comp3: impl system::ReadSimple<TestArch, Comp3>,
+    _comp4: impl system::WriteSimple<TestArch, Comp4>,
+    _comp5: impl system::ReadSimple<TestArch, Comp5>,
+    _comp6: impl system::ReadSimple<TestArch, Comp6>,
+    #[dynec(isotope(discrim = [TestDiscrim1(11), TestDiscrim1(17)]))] _iso1: impl system::ReadIsotope<
         TestArch,
         Iso1,
     >,
-    #[dynec(global)] aggregator: &mut Aggregator,
-    #[dynec(global)] initials: &InitialEntities,
+    #[dynec(global)] _aggregator: &mut Aggregator,
+    #[dynec(global)] _initials: &InitialEntities,
 ) {
 }
 
@@ -100,7 +106,7 @@ fn test_dependencies_successful() {
 
     match world.get_simple::<TestArch, Comp4, _>(&entity) {
         Some(&mut Comp4(c40, c41)) => {
-            assert_eq!(c40, 1 * 7);
+            assert_eq!(c40, 7);
             assert_eq!(c41, (1 + 2) * 8);
         }
         None => panic!("Comp4 is used in system_with_comp3_comp4_comp5"),
@@ -194,8 +200,8 @@ fn test_isotope_discrim_fetch() {
         }
 
         // should only include requested discriminants
-        let map = iso1.get_all(ent1).collect::<Vec<_>>();
-        assert_eq!(map.len(), 2);
+        let map = iso1.get_all(ent1);
+        assert_eq!(map.count(), 2);
     }
 
     let mut world = system_test!(test_system.build(););
@@ -205,7 +211,7 @@ fn test_isotope_discrim_fetch() {
         @(TestDiscrim1(13), Iso1(5)),
         @(TestDiscrim1(17), Iso1(7)),
     ]);
-    world.get_global::<InitialEntities>().ent1 = Some(ent1.clone());
+    world.get_global::<InitialEntities>().ent1 = Some(ent1);
 
     world.execute(&tracer::Log(log::Level::Trace));
 }

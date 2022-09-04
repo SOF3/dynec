@@ -157,6 +157,9 @@ define_tracer! {
     /// A node is unmarked as runnable because an exclusive node has been stolen.
     fn unmark_runnable(&self, node: world::ScheduleNode);
 
+    /// A system has completed. Also passes the number of remaining nodes.
+    fn complete_system(&self, node: world::ScheduleNode, remaining: usize);
+
     /// A thread-safe system starts running.
     fn start_run_sendable(
         &self,

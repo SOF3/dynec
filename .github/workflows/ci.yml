@@ -58,7 +58,7 @@ jobs:
         uses: actions-rs/clippy-check@v1
         with:
           token: ${{secrets.GITHUB_TOKEN}}
-          args: --all ${{matrix.profile}}
+          args: --tests --all ${{matrix.profile}}
           name: ${{matrix.toolchain}}${{matrix.profile}}
       - name: cargo test
         if: ${{ matrix.profile != '' || matrix.toolchain != 'nightly' }}

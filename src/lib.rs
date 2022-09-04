@@ -64,6 +64,7 @@
 //! - It is useful for entities that are mostly stationary, e.g. buildings that cannot move.
 
 #![cfg_attr(debug_assertions, allow(dead_code, unused_variables))]
+#![cfg_attr(not(debug_assertions), allow(dead_code))] // TODO remove
 #![cfg_attr(doc, warn(missing_docs))]
 #![cfg_attr(feature = "map-first-last", feature(map_first_last))]
 #![cfg_attr(feature = "vec-drain-filter", feature(vec_drain_filter))]
@@ -93,5 +94,4 @@ use test_util::{TestArch, TestDiscrim1, TestDiscrim2};
 pub mod world;
 pub use world::{new, storage, tracer, World};
 
-mod slice_any;
 pub mod util;

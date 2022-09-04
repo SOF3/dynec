@@ -119,7 +119,7 @@ pub trait VisitMutArg: sealed::Sealed {
     fn _visit_weak(&mut self, args: VisitWeakArgs) -> VisitWeakResult;
 
     #[doc(hidden)]
-    fn _set_debug_name(&mut self, name: String) {}
+    fn _set_debug_name(&mut self, _name: String) {}
 }
 
 #[doc(hidden)]

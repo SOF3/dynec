@@ -42,10 +42,10 @@ impl system::Sendable for SendSystem {
     fn get_spec(&self) -> system::Spec { dummy_spec(self.0.as_str()) }
     fn run(
         &mut self,
-        globals: &world::SyncGlobals,
-        components: &world::Components,
-        ealloc_shard_map: &mut ealloc::ShardMap,
-        offline_buffer: &mut offline::BufferShard,
+        _globals: &world::SyncGlobals,
+        _components: &world::Components,
+        _ealloc_shard_map: &mut ealloc::ShardMap,
+        _offline_buffer: &mut offline::BufferShard,
     ) {
         self.1();
     }
@@ -56,11 +56,11 @@ impl system::Unsendable for UnsendSystem {
     fn get_spec(&self) -> system::Spec { dummy_spec(self.0.as_str()) }
     fn run(
         &mut self,
-        sync_globals: &world::SyncGlobals,
-        unsync_globals: &mut world::UnsyncGlobals,
-        components: &world::Components,
-        ealloc_shard_map: &mut ealloc::ShardMap,
-        offline_buffer: &mut offline::BufferShard,
+        _sync_globals: &world::SyncGlobals,
+        _unsync_globals: &mut world::UnsyncGlobals,
+        _components: &world::Components,
+        _ealloc_shard_map: &mut ealloc::ShardMap,
+        _offline_buffer: &mut offline::BufferShard,
     ) {
         self.1();
     }
@@ -78,7 +78,7 @@ struct Comp2;
 #[derive(Default)]
 struct UnmarkCounterTracer(AtomicUsize);
 impl world::Tracer for UnmarkCounterTracer {
-    fn unmark_runnable(&self, node: world::ScheduleNode) {
+    fn unmark_runnable(&self, _node: world::ScheduleNode) {
         self.0.fetch_add(1, atomic::Ordering::SeqCst);
     }
 }
@@ -92,10 +92,10 @@ struct MaxConcurrencyTracer {
 impl world::Tracer for MaxConcurrencyTracer {
     fn start_run_sendable(
         &self,
-        thread: tracer::Thread,
-        node: world::ScheduleNode,
-        debug_name: &str,
-        system: &mut dyn system::Sendable,
+        _thread: tracer::Thread,
+        _node: world::ScheduleNode,
+        _debug_name: &str,
+        _system: &mut dyn system::Sendable,
     ) {
         let value = self.current.fetch_add(1, atomic::Ordering::SeqCst);
         self.max.fetch_max(value + 1, atomic::Ordering::SeqCst);
@@ -103,20 +103,20 @@ impl world::Tracer for MaxConcurrencyTracer {
 
     fn end_run_sendable(
         &self,
-        thread: tracer::Thread,
-        node: world::ScheduleNode,
-        debug_name: &str,
-        system: &mut dyn system::Sendable,
+        _thread: tracer::Thread,
+        _node: world::ScheduleNode,
+        _debug_name: &str,
+        _system: &mut dyn system::Sendable,
     ) {
         self.current.fetch_sub(1, atomic::Ordering::SeqCst);
     }
 
     fn start_run_unsendable(
         &self,
-        thread: tracer::Thread,
-        node: world::ScheduleNode,
-        debug_name: &str,
-        system: &mut dyn system::Unsendable,
+        _thread: tracer::Thread,
+        _node: world::ScheduleNode,
+        _debug_name: &str,
+        _system: &mut dyn system::Unsendable,
     ) {
         let value = self.current.fetch_add(1, atomic::Ordering::SeqCst);
         self.max.fetch_max(value + 1, atomic::Ordering::SeqCst);
@@ -124,10 +124,10 @@ impl world::Tracer for MaxConcurrencyTracer {
 
     fn end_run_unsendable(
         &self,
-        thread: tracer::Thread,
-        node: world::ScheduleNode,
-        debug_name: &str,
-        system: &mut dyn system::Unsendable,
+        _thread: tracer::Thread,
+        _node: world::ScheduleNode,
+        _debug_name: &str,
+        _system: &mut dyn system::Unsendable,
     ) {
         self.current.fetch_sub(1, atomic::Ordering::SeqCst);
     }
@@ -142,20 +142,20 @@ struct RunCounterTracer {
 impl world::Tracer for RunCounterTracer {
     fn start_run_sendable(
         &self,
-        thread: tracer::Thread,
-        node: world::ScheduleNode,
-        debug_name: &str,
-        system: &mut dyn system::Sendable,
+        _thread: tracer::Thread,
+        _node: world::ScheduleNode,
+        _debug_name: &str,
+        _system: &mut dyn system::Sendable,
     ) {
         self.send.fetch_add(1, atomic::Ordering::SeqCst);
     }
 
     fn start_run_unsendable(
         &self,
-        thread: tracer::Thread,
-        node: world::ScheduleNode,
-        debug_name: &str,
-        system: &mut dyn system::Unsendable,
+        _thread: tracer::Thread,
+        _node: world::ScheduleNode,
+        _debug_name: &str,
+        _system: &mut dyn system::Unsendable,
     ) {
         self.unsend.fetch_add(1, atomic::Ordering::SeqCst);
     }
@@ -650,7 +650,7 @@ fn test_bootstrap<const S: usize, const U: usize, T, C, R, V>(
         let send_nodes: [SendSystemIndex; S] = (0..S)
             .map(|i| {
                 let node_box = Arc::new(Mutex::new(None::<Node>));
-                let (node, spec) = builder.push_send_system(Box::new(SendSystem(
+                let (node, _spec) = builder.push_send_system(Box::new(SendSystem(
                     format!("SendSystem #{}", i),
                     Box::new({
                         let run = Arc::clone(&run);
@@ -677,7 +677,7 @@ fn test_bootstrap<const S: usize, const U: usize, T, C, R, V>(
         let unsend_nodes: [UnsendSystemIndex; U] = (0..U)
             .map(|i| {
                 let node_box = Rc::new(Cell::new(None::<Node>));
-                let (node, spec) = builder.push_unsend_system(Box::new(UnsendSystem(
+                let (node, _spec) = builder.push_unsend_system(Box::new(UnsendSystem(
                     format!("UnsendSystem #{}", i),
                     Box::new({
                         let run = Arc::clone(&run);

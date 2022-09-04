@@ -250,37 +250,35 @@ fn distribute_sorted(sizes: &mut [usize], total: usize) {
 #[cfg(test)]
 #[test]
 fn test_distribute_sorted_113367() {
-    let sample = [1, 1, 3, 3, 6, 7];
-
-    for (total, simulation) in [
-        (1, [1, 2, 3, 3, 6, 7]),
-        (2, [2, 2, 3, 3, 6, 7]),
-        (3, [2, 3, 3, 3, 6, 7]),
-        (4, [3, 3, 3, 3, 6, 7]),
-        (5, [3, 3, 3, 4, 6, 7]),
-        (7, [3, 4, 4, 4, 6, 7]),
-        (8, [4, 4, 4, 4, 6, 7]),
-        (10, [4, 4, 5, 5, 6, 7]),
-        (15, [5, 6, 6, 6, 6, 7]),
-        (16, [6, 6, 6, 6, 6, 7]),
-        (17, [6, 6, 6, 6, 7, 7]),
-        (22, [7, 7, 7, 7, 7, 8]),
-    ] {
-        assert_eq!(sample.into_iter().sum::<usize>() + total, simulation.into_iter().sum()); // assert correctness of the test case
-
-        let mut copy = sample;
-        distribute_sorted(&mut copy, total);
-
-        assert_eq!(copy, simulation);
-    }
+    test_distribute_sorted(
+        [1, 1, 3, 3, 6, 7],
+        [
+            (1, [1, 2, 3, 3, 6, 7]),
+            (2, [2, 2, 3, 3, 6, 7]),
+            (3, [2, 3, 3, 3, 6, 7]),
+            (4, [3, 3, 3, 3, 6, 7]),
+            (5, [3, 3, 3, 4, 6, 7]),
+            (7, [3, 4, 4, 4, 6, 7]),
+            (8, [4, 4, 4, 4, 6, 7]),
+            (10, [4, 4, 5, 5, 6, 7]),
+            (15, [5, 6, 6, 6, 6, 7]),
+            (16, [6, 6, 6, 6, 6, 7]),
+            (17, [6, 6, 6, 6, 7, 7]),
+            (22, [7, 7, 7, 7, 7, 8]),
+        ],
+    );
 }
 
 #[cfg(test)]
 #[test]
-fn test_distribute_sorted_000() {
-    let sample = [0, 0, 0];
+fn test_distribute_sorted_000() { test_distribute_sorted([0, 0, 0], [(5, [1, 2, 2])]); }
 
-    for (total, simulation) in [(5, [1, 2, 2])] {
+#[cfg(test)]
+fn test_distribute_sorted<const N: usize>(
+    sample: [usize; N],
+    cases: impl IntoIterator<Item = (usize, [usize; N])>,
+) {
+    for (total, simulation) in cases {
         assert_eq!(sample.into_iter().sum::<usize>() + total, simulation.into_iter().sum()); // assert correctness of the test case
 
         let mut copy = sample;

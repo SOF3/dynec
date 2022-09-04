@@ -105,11 +105,7 @@ impl Builder {
 
         for request in system.simple_requests {
             let builder = self.archetype(request.arch);
-            builder.add_simple_storage_if_missing(
-                request.comp,
-                request.storage_builder,
-                request.vtable,
-            );
+            builder.add_simple_storage_if_missing(request.comp, request.storage_builder);
 
             self.scheduler.use_resource(
                 node,
@@ -129,11 +125,7 @@ impl Builder {
 
         for request in system.isotope_requests {
             let builder = self.archetype(request.arch);
-            builder.add_isotope_factory_if_missing(
-                request.comp,
-                request.factory_builder,
-                request.vtable,
-            );
+            builder.add_isotope_factory_if_missing(request.comp, request.factory_builder);
 
             self.scheduler.use_resource(
                 node,

@@ -22,9 +22,10 @@ pub(crate) fn entity_ref(
 
             for (i, field) in s.fields.iter_mut().enumerate() {
                 if drain_entity_attr(&mut field.attrs) {
+                    let i_field = syn::Index::from(i);
                     field_values.push(match &field.ident {
                         Some(ident) => quote!(self.#ident),
-                        None => quote!(self.#i),
+                        None => quote!(self.#i_field),
                     });
                     field_types.push(&field.ty);
                 }

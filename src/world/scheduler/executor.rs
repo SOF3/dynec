@@ -33,6 +33,7 @@ impl Executor {
         }
     }
 
+    #[allow(clippy::too_many_arguments)] // FIXME
     pub(in crate::world::scheduler) fn execute_full_cycle(
         &mut self,
         tracer: &impl world::Tracer,
@@ -155,6 +156,7 @@ impl Executor {
     }
 }
 
+#[allow(clippy::too_many_arguments)] // FIXME
 fn main_worker(
     tracer: &impl world::Tracer,
     context: Context<'_>,
@@ -181,7 +183,6 @@ fn main_worker(
                 StealResult::Pending => {
                     deadlock_counter.start_wait();
                     context.condvar.wait(&mut planner_guard);
-                    deadlock_counter.end_wait();
                 }
                 StealResult::Ready(index) => {
                     MutexGuard::unlocked(&mut planner_guard, || {
@@ -217,13 +218,13 @@ fn main_worker(
                         Node::SendSystem(index),
                         context.topology,
                         context.condvar,
+                        deadlock_counter,
                     );
                 }
             },
             StealResult::Pending => {
                 deadlock_counter.start_wait();
                 context.condvar.wait(&mut planner_guard);
-                deadlock_counter.end_wait();
             }
             StealResult::Ready(index) => {
                 MutexGuard::unlocked(&mut planner_guard, || {
@@ -255,6 +256,7 @@ fn main_worker(
                     Node::UnsendSystem(index),
                     context.topology,
                     context.condvar,
+                    deadlock_counter,
                 );
             }
         }
@@ -277,7 +279,10 @@ fn threaded_worker(
     loop {
         match planner_guard.steal_send(tracer, thread, context.topology) {
             StealResult::CycleComplete => return,
-            StealResult::Pending => context.condvar.wait(&mut planner_guard),
+            StealResult::Pending => {
+                deadlock_counter.start_wait();
+                context.condvar.wait(&mut planner_guard);
+            }
             StealResult::Ready(index) => {
                 MutexGuard::unlocked(&mut planner_guard, || {
                     let (debug_name, system) = send.state.get_send_system(index);
@@ -307,6 +312,7 @@ fn threaded_worker(
                     Node::SendSystem(index),
                     context.topology,
                     context.condvar,
+                    deadlock_counter,
                 );
             }
         }
@@ -317,33 +323,38 @@ fn threaded_worker(
 mod deadlock_counter {
     use std::sync::atomic::{self, AtomicUsize};
 
-    pub(super) struct DeadlockCounter(AtomicUsize);
+    pub(in crate::world::scheduler) struct DeadlockCounter(AtomicUsize);
 
     impl DeadlockCounter {
-        pub(super) fn new(concurrency: usize) -> Self { Self(AtomicUsize::new(concurrency)) }
+        pub(in crate::world::scheduler) fn new(concurrency: usize) -> Self {
+            Self(AtomicUsize::new(concurrency))
+        }
 
-        pub(super) fn start_wait(&self) {
+        pub(in crate::world::scheduler) fn start_wait(&self) {
             let cnt = self.0.fetch_sub(1, atomic::Ordering::SeqCst);
             if cnt == 1 {
                 panic!("Deadlock detected, all workers and main are waiting for tasks");
             }
         }
-        pub(super) fn end_wait(&self) { self.0.fetch_add(1, atomic::Ordering::SeqCst); }
+
+        pub(in crate::world::scheduler) fn end_wait(&self, count: usize) {
+            self.0.fetch_add(count, atomic::Ordering::SeqCst);
+        }
     }
 }
 
 #[cfg(not(debug_assertions))]
 mod deadlock_counter {
-    pub(super) struct DeadlockCounter;
+    pub(in crate::world::scheduler) struct DeadlockCounter;
 
     impl DeadlockCounter {
-        pub(super) fn new(concurrency: usize) -> Self { Self }
-        pub(super) fn start_wait(&self) {}
-        pub(super) fn end_wait(&self) {}
+        pub(in crate::world::scheduler) fn new(_concurrency: usize) -> Self { Self }
+        pub(in crate::world::scheduler) fn start_wait(&self) {}
+        pub(in crate::world::scheduler) fn end_wait(&self, _count: usize) {}
     }
 }
 
-use deadlock_counter::DeadlockCounter;
+pub(in crate::world::scheduler) use deadlock_counter::DeadlockCounter;
 
 #[derive(Clone, Copy)]
 struct Context<'t> {

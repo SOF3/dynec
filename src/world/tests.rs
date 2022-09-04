@@ -1,6 +1,8 @@
 use super::tracer;
 use crate::entity::{deletion, generation, Ref};
-use crate::{comp, global, system, system_test, Entity, TestArch, TestDiscrim1, TestDiscrim2};
+use crate::{
+    comp, global, system, system_test, world, Entity, TestArch, TestDiscrim1, TestDiscrim2,
+};
 
 // Test component summary:
 // Comp1: optional, depends []
@@ -343,7 +345,7 @@ fn test_offline_delete() {
                     an entity must be dropped before queuing for deletion and removing all \
                     finalizers."
 )]
-fn test_offline_delete_leak() {
+fn test_offline_delete_sync_global_leak() {
     #[system(dynec_as(crate))]
     fn test_system(
         mut entity_deleter: impl system::EntityDeleter<TestArch>,
@@ -363,6 +365,44 @@ fn test_offline_delete_leak() {
     let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent1_weak);
     assert_eq!(comp1, None);
 }
+
+#[test]
+#[cfg_attr(
+    any(
+        all(debug_assertions, feature = "debug-entity-rc"),
+        all(not(debug_assertions), feature = "release-entity-rc"),
+    ),
+    should_panic = "Detected dangling strong reference to entity dynec::test_util::TestArch#1 in \
+                    global state dynec::world::tests::InitialEntities. All strong references to \
+                    an entity must be dropped before queuing for deletion and removing all \
+                    finalizers."
+)]
+fn test_offline_delete_unsync_global_leak() {
+    #[system(dynec_as(crate), thread_local)]
+    fn test_system(
+        mut entity_deleter: impl system::EntityDeleter<TestArch>,
+        #[dynec(global(thread_local))] initials: &mut InitialEntities,
+        _comp1: impl system::ReadSimple<TestArch, Comp1>,
+    ) {
+        entity_deleter.queue(initials.ent1.as_ref().expect("ent1 missing"));
+    }
+
+    let mut builder = world::Builder::new(0);
+    builder.schedule_thread_unsafe(Box::new(test_system.build()));
+
+    let mut world = builder.build();
+
+    let ent1 = world.create(crate::comps![@(crate) TestArch => Comp1(7)]);
+    let ent1_weak = ent1.weak(world.get_global::<generation::StoreMap>());
+    world.get_global_unsync::<InitialEntities>().ent1 = Some(ent1);
+
+    world.execute(&tracer::Log(log::Level::Trace));
+
+    let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent1_weak);
+    assert_eq!(comp1, None);
+}
+
+// TODO add tests for leaking from simple and isotope components
 
 #[test]
 fn test_offline_finalizer_delete() {

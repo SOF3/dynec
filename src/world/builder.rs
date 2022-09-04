@@ -105,7 +105,11 @@ impl Builder {
 
         for request in system.simple_requests {
             let builder = self.archetype(request.arch);
-            builder.add_simple_storage_if_missing(request.comp, request.storage_builder);
+            builder.add_simple_storage_if_missing(
+                request.comp,
+                request.storage_builder,
+                request.vtable,
+            );
 
             self.scheduler.use_resource(
                 node,
@@ -125,7 +129,11 @@ impl Builder {
 
         for request in system.isotope_requests {
             let builder = self.archetype(request.arch);
-            builder.add_isotope_factory_if_missing(request.comp, request.factory_builder);
+            builder.add_isotope_factory_if_missing(
+                request.comp,
+                request.factory_builder,
+                request.vtable,
+            );
 
             self.scheduler.use_resource(
                 node,
@@ -175,7 +183,7 @@ impl Builder {
     pub fn global<G: Global + Send + Sync>(&mut self, value: G) {
         self.sync_globals.insert(
             DbgTypeId::of::<G>(),
-            (referrer::Vtable::of::<G>(), GlobalBuilder::Provided(Box::new(value))),
+            (referrer::SingleVtable::of::<G>(), GlobalBuilder::Provided(Box::new(value))),
         );
     }
 
@@ -183,7 +191,7 @@ impl Builder {
     pub fn global_thread_unsafe<G: Global>(&mut self, value: G) {
         self.unsync_globals.insert(
             DbgTypeId::of::<G>(),
-            (referrer::Vtable::of::<G>(), GlobalBuilder::Provided(Box::new(value))),
+            (referrer::SingleVtable::of::<G>(), GlobalBuilder::Provided(Box::new(value))),
         );
     }
 
@@ -259,7 +267,7 @@ fn populate_default_globals(map: &mut GlobalBuilderMap<dyn Any + Send + Sync>) {
     ) {
         map.insert(
             DbgTypeId::of::<T>(),
-            (referrer::Vtable::of::<T>(), GlobalBuilder::Provided(Box::new(value))),
+            (referrer::SingleVtable::of::<T>(), GlobalBuilder::Provided(Box::new(value))),
         );
     }
 
@@ -277,4 +285,4 @@ fn populate_default_globals(map: &mut GlobalBuilderMap<dyn Any + Send + Sync>) {
     }
 }
 
-type GlobalBuilderMap<T> = HashMap<DbgTypeId, (referrer::Vtable, GlobalBuilder<T>)>;
+type GlobalBuilderMap<T> = HashMap<DbgTypeId, (referrer::SingleVtable, GlobalBuilder<T>)>;

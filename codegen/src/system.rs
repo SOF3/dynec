@@ -625,7 +625,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             quote!(Unsendable),
             quote! {
                 sync_globals: &#crate_name::world::SyncGlobals,
-                unsync_globals: &#crate_name::world::UnsyncGlobals,
+                unsync_globals: &mut #crate_name::world::UnsyncGlobals,
                 components: &#crate_name::world::Components,
                 ealloc_shard_map: &mut #crate_name::entity::ealloc::ShardMap,
                 offline_buffer: &mut #crate_name::world::offline::BufferShard,

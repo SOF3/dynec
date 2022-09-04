@@ -1,9 +1,9 @@
-use std::any::{self, Any};
-use std::ops;
 use std::sync::Arc;
+use std::{any, ops};
 
 use parking_lot::RwLock;
 
+use crate::storage::AnyIsotopeStorage;
 use crate::world::Storage;
 use crate::{comp, entity, world, Archetype};
 
@@ -117,7 +117,7 @@ impl<'t, C> ops::Deref for RefOrDefault<'t, C> {
 /// Provides immutable access to all isotopes of the same type for an entity.
 pub struct IsotopeRefMap<'t, A: Archetype, C: comp::Isotope<A>> {
     #[allow(clippy::type_complexity)]
-    pub(crate) storages: <&'t [(usize, StorageRefType<C::Storage>)] as IntoIterator>::IntoIter,
+    pub(crate) storages: <&'t [(usize, StorageRefType<A, C::Storage>)] as IntoIterator>::IntoIter,
     pub(crate) index:    A::RawEntity,
 }
 
@@ -150,7 +150,8 @@ pub trait WriteIsotope<A: Archetype, C: comp::Isotope<A>> {
 /// Provides mutable access to all isotopes of the same type for an entity.
 pub struct IsotopeMutMap<'t, A: Archetype, C: comp::Isotope<A>> {
     #[allow(clippy::type_complexity)]
-    pub(crate) storages: <&'t mut [(usize, StorageMutType<C::Storage>)] as IntoIterator>::IntoIter,
+    pub(crate) storages:
+        <&'t mut [(usize, StorageMutType<A, C::Storage>)] as IntoIterator>::IntoIter,
     pub(crate) index:    A::RawEntity,
 }
 
@@ -182,7 +183,7 @@ pub struct FixedIsotope<X, A: Archetype, C: comp::Isotope<A>> {
 }
 
 // we won't need this anymore if IsotopeRefMap turns into a trait.
-pub(crate) type StorageRefType<T> =
-    world::state::OwningMappedRwLockReadGuard<Arc<RwLock<dyn Any + Send + Sync>>, T>;
-pub(crate) type StorageMutType<T> =
-    world::state::OwningMappedRwLockWriteGuard<Arc<RwLock<dyn Any + Send + Sync>>, T>;
+pub(crate) type StorageRefType<A, T> =
+    world::state::OwningMappedRwLockReadGuard<Arc<RwLock<dyn AnyIsotopeStorage<A>>>, T>;
+pub(crate) type StorageMutType<A, T> =
+    world::state::OwningMappedRwLockWriteGuard<Arc<RwLock<dyn AnyIsotopeStorage<A>>>, T>;

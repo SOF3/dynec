@@ -1,13 +1,13 @@
 //! Tracks entity references owned by components and globals.
 //! See [`Referrer`] for more information.
 
+use std::any::Any;
 use std::collections::HashSet;
 use std::marker::PhantomData;
 use std::ops;
 
 use self::search_single::SearchSingleStrong;
 use super::Raw;
-use crate::slice_any::AnySliceMut;
 use crate::util::DbgTypeId;
 use crate::Archetype;
 
@@ -117,6 +117,9 @@ pub trait VisitMutArg: sealed::Sealed {
 
     #[doc(hidden)]
     fn _visit_weak(&mut self, args: VisitWeakArgs) -> VisitWeakResult;
+
+    #[doc(hidden)]
+    fn _set_debug_name(&mut self, name: String) {}
 }
 
 #[doc(hidden)]
@@ -178,28 +181,60 @@ impl<A: Archetype> Referrer for super::Weak<A> {
     }
 }
 
-/// Virtual dispatch table that operates on slices of its target.
-pub(crate) struct Vtable {
-    search_single_strong: for<'t> fn(&'t mut AnySliceMut<'t>, &mut SearchSingleStrong),
+/// Trait objects that are capable of calling [`Referrer::visit_mut`]
+/// with specific implementors of [`VisitMutArg`].
+pub(crate) trait Dyn {
+    fn search_single_strong(&mut self, state: &mut SearchSingleStrong);
 }
 
-impl Vtable {
+/// Virtual dispatch table to operate referrer functions on single instances,
+/// used on global states.
+pub(crate) struct SingleVtable {
+    search_single_strong: fn(&mut dyn Any, &mut SearchSingleStrong),
+}
+
+impl SingleVtable {
     pub(crate) fn of<T: Referrer>() -> Self {
         Self {
-            search_single_strong: |slice, state| {
-                let slice = slice.reborrow().downcast::<T>();
-                for item in slice {
-                    item.visit_mut(state);
-                }
+            search_single_strong: |object, state| {
+                object.downcast_mut::<T>().expect("TypeId mismatch").visit_mut(state)
             },
         }
     }
 
-    pub(crate) fn search_single_strong<'t>(
-        &self,
-        slice: &'t mut AnySliceMut<'t>,
+    pub(crate) fn search_single_strong(
+        &mut self,
+        value: &mut dyn Any,
         state: &mut SearchSingleStrong,
     ) {
-        (self.search_single_strong)(slice, state)
+        (self.search_single_strong)(value, state)
+    }
+}
+
+pub(crate) struct ReferrerIter<I>(pub(crate) I);
+
+impl<I: Iterator> Dyn for ReferrerIter<I>
+where
+    <I as Iterator>::Item: ops::DerefMut,
+    <<I as Iterator>::Item as ops::Deref>::Target: Referrer,
+{
+    fn search_single_strong(&mut self, state: &mut SearchSingleStrong) {
+        for mut item in self.0.by_ref() {
+            let item = &mut *item;
+            item.visit_mut(state);
+        }
+    }
+}
+
+pub(crate) struct DynIter<I>(pub(crate) I);
+
+impl<'t, I: Iterator<Item = (Option<String>, Box<dyn Dyn + 't>)>> Dyn for DynIter<I> {
+    fn search_single_strong(&mut self, state: &mut SearchSingleStrong) {
+        for (debug_name, mut item) in self.0.by_ref() {
+            if let Some(name) = debug_name {
+                state._set_debug_name(name);
+            }
+            item.search_single_strong(state);
+        }
     }
 }

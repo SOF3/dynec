@@ -1,5 +1,7 @@
 //! A storage is the data structure where components of the same type for all entities are stored.
 
+use core::slice;
+
 use crate::entity;
 
 mod vec;
@@ -14,7 +16,7 @@ pub use mux::Mux;
 mod simple;
 pub(crate) use simple::Simple;
 mod isotope;
-pub(crate) use isotope::{Factory as IsotopeFactory, Isotope};
+pub(crate) use isotope::{AnyIsotopeStorage, Factory as IsotopeFactory, Isotope};
 
 /// A [`Mux`] that uses a [`Tree`] and [`Vec`] as the backends.
 pub type MapVecMux<E, C> = Mux<E, C, Tree<E, C>, Vec<E, C>>;
@@ -42,6 +44,50 @@ pub trait Storage: Default + Send + Sync + 'static {
     /// Returns an immutable iterator over the storage, ordered by entity index order.
     fn iter(&self) -> Box<dyn Iterator<Item = (Self::RawEntity, &Self::Comp)> + '_>;
 
+    /// Returns an immutable iterator of slices over the storage, ordered by entity index order.
+    ///
+    /// Each item yielded by the iterator is a tuple of `(index, slice)`,
+    /// where `slice` is the slice of components in the chunk,
+    /// and `index` is the entity index of `slice[0]`.
+    /// `slice` is always nonempty.
+    #[inline]
+    fn iter_chunks(&self) -> Box<dyn Iterator<Item = ChunkRef<'_, Self>> + '_> {
+        Box::new(
+            self.iter()
+                .map(|(entity, item)| ChunkRef { slice: slice::from_ref(item), start: entity }),
+        )
+    }
+
     /// Returns a mutable iterator over the storage, ordered by entity index order.
     fn iter_mut(&mut self) -> Box<dyn Iterator<Item = (Self::RawEntity, &mut Self::Comp)> + '_>;
+
+    /// Returns a mutable iterator of slices over the storage, ordered by entity index order.
+    ///
+    /// Each item yielded by the iterator is a tuple of `(index, slice)`,
+    /// where `slice` is the slice of components in the chunk,
+    /// and `index` is the entity index of `slice[0]`.
+    /// `slice` is always nonempty.
+    #[inline]
+    fn iter_chunks_mut(&mut self) -> Box<dyn Iterator<Item = ChunkMut<'_, Self>> + '_> {
+        Box::new(
+            self.iter_mut()
+                .map(|(entity, item)| ChunkMut { slice: slice::from_mut(item), start: entity }),
+        )
+    }
+}
+
+/// The iterator item of [`Storage::iter_chunks`].
+pub struct ChunkRef<'t, S: Storage> {
+    /// The slice of components in the chunk.
+    pub slice: &'t [S::Comp],
+    /// The entity index of `slice[0]`.
+    pub start: S::RawEntity,
+}
+
+/// The iterator item of [`Storage::iter_chunks_mut`].
+pub struct ChunkMut<'t, S: Storage> {
+    /// The slice of components in the chunk.
+    pub slice: &'t mut [S::Comp],
+    /// The entity index of `slice[0]`.
+    pub start: S::RawEntity,
 }

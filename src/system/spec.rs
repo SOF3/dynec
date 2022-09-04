@@ -45,7 +45,7 @@ pub struct GlobalRequest {
     /// The type of the global state.
     pub(crate) ty:          DbgTypeId,
     /// The referrer vtable of the type.
-    pub(crate) vtable:      referrer::Vtable,
+    pub(crate) vtable:      referrer::SingleVtable,
     /// A closure that calls [`Global::initial`].
     pub(crate) initial:     GlobalInitial,
     /// Whether mutable access is requested.
@@ -71,7 +71,7 @@ impl GlobalRequest {
 
         Self {
             ty: DbgTypeId::of::<G>(),
-            vtable: referrer::Vtable::of::<G>(),
+            vtable: referrer::SingleVtable::of::<G>(),
             initial: GlobalInitial::Sync(|| Box::new(G::initial())),
             mutable,
             strong_refs: visitor.found_archs,
@@ -85,7 +85,7 @@ impl GlobalRequest {
 
         Self {
             ty: DbgTypeId::of::<G>(),
-            vtable: referrer::Vtable::of::<G>(),
+            vtable: referrer::SingleVtable::of::<G>(),
             initial: GlobalInitial::Unsync(|| Box::new(G::initial())),
             mutable,
             strong_refs: visitor.found_archs,
@@ -127,6 +127,8 @@ pub struct SimpleRequest {
     pub(crate) arch:            ArchetypeDescriptor,
     /// The type of the simple component.
     pub(crate) comp:            DbgTypeId,
+    /// The referrer vtable of the type.
+    pub(crate) vtable:          referrer::SingleVtable,
     /// Builder for the storage. Must be `Box<storage::SharedSimple<A>>`.
     pub(crate) storage_builder: fn() -> Box<dyn Any>,
     /// Whether mutable access is requested.
@@ -145,6 +147,7 @@ impl SimpleRequest {
             arch: ArchetypeDescriptor::of::<A>(),
             comp: DbgTypeId::of::<C>(),
             mutable,
+            vtable: referrer::SingleVtable::of::<C>(),
             storage_builder: || Box::new(storage::Simple::<A>::new::<C>()),
             strong_refs: visitor.found_archs,
         }
@@ -171,6 +174,8 @@ pub struct IsotopeRequest {
     pub(crate) arch:            ArchetypeDescriptor,
     /// The archetype of the isotope component.
     pub(crate) comp:            DbgTypeId,
+    /// The referrer vtable of the type.
+    pub(crate) vtable:          referrer::SingleVtable,
     /// Builder for the IsotopeFactory. Must be `Box<Box<dyn storage::AnyIsotopeFactory<A>>>`.
     pub(crate) factory_builder: fn() -> Box<dyn Any>,
     /// If `Some`, only the isotope components of the given discriminants are accessible.
@@ -197,6 +202,7 @@ impl IsotopeRequest {
             comp: DbgTypeId::of::<C>(),
             discrim,
             mutable,
+            vtable: referrer::SingleVtable::of::<C>(),
             factory_builder: || Box::new(storage::IsotopeFactory::<A>::new::<C>()),
             strong_refs: visitor.found_archs,
         }

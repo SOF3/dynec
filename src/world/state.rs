@@ -191,9 +191,7 @@ impl Components {
                                     discrim,
                                 ),
                             };
-                            RwLockReadGuard::map(guard, |storage| {
-                                storage.downcast_ref::<C::Storage>().expect("TypeId mismatch")
-                            })
+                            RwLockReadGuard::map(guard, |storage| storage.downcast_ref::<C>())
                         })
                     })
                 })
@@ -208,7 +206,7 @@ impl Components {
         }
 
         impl<A: Archetype, C: comp::Isotope<A>> system::ReadIsotope<A, C>
-            for Ret<C, system::StorageRefType<C::Storage>>
+            for Ret<C, system::StorageRefType<A, C::Storage>>
         {
             fn get<E: entity::Ref<Archetype = A>>(
                 &self,
@@ -308,7 +306,7 @@ static_assertions::assert_impl_all!(Components: Send, Sync);
 pub struct SyncGlobals {
     /// Global states that can be concurrently accessed by systems on other threads.
     pub(in crate::world) sync_globals:
-        HashMap<DbgTypeId, (referrer::Vtable, RwLock<Box<dyn Any + Send + Sync>>)>,
+        HashMap<DbgTypeId, (referrer::SingleVtable, RwLock<Box<dyn Any + Send + Sync>>)>,
 }
 
 impl SyncGlobals {
@@ -380,7 +378,7 @@ impl SyncGlobals {
 /// Stores the thread-unsafe global states in a world.
 pub struct UnsyncGlobals {
     /// Global states that must be accessed on the main thread.
-    pub(in crate::world) unsync_globals: HashMap<DbgTypeId, (referrer::Vtable, Box<dyn Any>)>,
+    pub(in crate::world) unsync_globals: HashMap<DbgTypeId, (referrer::SingleVtable, Box<dyn Any>)>,
 }
 
 impl UnsyncGlobals {

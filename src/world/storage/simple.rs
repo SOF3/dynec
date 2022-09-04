@@ -6,6 +6,7 @@ use std::sync::Arc;
 use parking_lot::RwLock;
 
 use super::Storage;
+use crate::entity::referrer;
 use crate::{comp, Archetype};
 
 /// Storage and metadata for a simple component.
@@ -81,6 +82,9 @@ pub(crate) trait AnySimpleStorage<A: Archetype>: Send + Sync {
 
     /// Clears the component data for an entity if any.
     fn clear_entry(&mut self, entity: A::RawEntity);
+
+    /// Returns a [`referrer::Dyn`] implementation that visits all components in this storage.
+    fn referrer_dyn<'t>(&'t mut self) -> Box<dyn referrer::Dyn + 't>;
 }
 
 impl<A: Archetype> dyn AnySimpleStorage<A> {
@@ -122,4 +126,8 @@ impl<A: Archetype, C: comp::Simple<A>> AnySimpleStorage<A> for SimpleStorage<A, 
     }
 
     fn clear_entry(&mut self, entity: A::RawEntity) { self.0.set(entity, None); }
+
+    fn referrer_dyn<'t>(&'t mut self) -> Box<dyn referrer::Dyn + 't> {
+        Box::new(referrer::ReferrerIter(self.0.iter_chunks_mut().flat_map(|chunk| chunk.slice)))
+    }
 }

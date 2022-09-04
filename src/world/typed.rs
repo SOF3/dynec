@@ -6,16 +6,23 @@ use std::sync::Arc;
 use parking_lot::RwLock;
 
 use super::storage;
+use crate::entity::referrer;
 use crate::util::DbgTypeId;
 use crate::{comp, Archetype};
 
 pub(crate) trait AnyBuilder {
-    fn add_simple_storage_if_missing(&mut self, component: DbgTypeId, shared: fn() -> Box<dyn Any>);
+    fn add_simple_storage_if_missing(
+        &mut self,
+        component: DbgTypeId,
+        storage_builder: fn() -> Box<dyn Any>,
+        vtable: referrer::SingleVtable,
+    );
 
     fn add_isotope_factory_if_missing(
         &mut self,
         component: DbgTypeId,
-        shared: fn() -> Box<dyn Any>,
+        factory_builder: fn() -> Box<dyn Any>,
+        vtable: referrer::SingleVtable,
     );
 
     fn build(self: Box<Self>) -> Box<dyn AnyTyped>;
@@ -35,6 +42,7 @@ impl<A: Archetype> AnyBuilder for Builder<A> {
         &mut self,
         component: DbgTypeId,
         box_fn: fn() -> Box<dyn Any>,
+        vtable: referrer::SingleVtable,
     ) {
         self.simple_storages.entry(component).or_insert_with(|| {
             let boxed = box_fn();
@@ -53,6 +61,7 @@ impl<A: Archetype> AnyBuilder for Builder<A> {
         &mut self,
         component: DbgTypeId,
         box_fn: fn() -> Box<dyn Any>,
+        vtable: referrer::SingleVtable,
     ) {
         self.isotope_factories.entry(component).or_insert_with(|| {
             let boxed = box_fn();
@@ -240,7 +249,7 @@ impl<A: Archetype> Typed<A> {
                 }),
             };
             let any_storage = Arc::get_mut(&mut storage.storage).expect("storage arc was leaked");
-            (storage.fill_init_isotope)(any_storage.get_mut(), id, value);
+            any_storage.get_mut().fill_init_isotope(id, value);
         }
     }
 }
@@ -248,9 +257,36 @@ impl<A: Archetype> Typed<A> {
 pub(crate) trait AnyTyped: Send + Sync {
     fn as_any(&self) -> &(dyn Any + Send + Sync);
     fn as_any_mut(&mut self) -> &mut (dyn Any + Send + Sync);
+
+    fn referrer_dyn_iter<'t>(&'t mut self, archetype: &'t str) -> Box<dyn referrer::Dyn + 't>;
 }
 
 impl<A: Archetype> AnyTyped for Typed<A> {
     fn as_any(&self) -> &(dyn Any + Send + Sync) { self }
     fn as_any_mut(&mut self) -> &mut (dyn Any + Send + Sync) { self }
+
+    fn referrer_dyn_iter<'t>(&'t mut self, archetype: &'t str) -> Box<dyn referrer::Dyn + 't> {
+        Box::new(referrer::DynIter(
+            self.simple_storages
+                .iter_mut()
+                .map(move |(comp_ty, storage)| {
+                    let referrer_dyn = Arc::get_mut(&mut storage.storage)
+                        .expect("storage arc was leaked")
+                        .get_mut()
+                        .referrer_dyn();
+                    (Some(format!("{archetype}/{comp_ty}")), referrer_dyn)
+                })
+                .chain(self.isotope_storages.get_mut().iter_mut().map(
+                    move |(comp_id, storage)| {
+                        let referrer_dyn = Arc::get_mut(&mut storage.storage)
+                            .expect("storage arc was leaked")
+                            .get_mut()
+                            .referrer_dyn();
+                        let comp_ty = comp_id.id;
+                        let comp_discrim = comp_id.discrim;
+                        (Some(format!("{archetype}/{comp_ty}/{comp_discrim:?}")), referrer_dyn)
+                    },
+                )),
+        ))
+    }
 }

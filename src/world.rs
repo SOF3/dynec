@@ -309,9 +309,9 @@ fn search_references(
     use std::any::Any;
 
     use crate::entity::referrer::search_single::SearchSingleStrong;
-    use crate::slice_any::AnySliceMut;
+    use crate::entity::referrer::VisitMutArg;
 
-    let mut output = Vec::new();
+    let mut state = SearchSingleStrong::new(archetype, entity);
 
     let globals = sync_globals
         .sync_globals
@@ -326,19 +326,15 @@ fn search_references(
                 .map(|(global_ty, (vtable, value))| (global_ty, vtable, &mut **value)),
         );
     for (global_ty, vtable, value) in globals {
-        let mut slice = AnySliceMut::from_any(&mut *value);
-        let mut state = SearchSingleStrong::new(archetype, entity);
-        vtable.search_single_strong(&mut slice, &mut state);
-        if state.found > 0 {
-            output.push(format!("global state {}", global_ty));
-        }
+        state._set_debug_name(format!("global state {global_ty}"));
+        vtable.search_single_strong(value, &mut state);
     }
 
-    for typed in components.archetypes.values_mut() {
-        // TODO
+    for (iter_archetype, typed) in &mut components.archetypes {
+        typed.referrer_dyn_iter(&iter_archetype.to_string()).search_single_strong(&mut state);
     }
 
-    output
+    state.found
 }
 
 #[cfg(test)]

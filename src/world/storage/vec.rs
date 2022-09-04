@@ -2,6 +2,7 @@ use std::marker::PhantomData;
 use std::mem::{self, MaybeUninit};
 
 use bitvec::prelude::BitVec;
+use itertools::Itertools;
 
 use super::Storage;
 use crate::entity;
@@ -124,6 +125,28 @@ impl<E: entity::Raw, C: Send + Sync + 'static> Storage for VecStorage<E, C> {
         }))
     }
 
+    #[inline]
+    fn iter_chunks(&self) -> Box<dyn Iterator<Item = super::ChunkRef<'_, Self>> + '_> {
+        let indices = self.bits.iter_zeros();
+        let data = &self.data;
+
+        // the first bit is always zero, so no need to worry about the initila `0..from`
+
+        Box::new(
+            indices
+                .tuple_windows()
+                .map(|(from, to)| (from + 1)..to)
+                .map(move |range| super::ChunkRef {
+                    slice: unsafe {
+                        let slice = data.get(range.clone()).expect("bits mismatch");
+                        slice_assume_init_ref(slice)
+                    },
+                    start: E::from_primitive(range.start),
+                })
+                .filter(|chunk| !chunk.slice.is_empty()),
+        )
+    }
+
     fn iter_mut(&mut self) -> Box<dyn Iterator<Item = (E, &mut C)> + '_> {
         let indices = self.bits.iter_ones();
         let data = &mut self.data;
@@ -136,4 +159,34 @@ impl<E: entity::Raw, C: Send + Sync + 'static> Storage for VecStorage<E, C> {
             (entity, value)
         }))
     }
+
+    #[inline]
+    fn iter_chunks_mut(&mut self) -> Box<dyn Iterator<Item = super::ChunkMut<'_, Self>> + '_> {
+        let indices = self.bits.iter_zeros().peekable();
+        let data = &mut self.data;
+
+        // the first bit is always zero, so no need to worry about the initila `0..from`
+
+        Box::new(
+            indices
+                .tuple_windows()
+                .map(|(from, to)| (from + 1)..to)
+                .map(move |range| super::ChunkMut {
+                    slice: unsafe {
+                        let uninit = data.get_mut(range.clone()).expect("bits mismatch");
+                        let slice = slice_assume_init_mut(uninit);
+                        mem::transmute::<&mut [C], &mut [C]>(slice)
+                    },
+                    start: E::from_primitive(range.start),
+                })
+                .filter(|chunk| !chunk.slice.is_empty()),
+        )
+    }
+}
+
+unsafe fn slice_assume_init_ref<T>(slice: &[MaybeUninit<T>]) -> &[T] {
+    &*(slice as *const [MaybeUninit<T>] as *const [T])
+}
+unsafe fn slice_assume_init_mut<T>(slice: &mut [MaybeUninit<T>]) -> &mut [T] {
+    &mut *(slice as *mut [MaybeUninit<T>] as *mut [T])
 }

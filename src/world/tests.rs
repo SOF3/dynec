@@ -146,6 +146,18 @@ fn test_global_update() {
 }
 
 #[test]
+#[should_panic]
+fn test_global_uninit() {
+    #[global(dynec_as(crate))]
+    struct Uninit;
+
+    #[system(dynec_as(crate))]
+    fn test_system(#[dynec(global)] _: &Uninit) {}
+
+    let _world = system_test!(test_system.build(););
+}
+
+#[test]
 fn test_simple_fetch() {
     #[system(dynec_as(crate))]
     fn test_system(

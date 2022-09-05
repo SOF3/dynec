@@ -146,7 +146,8 @@ fn test_global_update() {
 }
 
 #[test]
-#[should_panic]
+#[should_panic = "Global type dynec::world::tests::test_global_uninit::Uninit does not have an \
+                  initial impl and was not provided manually"]
 fn test_global_uninit() {
     #[global(dynec_as(crate))]
     struct Uninit;

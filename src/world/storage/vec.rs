@@ -4,7 +4,7 @@ use std::mem::{self, MaybeUninit};
 use bitvec::prelude::BitVec;
 use itertools::Itertools;
 
-use super::Storage;
+use super::{ChunkMut, ChunkRef, Storage};
 use crate::entity;
 
 /// The basic storage indexed by entity IDs directly.
@@ -58,6 +58,11 @@ impl<E: entity::Raw, T> Default for VecStorage<E, T> {
 impl<E: entity::Raw, C: Send + Sync + 'static> Storage for VecStorage<E, C> {
     type RawEntity = E;
     type Comp = C;
+
+    type Iter<'t> = impl Iterator<Item = (Self::RawEntity, &'t Self::Comp)> + 't;
+    type IterChunk<'t> = impl Iterator<Item = ChunkRef<'t, Self>> + 't;
+    type IterMut<'t> = impl Iterator<Item = (Self::RawEntity, &'t mut Self::Comp)> + 't;
+    type IterChunkMut<'t> = impl Iterator<Item = ChunkMut<'t, Self>> + 't;
 
     fn get(&self, id: E) -> Option<&C> {
         let index = id.to_primitive();
@@ -113,41 +118,38 @@ impl<E: entity::Raw, C: Send + Sync + 'static> Storage for VecStorage<E, C> {
 
     fn cardinality(&self) -> usize { self.cardinality }
 
-    fn iter(&self) -> Box<dyn Iterator<Item = (E, &C)> + '_> {
+    fn iter(&self) -> Self::Iter<'_> {
         let indices = self.bits.iter_ones();
         let data = &self.data;
 
-        Box::new(indices.map(move |index| {
+        indices.map(move |index| {
             let entity = E::from_primitive(index);
             let value = data.get(index).expect("bits mismatch");
             let value = unsafe { value.assume_init_ref() };
             (entity, value)
-        }))
+        })
     }
 
-    #[inline]
-    fn iter_chunks(&self) -> Box<dyn Iterator<Item = super::ChunkRef<'_, Self>> + '_> {
+    fn iter_chunks(&self) -> Self::IterChunk<'_> {
         let indices = self.bits.iter_zeros();
         let data = &self.data;
 
         // the first bit is always zero, so no need to worry about the initila `0..from`
 
-        Box::new(
-            indices
-                .tuple_windows()
-                .map(|(from, to)| (from + 1)..to)
-                .map(move |range| super::ChunkRef {
-                    slice: unsafe {
-                        let slice = data.get(range.clone()).expect("bits mismatch");
-                        slice_assume_init_ref(slice)
-                    },
-                    start: E::from_primitive(range.start),
-                })
-                .filter(|chunk| !chunk.slice.is_empty()),
-        )
+        indices
+            .tuple_windows()
+            .map(|(from, to)| (from + 1)..to)
+            .map(move |range| super::ChunkRef {
+                slice: unsafe {
+                    let slice = data.get(range.clone()).expect("bits mismatch");
+                    slice_assume_init_ref(slice)
+                },
+                start: E::from_primitive(range.start),
+            })
+            .filter(|chunk| !chunk.slice.is_empty())
     }
 
-    fn iter_mut(&mut self) -> Box<dyn Iterator<Item = (E, &mut C)> + '_> {
+    fn iter_mut(&mut self) -> Self::IterMut<'_> {
         let indices = self.bits.iter_ones();
         let data = &mut self.data;
 
@@ -160,8 +162,7 @@ impl<E: entity::Raw, C: Send + Sync + 'static> Storage for VecStorage<E, C> {
         }))
     }
 
-    #[inline]
-    fn iter_chunks_mut(&mut self) -> Box<dyn Iterator<Item = super::ChunkMut<'_, Self>> + '_> {
+    fn iter_chunks_mut(&mut self) -> Self::IterChunkMut<'_> {
         let indices = self.bits.iter_zeros().peekable();
         let data = &mut self.data;
 
@@ -171,7 +172,7 @@ impl<E: entity::Raw, C: Send + Sync + 'static> Storage for VecStorage<E, C> {
             indices
                 .tuple_windows()
                 .map(|(from, to)| (from + 1)..to)
-                .map(move |range| super::ChunkMut {
+                .map(move |range| ChunkMut {
                     slice: unsafe {
                         let uninit = data.get_mut(range.clone()).expect("bits mismatch");
                         let slice = slice_assume_init_mut(uninit);

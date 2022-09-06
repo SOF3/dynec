@@ -71,7 +71,7 @@ impl fmt::Debug for Wrapper {
 }
 
 impl PartialEq for Wrapper {
-    fn eq(&self, other: &Self) -> bool { (&*self.0).equals(&*other.0) }
+    fn eq(&self, other: &Self) -> bool { (*self.0).equals(&*other.0) }
 }
 
 impl Eq for Wrapper {}

@@ -4,7 +4,6 @@
 use std::any;
 use std::any::TypeId;
 use std::borrow::Borrow;
-use std::collections::BTreeSet;
 use std::{cmp, fmt, hash};
 
 /// A generic mutable/immutable reference type.
@@ -95,18 +94,4 @@ impl hash::Hash for DbgTypeId {
 
 impl Borrow<TypeId> for DbgTypeId {
     fn borrow(&self) -> &TypeId { &self.id }
-}
-
-#[inline]
-pub(crate) fn btreeset_remove_first<T: Eq + Ord + Copy>(set: &mut BTreeSet<T>) -> Option<T> {
-    #[cfg(feature = "map-first-last")]
-    {
-        set.pop_first()
-    }
-
-    #[cfg(not(feature = "map-first-last"))]
-    {
-        let item = *set.iter().next()?;
-        Some(set.take(&item).expect("equality is not reflexive"))
-    }
 }

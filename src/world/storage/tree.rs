@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
+use std::slice;
 
-use super::Storage;
+use super::{ChunkMut, ChunkRef, Storage};
 use crate::entity;
 
 /// A storage based on [`BTreeMap`].
@@ -16,6 +17,11 @@ impl<E: entity::Raw, C: Send + Sync + 'static> Storage for Tree<E, C> {
     type RawEntity = E;
     type Comp = C;
 
+    type Iter<'t> = impl Iterator<Item = (Self::RawEntity, &'t Self::Comp)> + 't;
+    type IterChunk<'t> = impl Iterator<Item = ChunkRef<'t, Self>> + 't;
+    type IterMut<'t> = impl Iterator<Item = (Self::RawEntity, &'t mut Self::Comp)> + 't;
+    type IterChunkMut<'t> = impl Iterator<Item = ChunkMut<'t, Self>> + 't;
+
     fn get(&self, id: Self::RawEntity) -> Option<&C> { self.data.get(&id) }
 
     fn get_mut(&mut self, id: Self::RawEntity) -> Option<&mut C> { self.data.get_mut(&id) }
@@ -29,11 +35,18 @@ impl<E: entity::Raw, C: Send + Sync + 'static> Storage for Tree<E, C> {
 
     fn cardinality(&self) -> usize { self.data.len() }
 
-    fn iter(&self) -> Box<dyn Iterator<Item = (Self::RawEntity, &C)> + '_> {
-        Box::new(self.data.iter().map(|(&k, v)| (k, v)))
+    fn iter(&self) -> Self::Iter<'_> { self.data.iter().map(|(&k, v)| (k, v)) }
+
+    fn iter_chunks(&self) -> Self::IterChunk<'_> {
+        self.iter().map(|(entity, item)| ChunkRef { slice: slice::from_ref(item), start: entity })
     }
 
-    fn iter_mut(&mut self) -> Box<dyn Iterator<Item = (Self::RawEntity, &mut C)> + '_> {
+    fn iter_mut(&mut self) -> Self::IterMut<'_> {
         Box::new(self.data.iter_mut().map(|(&k, v)| (k, v)))
+    }
+
+    fn iter_chunks_mut(&mut self) -> Self::IterChunkMut<'_> {
+        self.iter_mut()
+            .map(|(entity, item)| ChunkMut { slice: slice::from_mut(item), start: entity })
     }
 }

@@ -5,7 +5,7 @@ use parking_lot::Condvar;
 
 use super::executor::DeadlockCounter;
 use super::{Node, SendSystemIndex, Topology, UnsendSystemIndex, WakeupState};
-use crate::{util, world};
+use crate::world;
 
 /// Stores the tick-local state for schedule availability.
 #[derive(Debug, Clone)]
@@ -44,7 +44,7 @@ impl Planner {
             return StealResult::CycleComplete;
         }
 
-        let index = match util::btreeset_remove_first(pool(self)) {
+        let index = match pool(self).pop_first() {
             Some(index) => index,
             None => {
                 tracer.steal_return_pending(thread);

@@ -12,7 +12,7 @@ use rand::Rng;
 
 use super::raw::Raw;
 use crate::entity::raw::Atomic;
-use crate::util::{self, DbgTypeId};
+use crate::util::DbgTypeId;
 use crate::Archetype;
 
 pub(crate) type AnyBuilder = Box<dyn FnOnce(usize) -> Box<dyn AnyEalloc>>;
@@ -401,7 +401,7 @@ impl<R: Raw> Recycler<R> for BTreeSet<R> {
                 None
             }
         } else {
-            util::btreeset_remove_first(self)
+            self.pop_first()
         }
     }
 }

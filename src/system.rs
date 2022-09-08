@@ -13,9 +13,9 @@ use crate::world;
 use crate::world::offline;
 
 mod accessor;
-pub(crate) use accessor::{BorrowedOwned, StorageRefType};
+pub(crate) use accessor::BorrowedOwned;
 pub use accessor::{
-    IsotopeMutMap, IsotopeRefMap, ReadIsotope, ReadSimple, RefOrDefault, WriteIsotope, WriteSimple,
+    IsotopeMutMap, ReadIsotope, ReadSimple, RefOrDefault, WriteIsotope, WriteSimple,
 };
 
 pub mod partition;

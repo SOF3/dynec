@@ -198,55 +198,7 @@ impl Components {
                 .collect()
         };
 
-        struct Ret<C, S: ops::Deref> {
-            // TODO customize the implementation of discriminant lookup to allow O(1) indexing in
-            // small universe of concourse
-            storages: Vec<(usize, S)>,
-            default:  Option<fn() -> C>,
-        }
-
-        impl<A: Archetype, C: comp::Isotope<A>> system::ReadIsotope<A, C>
-            for Ret<C, system::StorageRefType<A, C::Storage>>
-        {
-            fn get<E: entity::Ref<Archetype = A>>(
-                &self,
-                entity: E,
-                discrim: C::Discrim,
-            ) -> system::RefOrDefault<'_, C>
-            where
-                C: comp::Must<A>,
-            {
-                match self.try_get(entity, discrim) {
-                    Some(value) => system::RefOrDefault(system::BorrowedOwned::Borrowed(value)),
-                    None => system::RefOrDefault(system::BorrowedOwned::Owned(self
-                        .default
-                        .expect("C: comp::Must<A>")(
-                    ))),
-                }
-            }
-
-            fn try_get<E: entity::Ref<Archetype = A>>(
-                &self,
-                entity: E,
-                discrim: C::Discrim,
-            ) -> Option<&C> {
-                let discrim = discrim.into_usize();
-
-                // if storage does not exist, the component does not exist yet.
-                let (_, storage) = self.storages.iter().find(|(key, _)| *key == discrim)?;
-
-                storage.get(entity.id())
-            }
-
-            fn get_all<E: entity::Ref<Archetype = A>>(
-                &self,
-                entity: E,
-            ) -> system::IsotopeRefMap<'_, A, C> {
-                system::IsotopeRefMap { storages: self.storages.iter(), index: entity.id() }
-            }
-        }
-
-        Ret {
+        ReadIsotopeStorage {
             storages,
             default: match C::INIT_STRATEGY {
                 comp::IsotopeInitStrategy::None => None,
@@ -264,40 +216,118 @@ impl Components {
         &self,
         _discrim: Option<&[usize]>,
     ) -> impl system::WriteIsotope<A, C> + '_ {
-        struct Ret<A: Archetype, C: comp::Isotope<A>>(PhantomData<(A, C)>);
-
-        impl<A: Archetype, C: comp::Isotope<A>> system::ReadIsotope<A, C> for Ret<A, C> {
-            fn get<E: entity::Ref<Archetype = A>>(
-                &self,
-                _entity: E,
-                _discrim: C::Discrim,
-            ) -> system::RefOrDefault<'_, C>
-            where
-                C: comp::Must<A>,
-            {
-                todo!()
-            }
-
-            fn try_get<E: entity::Ref<Archetype = A>>(
-                &self,
-                _entity: E,
-                _discrim: C::Discrim,
-            ) -> Option<&C> {
-                todo!()
-            }
-
-            fn get_all<E: entity::Ref<Archetype = A>>(
-                &self,
-                _entity: E,
-            ) -> system::IsotopeRefMap<'_, A, C> {
-                todo!()
-            }
-        }
-        impl<A: Archetype, C: comp::Isotope<A>> system::WriteIsotope<A, C> for Ret<A, C> {}
-
-        Ret(PhantomData)
+        WriteIsotopeStorage(PhantomData)
     }
 }
+
+struct ReadIsotopeStorage<C, S: ops::Deref> {
+    // TODO customize the implementation of discriminant lookup to allow O(1) indexing in
+    // small universe of concourse
+    storages: Vec<(usize, S)>,
+    default:  Option<fn() -> C>,
+}
+
+impl<A: Archetype, C: comp::Isotope<A>, S: ops::Deref<Target = C::Storage>>
+    system::ReadIsotope<A, C> for ReadIsotopeStorage<C, S>
+{
+    type IsotopeRefMap<'t> = impl Iterator<Item = (<C as comp::Isotope<A>>::Discrim, &'t C)> + 't where S: 't;
+
+    fn get<E: entity::Ref<Archetype = A>>(
+        &self,
+        entity: E,
+        discrim: C::Discrim,
+    ) -> system::RefOrDefault<'_, C>
+    where
+        C: comp::Must<A>,
+    {
+        match self.try_get(entity, discrim) {
+            Some(value) => system::RefOrDefault(system::BorrowedOwned::Borrowed(value)),
+            None => system::RefOrDefault(system::BorrowedOwned::Owned(self
+                .default
+                .expect("C: comp::Must<A>")(
+            ))),
+        }
+    }
+
+    fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E, discrim: C::Discrim) -> Option<&C> {
+        let discrim = discrim.into_usize();
+
+        // if storage does not exist, the component does not exist yet.
+        let (_, storage) = self.storages.iter().find(|(key, _)| *key == discrim)?;
+
+        storage.get(entity.id())
+    }
+
+    fn get_all<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Self::IsotopeRefMap<'_> {
+        IsotopeMapRef {
+            storages: self.storages.iter(),
+            index:    entity.id(),
+            _ph:      PhantomData,
+        }
+    }
+}
+
+/// Provides immutable access to all isotopes of the same type for an entity.
+struct IsotopeMapRef<'t, A: Archetype, C: comp::Isotope<A>, S: ops::Deref<Target = C::Storage>> {
+    #[allow(clippy::type_complexity)]
+    storages: <&'t [(usize, S)] as IntoIterator>::IntoIter,
+    index:    A::RawEntity,
+    _ph:      PhantomData<fn() -> C>,
+}
+
+impl<'t, A: Archetype, C: comp::Isotope<A>, S: ops::Deref<Target = C::Storage>> Iterator
+    for IsotopeMapRef<'t, A, C, S>
+{
+    type Item = (C::Discrim, &'t C);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        for (discrim, storage) in self.storages.by_ref() {
+            let discrim = <C::Discrim as comp::Discrim>::from_usize(*discrim);
+            let value = match storage.get(self.index) {
+                Some(value) => value,
+                None => continue,
+            };
+
+            return Some((discrim, value));
+        }
+
+        None
+    }
+}
+
+struct WriteIsotopeStorage<A: Archetype, C: comp::Isotope<A>>(PhantomData<(A, C)>);
+
+impl<A: Archetype, C: comp::Isotope<A>> system::ReadIsotope<A, C> for WriteIsotopeStorage<A, C> {
+    type IsotopeRefMap<'t> = impl Iterator<Item = (<C as comp::Isotope<A>>::Discrim, &'t C)> + 't;
+
+    fn get<E: entity::Ref<Archetype = A>>(
+        &self,
+        _entity: E,
+        _discrim: C::Discrim,
+    ) -> system::RefOrDefault<'_, C>
+    where
+        C: comp::Must<A>,
+    {
+        todo!()
+    }
+
+    fn try_get<E: entity::Ref<Archetype = A>>(
+        &self,
+        _entity: E,
+        _discrim: C::Discrim,
+    ) -> Option<&C> {
+        todo!()
+    }
+
+    fn get_all<E: entity::Ref<Archetype = A>>(&self, _entity: E) -> Self::IsotopeRefMap<'_> {
+        if true {
+            todo!()
+        }
+
+        std::iter::empty()
+    }
+}
+impl<A: Archetype, C: comp::Isotope<A>> system::WriteIsotope<A, C> for WriteIsotopeStorage<A, C> {}
 
 #[cfg(test)]
 static_assertions::assert_impl_all!(Components: Send, Sync);

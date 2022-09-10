@@ -14,9 +14,7 @@ use crate::world::offline;
 
 mod accessor;
 pub(crate) use accessor::BorrowedOwned;
-pub use accessor::{
-    IsotopeMutMap, ReadIsotope, ReadSimple, RefOrDefault, WriteIsotope, WriteSimple,
-};
+pub use accessor::{ReadIsotope, ReadSimple, RefOrDefault, WriteIsotope, WriteSimple};
 
 pub mod partition;
 pub use partition::{EntityCreationPartition, Partition};
@@ -30,8 +28,9 @@ pub mod spec;
 #[doc(inline)]
 pub use spec::Spec;
 
+/// Describes a system.
 pub trait Descriptor {
-    /// Describes this instance of system.
+    /// Describes the resource requirements of this system.
     ///
     /// The method is only called when the system was initially scheduled,
     /// but it should return a consistent value.

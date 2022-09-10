@@ -58,6 +58,7 @@ impl StoreMap {
 
 /// Parameter to [`super::Entity::weak`].
 pub trait WeakStore {
+    /// Resolves the actual generation store for the archetype.
     fn resolve<A: Archetype>(&self) -> Option<&Store>;
 }
 

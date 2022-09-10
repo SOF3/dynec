@@ -20,10 +20,14 @@ pub trait Storage: Default + Send + Sync + 'static {
     /// The component type stored.
     type Comp;
 
+    /// Return value of [`iter`](Self::iter).
     type Iter<'t>: Iterator<Item = (Self::RawEntity, &'t Self::Comp)> + 't;
-    type IterChunk<'t>: Iterator<Item = ChunkRef<'t, Self>> + 't;
+    /// Return value of [`iter_chunk`](Self::iter_chunks).
+    type IterChunks<'t>: Iterator<Item = ChunkRef<'t, Self>> + 't;
+    /// Return value of [`iter_mut`](Self::iter_mut).
     type IterMut<'t>: Iterator<Item = (Self::RawEntity, &'t mut Self::Comp)> + 't;
-    type IterChunkMut<'t>: Iterator<Item = ChunkMut<'t, Self>> + 't;
+    /// Return value of [`iter_chunk_mut`](Self::iter_chunks_mut).
+    type IterChunksMut<'t>: Iterator<Item = ChunkMut<'t, Self>> + 't;
 
     /// Gets a shared reference to the component for a specific entity if it is present.
     fn get(&self, id: Self::RawEntity) -> Option<&Self::Comp>;
@@ -47,7 +51,7 @@ pub trait Storage: Default + Send + Sync + 'static {
     /// where `slice` is the slice of components in the chunk,
     /// and `index` is the entity index of `slice[0]`.
     /// `slice` is always nonempty.
-    fn iter_chunks(&self) -> Self::IterChunk<'_>;
+    fn iter_chunks(&self) -> Self::IterChunks<'_>;
 
     /// Returns a mutable iterator over the storage, ordered by entity index order.
     fn iter_mut(&mut self) -> Self::IterMut<'_>;
@@ -58,7 +62,7 @@ pub trait Storage: Default + Send + Sync + 'static {
     /// where `slice` is the slice of components in the chunk,
     /// and `index` is the entity index of `slice[0]`.
     /// `slice` is always nonempty.
-    fn iter_chunks_mut(&mut self) -> Self::IterChunkMut<'_>;
+    fn iter_chunks_mut(&mut self) -> Self::IterChunksMut<'_>;
 }
 
 /// The iterator item of [`Storage::iter_chunks`].

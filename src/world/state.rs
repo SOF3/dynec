@@ -259,39 +259,35 @@ impl<A: Archetype, C: comp::Isotope<A>, S: ops::Deref<Target = C::Storage>>
     }
 
     fn get_all<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Self::IsotopeRefMap<'_> {
-        IsotopeMapRef {
-            storages: self.storages.iter(),
-            index:    entity.id(),
-            _ph:      PhantomData,
-        }
-    }
-}
-
-/// Provides immutable access to all isotopes of the same type for an entity.
-struct IsotopeMapRef<'t, A: Archetype, C: comp::Isotope<A>, S: ops::Deref<Target = C::Storage>> {
-    #[allow(clippy::type_complexity)]
-    storages: <&'t [(usize, S)] as IntoIterator>::IntoIter,
-    index:    A::RawEntity,
-    _ph:      PhantomData<fn() -> C>,
-}
-
-impl<'t, A: Archetype, C: comp::Isotope<A>, S: ops::Deref<Target = C::Storage>> Iterator
-    for IsotopeMapRef<'t, A, C, S>
-{
-    type Item = (C::Discrim, &'t C);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        for (discrim, storage) in self.storages.by_ref() {
-            let discrim = <C::Discrim as comp::Discrim>::from_usize(*discrim);
-            let value = match storage.get(self.index) {
-                Some(value) => value,
-                None => continue,
-            };
-
-            return Some((discrim, value));
+        /// Provides immutable access to all isotopes of the same type for an entity.
+        struct Ret<'t, A: Archetype, C: comp::Isotope<A>, S: ops::Deref<Target = C::Storage>> {
+            #[allow(clippy::type_complexity)]
+            storages: <&'t [(usize, S)] as IntoIterator>::IntoIter,
+            index:    A::RawEntity,
+            _ph:      PhantomData<fn() -> C>,
         }
 
-        None
+        impl<'t, A: Archetype, C: comp::Isotope<A>, S: ops::Deref<Target = C::Storage>> Iterator
+            for Ret<'t, A, C, S>
+        {
+            type Item = (C::Discrim, &'t C);
+
+            fn next(&mut self) -> Option<Self::Item> {
+                for (discrim, storage) in self.storages.by_ref() {
+                    let discrim = <C::Discrim as comp::Discrim>::from_usize(*discrim);
+                    let value = match storage.get(self.index) {
+                        Some(value) => value,
+                        None => continue,
+                    };
+
+                    return Some((discrim, value));
+                }
+
+                None
+            }
+        }
+
+        Ret { storages: self.storages.iter(), index: entity.id(), _ph: PhantomData }
     }
 }
 

@@ -1,7 +1,5 @@
-use std::marker::PhantomData;
 use std::{any, ops};
 
-use crate::world::Storage;
 use crate::{comp, entity, Archetype};
 
 /// Provides access to a simple component in a specific archetype.
@@ -67,6 +65,7 @@ pub trait WriteSimple<A: Archetype, C: comp::Simple<A>>: ReadSimple<A, C> {
 
 /// Provides access to an isotope component in a specific archetype.
 pub trait ReadIsotope<A: Archetype, C: comp::Isotope<A>> {
+    /// Return value of [`get_all`](Self::get_all).
     type IsotopeRefMap<'t>: Iterator<Item = (<C as comp::Isotope<A>>::Discrim, &'t C)> + 't
     where
         Self: 't;
@@ -120,41 +119,6 @@ pub trait WriteIsotope<A: Archetype, C: comp::Isotope<A>> {
     /// Creates an accessor with fixed discriminant.
     fn with(&self, discrim: C::Discrim) -> FixedIsotope<&'_ Self, A, C> {
         FixedIsotope { discrim, accessor: self }
-    }
-}
-
-/// Provides mutable access to all isotopes of the same type for an entity.
-pub struct IsotopeMutMap<
-    't,
-    A: Archetype,
-    C: comp::Isotope<A>,
-    S: ops::Deref<Target = C::Storage> + ops::DerefMut,
-> {
-    #[allow(clippy::type_complexity)]
-    pub(crate) storages: <&'t mut [(usize, S)] as IntoIterator>::IntoIter,
-    pub(crate) index:    A::RawEntity,
-    _ph:                 PhantomData<fn() -> C>,
-}
-
-impl<'t, A: Archetype, C: comp::Isotope<A>, S: ops::Deref<Target = C::Storage> + ops::DerefMut>
-    Iterator for IsotopeMutMap<'t, A, C, S>
-{
-    type Item = (C::Discrim, &'t mut C);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        for (discrim, storage) in self.storages.by_ref() {
-            let discrim = <C::Discrim as comp::Discrim>::from_usize(*discrim);
-
-            let value = storage.get_mut(self.index);
-            let value = match value {
-                Some(value) => value,
-                None => continue,
-            };
-
-            return Some((discrim, value));
-        }
-
-        None
     }
 }
 

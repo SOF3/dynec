@@ -185,6 +185,7 @@ impl<A: Archetype> Referrer for super::Weak<A> {
 pub struct AsObject<'t>(pub(crate) Box<dyn Object + 't>);
 
 impl<'t> AsObject<'t> {
+    /// Constructs an `AsObject` that delegates to the given [`Referrer`].
     pub fn of(value: &'t mut impl Referrer) -> Self {
         Self(Box::new(ReferrerIter(iter::once(value))))
     }

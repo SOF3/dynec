@@ -4,7 +4,7 @@ use std::any::{self, TypeId};
 use std::sync::Arc;
 
 use crate::entity::{deletion, ealloc, generation, Raw};
-use crate::{comp, entity, Archetype, Entity, Global};
+use crate::{comp, entity, system, Archetype, Entity, Global};
 
 mod builder;
 pub use builder::Builder;
@@ -162,7 +162,8 @@ impl World {
         let global = match self.sync_globals.sync_globals.get_mut(&TypeId::of::<G>()) {
             Some((_, global)) => global,
             None => panic!(
-                "The global state {} cannot be retrieved becaues it is not used in any systems",
+                "The global state {} cannot be retrieved becaues it is not used in any systems, \
+                 or was registered as an unsync global instead of a sync global",
                 any::type_name::<G>()
             ),
         };
@@ -177,7 +178,8 @@ impl World {
         let global = match self.unsync_globals.unsync_globals.get_mut(&TypeId::of::<G>()) {
             Some((_, global)) => global,
             None => panic!(
-                "The global state {} cannot be retrieved becaues it is not used in any systems",
+                "The global state {} cannot be retrieved becaues it is not used in any systems, \
+                 or was registered as a sync global instead of an unsync global",
                 any::type_name::<G>()
             ),
         };
@@ -223,11 +225,12 @@ fn flag_delete_entity<A: Archetype>(
     components: &mut Components,
     sync_globals: &mut SyncGlobals,
     unsync_globals: &mut UnsyncGlobals,
+    systems: &mut [(&str, &mut dyn system::Descriptor)],
     ealloc_map: &mut ealloc::Map,
 ) -> DeleteResult {
     sync_globals.get_mut::<deletion::Flags>().set::<A>(id, true);
 
-    try_real_delete_entity::<A>(components, id, sync_globals, unsync_globals, ealloc_map)
+    try_real_delete_entity::<A>(components, id, sync_globals, unsync_globals, systems, ealloc_map)
 }
 
 /// Deletes an entity immediately if there are no finalizers.
@@ -236,6 +239,7 @@ fn try_real_delete_entity<A: Archetype>(
     entity: <A as Archetype>::RawEntity,
     _sync_globals: &mut SyncGlobals,
     _unsync_globals: &mut UnsyncGlobals,
+    _systems: &mut [(&str, &mut dyn system::Descriptor)],
     ealloc_map: &mut ealloc::Map,
 ) -> DeleteResult {
     let storages = &mut components.archetype_mut::<A>().simple_storages;
@@ -271,6 +275,7 @@ fn try_real_delete_entity<A: Archetype>(
                 components,
                 _sync_globals,
                 _unsync_globals,
+                _systems,
                 DbgTypeId::of::<A>(),
                 entity.to_primitive(),
             );
@@ -303,6 +308,7 @@ fn search_references(
     components: &mut Components,
     sync_globals: &mut SyncGlobals,
     unsync_globals: &mut UnsyncGlobals,
+    systems: &mut [(&str, &mut dyn system::Descriptor)],
     archetype: crate::util::DbgTypeId,
     entity: usize,
 ) -> Vec<String> {
@@ -312,6 +318,12 @@ fn search_references(
     use crate::entity::referrer::VisitMutArg;
 
     let mut state = SearchSingleStrong::new(archetype, entity);
+
+    for (name, system) in systems {
+        let mut object = system.visit_mut();
+        state._set_debug_name(format!("system {name}"));
+        object.0.search_single_strong(&mut state);
+    }
 
     let globals = sync_globals
         .sync_globals

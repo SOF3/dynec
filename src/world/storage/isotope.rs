@@ -35,7 +35,7 @@ pub(crate) trait AnyIsotopeStorage<A: Archetype>: Send + Sync {
     fn fill_init_isotope(&mut self, entity: A::RawEntity, comp: Box<dyn Any>);
 
     /// Returns a [`referrer::Dyn`] implementation that visits all components in this storage.
-    fn referrer_dyn<'t>(&'t mut self) -> Box<dyn referrer::Dyn + 't>;
+    fn referrer_dyn<'t>(&'t mut self) -> Box<dyn referrer::Object + 't>;
 }
 
 impl<A: Archetype> dyn AnyIsotopeStorage<A> {
@@ -59,7 +59,7 @@ impl<A: Archetype, C: comp::Isotope<A>> AnyIsotopeStorage<A> for IsotopeStorage<
         self.0.set(entity, Some(comp));
     }
 
-    fn referrer_dyn<'t>(&'t mut self) -> Box<dyn referrer::Dyn + 't> {
+    fn referrer_dyn<'t>(&'t mut self) -> Box<dyn referrer::Object + 't> {
         Box::new(referrer::ReferrerIter(self.0.iter_chunks_mut().flat_map(|chunk| chunk.slice)))
     }
 }

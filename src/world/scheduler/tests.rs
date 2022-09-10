@@ -5,6 +5,7 @@ use std::sync::atomic::{self, AtomicUsize};
 use std::sync::Arc;
 
 use super::*;
+use crate::entity::referrer;
 use crate::test_util::{self, AntiSemaphore};
 use crate::world::{offline, tracer};
 use crate::{comp, system, world, TestArch};
@@ -37,9 +38,18 @@ fn dummy_spec(name: &str) -> system::Spec {
     }
 }
 
-struct SendSystem(String, Box<dyn Fn() + Send>);
-impl system::Sendable for SendSystem {
+struct TestSystem<D: ?Sized + 'static>(String, Box<D>);
+impl<D: ?Sized> referrer::Referrer for TestSystem<D> {
+    fn visit_type(_arg: &mut referrer::VisitTypeArg) {}
+    fn visit_mut<V: referrer::VisitMutArg>(&mut self, _arg: &mut V) {}
+}
+impl<D: ?Sized> system::Descriptor for TestSystem<D> {
     fn get_spec(&self) -> system::Spec { dummy_spec(self.0.as_str()) }
+    fn visit_type(&self, _arg: &mut referrer::VisitTypeArg) {} // no types to visit
+    fn visit_mut(&mut self) -> referrer::AsObject<'_> { referrer::AsObject::of(self) }
+}
+type SendSystem = TestSystem<dyn Fn() + Send>;
+impl system::Sendable for SendSystem {
     fn run(
         &mut self,
         _globals: &world::SyncGlobals,
@@ -49,11 +59,12 @@ impl system::Sendable for SendSystem {
     ) {
         self.1();
     }
+
+    fn as_descriptor_mut(&mut self) -> &mut dyn system::Descriptor { self }
 }
 
-struct UnsendSystem(String, Box<dyn Fn()>);
+type UnsendSystem = TestSystem<dyn Fn()>;
 impl system::Unsendable for UnsendSystem {
-    fn get_spec(&self) -> system::Spec { dummy_spec(self.0.as_str()) }
     fn run(
         &mut self,
         _sync_globals: &world::SyncGlobals,
@@ -64,6 +75,8 @@ impl system::Unsendable for UnsendSystem {
     ) {
         self.1();
     }
+
+    fn as_descriptor_mut(&mut self) -> &mut dyn system::Descriptor { self }
 }
 
 struct Global1;
@@ -650,7 +663,7 @@ fn test_bootstrap<const S: usize, const U: usize, T, C, R, V>(
         let send_nodes: [SendSystemIndex; S] = (0..S)
             .map(|i| {
                 let node_box = Arc::new(Mutex::new(None::<Node>));
-                let (node, _spec) = builder.push_send_system(Box::new(SendSystem(
+                let (node, _spec) = builder.push_send_system(Box::new(TestSystem(
                     format!("SendSystem #{}", i),
                     Box::new({
                         let run = Arc::clone(&run);
@@ -660,7 +673,7 @@ fn test_bootstrap<const S: usize, const U: usize, T, C, R, V>(
                             let &node = node_guard.as_ref().expect("node_box not populated");
                             run(node)
                         }
-                    }),
+                    }) as Box<dyn Fn() + Send>,
                 )));
                 {
                     let mut node_guard = node_box.try_lock().expect("node_box contention");
@@ -677,7 +690,7 @@ fn test_bootstrap<const S: usize, const U: usize, T, C, R, V>(
         let unsend_nodes: [UnsendSystemIndex; U] = (0..U)
             .map(|i| {
                 let node_box = Rc::new(Cell::new(None::<Node>));
-                let (node, _spec) = builder.push_unsend_system(Box::new(UnsendSystem(
+                let (node, _spec) = builder.push_unsend_system(Box::new(TestSystem(
                     format!("UnsendSystem #{}", i),
                     Box::new({
                         let run = Arc::clone(&run);
@@ -687,8 +700,9 @@ fn test_bootstrap<const S: usize, const U: usize, T, C, R, V>(
                             let node = node.expect("node_box not populated");
                             run(node)
                         }
-                    }),
-                )));
+                    }) as Box<dyn Fn()>,
+                )
+                    as UnsendSystem));
                 node_box.set(Some(node));
                 match node {
                     Node::UnsendSystem(index) => index,

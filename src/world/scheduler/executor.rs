@@ -39,7 +39,7 @@ impl Executor {
         tracer: &impl world::Tracer,
         topology: &Topology,
         planner: &mut Mutex<Planner>,
-        state: &SyncState,
+        sync_state: &mut SyncState,
         components: &mut world::Components,
         globals: &mut world::SyncGlobals,
         mut unsend: UnsendArgs<'_>,
@@ -68,7 +68,7 @@ impl Executor {
 
         let mut ealloc_shards = ealloc_map.shards(self.concurrency + 1);
 
-        let send = SendArgs { state, components, globals };
+        let send = SendArgs { state: sync_state, components, globals };
 
         let deadlock_counter = DeadlockCounter::new(self.concurrency + 1);
 
@@ -144,8 +144,19 @@ impl Executor {
         // which causes panic when flush_deallocate() is called
         drop(ealloc_shards);
 
+        let sync_system_refs = sync_state
+            .send_systems
+            .iter_mut()
+            .map(|(name, mutex)| (name.as_str(), mutex.get_mut().as_mut().as_descriptor_mut()));
+        let unsend_system_refs = unsend
+            .state
+            .unsend_systems
+            .iter_mut()
+            .map(|(name, boxed)| (name.as_str(), boxed.as_mut().as_descriptor_mut()));
+        let mut all_system_refs: Vec<_> = sync_system_refs.chain(unsend_system_refs).collect();
+
         self.offline_buffer.drain_cycle(|operation| {
-            operation.run(components, globals, unsend.globals, ealloc_map)
+            operation.run(components, globals, unsend.globals, &mut all_system_refs[..], ealloc_map)
         });
 
         for ealloc in ealloc_map.map.values_mut() {

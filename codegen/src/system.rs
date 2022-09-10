@@ -6,6 +6,7 @@ use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::{Error, Result};
 
+use crate::entity_ref;
 use crate::util::{self, Attr, Named};
 
 pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
@@ -61,6 +62,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
     let mut local_state_field_idents = Vec::new();
     let mut local_state_field_pats = Vec::new();
     let mut local_state_field_tys = Vec::new();
+    let mut local_state_entity_attrs = Vec::new();
 
     let mut param_state_field_idents = Vec::new();
     let mut param_state_field_tys = Vec::new();
@@ -91,7 +93,8 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
 
         enum ArgType {
             Local {
-                default: Option<Box<syn::Expr>>,
+                default:    Option<Box<syn::Expr>>,
+                has_entity: bool,
             },
             Global {
                 thread_local: bool,
@@ -239,14 +242,36 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
 
             for arg in arg_attr.items {
                 match arg.value {
-                    ArgOpt::Param => {
-                        set_arg_type(&mut arg_type, arg.name, ArgType::Local { default: None })?;
-                    }
-                    ArgOpt::Local(_, default) => {
+                    ArgOpt::Param(_, opts) => {
+                        let has_entity = opts
+                            .find_one(|opt| option_match!(opt, ParamArgOpt::HasEntity => &()))?
+                            .is_some();
                         set_arg_type(
                             &mut arg_type,
                             arg.name,
-                            ArgType::Local { default: Some(default) },
+                            ArgType::Local { default: None, has_entity },
+                        )?;
+                    }
+                    ArgOpt::Local(_, opts) => {
+                        let initial = match opts.find_one(
+                            |opt| option_match!(opt, LocalArgOpt::Initial(_, initial) => initial),
+                        )? {
+                            Some((_, initial)) => initial,
+                            None => {
+                                return Err(Error::new_spanned(
+                                    attr,
+                                    "Missing required expression for #[dynec(local(initial = \
+                                     expr))]",
+                                ))
+                            }
+                        };
+                        let has_entity = opts
+                            .find_one(|opt| option_match!(opt, LocalArgOpt::HasEntity => &()))?
+                            .is_some();
+                        set_arg_type(
+                            &mut arg_type,
+                            arg.name,
+                            ArgType::Local { default: Some(initial.clone()), has_entity },
                         )?;
                     }
                     ArgOpt::Global(_, opts) => {
@@ -460,7 +485,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
         };
 
         let run_arg = match arg_type {
-            ArgType::Local { default } => {
+            ArgType::Local { default, has_entity } => {
                 let field_name = match &*param.pat {
                     syn::Pat::Ident(ident) => ident.ident.clone(),
                     syn::Pat::Reference(pat) => match &*pat.pat {
@@ -483,6 +508,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 local_state_field_idents.push(field_name.clone());
                 local_state_field_pats.push(param.pat.clone());
                 local_state_field_tys.push(syn::Type::clone(param_ty));
+                local_state_entity_attrs.push(has_entity.then(|| quote!(#[entity])));
 
                 if let Some(default) = default {
                     initial_state_field_idents.push(field_name.clone());
@@ -643,6 +669,16 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
         ),
     };
 
+    let mut local_state_struct = syn::parse2(quote! {
+        #[allow(non_camel_case_types)]
+        struct __dynec_local_state {
+            #(#local_state_entity_attrs #local_state_field_idents: #local_state_field_tys,)*
+            #(#isotope_discrim_idents: Vec<usize>,)*
+        }
+    })?;
+    let local_state_impl_entity_ref =
+        entity_ref::entity_ref(&mut local_state_struct, crate_name.clone())?;
+
     let output = quote! {
         #(#[#other_attrs])*
         #[derive(Clone, Copy)]
@@ -663,11 +699,8 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 }
             }
 
-            #[allow(non_camel_case_types)]
-            struct __dynec_local_state {
-                #(#local_state_field_idents: #local_state_field_tys,)*
-                #(#isotope_discrim_idents: Vec<usize>,)*
-            }
+            #local_state_struct
+            #local_state_impl_entity_ref
 
             fn __dynec_original(#(#input_args),*) {
                 #fn_body
@@ -689,7 +722,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             }
             */
 
-            impl #crate_name::system::#system_trait for __dynec_local_state {
+            impl #crate_name::system::Descriptor for __dynec_local_state {
                 fn get_spec(&self) -> #crate_name::system::Spec {
                     #destructure_local_states
 
@@ -705,11 +738,23 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                     }
                 }
 
+                fn visit_type(&self, arg: &mut #crate_name::entity::referrer::VisitTypeArg) {
+                    <Self as #crate_name::entity::Referrer>::visit_type(arg)
+                }
+
+                fn visit_mut(&mut self) -> #crate_name::entity::referrer::AsObject<'_> {
+                    #crate_name::entity::referrer::AsObject::of(self)
+                }
+            }
+
+            impl #crate_name::system::#system_trait for __dynec_local_state {
                 fn run(&mut self, #system_run_params) {
                     let offline_buffer = ::std::cell::RefCell::new(offline_buffer);
 
                     __dynec_original(#(#system_run_args),*)
                 }
+
+                fn as_descriptor_mut(&mut self) -> &mut dyn #crate_name::system::Descriptor { self }
             }
         };
     };
@@ -761,8 +806,8 @@ impl Parse for Named<FnOpt> {
 }
 
 enum ArgOpt {
-    Param,
-    Local(syn::Token![=], Box<syn::Expr>),
+    Param(Option<syn::token::Paren>, Attr<ParamArgOpt>),
+    Local(Option<syn::token::Paren>, Attr<LocalArgOpt>),
     Global(Option<syn::token::Paren>, Attr<GlobalArgOpt>),
     Simple(Option<syn::token::Paren>, Attr<SimpleArgOpt>),
     Isotope(Option<syn::token::Paren>, Attr<IsotopeArgOpt>),
@@ -776,12 +821,8 @@ impl Parse for Named<ArgOpt> {
         let name_string = name.to_string();
 
         let value = match name_string.as_str() {
-            "param" => ArgOpt::Param,
-            "local" => {
-                let eq = input.parse::<syn::Token![=]>()?;
-                let default = input.parse::<syn::Expr>()?;
-                ArgOpt::Local(eq, Box::new(default))
-            }
+            "param" => parse_opt_list(input, ArgOpt::Param)?,
+            "local" => parse_opt_list(input, ArgOpt::Local)?,
             "global" => parse_opt_list(input, ArgOpt::Global)?,
             "simple" => parse_opt_list(input, ArgOpt::Simple)?,
             "isotope" => parse_opt_list(input, ArgOpt::Isotope)?,
@@ -810,6 +851,46 @@ where
     }
 
     Ok(arg_opt_variant(paren, opts))
+}
+
+enum LocalArgOpt {
+    HasEntity,
+    Initial(syn::Token![=], Box<syn::Expr>),
+}
+
+impl Parse for Named<LocalArgOpt> {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let name = input.parse::<syn::Ident>()?;
+        let name_string = name.to_string();
+
+        let value = match name_string.as_str() {
+            "entity" => LocalArgOpt::HasEntity,
+            "initial" => {
+                let eq = input.parse::<syn::Token![=]>()?;
+                let expr = input.parse::<syn::Expr>()?;
+                LocalArgOpt::Initial(eq, Box::new(expr))
+            }
+            _ => return Err(Error::new_spanned(&name, "Unknown option for #[dynec(local)]")),
+        };
+        Ok(Named { name, value })
+    }
+}
+
+enum ParamArgOpt {
+    HasEntity,
+}
+
+impl Parse for Named<ParamArgOpt> {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let name = input.parse::<syn::Ident>()?;
+        let name_string = name.to_string();
+
+        let value = match name_string.as_str() {
+            "entity" => ParamArgOpt::HasEntity,
+            _ => return Err(Error::new_spanned(&name, "Unknown option for #[dynec(param)]")),
+        };
+        Ok(Named { name, value })
+    }
 }
 
 enum GlobalArgOpt {

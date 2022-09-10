@@ -45,7 +45,7 @@ impl Scheduler {
             tracer,
             &self.topology,
             &mut self.planner,
-            &self.sync_state,
+            &mut self.sync_state,
             components,
             sync_globals,
             UnsendArgs { state: &mut self.unsync_state, globals: unsync_globals },

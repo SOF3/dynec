@@ -69,6 +69,12 @@
 #![feature(map_first_last)]
 #![feature(generic_associated_types, type_alias_impl_trait)]
 
+/// Internal re-exports used in macros.
+#[doc(hidden)]
+pub mod _reexports {
+    pub use static_assertions;
+}
+
 mod macros;
 #[doc(inline)]
 pub use macros::*;

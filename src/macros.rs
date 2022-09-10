@@ -435,7 +435,7 @@ mod system_tests {
     }
 }
 
-/// Derives a [`crate::entity::Referrer`] implementation for the type.
+/// Derives a [`Referrer`](crate::entity::Referrer) implementation for the type.
 ///
 /// The generated implementation does not visit any fields by default.
 /// Add the `#[entity]` attribute to fields that implement `[crate::entity::Referrer]`,
@@ -443,7 +443,7 @@ mod system_tests {
 ///
 /// This derive macro is automatically called in [`comp`] and [`global`].
 /// It should only be called explicitly if the type is not a component or global,
-/// e.g. if it is a type included in a [``]
+/// e.g. if it is a type included in a component field.
 ///
 /// # Example
 /// ```
@@ -455,6 +455,26 @@ mod system_tests {
 ///     entity: dynec::Entity<Foo>,
 /// }
 /// ```
+///
+/// A compile error would be triggered if a field is an entity reference but is not `#[entity]`:
+///
+/// ```compile_fail
+/// dynec::archetype!(Foo);
+///
+/// #[derive(dynec::EntityRef)]
+/// struct Enum {
+///     entity: dynec::Entity<Foo>,
+/// }
+/// ```
+///
+/// The above code will fail to compile with an error that contains
+/// `this_field_references_an_entity_so_it_should_have_the_entity_attribute`.
+///
+/// Note that this compile error is best-effort and not comprehensive &mdash;
+/// if the actual entity reference is hidden behind a complex type
+/// that does not implement [`Referrer`](crate::entity::Referrer),
+/// e.g. as an element in a tuple, this error will not happen,
+/// which would lead to a runtime panic instead during ref counting.
 #[doc(inline)]
 pub use dynec_codegen::EntityRef;
 

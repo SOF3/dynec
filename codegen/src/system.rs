@@ -676,8 +676,13 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             #(#isotope_discrim_idents: Vec<usize>,)*
         }
     })?;
-    let local_state_impl_entity_ref =
-        entity_ref::entity_ref(&mut local_state_struct, crate_name.clone())?;
+    let local_state_impl_entity_ref = entity_ref::entity_ref(
+        &mut local_state_struct,
+        crate_name.clone(),
+        quote! {
+            this_field_references_an_entity_so_it_should_use_dynec_param_entity_or_dynec_local_entity
+        },
+    )?;
 
     let output = quote! {
         #(#[#other_attrs])*

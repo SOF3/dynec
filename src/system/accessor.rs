@@ -65,11 +65,6 @@ pub trait WriteSimple<A: Archetype, C: comp::Simple<A>>: ReadSimple<A, C> {
 
 /// Provides access to an isotope component in a specific archetype.
 pub trait ReadIsotope<A: Archetype, C: comp::Isotope<A>> {
-    /// Return value of [`get_all`](Self::get_all).
-    type IsotopeRefMap<'t>: Iterator<Item = (<C as comp::Isotope<A>>::Discrim, &'t C)> + 't
-    where
-        Self: 't;
-
     /// Retrieves the component for the given entity and discriminant.
     ///
     /// This method is infallible for correctly implemented `comp::Must`,
@@ -86,6 +81,10 @@ pub trait ReadIsotope<A: Archetype, C: comp::Isotope<A>> {
     /// or `None` if the component is not present in the entity.
     fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E, discrim: C::Discrim) -> Option<&C>;
 
+    /// Return value of [`get_all`](Self::get_all).
+    type IsotopeRefMap<'t>: Iterator<Item = (<C as comp::Isotope<A>>::Discrim, &'t C)> + 't
+    where
+        Self: 't;
     /// Iterates over all isotopes of the component type for the given entity.
     fn get_all<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Self::IsotopeRefMap<'_>;
 

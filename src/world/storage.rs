@@ -20,15 +20,6 @@ pub trait Storage: Default + Send + Sync + 'static {
     /// The component type stored.
     type Comp;
 
-    /// Return value of [`iter`](Self::iter).
-    type Iter<'t>: Iterator<Item = (Self::RawEntity, &'t Self::Comp)> + 't;
-    /// Return value of [`iter_chunk`](Self::iter_chunks).
-    type IterChunks<'t>: Iterator<Item = ChunkRef<'t, Self>> + 't;
-    /// Return value of [`iter_mut`](Self::iter_mut).
-    type IterMut<'t>: Iterator<Item = (Self::RawEntity, &'t mut Self::Comp)> + 't;
-    /// Return value of [`iter_chunk_mut`](Self::iter_chunks_mut).
-    type IterChunksMut<'t>: Iterator<Item = ChunkMut<'t, Self>> + 't;
-
     /// Gets a shared reference to the component for a specific entity if it is present.
     fn get(&self, id: Self::RawEntity) -> Option<&Self::Comp>;
 
@@ -42,9 +33,13 @@ pub trait Storage: Default + Send + Sync + 'static {
     /// Returns the number of components that exist in this storage.
     fn cardinality(&self) -> usize;
 
+    /// Return value of [`iter`](Self::iter).
+    type Iter<'t>: Iterator<Item = (Self::RawEntity, &'t Self::Comp)> + 't;
     /// Returns an immutable iterator over the storage, ordered by entity index order.
     fn iter(&self) -> Self::Iter<'_>;
 
+    /// Return value of [`iter_chunk`](Self::iter_chunks).
+    type IterChunks<'t>: Iterator<Item = ChunkRef<'t, Self>> + 't;
     /// Returns an immutable iterator of slices over the storage, ordered by entity index order.
     ///
     /// Each item yielded by the iterator is a tuple of `(index, slice)`,
@@ -53,9 +48,13 @@ pub trait Storage: Default + Send + Sync + 'static {
     /// `slice` is always nonempty.
     fn iter_chunks(&self) -> Self::IterChunks<'_>;
 
+    /// Return value of [`iter_mut`](Self::iter_mut).
+    type IterMut<'t>: Iterator<Item = (Self::RawEntity, &'t mut Self::Comp)> + 't;
     /// Returns a mutable iterator over the storage, ordered by entity index order.
     fn iter_mut(&mut self) -> Self::IterMut<'_>;
 
+    /// Return value of [`iter_chunk_mut`](Self::iter_chunks_mut).
+    type IterChunksMut<'t>: Iterator<Item = ChunkMut<'t, Self>> + 't;
     /// Returns a mutable iterator of slices over the storage, ordered by entity index order.
     ///
     /// Each item yielded by the iterator is a tuple of `(index, slice)`,

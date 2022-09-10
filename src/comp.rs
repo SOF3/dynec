@@ -130,27 +130,6 @@ pub enum IsotopeInitStrategy<T> {
     Default(fn() -> T),
 }
 
-/// A discriminant value that distinguishes different isotopes of the same component type.
-///
-/// For compact storage, the discriminant should have a one-to-one mapping to the `usize` type.
-/// The `usize` needs not be a small number; it can be any valid `usize`
-/// as long as it is one-to-one and consistent.
-pub trait Discrim: Copy {
-    /// Constructs a discriminant from the usize.
-    ///
-    /// Can panic if the usize is not supported.
-    fn from_usize(usize: usize) -> Self;
-
-    /// Converts the discriminant to a usize.
-    fn into_usize(self) -> usize;
-}
-
-impl Discrim for usize {
-    fn from_usize(usize: usize) -> Self { usize }
-
-    fn into_usize(self) -> usize { self }
-}
-
 /// Marks that a component type is always present.
 ///
 /// This trait must only be implemented by components that
@@ -163,3 +142,6 @@ pub trait Must<A: Archetype> {}
 
 pub(crate) mod any;
 pub use any::{AutoInitFn, AutoIniter, Map};
+
+pub mod discrim;
+pub use discrim::Discrim;

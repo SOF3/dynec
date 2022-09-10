@@ -59,11 +59,6 @@ impl<E: entity::Raw, C: Send + Sync + 'static> Storage for VecStorage<E, C> {
     type RawEntity = E;
     type Comp = C;
 
-    type Iter<'t> = impl Iterator<Item = (Self::RawEntity, &'t Self::Comp)> + 't;
-    type IterChunks<'t> = impl Iterator<Item = ChunkRef<'t, Self>> + 't;
-    type IterMut<'t> = impl Iterator<Item = (Self::RawEntity, &'t mut Self::Comp)> + 't;
-    type IterChunksMut<'t> = impl Iterator<Item = ChunkMut<'t, Self>> + 't;
-
     fn get(&self, id: E) -> Option<&C> {
         let index = id.to_primitive();
 
@@ -118,6 +113,7 @@ impl<E: entity::Raw, C: Send + Sync + 'static> Storage for VecStorage<E, C> {
 
     fn cardinality(&self) -> usize { self.cardinality }
 
+    type Iter<'t> = impl Iterator<Item = (Self::RawEntity, &'t Self::Comp)> + 't;
     fn iter(&self) -> Self::Iter<'_> {
         let indices = self.bits.iter_ones();
         let data = &self.data;
@@ -130,6 +126,7 @@ impl<E: entity::Raw, C: Send + Sync + 'static> Storage for VecStorage<E, C> {
         })
     }
 
+    type IterChunks<'t> = impl Iterator<Item = ChunkRef<'t, Self>> + 't;
     fn iter_chunks(&self) -> Self::IterChunks<'_> {
         let indices = self.bits.iter_zeros();
         let data = &self.data;
@@ -149,6 +146,7 @@ impl<E: entity::Raw, C: Send + Sync + 'static> Storage for VecStorage<E, C> {
             .filter(|chunk| !chunk.slice.is_empty())
     }
 
+    type IterMut<'t> = impl Iterator<Item = (Self::RawEntity, &'t mut Self::Comp)> + 't;
     fn iter_mut(&mut self) -> Self::IterMut<'_> {
         let indices = self.bits.iter_ones();
         let data = &mut self.data;
@@ -162,6 +160,7 @@ impl<E: entity::Raw, C: Send + Sync + 'static> Storage for VecStorage<E, C> {
         }))
     }
 
+    type IterChunksMut<'t> = impl Iterator<Item = ChunkMut<'t, Self>> + 't;
     fn iter_chunks_mut(&mut self) -> Self::IterChunksMut<'_> {
         let indices = self.bits.iter_zeros().peekable();
         let data = &mut self.data;

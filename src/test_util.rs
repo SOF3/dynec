@@ -201,6 +201,8 @@ macro_rules! decl_test_discrim {
         pub(crate) struct $id(pub(crate) usize);
 
         impl comp::Discrim for $id {
+            type Map<T> = comp::discrim::LinearVecMap<T>;
+
             fn from_usize(usize: usize) -> Self { Self(usize) }
 
             fn into_usize(self) -> usize { self.0 }

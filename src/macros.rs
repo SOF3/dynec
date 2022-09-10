@@ -76,6 +76,8 @@ mod archetype_tests {}
 ///
 /// # Example
 /// ```
+/// #![feature(generic_associated_types)]
+///
 /// use dynec::comp;
 ///
 /// dynec::archetype!(Foo; Bar);
@@ -90,6 +92,8 @@ mod archetype_tests {}
 /// #[derive(Debug, Clone, Copy)]
 /// struct Id(usize);
 /// impl comp::Discrim for Id {
+///     type Map<T> = comp::discrim::BoundedVecMap<T>;
+///
 ///     fn from_usize(usize: usize) -> Self { Self(usize) }
 ///     fn into_usize(self) -> usize { self.0 }
 /// }
@@ -316,8 +320,10 @@ mod global_tests {}
 /// so mutating states has no effect on the system schedule.
 ///
 /// # Example
-/// ```no_run
-/// # // TODO remove no_run here
+/// ```
+/// #![feature(generic_associated_types)]
+///
+/// use dynec::comp::discrim::BoundedUsize;
 /// use dynec::system;
 ///
 /// #[dynec::global(initial = Title("hello world"))]
@@ -336,14 +342,7 @@ mod global_tests {}
 /// #[dynec::comp(of = Player)]
 /// struct Direction(f32, f32);
 ///
-/// #[derive(Debug, Clone, Copy)]
-/// struct SkillId(usize);
-/// impl dynec::comp::Discrim for SkillId {
-///     fn from_usize(id: usize) -> Self { Self(id) }
-///     fn into_usize(self) -> usize { self.0 }
-/// }
-///
-/// #[dynec::comp(of = Player, isotope = SkillId, init = || SkillLevel(1))]
+/// #[dynec::comp(of = Player, isotope = BoundedUsize, init = || SkillLevel(1))]
 /// struct SkillLevel(u8);
 ///
 /// #[system(
@@ -352,7 +351,7 @@ mod global_tests {}
 /// )]
 /// fn simulate(
 ///     #[dynec(local(initial = 0))] counter: &mut u16,
-///     #[dynec(param)] &skill_id: &SkillId,
+///     #[dynec(param)] &skill_id: &BoundedUsize,
 ///     #[dynec(global)] title: &mut Title,
 ///     x: impl system::WriteSimple<Player, PositionX>,
 ///     y: impl system::WriteSimple<Player, PositionY>,
@@ -366,10 +365,10 @@ mod global_tests {}
 ///     }
 /// }
 ///
-/// let system = simulate.build(SkillId(3));
+/// let system = simulate.build(BoundedUsize(3));
 /// assert_eq!(
 ///     system::Descriptor::get_spec(&system).debug_name.as_str(),
-///     "simulate[counter = 0, skill_id = SkillId(3)]"
+///     "simulate[counter = 0, skill_id = BoundedUsize(3)]"
 /// );
 ///
 /// {
@@ -379,7 +378,7 @@ mod global_tests {}
 ///     let mut title = Title("original");
 ///
 ///     let mut world = dynec::system_test! {
-///         simulate.build(SkillId(2));
+///         simulate.build(BoundedUsize(2));
 ///         _: Player = (
 ///             PositionX(0.0),
 ///             PositionY(0.0),
@@ -395,7 +394,7 @@ mod global_tests {}
 ///     /*
 ///     simulate::call(
 ///         &mut counter,
-///         &SkillId(2),
+///         &BoundedUsize(2),
 ///         &mut title,
 ///         todo!("component access logic"),
 ///         todo!("component access logic"),

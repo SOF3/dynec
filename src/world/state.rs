@@ -10,6 +10,7 @@ use parking_lot::{
 
 use super::storage::Storage;
 use super::typed::{self, PaddedIsotopeIdentifier};
+use crate::comp::discrim::Map as _;
 use crate::comp::Discrim;
 use crate::entity::referrer;
 use crate::util::DbgTypeId;
@@ -159,7 +160,7 @@ impl Components {
         &self,
         discrims: Option<&[usize]>,
     ) -> impl system::ReadIsotope<A, C> + '_ {
-        let storages: Vec<_> = {
+        let storages: <C::Discrim as comp::Discrim>::Map<_> = {
             let storages = self.archetype::<A>().isotope_storages.read();
             storages
                 .range(PaddedIsotopeIdentifier::range::<C>())
@@ -220,15 +221,13 @@ impl Components {
     }
 }
 
-struct ReadIsotopeStorage<C, S: ops::Deref> {
-    // TODO customize the implementation of discriminant lookup to allow O(1) indexing in
-    // small universe of concourse
-    storages: Vec<(usize, S)>,
+struct ReadIsotopeStorage<A: Archetype, C: comp::Isotope<A>, S: ops::Deref> {
+    storages: <C::Discrim as Discrim>::Map<S>,
     default:  Option<fn() -> C>,
 }
 
 impl<A: Archetype, C: comp::Isotope<A>, S: ops::Deref<Target = C::Storage>>
-    system::ReadIsotope<A, C> for ReadIsotopeStorage<C, S>
+    system::ReadIsotope<A, C> for ReadIsotopeStorage<A, C, S>
 {
     type IsotopeRefMap<'t> = impl Iterator<Item = (<C as comp::Isotope<A>>::Discrim, &'t C)> + 't where S: 't;
 
@@ -253,41 +252,25 @@ impl<A: Archetype, C: comp::Isotope<A>, S: ops::Deref<Target = C::Storage>>
         let discrim = discrim.into_usize();
 
         // if storage does not exist, the component does not exist yet.
-        let (_, storage) = self.storages.iter().find(|(key, _)| *key == discrim)?;
+        let storage = self.storages.find(discrim)?;
 
         storage.get(entity.id())
     }
 
     fn get_all<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Self::IsotopeRefMap<'_> {
-        /// Provides immutable access to all isotopes of the same type for an entity.
-        struct Ret<'t, A: Archetype, C: comp::Isotope<A>, S: ops::Deref<Target = C::Storage>> {
-            #[allow(clippy::type_complexity)]
-            storages: <&'t [(usize, S)] as IntoIterator>::IntoIter,
-            index:    A::RawEntity,
-            _ph:      PhantomData<fn() -> C>,
-        }
+        let index: A::RawEntity = entity.id();
 
-        impl<'t, A: Archetype, C: comp::Isotope<A>, S: ops::Deref<Target = C::Storage>> Iterator
-            for Ret<'t, A, C, S>
-        {
-            type Item = (C::Discrim, &'t C);
-
-            fn next(&mut self) -> Option<Self::Item> {
-                for (discrim, storage) in self.storages.by_ref() {
-                    let discrim = <C::Discrim as comp::Discrim>::from_usize(*discrim);
-                    let value = match storage.get(self.index) {
-                        Some(value) => value,
-                        None => continue,
-                    };
-
-                    return Some((discrim, value));
-                }
-
-                None
+        fn filter_map_fn<S: ops::Deref<Target = C::Storage>, A: Archetype, C: comp::Isotope<A>>(
+            index: A::RawEntity,
+        ) -> impl Fn((usize, &S)) -> Option<(C::Discrim, &C)> {
+            move |(discrim, storage)| {
+                let discrim = <C::Discrim as comp::Discrim>::from_usize(discrim);
+                let comp = storage.get(index)?;
+                Some((discrim, comp))
             }
         }
 
-        Ret { storages: self.storages.iter(), index: entity.id(), _ph: PhantomData }
+        self.storages.iter().filter_map(filter_map_fn(index))
     }
 }
 

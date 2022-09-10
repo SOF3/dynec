@@ -17,11 +17,6 @@ impl<E: entity::Raw, C: Send + Sync + 'static> Storage for Tree<E, C> {
     type RawEntity = E;
     type Comp = C;
 
-    type Iter<'t> = impl Iterator<Item = (Self::RawEntity, &'t Self::Comp)> + 't;
-    type IterChunks<'t> = impl Iterator<Item = ChunkRef<'t, Self>> + 't;
-    type IterMut<'t> = impl Iterator<Item = (Self::RawEntity, &'t mut Self::Comp)> + 't;
-    type IterChunksMut<'t> = impl Iterator<Item = ChunkMut<'t, Self>> + 't;
-
     fn get(&self, id: Self::RawEntity) -> Option<&C> { self.data.get(&id) }
 
     fn get_mut(&mut self, id: Self::RawEntity) -> Option<&mut C> { self.data.get_mut(&id) }
@@ -35,16 +30,20 @@ impl<E: entity::Raw, C: Send + Sync + 'static> Storage for Tree<E, C> {
 
     fn cardinality(&self) -> usize { self.data.len() }
 
+    type Iter<'t> = impl Iterator<Item = (Self::RawEntity, &'t Self::Comp)> + 't;
     fn iter(&self) -> Self::Iter<'_> { self.data.iter().map(|(&k, v)| (k, v)) }
 
+    type IterChunks<'t> = impl Iterator<Item = ChunkRef<'t, Self>> + 't;
     fn iter_chunks(&self) -> Self::IterChunks<'_> {
         self.iter().map(|(entity, item)| ChunkRef { slice: slice::from_ref(item), start: entity })
     }
 
+    type IterMut<'t> = impl Iterator<Item = (Self::RawEntity, &'t mut Self::Comp)> + 't;
     fn iter_mut(&mut self) -> Self::IterMut<'_> {
         Box::new(self.data.iter_mut().map(|(&k, v)| (k, v)))
     }
 
+    type IterChunksMut<'t> = impl Iterator<Item = ChunkMut<'t, Self>> + 't;
     fn iter_chunks_mut(&mut self) -> Self::IterChunksMut<'_> {
         self.iter_mut()
             .map(|(entity, item)| ChunkMut { slice: slice::from_mut(item), start: entity })

@@ -122,6 +122,8 @@ pub struct Flow(pub u32);
 pub struct ItemType(usize);
 
 impl dynec::comp::Discrim for ItemType {
+    type Map<T> = dynec::comp::discrim::BoundedVecMap<T>;
+
     fn from_usize(usize: usize) -> Self { Self(usize) }
     fn into_usize(self) -> usize { self.0 }
 }

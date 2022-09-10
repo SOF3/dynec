@@ -4,7 +4,7 @@
 use std::any::Any;
 use std::collections::HashSet;
 use std::marker::PhantomData;
-use std::ops;
+use std::{iter, ops};
 
 use self::search_single::SearchSingleStrong;
 use super::Raw;
@@ -181,9 +181,18 @@ impl<A: Archetype> Referrer for super::Weak<A> {
     }
 }
 
+/// Wraps a trait object for calling [`Referrer::visit_mut`].
+pub struct AsObject<'t>(pub(crate) Box<dyn Object + 't>);
+
+impl<'t> AsObject<'t> {
+    pub fn of(value: &'t mut impl Referrer) -> Self {
+        Self(Box::new(ReferrerIter(iter::once(value))))
+    }
+}
+
 /// Trait objects that are capable of calling [`Referrer::visit_mut`]
 /// with specific implementors of [`VisitMutArg`].
-pub(crate) trait Dyn {
+pub(crate) trait Object {
     fn search_single_strong(&mut self, state: &mut SearchSingleStrong);
 }
 
@@ -211,9 +220,10 @@ impl SingleVtable {
     }
 }
 
+#[repr(transparent)]
 pub(crate) struct ReferrerIter<I>(pub(crate) I);
 
-impl<I: Iterator> Dyn for ReferrerIter<I>
+impl<I: Iterator> Object for ReferrerIter<I>
 where
     <I as Iterator>::Item: ops::DerefMut,
     <<I as Iterator>::Item as ops::Deref>::Target: Referrer,
@@ -228,7 +238,7 @@ where
 
 pub(crate) struct DynIter<I>(pub(crate) I);
 
-impl<'t, I: Iterator<Item = (Option<String>, Box<dyn Dyn + 't>)>> Dyn for DynIter<I> {
+impl<'t, I: Iterator<Item = (Option<String>, Box<dyn Object + 't>)>> Object for DynIter<I> {
     fn search_single_strong(&mut self, state: &mut SearchSingleStrong) {
         for (debug_name, mut item) in self.0.by_ref() {
             if let Some(name) = debug_name {

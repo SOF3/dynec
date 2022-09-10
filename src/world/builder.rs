@@ -45,7 +45,22 @@ impl Builder {
         &mut self.archetypes.entry(archetype.id).or_insert_with(archetype.builder).1
     }
 
-    fn register_resources(&mut self, system: system::Spec, sync: bool, node: scheduler::Node) {
+    fn register_resources(
+        &mut self,
+        system: system::Spec,
+        type_visitor: referrer::VisitTypeArg,
+        sync: bool,
+        node: scheduler::Node,
+    ) {
+        for arch in type_visitor.found_archs {
+            self.scheduler.add_dependencies(
+                vec![spec::Dependency::Before(Box::new(system::EntityCreationPartition {
+                    ty: arch,
+                }))],
+                node,
+            );
+        }
+
         for request in system.global_requests {
             match (request.initial, sync) {
                 (spec::GlobalInitial::Sync(initial), _) => {
@@ -159,16 +174,19 @@ impl Builder {
 
     /// Schedules a thread-safe system.
     pub fn schedule(&mut self, system: Box<dyn system::Sendable>) {
-        let spec = system.get_spec();
-        let (node, _spec) = self.scheduler.push_send_system(system);
-        self.register_resources(spec, true, node);
+        let mut type_visitor = referrer::VisitTypeArg::new();
+        system.visit_type(&mut type_visitor);
+        let (node, spec) = self.scheduler.push_send_system(system);
+        self.register_resources(spec, type_visitor, true, node);
     }
 
     /// Schedules a system that must be run on the main thread.
     pub fn schedule_thread_unsafe(&mut self, system: Box<dyn system::Unsendable>) {
-        let spec = system.get_spec();
-        let (node, _spec) = self.scheduler.push_unsend_system(system);
-        self.register_resources(spec, false, node);
+        let mut type_visitor = referrer::VisitTypeArg::new();
+        system.visit_type(&mut type_visitor);
+
+        let (node, spec) = self.scheduler.push_unsend_system(system);
+        self.register_resources(spec, type_visitor, false, node);
     }
 
     /// Provides a thread-safe global resource.

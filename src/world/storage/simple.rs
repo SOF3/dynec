@@ -84,7 +84,7 @@ pub(crate) trait AnySimpleStorage<A: Archetype>: Send + Sync {
     fn clear_entry(&mut self, entity: A::RawEntity);
 
     /// Returns a [`referrer::Dyn`] implementation that visits all components in this storage.
-    fn referrer_dyn<'t>(&'t mut self) -> Box<dyn referrer::Dyn + 't>;
+    fn referrer_dyn<'t>(&'t mut self) -> Box<dyn referrer::Object + 't>;
 }
 
 impl<A: Archetype> dyn AnySimpleStorage<A> {
@@ -127,7 +127,7 @@ impl<A: Archetype, C: comp::Simple<A>> AnySimpleStorage<A> for SimpleStorage<A, 
 
     fn clear_entry(&mut self, entity: A::RawEntity) { self.0.set(entity, None); }
 
-    fn referrer_dyn<'t>(&'t mut self) -> Box<dyn referrer::Dyn + 't> {
+    fn referrer_dyn<'t>(&'t mut self) -> Box<dyn referrer::Object + 't> {
         Box::new(referrer::ReferrerIter(self.0.iter_chunks_mut().flat_map(|chunk| chunk.slice)))
     }
 }

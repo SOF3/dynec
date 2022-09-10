@@ -243,7 +243,7 @@ mod global_tests {}
 /// Each parameter of a system function has a special meaning:
 ///
 /// ## Local states
-/// Parameters with the attribute `#[dynec(local = xxx)]` are "local states",
+/// Parameters with the attribute `#[dynec(local(initial = xxx))]` are "local states",
 /// where `xxx` is an expression that evaluates to the initial value of the state.
 ///
 /// Local states must take the type `&T` or `&mut T`,
@@ -351,7 +351,7 @@ mod global_tests {}
 ///     before(Foo),
 /// )]
 /// fn simulate(
-///     #[dynec(local = 0)] counter: &mut u16,
+///     #[dynec(local(initial = 0))] counter: &mut u16,
 ///     #[dynec(param)] &skill_id: &SkillId,
 ///     #[dynec(global)] title: &mut Title,
 ///     x: impl system::WriteSimple<Player, PositionX>,
@@ -368,7 +368,7 @@ mod global_tests {}
 ///
 /// let system = simulate.build(SkillId(3));
 /// assert_eq!(
-///     system::Sendable::get_spec(&system).debug_name.as_str(),
+///     system::Descriptor::get_spec(&system).debug_name.as_str(),
 ///     "simulate[counter = 0, skill_id = SkillId(3)]"
 /// );
 ///
@@ -417,7 +417,7 @@ mod system_tests {
     fn test_system_name() {
         #[super::system(dynec_as(crate))]
         fn simulate(
-            #[dynec(local = 0)] counter_one: &mut u16,
+            #[dynec(local(initial = 0))] counter_one: &mut u16,
             #[dynec(param)] counter_two: &mut i64,
         ) {
             *counter_one += 1u16;
@@ -426,7 +426,7 @@ mod system_tests {
 
         let system = simulate.build(2i64);
         {
-            use crate::system::Sendable;
+            use crate::system::Descriptor;
             assert_eq!(
                 system.get_spec().debug_name.as_str(),
                 "dynec::macros::system_tests::simulate"

@@ -1,7 +1,7 @@
 //! Operations queued to be executed after the cycle joins.
 
 use crate::entity::{self, ealloc};
-use crate::{comp, world, Archetype};
+use crate::{comp, system, world, Archetype};
 
 /// An operation to be executed after join.
 pub(crate) trait Operation: Send {
@@ -11,6 +11,7 @@ pub(crate) trait Operation: Send {
         components: &mut world::Components,
         sync_globals: &mut world::SyncGlobals,
         unsync_globals: &mut world::UnsyncGlobals,
+        systems: &mut [(&str, &mut dyn system::Descriptor)],
         ealloc_map: &mut ealloc::Map,
     ) -> OperationResult;
 }
@@ -40,6 +41,7 @@ impl<A: Archetype> Operation for CreateEntity<A> {
         components: &mut world::Components,
         sync_globals: &mut world::SyncGlobals,
         _unsync_globals: &mut world::UnsyncGlobals,
+        _systems: &mut [(&str, &mut dyn system::Descriptor)],
         _ealloc_map: &mut ealloc::Map,
     ) -> OperationResult {
         world::init_entity(sync_globals, self.entity, self.rc, components, self.comp_map);
@@ -57,6 +59,7 @@ impl<A: Archetype> Operation for DeleteEntity<A> {
         components: &mut world::Components,
         sync_globals: &mut world::SyncGlobals,
         unsync_globals: &mut world::UnsyncGlobals,
+        systems: &mut [(&str, &mut dyn system::Descriptor)],
         ealloc_map: &mut ealloc::Map,
     ) -> OperationResult {
         match world::flag_delete_entity::<A>(
@@ -64,6 +67,7 @@ impl<A: Archetype> Operation for DeleteEntity<A> {
             components,
             sync_globals,
             unsync_globals,
+            systems,
             ealloc_map,
         ) {
             world::DeleteResult::Deleted => OperationResult::Ok,

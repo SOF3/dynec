@@ -254,14 +254,14 @@ pub(crate) trait AnyTyped: Send + Sync {
     fn as_any(&self) -> &(dyn Any + Send + Sync);
     fn as_any_mut(&mut self) -> &mut (dyn Any + Send + Sync);
 
-    fn referrer_dyn_iter<'t>(&'t mut self, archetype: &'t str) -> Box<dyn referrer::Dyn + 't>;
+    fn referrer_dyn_iter<'t>(&'t mut self, archetype: &'t str) -> Box<dyn referrer::Object + 't>;
 }
 
 impl<A: Archetype> AnyTyped for Typed<A> {
     fn as_any(&self) -> &(dyn Any + Send + Sync) { self }
     fn as_any_mut(&mut self) -> &mut (dyn Any + Send + Sync) { self }
 
-    fn referrer_dyn_iter<'t>(&'t mut self, archetype: &'t str) -> Box<dyn referrer::Dyn + 't> {
+    fn referrer_dyn_iter<'t>(&'t mut self, archetype: &'t str) -> Box<dyn referrer::Object + 't> {
         Box::new(referrer::DynIter(
             self.simple_storages
                 .iter_mut()

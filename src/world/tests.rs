@@ -360,6 +360,90 @@ fn test_offline_delete() {
         all(not(debug_assertions), feature = "release-entity-rc"),
     ),
     should_panic = "Detected dangling strong reference to entity dynec::test_util::TestArch#1 in \
+                    system dynec::world::tests::test_system. All strong references to an entity \
+                    must be dropped before queuing for deletion and removing all finalizers."
+)]
+fn test_offline_delete_send_system_leak() {
+    #[system(dynec_as(crate))]
+    fn test_system(
+        #[dynec(local(initial = None, entity))] entity: &mut Option<Entity<TestArch>>,
+        mut entity_deleter: impl system::EntityDeleter<TestArch>,
+        #[dynec(global)] initials: &mut InitialEntities,
+        _comp1: impl system::ReadSimple<TestArch, Comp1>,
+    ) {
+        if let Some(ent) = initials.ent1.take() {
+            *entity = Some(ent);
+        }
+
+        if let Some(ent) = entity {
+            entity_deleter.queue(&*ent);
+        }
+    }
+
+    let mut builder = world::Builder::new(0);
+    builder.schedule(Box::new(test_system.build()));
+
+    let mut world = builder.build();
+
+    let ent1 = world.create(crate::comps![@(crate) TestArch => Comp1(7)]);
+    let ent1_weak = ent1.weak(world.get_global::<generation::StoreMap>());
+    world.get_global::<InitialEntities>().ent1 = Some(ent1);
+
+    world.execute(&tracer::Log(log::Level::Trace));
+
+    let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent1_weak);
+    assert_eq!(comp1, None);
+}
+
+#[test]
+#[cfg_attr(
+    any(
+        all(debug_assertions, feature = "debug-entity-rc"),
+        all(not(debug_assertions), feature = "release-entity-rc"),
+    ),
+    should_panic = "Detected dangling strong reference to entity dynec::test_util::TestArch#1 in \
+                    system dynec::world::tests::test_system. All strong references to an entity \
+                    must be dropped before queuing for deletion and removing all finalizers."
+)]
+fn test_offline_delete_unsend_system_leak() {
+    #[system(dynec_as(crate), thread_local)]
+    fn test_system(
+        #[dynec(local(initial = None, entity))] entity: &mut Option<Entity<TestArch>>,
+        mut entity_deleter: impl system::EntityDeleter<TestArch>,
+        #[dynec(global)] initials: &mut InitialEntities,
+        _comp1: impl system::ReadSimple<TestArch, Comp1>,
+    ) {
+        if let Some(ent) = initials.ent1.take() {
+            *entity = Some(ent);
+        }
+
+        if let Some(ent) = entity {
+            entity_deleter.queue(&*ent);
+        }
+    }
+
+    let mut builder = world::Builder::new(0);
+    builder.schedule_thread_unsafe(Box::new(test_system.build()));
+
+    let mut world = builder.build();
+
+    let ent1 = world.create(crate::comps![@(crate) TestArch => Comp1(7)]);
+    let ent1_weak = ent1.weak(world.get_global::<generation::StoreMap>());
+    world.get_global::<InitialEntities>().ent1 = Some(ent1);
+
+    world.execute(&tracer::Log(log::Level::Trace));
+
+    let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent1_weak);
+    assert_eq!(comp1, None);
+}
+
+#[test]
+#[cfg_attr(
+    any(
+        all(debug_assertions, feature = "debug-entity-rc"),
+        all(not(debug_assertions), feature = "release-entity-rc"),
+    ),
+    should_panic = "Detected dangling strong reference to entity dynec::test_util::TestArch#1 in \
                     global state dynec::world::tests::InitialEntities. All strong references to \
                     an entity must be dropped before queuing for deletion and removing all \
                     finalizers."

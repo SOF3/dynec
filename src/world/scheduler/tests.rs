@@ -87,6 +87,9 @@ struct Comp1;
 #[comp(dynec_as(crate), of = TestArch)]
 struct Comp2;
 
+#[derive(Debug, PartialEq, Eq, Hash)]
+struct TestPartition(u32);
+
 /// Counts the number of times some node is unmarked as runnable.
 #[derive(Default)]
 struct UnmarkCounterTracer(AtomicUsize);
@@ -174,9 +177,42 @@ impl world::Tracer for RunCounterTracer {
     }
 }
 
+/// Tracks the start order of systems.
+#[derive(Default)]
+struct StartOrderTracer(Mutex<Vec<Node>>);
+impl world::Tracer for StartOrderTracer {
+    fn start_run_sendable(
+        &self,
+        _thread: tracer::Thread,
+        node: world::ScheduleNode,
+        _debug_name: &str,
+        _system: &mut dyn system::Sendable,
+    ) {
+        let mut vec = self.0.lock();
+        vec.push(node);
+    }
+    fn start_run_unsendable(
+        &self,
+        _thread: tracer::Thread,
+        node: world::ScheduleNode,
+        _debug_name: &str,
+        _system: &mut dyn system::Unsendable,
+    ) {
+        let mut vec = self.0.lock();
+        vec.push(node);
+    }
+}
+
+#[test]
+fn test_empty() {
+    for concurrency in 0..3 {
+        bootstrap(concurrency, || (), |_builder, [], []| {}, || |_| (), |()| {});
+    }
+}
+
 #[test]
 fn test_global_exclusion() {
-    test_bootstrap(
+    bootstrap(
         2,
         || (UnmarkCounterTracer::default(), MaxConcurrencyTracer::default()),
         |builder, [sys1, sys2, sys3], []| {
@@ -212,7 +248,7 @@ fn test_global_exclusion() {
 
 #[test]
 fn test_different_global_exclusion() {
-    test_bootstrap(
+    bootstrap(
         2,
         || (UnmarkCounterTracer::default(), MaxConcurrencyTracer::default()),
         |builder, [sys1, sys2], []| {
@@ -243,7 +279,7 @@ fn test_different_global_exclusion() {
 
 #[test]
 fn test_global_share() {
-    test_bootstrap(
+    bootstrap(
         2,
         || (UnmarkCounterTracer::default(), MaxConcurrencyTracer::default()),
         |builder, [sys1, sys2, sys3, sys4], []| {
@@ -271,7 +307,7 @@ fn test_global_share() {
 
 #[test]
 fn test_simple_exclusion() {
-    test_bootstrap(
+    bootstrap(
         2,
         || (UnmarkCounterTracer::default(), MaxConcurrencyTracer::default()),
         |builder, [sys1, sys2, sys3], []| {
@@ -316,7 +352,7 @@ fn test_simple_exclusion() {
 
 #[test]
 fn test_different_simple_exclusion() {
-    test_bootstrap(
+    bootstrap(
         2,
         || (UnmarkCounterTracer::default(), MaxConcurrencyTracer::default()),
         |builder, [sys1, sys2], []| {
@@ -353,7 +389,7 @@ fn test_different_simple_exclusion() {
 
 #[test]
 fn test_simple_share() {
-    test_bootstrap(
+    bootstrap(
         2,
         || (UnmarkCounterTracer::default(), MaxConcurrencyTracer::default()),
         |builder, [sys1, sys2, sys3, sys4], []| {
@@ -384,7 +420,7 @@ fn test_simple_share() {
 
 #[test]
 fn test_isotope_exclusion() {
-    test_bootstrap(
+    bootstrap(
         2,
         || (UnmarkCounterTracer::default(), MaxConcurrencyTracer::default()),
         |builder, [sys1, sys2, sys3], []| {
@@ -429,7 +465,7 @@ fn test_isotope_exclusion() {
 
 #[test]
 fn test_intersecting_isotope_exclusion() {
-    test_bootstrap(
+    bootstrap(
         3,
         || (UnmarkCounterTracer::default(), MaxConcurrencyTracer::default()),
         |builder, [sys1, sys2, sys3], []| {
@@ -484,7 +520,7 @@ fn test_intersecting_isotope_exclusion() {
 
 #[test]
 fn test_different_isotope_exclusion() {
-    test_bootstrap(
+    bootstrap(
         2,
         || (UnmarkCounterTracer::default(), MaxConcurrencyTracer::default()),
         |builder, [sys1, sys2], []| {
@@ -521,7 +557,7 @@ fn test_different_isotope_exclusion() {
 
 #[test]
 fn test_isotope_share() {
-    test_bootstrap(
+    bootstrap(
         2,
         || (UnmarkCounterTracer::default(), MaxConcurrencyTracer::default()),
         |builder, [sys1, sys2, sys3, sys4], []| {
@@ -550,10 +586,87 @@ fn test_isotope_share() {
     );
 }
 
+#[test]
+fn test_partition() {
+    bootstrap(
+        2,
+        || (StartOrderTracer::default(),),
+        |builder, [sys1, sys2], []| {
+            builder.add_dependencies(
+                vec![system::spec::Dependency::After(Box::new(TestPartition(0)))],
+                Node::SendSystem(sys1),
+            );
+            builder.add_dependencies(
+                vec![system::spec::Dependency::Before(Box::new(TestPartition(0)))],
+                Node::SendSystem(sys2),
+            );
+        },
+        || |_| (),
+        |(StartOrderTracer(order),)| {
+            assert_eq!(
+                &order.into_inner()[..],
+                &[Node::SendSystem(SendSystemIndex(1)), Node::SendSystem(SendSystemIndex(0))]
+            );
+        },
+    );
+}
+
+#[test]
+fn test_duplicate_partition() {
+    bootstrap(
+        2,
+        || (StartOrderTracer::default(),),
+        |builder, [sys1, sys2], []| {
+            builder.add_dependencies(
+                vec![
+                    system::spec::Dependency::After(Box::new(TestPartition(0))),
+                    system::spec::Dependency::After(Box::new(TestPartition(0))),
+                ],
+                Node::SendSystem(sys1),
+            );
+            builder.add_dependencies(
+                vec![
+                    system::spec::Dependency::Before(Box::new(TestPartition(0))),
+                    system::spec::Dependency::Before(Box::new(TestPartition(0))),
+                ],
+                Node::SendSystem(sys2),
+            );
+        },
+        || |_| (),
+        |(StartOrderTracer(order),)| {
+            assert_eq!(
+                &order.into_inner()[..],
+                &[Node::SendSystem(SendSystemIndex(1)), Node::SendSystem(SendSystemIndex(0))]
+            );
+        },
+    );
+}
+
+#[test]
+#[should_panic = "Scheduled systems have a cyclic dependency: thread-safe system #0 (SendSystem \
+                  #0) -> partition #0 (TestPartition(0)) -> thread-safe system #0 (SendSystem #0)"]
+fn test_conflicting_partition() {
+    bootstrap(
+        2,
+        || (),
+        |builder, [sys1], []| {
+            builder.add_dependencies(
+                vec![
+                    system::spec::Dependency::After(Box::new(TestPartition(0))),
+                    system::spec::Dependency::Before(Box::new(TestPartition(0))),
+                ],
+                Node::SendSystem(sys1),
+            );
+        },
+        || |_| (),
+        |()| {},
+    );
+}
+
 // Make sure that thread-local systems have the same exclusion rules as thread-safe systems.
 #[test]
 fn test_thread_local_exclusion() {
-    test_bootstrap(
+    bootstrap(
         1,
         || (UnmarkCounterTracer::default(), MaxConcurrencyTracer::default()),
         |builder, [sys1], [sys2]| {
@@ -591,7 +704,7 @@ fn test_thread_local_exclusion() {
 
 #[test]
 fn test_zero_concurrency_single_send() {
-    test_bootstrap(
+    bootstrap(
         0,
         || (MaxConcurrencyTracer::default(),),
         |_builder, [_sys], []| {},
@@ -605,7 +718,7 @@ fn test_zero_concurrency_single_send() {
 
 #[test]
 fn test_zero_concurrency_single_unsend() {
-    test_bootstrap(
+    bootstrap(
         0,
         || (MaxConcurrencyTracer::default(),),
         |_builder, [], [_sys]| {},
@@ -639,7 +752,7 @@ fn test_zero_concurrency_single_unsend() {
 /// - Executes the built scheduler with a TRACE-level tracer,
 ///   along with the tuple of schedulers returned by `make_tracers`.
 /// - Calls `verify` with the tuple of tracers to verify that the test has succeeded.
-fn test_bootstrap<const S: usize, const U: usize, T, C, R, V>(
+fn bootstrap<const S: usize, const U: usize, T, C, R, V>(
     concurrency: usize,
     make_tracers: fn() -> T,
     customize: C,

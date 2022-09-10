@@ -47,7 +47,13 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
     };
 
     let mut mut_input = input;
-    let entity_ref = entity_ref::entity_ref(&mut mut_input, crate_name)?;
+    let entity_ref = entity_ref::entity_ref(
+        &mut mut_input,
+        crate_name,
+        quote! {
+            this_field_references_an_entity_so_it_should_have_the_entity_attribute
+        },
+    )?;
 
     Ok(quote! {
         #mut_input

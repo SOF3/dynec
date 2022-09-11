@@ -168,19 +168,19 @@ impl SimpleRequest {
 /// Indicates that the system requires an isotope component read/write.
 pub struct IsotopeRequest {
     /// The archetype requested.
-    pub(crate) arch:            ArchetypeDescriptor,
+    pub(crate) arch:        ArchetypeDescriptor,
     /// The archetype of the isotope component.
-    pub(crate) comp:            DbgTypeId,
-    /// Builder for the IsotopeFactory. Must be `Box<Box<dyn storage::AnyIsotopeFactory<A>>>`.
-    pub(crate) factory_builder: fn() -> Box<dyn Any>,
+    pub(crate) comp:        DbgTypeId,
+    /// Builder for the IsotopeFactory. Downcasts to `Box<Arc<dyn storage::AnyIsotopeMap<A>>>`.
+    pub(crate) map_builder: fn() -> Box<dyn Any>,
     /// If `Some`, only the isotope components of the given discriminants are accessible.
     ///
     /// This will not lead to creation of the discriminant storages.
-    pub(crate) discrim:         Option<Vec<usize>>,
+    pub(crate) discrim:     Option<Vec<usize>>,
     /// Whether mutable access is requested.
-    pub(crate) mutable:         bool,
+    pub(crate) mutable:     bool,
     /// The list of strongly referenced archetypes that must be initialized.
-    pub(crate) strong_refs:     HashSet<DbgTypeId>,
+    pub(crate) strong_refs: HashSet<DbgTypeId>,
 }
 
 impl IsotopeRequest {
@@ -197,7 +197,7 @@ impl IsotopeRequest {
             comp: DbgTypeId::of::<C>(),
             discrim,
             mutable,
-            factory_builder: || Box::new(storage::IsotopeFactory::<A>::new::<C>()),
+            map_builder: || Box::new(storage::IsotopeMap::<A, C>::new_any()),
             strong_refs: visitor.found_archs,
         }
     }

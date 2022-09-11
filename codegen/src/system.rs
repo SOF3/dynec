@@ -587,25 +587,23 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                         #(.maybe_uninit::<#maybe_uninit>())*
                 });
 
-                let discrim_field_option = match &discrim {
-                    Some(_) => {
-                        let discrim_ident =
-                            quote::format_ident!("__dynec_isotope_discrim_{}", param_index);
-                        isotope_discrim_idents.push(discrim_ident.clone());
-                        isotope_discrim_values.push(discrim_vec);
-                        quote!(Some(&self.#discrim_ident))
-                    }
-                    None => quote!(None),
+                let discrim_field = discrim.map(|_| {
+                    let discrim_ident =
+                        quote::format_ident!("__dynec_isotope_discrim_{}", param_index);
+                    isotope_discrim_idents.push(discrim_ident.clone());
+                    isotope_discrim_values.push(discrim_vec);
+
+                    quote!(&self.#discrim_ident, )
+                });
+
+                let method_ident = match (mutable, discrim_field.is_some()) {
+                    (true, true) => quote!(write_partial_isotope_storage),
+                    (true, false) => quote!(write_full_isotope_storage),
+                    (false, true) => quote!(read_partial_isotope_storage),
+                    (false, false) => quote!(read_full_isotope_storage),
                 };
 
-                match mutable {
-                    true => {
-                        quote!(components.write_isotope_storage::<#arch, #comp>(#discrim_field_option))
-                    }
-                    false => {
-                        quote!(components.read_isotope_storage::<#arch, #comp>(#discrim_field_option))
-                    }
-                }
+                quote!(components.#method_ident::<#arch, #comp>(#discrim_field))
             }
             ArgType::EntityCreator { arch, no_partition } => {
                 let no_partition_call = no_partition.then(|| quote!(.no_partition()));

@@ -1,15 +1,12 @@
 use std::any::{self, Any, TypeId};
 use std::collections::HashMap;
-use std::marker::PhantomData;
 use std::ops;
 use std::sync::Arc;
 
-use parking_lot::{
-    MappedRwLockReadGuard, MappedRwLockWriteGuard, RwLock, RwLockReadGuard, RwLockWriteGuard,
-};
+use parking_lot::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use super::storage::Storage;
-use super::typed::{self, PaddedIsotopeIdentifier};
+use super::typed;
 use crate::comp::discrim::Map as _;
 use crate::comp::Discrim;
 use crate::entity::referrer;
@@ -92,7 +89,7 @@ impl Components {
     /// Creates a writable, exclusive accessor to the given archetyped simple component.
     ///
     /// # Panics
-    /// - if the archetyped component is not used in any systems
+    /// - if the archetyped component is not used in any systems.
     /// - if another thread is accessing the same archetyped component.
     pub fn write_simple_storage<A: Archetype, C: comp::Simple<A>>(
         &self,
@@ -151,85 +148,175 @@ impl Components {
         Ret { storage: guard }
     }
 
-    /// Creates a read-only, shared accessor to the given archetyped isotope component.
+    /// Creates a read-only, shared accessor to all discriminants of the given archetyped isotope component.
     ///
     /// # Panics
-    /// - if the archetyped component is not used in any systems
-    /// - if another thread is exclusively accessing the same archetyped component.
-    pub fn read_isotope_storage<A: Archetype, C: comp::Isotope<A>>(
+    /// - if the archetyped component is not used in any systems.
+    /// - if another thread is exclusively accessing any discriminants of the isotope component.
+    pub fn read_full_isotope_storage<A: Archetype, C: comp::Isotope<A>>(
+        &self,
+    ) -> impl system::ReadIsotope<A, C> + '_ {
+        self.read_isotope_storage(None)
+    }
+
+    /// Creates a read-only, shared accessor to specific discriminants of the given archetyped isotope component.
+    ///
+    /// # Panics
+    /// - if the archetyped component is not used in any systems.
+    /// - if another thread is exclusively accessing any of the requested discriminants.
+    pub fn read_partial_isotope_storage<A: Archetype, C: comp::Isotope<A>>(
+        &self,
+        discrims: &[usize],
+    ) -> impl system::ReadIsotope<A, C> + '_ {
+        self.read_isotope_storage(Some(discrims))
+    }
+
+    fn read_isotope_storage<A: Archetype, C: comp::Isotope<A>>(
         &self,
         discrims: Option<&[usize]>,
     ) -> impl system::ReadIsotope<A, C> + '_ {
+        let storage_map = match self.archetype::<A>().isotope_storage_maps.get(&TypeId::of::<C>()) {
+            Some(storage) => storage.downcast_ref::<C>(),
+            None => panic!(
+                "The component {}/{} cannot be used because it is not used in any systems",
+                any::type_name::<A>(),
+                any::type_name::<C>()
+            ),
+        };
+
         let storages: <C::Discrim as comp::Discrim>::Map<_> = {
-            let storages = self.archetype::<A>().isotope_storages.read();
-            storages
-                .range(PaddedIsotopeIdentifier::range::<C>())
-                .filter_map(|(ty, storage)| {
-                    Some((
-                        {
-                            let discrim = ty.expect_discrim();
-                            if let Some(discrims) = discrims {
-                                if !discrims.contains(&discrim) {
-                                    return None;
-                                }
-                            }
-                            discrim
-                        },
-                        storage,
-                    ))
+            // note: lock contention may occur here if another thread is requesting write access to
+            // storages of other discriminants.
+            let map = storage_map.map.read();
+
+            map.iter()
+                .filter(|(&discrim, _)| match discrims {
+                    Some(discrims) => discrims.contains(&discrim),
+                    None => true,
                 })
-                .map(|(discrim, storage)| {
-                    (discrim, {
-                        let storage = Arc::clone(&storage.storage);
-                        OwningMappedRwLockReadGuard::new(storage, |storage| {
-                            let guard = match storage.try_read() {
-                                Some(guard) => guard,
-                                None => panic!(
-                                    "The component {}/{}/{} is currently used by another system. \
-                                     Maybe scheduler bug?",
-                                    any::type_name::<A>(),
-                                    any::type_name::<C>(),
-                                    discrim,
-                                ),
-                            };
-                            RwLockReadGuard::map(guard, |storage| storage.downcast_ref::<C>())
-                        })
-                    })
+                .map(|(&discrim, storage)| {
+                    let storage: Arc<RwLock<C::Storage>> = Arc::clone(storage);
+                    let storage = match storage.try_read_arc() {
+                        Some(guard) => guard,
+                        None => panic!(
+                            "The component {}/{}/{} is currently used by another system. Maybe \
+                             scheduler bug?",
+                            any::type_name::<A>(),
+                            any::type_name::<C>(),
+                            discrim,
+                        ),
+                    };
+                    (discrim, storage)
                 })
                 .collect()
         };
 
-        ReadIsotopeStorage {
-            storages,
-            default: match C::INIT_STRATEGY {
-                comp::IsotopeInitStrategy::None => None,
-                comp::IsotopeInitStrategy::Default(factory) => Some(factory),
-            },
+        IsotopeAccessor { storages }
+    }
+
+    /// Creates a writable, exclusive accessor to all discriminants of the given archetyped isotope component,
+    /// with the capability of initializing creating new discriminants not previously created.
+    ///
+    /// # Panics
+    /// - if the archetyped component is not used in any systems.
+    /// - if another thread is accessing the same archetyped component.
+    pub fn write_full_isotope_storage<A: Archetype, C: comp::Isotope<A>>(
+        &self,
+    ) -> impl system::WriteIsotope<A, C> + '_ {
+        let storage_map = match self.archetype::<A>().isotope_storage_maps.get(&TypeId::of::<C>()) {
+            Some(storage) => storage.downcast_ref::<C>(),
+            None => panic!(
+                "The component {}/{} cannot be used because it is not used in any systems",
+                any::type_name::<A>(),
+                any::type_name::<C>()
+            ),
+        };
+
+        let full_map = storage_map.map.write();
+
+        let accessor_storages: <C::Discrim as comp::Discrim>::Map<_> = full_map
+            .iter()
+            .map(|(&discrim, storage)| {
+                let storage: Arc<RwLock<C::Storage>> = Arc::clone(storage);
+                let storage = match storage.try_write_arc() {
+                    Some(guard) => guard,
+                    None => panic!(
+                        "The component {}/{}/{} is currently used by another system. Maybe \
+                         scheduler bug?",
+                        any::type_name::<A>(),
+                        any::type_name::<C>(),
+                        discrim,
+                    ),
+                };
+                (discrim, storage)
+            })
+            .collect();
+
+        FullIsotopeAccessor {
+            full_map,
+            isotope_accessor: IsotopeAccessor { storages: accessor_storages },
         }
     }
 
-    /// Creates a writable, exclusive accessor to the given archetyped isotope component.
+    /// Creates a writable, exclusive accessor to the given archetyped isotope component,
+    /// initializing new discriminants if not previously created.
     ///
     /// # Panics
     /// - if the archetyped component is not used in any systems
     /// - if another thread is accessing the same archetyped component.
-    pub fn write_isotope_storage<A: Archetype, C: comp::Isotope<A>>(
+    pub fn write_partial_isotope_storage<A: Archetype, C: comp::Isotope<A>>(
         &self,
-        _discrim: Option<&[usize]>,
+        discrims: &[usize],
     ) -> impl system::WriteIsotope<A, C> + '_ {
-        WriteIsotopeStorage(PhantomData)
+        let storage_map = match self.archetype::<A>().isotope_storage_maps.get(&TypeId::of::<C>()) {
+            Some(storage) => storage.downcast_ref::<C>(),
+            None => panic!(
+                "The component {}/{} cannot be used because it is not used in any systems",
+                any::type_name::<A>(),
+                any::type_name::<C>()
+            ),
+        };
+
+        let storages: <C::Discrim as comp::Discrim>::Map<_> = {
+            // note: lock contention may occur here if another thread is requesting write access to
+            // storages of other discriminants.
+            let mut map = storage_map.map.write();
+
+            discrims
+                .iter()
+                .map(|&discrim| {
+                    let storage =
+                        map.entry(discrim).or_insert_with(Arc::<RwLock<C::Storage>>::default);
+                    let storage = Arc::clone(storage);
+
+                    let storage = match storage.try_write_arc() {
+                        Some(guard) => guard,
+                        None => panic!(
+                            "The component {}/{}/{} is currently used by another system. Maybe \
+                             scheduler bug?",
+                            any::type_name::<A>(),
+                            any::type_name::<C>(),
+                            discrim,
+                        ),
+                    };
+
+                    (discrim, storage)
+                })
+                .collect()
+        };
+
+        IsotopeAccessor { storages }
     }
 }
 
-struct ReadIsotopeStorage<A: Archetype, C: comp::Isotope<A>, S: ops::Deref> {
+struct IsotopeAccessor<A: Archetype, C: comp::Isotope<A>, S> {
     storages: <C::Discrim as Discrim>::Map<S>,
-    default:  Option<fn() -> C>,
 }
 
 impl<A: Archetype, C: comp::Isotope<A>, S: ops::Deref<Target = C::Storage>>
-    system::ReadIsotope<A, C> for ReadIsotopeStorage<A, C, S>
+    system::ReadIsotope<A, C> for IsotopeAccessor<A, C, S>
 {
-    type IsotopeRefMap<'t> = impl Iterator<Item = (<C as comp::Isotope<A>>::Discrim, &'t C)> + 't where S: 't;
+    type IsotopeRefMap<'t> = impl Iterator<Item = (<C as comp::Isotope<A>>::Discrim, &'t C)> + 't where Self: 't;
 
     fn get<E: entity::Ref<Archetype = A>>(
         &self,
@@ -241,10 +328,7 @@ impl<A: Archetype, C: comp::Isotope<A>, S: ops::Deref<Target = C::Storage>>
     {
         match self.try_get(entity, discrim) {
             Some(value) => system::RefOrDefault(system::BorrowedOwned::Borrowed(value)),
-            None => system::RefOrDefault(system::BorrowedOwned::Owned(self
-                .default
-                .expect("C: comp::Must<A>")(
-            ))),
+            None => system::RefOrDefault(system::BorrowedOwned::Owned(comp::must_isotope_init())),
         }
     }
 
@@ -274,39 +358,55 @@ impl<A: Archetype, C: comp::Isotope<A>, S: ops::Deref<Target = C::Storage>>
     }
 }
 
-struct WriteIsotopeStorage<A: Archetype, C: comp::Isotope<A>>(PhantomData<(A, C)>);
+impl<A: Archetype, C: comp::Isotope<A>, S: ops::Deref> system::WriteIsotope<A, C>
+    for IsotopeAccessor<A, C, S>
+{
+    // TODO
+}
 
-impl<A: Archetype, C: comp::Isotope<A>> system::ReadIsotope<A, C> for WriteIsotopeStorage<A, C> {
-    type IsotopeRefMap<'t> = impl Iterator<Item = (<C as comp::Isotope<A>>::Discrim, &'t C)> + 't;
+struct FullIsotopeAccessor<A: Archetype, C: comp::Isotope<A>, M, S> {
+    full_map:         M,
+    isotope_accessor: IsotopeAccessor<A, C, S>,
+}
 
+impl<A, C, M, S> system::ReadIsotope<A, C> for FullIsotopeAccessor<A, C, M, S>
+where
+    A: Archetype,
+    C: comp::Isotope<A>,
+    M: ops::Deref<Target = HashMap<usize, Arc<RwLock<C::Storage>>>>,
+    IsotopeAccessor<A, C, S>: system::ReadIsotope<A, C>,
+{
     fn get<E: entity::Ref<Archetype = A>>(
         &self,
-        _entity: E,
-        _discrim: C::Discrim,
+        entity: E,
+        discrim: C::Discrim,
     ) -> system::RefOrDefault<'_, C>
     where
         C: comp::Must<A>,
     {
-        todo!()
+        self.isotope_accessor.get(entity, discrim)
     }
 
-    fn try_get<E: entity::Ref<Archetype = A>>(
-        &self,
-        _entity: E,
-        _discrim: C::Discrim,
-    ) -> Option<&C> {
-        todo!()
+    fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E, discrim: C::Discrim) -> Option<&C> {
+        self.isotope_accessor.try_get(entity, discrim)
     }
 
-    fn get_all<E: entity::Ref<Archetype = A>>(&self, _entity: E) -> Self::IsotopeRefMap<'_> {
-        if true {
-            todo!()
-        }
+    type IsotopeRefMap<'t> = impl Iterator<Item = (<C as comp::Isotope<A>>::Discrim, &'t C)> + 't where Self: 't;
 
-        std::iter::empty()
+    fn get_all<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Self::IsotopeRefMap<'_> {
+        self.isotope_accessor.get_all::<E>(entity)
     }
 }
-impl<A: Archetype, C: comp::Isotope<A>> system::WriteIsotope<A, C> for WriteIsotopeStorage<A, C> {}
+
+impl<A, C, M, S> system::WriteIsotope<A, C> for FullIsotopeAccessor<A, C, M, S>
+where
+    A: Archetype,
+    C: comp::Isotope<A>,
+    M: ops::Deref<Target = HashMap<usize, Arc<RwLock<C::Storage>>>>,
+    IsotopeAccessor<A, C, S>: system::ReadIsotope<A, C>,
+{
+    // TODO
+}
 
 #[cfg(test)]
 static_assertions::assert_impl_all!(Components: Send, Sync);
@@ -407,37 +507,5 @@ impl UnsyncGlobals {
                 any::type_name::<G>()
             ),
         }
-    }
-}
-
-#[ouroboros::self_referencing]
-pub(crate) struct OwningMappedRwLockReadGuard<L: 'static, U: 'static> {
-    lock:  L,
-    #[borrows(lock)]
-    #[covariant]
-    guard: MappedRwLockReadGuard<'this, U>,
-}
-
-impl<L: 'static, U: 'static> ops::Deref for OwningMappedRwLockReadGuard<L, U> {
-    type Target = U;
-
-    fn deref(&self) -> &Self::Target { self.borrow_guard() }
-}
-
-#[ouroboros::self_referencing]
-pub(crate) struct OwningMappedRwLockWriteGuard<L: 'static, U: 'static> {
-    lock:  L,
-    #[borrows(lock)]
-    #[covariant]
-    guard: MappedRwLockWriteGuard<'this, U>,
-}
-
-impl<L: 'static, U: 'static> OwningMappedRwLockWriteGuard<L, U> {
-    /// Gets `U` mutably.
-    ///
-    /// # Safety
-    /// TODO idk...
-    pub(crate) unsafe fn borrow_guard_mut(&mut self) -> &mut U {
-        &mut *self.with_guard_mut(|guard| &mut **guard as *mut U)
     }
 }

@@ -140,7 +140,7 @@ impl Builder {
 
         for request in system.isotope_requests {
             let builder = self.archetype(request.arch);
-            builder.add_isotope_factory_if_missing(request.comp, request.factory_builder);
+            builder.add_isotope_map_if_missing(request.comp, request.map_builder);
 
             self.scheduler.use_resource(
                 node,

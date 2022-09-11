@@ -1,9 +1,6 @@
 use std::any::{self, Any};
-use std::collections::{btree_map, hash_map, BTreeMap, HashMap};
-use std::ops;
+use std::collections::{hash_map, HashMap};
 use std::sync::Arc;
-
-use parking_lot::RwLock;
 
 use super::storage;
 use crate::entity::referrer;
@@ -17,7 +14,7 @@ pub(crate) trait AnyBuilder {
         storage_builder: fn() -> Box<dyn Any>,
     );
 
-    fn add_isotope_factory_if_missing(
+    fn add_isotope_map_if_missing(
         &mut self,
         component: DbgTypeId,
         factory_builder: fn() -> Box<dyn Any>,
@@ -27,12 +24,12 @@ pub(crate) trait AnyBuilder {
 }
 
 pub(crate) fn builder<A: Archetype>() -> impl AnyBuilder {
-    Builder::<A> { simple_storages: HashMap::new(), isotope_factories: HashMap::new() }
+    Builder::<A> { simple_storages: HashMap::new(), isotope_storage_maps: HashMap::new() }
 }
 
 struct Builder<A: Archetype> {
-    simple_storages:   HashMap<DbgTypeId, storage::Simple<A>>,
-    isotope_factories: HashMap<DbgTypeId, storage::IsotopeFactory<A>>,
+    simple_storages:      HashMap<DbgTypeId, storage::Simple<A>>,
+    isotope_storage_maps: HashMap<DbgTypeId, Arc<dyn storage::AnyIsotopeMap<A>>>,
 }
 
 impl<A: Archetype> AnyBuilder for Builder<A> {
@@ -54,17 +51,13 @@ impl<A: Archetype> AnyBuilder for Builder<A> {
         });
     }
 
-    fn add_isotope_factory_if_missing(
-        &mut self,
-        component: DbgTypeId,
-        box_fn: fn() -> Box<dyn Any>,
-    ) {
-        self.isotope_factories.entry(component).or_insert_with(|| {
+    fn add_isotope_map_if_missing(&mut self, component: DbgTypeId, box_fn: fn() -> Box<dyn Any>) {
+        self.isotope_storage_maps.entry(component).or_insert_with(|| {
             let boxed = box_fn();
-            match boxed.downcast::<storage::IsotopeFactory<A>>() {
+            match boxed.downcast::<Arc<dyn storage::AnyIsotopeMap<A>>>() {
                 Ok(factory) => *factory,
                 Err(boxed) => panic!(
-                    "Expected storage::IsotopeFactory<{}>, got {:?}",
+                    "Expected storage::isotope::AnyMap<{}>, got {:?}",
                     any::type_name::<A>(),
                     boxed.type_id(),
                 ),
@@ -77,8 +70,7 @@ impl<A: Archetype> AnyBuilder for Builder<A> {
 
         Box::new(Typed::<A> {
             simple_storages: self.simple_storages,
-            isotope_storages: RwLock::new(BTreeMap::new()),
-            isotope_factories: self.isotope_factories,
+            isotope_storage_maps: self.isotope_storage_maps,
             populators,
         })
     }
@@ -164,43 +156,12 @@ fn toposort_populators<A: Archetype>(
 }
 // TODO unit test toposort_populators
 
-/// Key type used for indexing isotope storages.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub(crate) struct PaddedIsotopeIdentifier {
-    pub(crate) id:      DbgTypeId,
-    pub(crate) discrim: PaddedIsotopeDiscrim,
-}
-
-impl PaddedIsotopeIdentifier {
-    pub(crate) fn expect_discrim(&self) -> usize {
-        match self.discrim {
-            PaddedIsotopeDiscrim::Item(discrim) => discrim,
-            _ => panic!("expect_discrim() called on {:?}", self.discrim),
-        }
-    }
-
-    pub(crate) fn range<C: 'static>() -> ops::Range<Self> {
-        let comp = DbgTypeId::of::<C>();
-        let head = Self { id: comp, discrim: PaddedIsotopeDiscrim::Head };
-        let tail = Self { id: comp, discrim: PaddedIsotopeDiscrim::Tail };
-        head..tail
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub(crate) enum PaddedIsotopeDiscrim {
-    Head,
-    Item(usize),
-    Tail,
-}
-
 /// Stores everything related to a specific archetype.
 #[derive(Default)]
 pub(crate) struct Typed<A: Archetype> {
-    pub(crate) simple_storages:   HashMap<DbgTypeId, storage::Simple<A>>,
-    pub(crate) isotope_storages:  RwLock<BTreeMap<PaddedIsotopeIdentifier, storage::Isotope<A>>>,
-    pub(crate) isotope_factories: HashMap<DbgTypeId, storage::IsotopeFactory<A>>,
-    pub(crate) populators:        Vec<Populator<A>>,
+    pub(crate) simple_storages:      HashMap<DbgTypeId, storage::Simple<A>>,
+    pub(crate) isotope_storage_maps: HashMap<DbgTypeId, Arc<dyn storage::AnyIsotopeMap<A>>>,
+    pub(crate) populators:           Vec<Populator<A>>,
 }
 
 impl<A: Archetype> Typed<A> {
@@ -216,36 +177,12 @@ impl<A: Archetype> Typed<A> {
         }
 
         for (ty, value) in comp_map.into_isotopes() {
-            let ty = PaddedIsotopeIdentifier {
-                id:      ty.id,
-                discrim: PaddedIsotopeDiscrim::Item(
-                    ty.discrim.expect("Map::into_isotopes() should filter away None discrims"),
-                ),
-            };
-
-            let storages = self.isotope_storages.get_mut();
-
-            let mut storage_entry = storages.entry(ty);
-            let storage = match storage_entry {
-                btree_map::Entry::Occupied(ref mut entry) => entry.get_mut(),
-                btree_map::Entry::Vacant(entry) => entry.insert({
-                    let factory = match self.isotope_factories.get(&ty.id) {
-                        Some(factory) => factory,
-                        None => {
-                            // Let's just discard the object,
-                            // because user may simply have disabled a certain system
-                            // without modifying the initialization code,
-                            // instead of panicking with:
-                            // panic!("Isotope type `{}` is not used in any systems", ty.id)
-
-                            continue;
-                        }
-                    };
-                    factory.build()
-                }),
-            };
-            let any_storage = Arc::get_mut(&mut storage.storage).expect("storage arc was leaked");
-            any_storage.get_mut().fill_init_isotope(id, value);
+            let discrim =
+                ty.discrim.expect("Map::into_isotopes() should filter away None discrims");
+            if let Some(storage) = self.isotope_storage_maps.get_mut(&ty.id) {
+                let storage = Arc::get_mut(storage).expect("storage arc was leaked");
+                storage.fill_init(discrim, id, value);
+            }
         }
     }
 }
@@ -272,17 +209,10 @@ impl<A: Archetype> AnyTyped for Typed<A> {
                         .referrer_dyn();
                     (Some(format!("{archetype}/{comp_ty}")), referrer_dyn)
                 })
-                .chain(self.isotope_storages.get_mut().iter_mut().map(
-                    move |(comp_id, storage)| {
-                        let referrer_dyn = Arc::get_mut(&mut storage.storage)
-                            .expect("storage arc was leaked")
-                            .get_mut()
-                            .referrer_dyn();
-                        let comp_ty = comp_id.id;
-                        let comp_discrim = comp_id.discrim;
-                        (Some(format!("{archetype}/{comp_ty}/{comp_discrim:?}")), referrer_dyn)
-                    },
-                )),
+                .chain(self.isotope_storage_maps.iter_mut().map(move |(comp_ty, storage)| {
+                    let storage = Arc::get_mut(storage).expect("storage arc was leaked");
+                    (Some(format!("{archetype}/{comp_ty}")), storage.referrer_dyn())
+                })),
         ))
     }
 }

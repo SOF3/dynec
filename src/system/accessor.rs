@@ -115,6 +115,8 @@ impl<'t, C> ops::Deref for RefOrDefault<'t, C> {
 
 /// Provides access to an isotope component in a specific archetype.
 pub trait WriteIsotope<A: Archetype, C: comp::Isotope<A>> {
+    // TODO
+
     /// Creates an accessor with fixed discriminant.
     fn with(&self, discrim: C::Discrim) -> FixedIsotope<&'_ Self, A, C> {
         FixedIsotope { discrim, accessor: self }

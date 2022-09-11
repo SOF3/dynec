@@ -11,7 +11,7 @@ pub use tree::Tree;
 mod simple;
 pub(crate) use simple::Simple;
 mod isotope;
-pub(crate) use isotope::{Factory as IsotopeFactory, Isotope};
+pub(crate) use isotope::{AnyMap as AnyIsotopeMap, Map as IsotopeMap};
 
 /// A storage for storing component data.
 pub trait Storage: Default + Send + Sync + 'static {

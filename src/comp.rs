@@ -45,6 +45,8 @@
 //!
 //! Isotope components are never instantiated on entity creation.
 
+use std::any::type_name;
+
 use crate::{entity, world, Archetype};
 
 /// A simple component has only one instance per entity.
@@ -128,6 +130,19 @@ pub enum IsotopeInitStrategy<T> {
     /// the function is invoked and the result is stored in the storage,
     /// then the system is given a mutable reference to the value in the storage.
     Default(fn() -> T),
+}
+
+pub(crate) fn must_isotope_init<A: Archetype, C: Isotope<A> + Must<A>>() -> C {
+    match C::INIT_STRATEGY {
+        IsotopeInitStrategy::None => {
+            panic!(
+                "{}: comp::Must<{}> but it has no init strategy for this archetype",
+                type_name::<C>(),
+                type_name::<A>(),
+            )
+        }
+        IsotopeInitStrategy::Default(fp) => fp(),
+    }
 }
 
 /// Marks that a component type is always present.

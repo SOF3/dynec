@@ -8,10 +8,10 @@ use crate::util::{Attr, Named};
 use crate::{entity_ref, util};
 
 pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
-    let args: Attr<FnOpt> = syn::parse2(args)?;
+    let args: Attr<ItemOpt> = syn::parse2(args)?;
 
     let crate_name = if let Some((_, ts)) =
-        args.find_one(|opt| option_match!(opt, FnOpt::DynecAs(_, ts) => ts))?
+        args.find_one(|opt| option_match!(opt, ItemOpt::DynecAs(_, ts) => ts))?
     {
         ts.clone()
     } else {
@@ -22,20 +22,21 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
         .items
         .iter()
         .filter_map(|arg| match &arg.value {
-            FnOpt::Of(_, ty) => Some(ty),
+            ItemOpt::Of(_, ty) => Some(ty),
             _ => None,
         })
         .collect();
 
-    let isotope = args.find_one(|arg| option_match!(arg, FnOpt::Isotope(_, discrim) => discrim))?;
+    let isotope =
+        args.find_one(|arg| option_match!(arg, ItemOpt::Isotope(_, discrim) => discrim))?;
     let storage =
-        match args.find_one(|arg| option_match!(arg, FnOpt::Storage(_, discrim) => discrim))? {
+        match args.find_one(|arg| option_match!(arg, ItemOpt::Storage(_, discrim) => discrim))? {
             Some((_, ty)) => ty.clone(),
             None => syn::parse2(quote!(#crate_name::storage::Vec))
                 .expect("Cannot parse storage::Vec as a path"),
         };
 
-    let presence = args.find_one(|arg| option_match!(arg, FnOpt::Required => &()))?;
+    let presence = args.find_one(|arg| option_match!(arg, ItemOpt::Required => &()))?;
     if let (Some((isotope_span, _)), Some((presence_span, _))) = (isotope, presence) {
         return Err(Error::new(
             isotope_span.join(presence_span).unwrap_or(presence_span),
@@ -47,7 +48,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
         None => quote!(#crate_name::comp::SimplePresence::Optional),
     };
 
-    let finalizer = args.find_one(|arg| option_match!(arg, FnOpt::Finalizer => &()))?;
+    let finalizer = args.find_one(|arg| option_match!(arg, ItemOpt::Finalizer => &()))?;
     if let (Some((isotope_span, _)), Some((finalizer_span, _))) = (isotope, finalizer) {
         return Err(Error::new(
             isotope_span.join(finalizer_span).unwrap_or(finalizer_span),
@@ -56,7 +57,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
     }
     let finalizer = finalizer.is_some();
 
-    let init = args.find_one(|arg| option_match!(arg, FnOpt::Init(_, func) => func))?;
+    let init = args.find_one(|arg| option_match!(arg, ItemOpt::Init(_, func) => func))?;
 
     let input: syn::DeriveInput = syn::parse2(input)?;
     let generics = util::parse_generics(&input);
@@ -132,7 +133,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
     })
 }
 
-enum FnOpt {
+enum ItemOpt {
     DynecAs(syn::token::Paren, TokenStream),
     Of(syn::Token![=], syn::Type),
     Isotope(syn::Token![=], syn::Type),
@@ -142,7 +143,7 @@ enum FnOpt {
     Init(syn::Token![=], Box<FunctionRefWithArity>),
 }
 
-impl Parse for Named<FnOpt> {
+impl Parse for Named<ItemOpt> {
     fn parse(input: ParseStream) -> Result<Self> {
         let name = input.parse::<syn::Ident>()?;
 
@@ -151,29 +152,29 @@ impl Parse for Named<FnOpt> {
                 let inner;
                 let paren = syn::parenthesized!(inner in input);
                 let args = inner.parse()?;
-                FnOpt::DynecAs(paren, args)
+                ItemOpt::DynecAs(paren, args)
             }
             "of" => {
                 let eq: syn::Token![=] = input.parse()?;
                 let ty = input.parse::<syn::Type>()?;
-                FnOpt::Of(eq, ty)
+                ItemOpt::Of(eq, ty)
             }
             "isotope" => {
                 let eq: syn::Token![=] = input.parse()?;
                 let ty = input.parse::<syn::Type>()?;
-                FnOpt::Isotope(eq, ty)
+                ItemOpt::Isotope(eq, ty)
             }
             "storage" => {
                 let eq: syn::Token![=] = input.parse()?;
                 let ty = input.parse::<syn::Path>()?;
-                FnOpt::Storage(eq, ty)
+                ItemOpt::Storage(eq, ty)
             }
-            "required" => FnOpt::Required,
-            "finalizer" => FnOpt::Finalizer,
+            "required" => ItemOpt::Required,
+            "finalizer" => ItemOpt::Finalizer,
             "init" => {
                 let eq: syn::Token![=] = input.parse()?;
                 let expr = input.parse::<FunctionRefWithArity>()?;
-                FnOpt::Init(eq, Box::new(expr))
+                ItemOpt::Init(eq, Box::new(expr))
             }
             _ => return Err(Error::new_spanned(&name, format!("Unknown argument `{}`", name))),
         };

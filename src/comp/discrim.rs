@@ -145,17 +145,12 @@ impl<T> Map<T> for BoundedVecMap<T> {
 
 /// A wrapper for [`usize`] that implements [`Discrim`] with [`BoundedVecMap`] instead.
 #[repr(transparent)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default, dynec_codegen::Discrim)]
+#[dynec(dynec_as(crate), map = BoundedVecMap)]
 pub struct BoundedUsize(
     /// The underlying value
     pub usize,
 );
-impl Discrim for BoundedUsize {
-    type Map<T> = BoundedVecMap<T>;
-
-    fn from_usize(usize: usize) -> Self { Self(usize) }
-    fn into_usize(self) -> usize { self.0 }
-}
 
 /// Implements [`Map`] with O(1) search complexity and O(N) memory,
 /// where `N` is a number known at compile time.

@@ -72,7 +72,7 @@
 /// Internal re-exports used in macros.
 #[doc(hidden)]
 pub mod _reexports {
-    pub use static_assertions;
+    pub use {static_assertions, xias};
 }
 
 mod macros;

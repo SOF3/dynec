@@ -9,7 +9,7 @@ use indexmap::IndexSet;
 use parking_lot::{Condvar, Mutex, Once};
 
 use crate::entity::ealloc;
-use crate::{comp, Archetype};
+use crate::Archetype;
 
 /// Records event and ensures that they are in the correct order.
 pub(crate) struct EventTracer<T: fmt::Debug + Eq + Hash> {
@@ -195,25 +195,18 @@ impl Archetype for TestArch {
         ealloc::Recycling<NonZeroU32, BTreeSet<NonZeroU32>, ealloc::ThreadRngShardAssigner, 2>;
 }
 
-macro_rules! decl_test_discrim {
-    ($id:ident) => {
-        #[derive(Debug, Clone, Copy)]
-        pub(crate) struct $id(pub(crate) usize);
-
-        impl comp::Discrim for $id {
-            type Map<T> = comp::discrim::LinearVecMap<T>;
-
-            fn from_usize(usize: usize) -> Self { Self(usize) }
-
-            fn into_usize(self) -> usize { self.0 }
-        }
-    };
-}
-
-decl_test_discrim!(TestDiscrim1);
-decl_test_discrim!(TestDiscrim2);
-decl_test_discrim!(TestDiscrim3);
-decl_test_discrim!(TestDiscrim4);
+#[derive(Debug, Clone, Copy, dynec_codegen::Discrim)]
+#[dynec(dynec_as(crate))]
+pub(crate) struct TestDiscrim1(pub(crate) usize);
+#[derive(Debug, Clone, Copy, dynec_codegen::Discrim)]
+#[dynec(dynec_as(crate))]
+pub(crate) struct TestDiscrim2(pub(crate) usize);
+#[derive(Debug, Clone, Copy, dynec_codegen::Discrim)]
+#[dynec(dynec_as(crate))]
+pub(crate) struct TestDiscrim3(pub(crate) usize);
+#[derive(Debug, Clone, Copy, dynec_codegen::Discrim)]
+#[dynec(dynec_as(crate))]
+pub(crate) struct TestDiscrim4(pub(crate) usize);
 
 pub(crate) fn init() {
     static SET_LOGGER_ONCE: Once = Once::new();

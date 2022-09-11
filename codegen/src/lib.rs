@@ -5,6 +5,7 @@ extern crate proc_macro;
 mod archetype;
 mod comp;
 mod comps;
+mod discrim;
 mod entity_ref;
 mod global;
 mod system;
@@ -33,6 +34,11 @@ pub fn global(args: TokenStream, input: TokenStream) -> TokenStream {
 #[proc_macro_derive(EntityRef, attributes(entity, not_entity))]
 pub fn entity_ref(input: TokenStream) -> TokenStream {
     entity_ref::derive(input.into()).unwrap_or_else(|err| err.to_compile_error()).into()
+}
+
+#[proc_macro_derive(Discrim, attributes(dynec))]
+pub fn discrim(input: TokenStream) -> TokenStream {
+    discrim::derive(input.into()).unwrap_or_else(|err| err.to_compile_error()).into()
 }
 
 #[proc_macro_attribute]

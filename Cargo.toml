@@ -26,7 +26,7 @@ rand = "0.8.5"
 rayon = "1.5.2"
 replace_with = "0.1.7"
 static_assertions = "1.1.0"
-xias = "0.2.1"
+xias = "0.3.0"
 
 [features]
 default = ["debug-entity-rc"]

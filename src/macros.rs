@@ -89,14 +89,9 @@ mod archetype_tests {}
 /// assert!(matches!(<Qux as comp::Simple<Foo>>::PRESENCE, comp::SimplePresence::Optional));
 /// assert!(<Qux as comp::Simple<Bar>>::IS_FINALIZER);
 ///
-/// #[derive(Debug, Clone, Copy)]
+/// #[derive(Debug, Clone, Copy, dynec::Discrim)]
+/// #[dynec(map = discrim::BoundedVecMap)]
 /// struct Id(usize);
-/// impl comp::Discrim for Id {
-///     type Map<T> = comp::discrim::BoundedVecMap<T>;
-///
-///     fn from_usize(usize: usize) -> Self { Self(usize) }
-///     fn into_usize(self) -> usize { self.0 }
-/// }
 ///
 /// #[comp(of = Foo, isotope = Id, init = Corge::make/0)]
 /// struct Corge(i32);
@@ -434,6 +429,61 @@ mod system_tests {
     }
 }
 
+/// Derives a [`Discrim`](crate::comp::Discrim) implementation for the type.
+///
+/// This derive macro is only applicable to
+/// single-field structs (both tuple structs and named structs)
+/// and enums with only unit fields.
+///
+/// For structs, the only field must be an integer type
+/// (one that is convertible from and to `usize` through [`xias::SmallInt`]).
+/// Note that dynec mostly uses `usize` to identify isotopes,
+/// so using `u8` instead of `usize` as the backing type does not provide notable benefit;
+/// custom discriminant types are only available for ergonomic reasons.
+///
+/// # Customizing the discriminant map
+/// Implementations for structs use
+/// [`discrim::LinearVecMap`](crate::comp::discrim::LinearVecMap) by default.
+/// This can be customized by adding `#[dynec(map = path::to::another::Impl)]` on the struct.
+/// [`dynec::comp::discrim`](crate::comp::discrim)
+/// is automatically imported for the map reference,
+/// so users only need to specify e.g. `#[dynec(map = discrim::BoundedVecMap)]`.
+///
+/// Since maps are generic over `T`,
+/// the passed type actually can depend on the type parameter `T`,
+/// e.g. `#[dynec(map = discrim::ArrayMap<T, 16>)]`.
+/// Inputs without trailing type parameters are appended with `<T>` automatically.
+///
+/// Enums do not require customization because they always use
+/// [`ArrayMap`](crate::comp::discrim::ArrayMap).
+///
+/// # Example
+/// ```
+/// #![feature(generic_associated_types)]
+///
+/// #[derive(Clone, Copy, dynec::Discrim)]
+/// struct Tuple(u16);
+///
+/// #[derive(Clone, Copy, dynec::Discrim)]
+/// #[dynec(map = discrim::BoundedVecMap)]
+/// struct Named {
+///     field: u32,
+/// }
+///
+/// #[derive(Clone, Copy, dynec::Discrim)]
+/// #[dynec(map = discrim::ArrayMap<T, 16>)]
+/// struct UsesArray {
+///     field: u8,
+/// }
+///
+/// #[derive(Clone, Copy, dynec::Discrim)]
+/// enum Enum {
+///     Foo,
+///     Bar,
+/// }
+/// ```
+#[doc(inline)]
+pub use dynec_codegen::Discrim;
 /// Derives a [`Referrer`](crate::entity::Referrer) implementation for the type.
 ///
 /// The generated implementation does not visit any fields by default.

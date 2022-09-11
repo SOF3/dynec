@@ -16,16 +16,16 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
     let mut crate_name = quote!(::dynec);
 
     if !args.is_empty() {
-        let args: Attr<FnOpt> = syn::parse2(args)?;
+        let args: Attr<ItemOpt> = syn::parse2(args)?;
 
         if let Some((_, ts)) =
-            args.find_one(|opt| option_match!(opt, FnOpt::DynecAs(_, ts) => ts))?
+            args.find_one(|opt| option_match!(opt, ItemOpt::DynecAs(_, ts) => ts))?
         {
             crate_name = ts.clone();
         }
 
         if let Some((_, value)) =
-            args.find_one(|opt| option_match!(opt, FnOpt::Initial(value) => value))?
+            args.find_one(|opt| option_match!(opt, ItemOpt::Initial(value) => value))?
         {
             let value = match value {
                 Some((_, value)) => quote!(#value),
@@ -62,12 +62,12 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
     })
 }
 
-enum FnOpt {
+enum ItemOpt {
     DynecAs(syn::token::Paren, TokenStream),
     Initial(Option<(syn::Token![=], Box<syn::Expr>)>),
 }
 
-impl Parse for Named<FnOpt> {
+impl Parse for Named<ItemOpt> {
     fn parse(input: ParseStream) -> Result<Self> {
         let name = input.parse::<syn::Ident>()?;
 
@@ -76,7 +76,7 @@ impl Parse for Named<FnOpt> {
                 let inner;
                 let paren = syn::parenthesized!(inner in input);
                 let args = inner.parse()?;
-                FnOpt::DynecAs(paren, args)
+                ItemOpt::DynecAs(paren, args)
             }
             "initial" => {
                 let value = if input.peek(syn::Token![=]) {
@@ -86,7 +86,7 @@ impl Parse for Named<FnOpt> {
                 } else {
                     None
                 };
-                FnOpt::Initial(value)
+                ItemOpt::Initial(value)
             }
             _ => return Err(Error::new_spanned(&name, format!("Unknown argument `{}`", name))),
         };

@@ -21,6 +21,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
 
     let mut crate_name = quote!(::dynec);
     let mut system_thread_local = false;
+    let mut state_maybe_uninit = Vec::new();
 
     if !args.is_empty() {
         let args = syn::parse2::<Attr<FnOpt>>(args)?;
@@ -33,6 +34,9 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
 
         system_thread_local =
             args.find_one(|opt| option_match!(opt, FnOpt::ThreadLocal => &()))?.is_some();
+        state_maybe_uninit = args.merge_all(
+            |opt| option_match!(opt, FnOpt::MaybeUninit(_, archs) => archs.iter().cloned()),
+        );
 
         for named in &args.items {
             match &named.value {
@@ -51,6 +55,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 FnOpt::Name(_, name_expr) => {
                     name = quote!(#name_expr);
                 }
+                FnOpt::MaybeUninit(_, _) => {} // already handled
             }
         }
     }
@@ -745,6 +750,10 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                     <Self as #crate_name::entity::Referrer>::visit_type(arg)
                 }
 
+                fn state_maybe_uninit(&self) -> ::std::vec::Vec<::std::any::TypeId> {
+                    vec![#(#state_maybe_uninit),*]
+                }
+
                 fn visit_mut(&mut self) -> #crate_name::entity::referrer::AsObject<'_> {
                     #crate_name::entity::referrer::AsObject::of(self)
                 }
@@ -771,6 +780,7 @@ enum FnOpt {
     Before(syn::token::Paren, Punctuated<syn::Expr, syn::Token![,]>),
     After(syn::token::Paren, Punctuated<syn::Expr, syn::Token![,]>),
     Name(syn::Token![=], Box<syn::Expr>),
+    MaybeUninit(syn::token::Paren, Punctuated<syn::Type, syn::Token![,]>),
 }
 
 impl Parse for Named<FnOpt> {
@@ -801,6 +811,7 @@ impl Parse for Named<FnOpt> {
                 let name = input.parse::<syn::Expr>()?;
                 FnOpt::Name(eq, Box::new(name))
             }
+            "maybe_uninit" => parse_maybe_uninit(input, FnOpt::MaybeUninit)?,
             _ => return Err(Error::new_spanned(&name, "Unknown attribute")),
         };
 

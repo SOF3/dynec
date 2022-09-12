@@ -8,6 +8,8 @@
 //! Systems that use thread-unsafe resources (systems that are not [`Send`])
 //! are always executed on the main thread.
 
+use std::any::TypeId;
+
 use crate::entity::{ealloc, referrer};
 use crate::world;
 use crate::world::offline;
@@ -39,6 +41,12 @@ pub trait Descriptor {
     /// Delegates to [`Referrer::visit_type`](referrer::Referrer::visit_type)
     /// for the states of this system.
     fn visit_type(&self, arg: &mut referrer::VisitTypeArg);
+
+    /// By default, systems with states that strongly reference entities always execute
+    /// before systems that create those entities to ensure the entities initialized.
+    /// If references to uninitialized entities are tolerable,
+    /// include the TypeId of the archetype in the returned vector.
+    fn state_maybe_uninit(&self) -> Vec<TypeId> { Vec::new() }
 
     /// Executes the mutable visitor
     fn visit_mut(&mut self) -> referrer::AsObject<'_>;

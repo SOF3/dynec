@@ -1,4 +1,4 @@
-use std::any::Any;
+use std::any::{Any, TypeId};
 use std::collections::HashMap;
 
 use parking_lot::RwLock;
@@ -49,10 +49,15 @@ impl Builder {
         &mut self,
         system: system::Spec,
         type_visitor: referrer::VisitTypeArg,
+        state_maybe_uninit: &[TypeId],
         sync: bool,
         node: scheduler::Node,
     ) {
         for arch in type_visitor.found_archs {
+            if state_maybe_uninit.contains(&arch.id) {
+                continue;
+            }
+
             self.scheduler.add_dependencies(
                 vec![spec::Dependency::Before(Box::new(system::EntityCreationPartition {
                     ty: arch,
@@ -176,17 +181,20 @@ impl Builder {
     pub fn schedule(&mut self, system: Box<dyn system::Sendable>) {
         let mut type_visitor = referrer::VisitTypeArg::new();
         system.visit_type(&mut type_visitor);
+        let state_maybe_uninit = system.state_maybe_uninit();
+
         let (node, spec) = self.scheduler.push_send_system(system);
-        self.register_resources(spec, type_visitor, true, node);
+        self.register_resources(spec, type_visitor, &state_maybe_uninit, true, node);
     }
 
     /// Schedules a system that must be run on the main thread.
     pub fn schedule_thread_unsafe(&mut self, system: Box<dyn system::Unsendable>) {
         let mut type_visitor = referrer::VisitTypeArg::new();
         system.visit_type(&mut type_visitor);
+        let state_maybe_uninit = system.state_maybe_uninit();
 
         let (node, spec) = self.scheduler.push_unsend_system(system);
-        self.register_resources(spec, type_visitor, false, node);
+        self.register_resources(spec, type_visitor, &state_maybe_uninit, false, node);
     }
 
     /// Provides a thread-safe global resource.

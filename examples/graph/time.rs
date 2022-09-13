@@ -1,4 +1,4 @@
-//! This module simply defines a sytem that uses a Global to measure delta-time.
+//! This module simply defines a system that uses a Global to measure delta-time.
 //! Nevertheless, for the sake of testing consistency,
 //! we use a `Box<dyn Fn() -> u64>` to measure the time
 //! instead of calling `std::time::Instant::elapsed()`.

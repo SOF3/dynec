@@ -30,7 +30,7 @@ Note that components are only stored on entities if at least one system uses it.
 
 Simple components can be equipped with an auto-initializer.
 When an entity is created without passing this component,
-it is filled with the value returned by the auto-intializer.
+it is filled with the value returned by the auto-initializer.
 
 The auto-initializer can depend on other simple components
 passed by the entity creator or other auto-initializers.

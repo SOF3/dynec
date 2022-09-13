@@ -162,7 +162,7 @@ impl World {
         let global = match self.sync_globals.sync_globals.get_mut(&TypeId::of::<G>()) {
             Some((_, global)) => global,
             None => panic!(
-                "The global state {} cannot be retrieved becaues it is not used in any systems, \
+                "The global state {} cannot be retrieved because it is not used in any systems, \
                  or was registered as an unsync global instead of a sync global",
                 any::type_name::<G>()
             ),
@@ -178,7 +178,7 @@ impl World {
         let global = match self.unsync_globals.unsync_globals.get_mut(&TypeId::of::<G>()) {
             Some((_, global)) => global,
             None => panic!(
-                "The global state {} cannot be retrieved becaues it is not used in any systems, \
+                "The global state {} cannot be retrieved because it is not used in any systems, \
                  or was registered as a sync global instead of an unsync global",
                 any::type_name::<G>()
             ),

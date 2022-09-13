@@ -1,4 +1,4 @@
-//! Utilties for dynamic dispatch related to components.
+//! Utilities for dynamic dispatch related to components.
 
 use std::any::{self, Any};
 use std::collections::BTreeMap;

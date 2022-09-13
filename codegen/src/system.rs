@@ -89,7 +89,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
     for (param_index, param) in input.sig.inputs.iter_mut().enumerate() {
         let param = match param {
             syn::FnArg::Receiver(receiver) => {
-                return Err(Error::new_spanned(receiver, "system funcions must not be a method"))
+                return Err(Error::new_spanned(receiver, "system functions must not be a method"))
             }
             syn::FnArg::Typed(typed) => typed,
         };

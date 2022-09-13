@@ -5,7 +5,7 @@ use crate::{comp, system, world, Archetype};
 
 /// An operation to be executed after join.
 pub(crate) trait Operation: Send {
-    /// Performs the opreation during offline.
+    /// Performs the operation during offline.
     fn run(
         self: Box<Self>,
         components: &mut world::Components,
@@ -16,7 +16,7 @@ pub(crate) trait Operation: Send {
     ) -> OperationResult;
 }
 
-/// Result of an opreation.
+/// Result of an operation.
 pub(crate) enum OperationResult {
     /// The operation completed.
     Ok,

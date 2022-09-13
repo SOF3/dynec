@@ -9,9 +9,8 @@ use crate::{system, world};
 /// All tracer method parameters must be either [`Copy`] or a mutable reference
 /// (or immutable reference, which is [`Copy`]).
 ///
-/// Use the `{@LOG_WITH = transformer}` syntax to transform an argument for log printing,
-/// where `transformer` is an invokable that accepts the argument
-/// and returns any [`fmt::Debug`] type.
+/// Use the `{@LOG_WITH = transformer}` syntax to transform an argument for log printing
+/// such that `transformer(argument)` returns a [`fmt::Debug`] type.
 macro_rules! define_tracer {
     (
         $(

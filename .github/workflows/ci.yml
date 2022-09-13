@@ -11,8 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-        with:
-          submodules: true
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly-2022-08-27
@@ -21,6 +19,7 @@ jobs:
           components: rustfmt
       - run: cargo fmt --all -- --check
       - run: make README.md && git diff --exit-code
+      - run: crate-ci/typos@master
   lint-test:
     name: clippy lint and unit tests
     runs-on: ubuntu-latest

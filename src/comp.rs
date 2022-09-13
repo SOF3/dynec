@@ -102,7 +102,7 @@ impl<A: Archetype> SimpleInitStrategy<A> {
 ///
 /// See the [module-level documentation](mod@crate::comp) for more information.
 pub trait Isotope<A: Archetype>: entity::Referrer + Send + Sync + Sized + 'static {
-    /// The initialzation strategy for this component.
+    /// The initialization strategy for this component.
     const INIT_STRATEGY: IsotopeInitStrategy<Self>;
 
     /// The discriminant type.

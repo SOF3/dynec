@@ -234,7 +234,7 @@ mod global_tests {}
 /// Indicates that the system must be executed
 /// before/after all [partitions](crate::system::Partition) given in the expressions.
 ///
-/// Similar to `name`, the expressions can read local and param states dirctly.
+/// Similar to `name`, the expressions can read local and param states directly.
 /// However, only the expressions are only resolved once before the first run of the system,
 /// so mutating states has no effect on the system schedule.
 ///
@@ -310,7 +310,7 @@ mod global_tests {}
 /// where `expr` is a value that implements `IntoIterator<Item = Type2::Discrim>`
 /// Note that `arch`, `comp` and `mut` must not be used if the second syntax is intended.
 ///
-/// Similar to `name`, the expressions can read local and param states dirctly.
+/// Similar to `name`, the expressions can read local and param states directly.
 /// However, only the expressions are only resolved once before the first run of the system,
 /// so mutating states has no effect on the system schedule.
 ///

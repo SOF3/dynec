@@ -19,7 +19,7 @@ jobs:
           components: rustfmt
       - run: cargo fmt --all -- --check
       - run: make README.md && git diff --exit-code
-      - run: crate-ci/typos@master
+      - uses: crate-ci/typos@master
   lint-test:
     name: clippy lint and unit tests
     runs-on: ubuntu-latest

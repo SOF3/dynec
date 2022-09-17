@@ -15,8 +15,7 @@ use crate::world;
 use crate::world::offline;
 
 mod accessor;
-pub(crate) use accessor::BorrowedOwned;
-pub use accessor::{ReadIsotope, ReadSimple, RefOrDefault, WriteIsotope, WriteSimple};
+pub use accessor::{ReadIsotope, ReadSimple, WriteIsotope, WriteSimple};
 
 pub mod partition;
 pub use partition::{EntityCreationPartition, Partition};

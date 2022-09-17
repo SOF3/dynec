@@ -340,17 +340,14 @@ impl<
 {
     type IsotopeRefMap<'t> = impl Iterator<Item = (<C as comp::Isotope<A>>::Discrim, &'t C)> + 't where Self: 't;
 
-    fn get<E: entity::Ref<Archetype = A>>(
-        &self,
-        entity: E,
-        discrim: C::Discrim,
-    ) -> system::RefOrDefault<'_, C>
+    type Get<'t> = RefOrDefault<'t, C> where Self: 't, C: comp::Must<A>;
+    fn get<E: entity::Ref<Archetype = A>>(&self, entity: E, discrim: C::Discrim) -> Self::Get<'_>
     where
         C: comp::Must<A>,
     {
         match self.try_get(entity, discrim) {
-            Some(value) => system::RefOrDefault(system::BorrowedOwned::Borrowed(value)),
-            None => system::RefOrDefault(system::BorrowedOwned::Owned(comp::must_isotope_init())),
+            Some(value) => RefOrDefault::Borrowed(value),
+            None => RefOrDefault::Owned(comp::must_isotope_init()),
         }
     }
 
@@ -380,6 +377,23 @@ impl<
         }
 
         self.storages.iter().filter_map(filter_map_fn(index))
+    }
+}
+
+/// A lazy accessor that may return an owned default value.
+enum RefOrDefault<'t, C> {
+    Borrowed(&'t C),
+    Owned(C),
+}
+
+impl<'t, C> ops::Deref for RefOrDefault<'t, C> {
+    type Target = C;
+
+    fn deref(&self) -> &C {
+        match self {
+            Self::Borrowed(ref_) => ref_,
+            Self::Owned(ref owned) => owned,
+        }
     }
 }
 

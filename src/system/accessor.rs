@@ -65,15 +65,16 @@ pub trait WriteSimple<A: Archetype, C: comp::Simple<A>>: ReadSimple<A, C> {
 
 /// Provides access to an isotope component in a specific archetype.
 pub trait ReadIsotope<A: Archetype, C: comp::Isotope<A>> {
+    /// Return value of [`get`](Self::get).
+    type Get<'t>: ops::Deref<Target = C> + 't
+    where
+        Self: 't,
+        C: comp::Must<A>;
     /// Retrieves the component for the given entity and discriminant.
     ///
     /// This method is infallible for correctly implemented `comp::Must`,
     /// which returns the auto-initialized value for missing components.
-    fn get<E: entity::Ref<Archetype = A>>(
-        &self,
-        entity: E,
-        discrim: C::Discrim,
-    ) -> RefOrDefault<'_, C>
+    fn get<E: entity::Ref<Archetype = A>>(&self, entity: E, discrim: C::Discrim) -> Self::Get<'_>
     where
         C: comp::Must<A>;
 
@@ -94,25 +95,6 @@ pub trait ReadIsotope<A: Archetype, C: comp::Isotope<A>> {
     // type With<'t>: SpecificWriteIsotope<A, C>;
     // /// Creates an accessor with fixed discriminant.
     // fn with(&self, discrim: C::Discrim) -> Self::With<'_>;
-}
-
-/// A lazy accessor that may return an owned default value.
-pub struct RefOrDefault<'t, C>(pub(crate) BorrowedOwned<'t, C>);
-
-pub(crate) enum BorrowedOwned<'t, C> {
-    Borrowed(&'t C),
-    Owned(C),
-}
-
-impl<'t, C> ops::Deref for RefOrDefault<'t, C> {
-    type Target = C;
-
-    fn deref(&self) -> &C {
-        match self.0 {
-            BorrowedOwned::Borrowed(ref_) => ref_,
-            BorrowedOwned::Owned(ref owned) => owned,
-        }
-    }
 }
 
 /// Provides access to an isotope component in a specific archetype.

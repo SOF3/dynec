@@ -3,15 +3,17 @@
 use std::any::{self, TypeId};
 use std::sync::Arc;
 
-use crate::entity::{deletion, ealloc, generation, Raw};
+use crate::entity::{deletion, ealloc, generation, Ealloc, Raw};
 use crate::{comp, entity, system, Archetype, Entity, Global};
 
 mod builder;
 pub use builder::Builder;
 
-pub(crate) mod state;
-use ealloc::Ealloc;
-pub use state::{Components, SyncGlobals, UnsyncGlobals};
+pub(crate) mod global;
+pub use global::{SyncGlobals, UnsyncGlobals};
+
+pub(crate) mod accessor;
+pub use accessor::Components;
 
 pub mod storage;
 pub use storage::Storage;

@@ -195,7 +195,7 @@ impl Archetype for TestArch {
         ealloc::Recycling<NonZeroU32, BTreeSet<NonZeroU32>, ealloc::ThreadRngShardAssigner, 2>;
 }
 
-#[derive(Debug, Clone, Copy, dynec_codegen::Discrim)]
+#[derive(Debug, Clone, Copy, PartialEq, dynec_codegen::Discrim)]
 #[dynec(dynec_as(crate))]
 pub(crate) struct TestDiscrim1(pub(crate) usize);
 #[derive(Debug, Clone, Copy, dynec_codegen::Discrim)]

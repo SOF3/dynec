@@ -32,7 +32,7 @@ impl Discrim for usize {
 }
 
 /// A map-like collection with discriminants as keys.
-pub trait Map<T>: FromIterator<(usize, T)> {
+pub trait Map<T>: FromIterator<(usize, T)> + Extend<(usize, T)> {
     /// Returns an immutable reference to the value indexed by the discriminant.
     fn find(&self, discrim: usize) -> Option<&T>;
 
@@ -78,6 +78,10 @@ impl<T> FromIterator<(usize, T)> for LinearVecMap<T> {
     }
 }
 
+impl<T> Extend<(usize, T)> for LinearVecMap<T> {
+    fn extend<I: IntoIterator<Item = (usize, T)>>(&mut self, iter: I) { self.vec.extend(iter); }
+}
+
 impl<T> Map<T> for LinearVecMap<T> {
     fn find(&self, needle: usize) -> Option<&T> {
         self.vec.iter().find(|&&(discrim, _)| discrim == needle).map(|(_, item)| item)
@@ -118,15 +122,21 @@ pub struct BoundedVecMap<T> {
 impl<T> FromIterator<(usize, T)> for BoundedVecMap<T> {
     fn from_iter<I: IntoIterator<Item = (usize, T)>>(iter: I) -> Self {
         let iter = iter.into_iter();
-        let mut vec: Vec<_> = (0..iter.size_hint().0).map(|_| None).collect();
+        let mut this = Self { vec: (0..iter.size_hint().0).map(|_| None).collect() };
+        this.extend(iter);
+        this
+    }
+}
+
+impl<T> Extend<(usize, T)> for BoundedVecMap<T> {
+    fn extend<I: IntoIterator<Item = (usize, T)>>(&mut self, iter: I) {
         for (discrim, value) in iter {
-            if vec.len() <= discrim {
-                vec.resize_with(discrim + 1, || None);
+            if self.vec.len() <= discrim {
+                self.vec.resize_with(discrim + 1, || None);
             }
-            let entry = vec.get_mut(discrim).expect("just reserved");
+            let entry = self.vec.get_mut(discrim).expect("just reserved");
             *entry = Some(value);
         }
-        Self { vec }
     }
 }
 
@@ -178,9 +188,16 @@ pub struct ArrayMap<T, const N: usize> {
 
 impl<T, const N: usize> FromIterator<(usize, T)> for ArrayMap<T, N> {
     fn from_iter<I: IntoIterator<Item = (usize, T)>>(iter: I) -> Self {
-        let mut array = [(); N].map(|()| None);
+        let mut this = Self { array: [(); N].map(|()| None) };
+        this.extend(iter);
+        this
+    }
+}
+
+impl<T, const N: usize> Extend<(usize, T)> for ArrayMap<T, N> {
+    fn extend<I: IntoIterator<Item = (usize, T)>>(&mut self, iter: I) {
         for (discrim, value) in iter {
-            let entry = match array.get_mut(discrim) {
+            let entry = match self.array.get_mut(discrim) {
                 Some(entry) => entry,
                 None => panic!(
                     "{} is too small to contain all possible discriminants",
@@ -189,7 +206,6 @@ impl<T, const N: usize> FromIterator<(usize, T)> for ArrayMap<T, N> {
             };
             *entry = Some(value);
         }
-        Self { array }
     }
 }
 

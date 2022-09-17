@@ -576,20 +576,11 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                     quote!({
                         let __iter = ::std::iter::IntoIterator::into_iter(#discrim);
                         let __iter = ::std::iter::Iterator::map(__iter, |d| {
-                            let _: &(<#comp as #crate_name::comp::Isotope<#arch>>::Discrim) = &d; // type check
-                            #crate_name::comp::Discrim::into_usize(d)
+                            let d: &(<#comp as #crate_name::comp::Isotope<#arch>>::Discrim) = &d; // auto deref
+                            #crate_name::comp::Discrim::into_usize(*d)
                         });
                         ::std::iter::Iterator::collect::<::std::vec::Vec<_>>(__iter)
                     })
-                });
-
-                let discrim_vec_option = match &discrim {
-                    Some(_) => quote!(Some(#discrim_vec)),
-                    None => quote!(None),
-                };
-                isotope_requests.push(quote! {
-                    #crate_name::system::spec::IsotopeRequest::new::<#arch, #comp>(#discrim_vec_option, #mutable)
-                        #(.maybe_uninit::<#maybe_uninit>())*
                 });
 
                 let discrim_field = discrim.map(|_| {
@@ -598,7 +589,17 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                     isotope_discrim_idents.push(discrim_ident.clone());
                     isotope_discrim_values.push(discrim_vec);
 
-                    quote!(&self.#discrim_ident, )
+                    quote!(self.__dynec_isotope_discrim_idents.#discrim_ident)
+                });
+
+                let discrim_field_variadic = discrim_field.as_ref().map(|expr| quote!(&#expr));
+                let discrim_field_option = discrim_field
+                    .as_ref()
+                    .map_or_else(|| quote!(None), |expr| quote!(Some(#expr.clone())));
+
+                isotope_requests.push(quote! {
+                    #crate_name::system::spec::IsotopeRequest::new::<#arch, #comp>(#discrim_field_option, #mutable)
+                        #(.maybe_uninit::<#maybe_uninit>())*
                 });
 
                 let method_ident = match (mutable, discrim_field.is_some()) {
@@ -608,7 +609,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                     (false, false) => quote!(read_full_isotope_storage),
                 };
 
-                quote!(components.#method_ident::<#arch, #comp>(#discrim_field))
+                quote!(components.#method_ident::<#arch, #comp>(#discrim_field_variadic))
             }
             ArgType::EntityCreator { arch, no_partition } => {
                 let no_partition_call = no_partition.then(|| quote!(.no_partition()));
@@ -644,8 +645,9 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
         let (#(#local_state_field_pats,)*) = {
             let &Self {
                 #(ref #local_state_field_idents,)*
-                #(#isotope_discrim_idents: _,)*
+                ref __dynec_isotope_discrim_idents,
             } = self;
+            let __dynec_isotope_discrim_idents { #(#isotope_discrim_idents: _,)* } = __dynec_isotope_discrim_idents;
             (#(#local_state_field_idents,)*)
         };
     };
@@ -676,9 +678,15 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
         #[allow(non_camel_case_types)]
         struct __dynec_local_state {
             #(#local_state_entity_attrs #local_state_field_idents: #local_state_field_tys,)*
-            #(#isotope_discrim_idents: Vec<usize>,)*
+            __dynec_isotope_discrim_idents: __dynec_isotope_discrim_idents,
         }
     })?;
+    let isotope_discrim_idents_struct = quote! {
+        #[allow(non_camel_case_types)]
+        struct __dynec_isotope_discrim_idents {
+            #(#isotope_discrim_idents: Vec<usize>,)*
+        }
+    };
     let local_state_impl_entity_ref = entity_ref::entity_ref(
         &mut local_state_struct,
         crate_name.clone(),
@@ -699,15 +707,29 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                     &self,
                     #(#param_state_field_idents: #param_state_field_tys,)*
                 ) -> impl #crate_name::system::#system_trait {
+                    let __dynec_isotope_discrim_idents = {
+                        #(
+                            #[allow(unused_variables)]
+                            let #param_state_field_idents = &#param_state_field_idents;
+                        )*
+
+                        __dynec_isotope_discrim_idents {
+                            #(#isotope_discrim_idents: #isotope_discrim_values,)*
+                        }
+                    };
+
+                    // parameters are moved below so that they can be borrowed above
+
                     __dynec_local_state {
+                        __dynec_isotope_discrim_idents,
                         #(#param_state_field_idents,)*
                         #(#initial_state_field_idents: #initial_state_field_defaults,)*
-                        #(#isotope_discrim_idents: #isotope_discrim_values,)*
                     }
                 }
             }
 
             #local_state_struct
+            #isotope_discrim_idents_struct
             #local_state_impl_entity_ref
 
             fn __dynec_original(#(#input_args),*) {

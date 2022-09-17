@@ -1,3 +1,5 @@
+#![allow(clippy::ptr_arg)]
+
 use super::tracer;
 use crate::entity::{deletion, generation, Ref};
 use crate::{
@@ -48,7 +50,7 @@ struct Comp6(i32);
 struct CompFinal;
 
 #[comp(dynec_as(crate), of = TestArch, isotope = TestDiscrim1)]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 struct Iso1(i32);
 #[comp(dynec_as(crate), of = TestArch, isotope = TestDiscrim2)]
 #[derive(Debug)]
@@ -184,14 +186,9 @@ fn test_simple_fetch() {
 }
 
 #[test]
-fn test_isotope_discrim_fetch() {
+fn test_full_isotope_discrim_read() {
     #[system(dynec_as(crate))]
     fn test_system(
-        #[dynec(isotope(discrim = [
-            TestDiscrim1(11),
-            TestDiscrim1(17),
-            TestDiscrim1(19),
-        ]))]
         iso1: impl system::ReadIsotope<TestArch, Iso1>,
         #[dynec(global)] initials: &InitialEntities,
     ) {
@@ -202,19 +199,16 @@ fn test_isotope_discrim_fetch() {
             assert_eq!(iso, Some(&Iso1(3)));
         }
 
+        // should not panic on nonexistent storages
         {
-            let iso = iso1.try_get(ent1, TestDiscrim1(13));
-            assert!(iso.is_none());
+            let iso = iso1.try_get(ent1, TestDiscrim1(17));
+            assert_eq!(iso, None);
         }
 
-        {
-            let iso = iso1.try_get(ent1, TestDiscrim1(19));
-            assert!(iso.is_none());
-        }
-
-        // should only include requested discriminants
         let map = iso1.get_all(ent1);
-        assert_eq!(map.count(), 2);
+        let mut map_vec: Vec<(TestDiscrim1, &Iso1)> = map.collect();
+        map_vec.sort_by_key(|(TestDiscrim1(discrim), _)| *discrim);
+        assert_eq!(map_vec, vec![(TestDiscrim1(11), &Iso1(3)), (TestDiscrim1(13), &Iso1(5))]);
     }
 
     let mut world = system_test!(test_system.build(););
@@ -222,7 +216,186 @@ fn test_isotope_discrim_fetch() {
     let ent1 = world.create(crate::comps![@(crate) TestArch =>
         @(TestDiscrim1(11), Iso1(3)),
         @(TestDiscrim1(13), Iso1(5)),
-        @(TestDiscrim1(17), Iso1(7)),
+    ]);
+    world.get_global::<InitialEntities>().ent1 = Some(ent1);
+
+    world.execute(&tracer::Log(log::Level::Trace));
+}
+
+#[test]
+fn test_partial_isotope_discrim_read() {
+    partial_isotope_discrim_read(
+        vec![TestDiscrim1(11), TestDiscrim1(17)],
+        vec![(TestDiscrim1(11), Some(Iso1(3))), (TestDiscrim1(17), None)],
+        vec![(TestDiscrim1(11), Iso1(3))],
+    );
+}
+
+#[test]
+#[should_panic = "Cannot access isotope 13 because it is not in the list of requested discriminants"]
+fn test_partial_isotope_discrim_read_panic() {
+    partial_isotope_discrim_read(vec![TestDiscrim1(11)], vec![(TestDiscrim1(13), None)], vec![]);
+}
+
+fn partial_isotope_discrim_read(
+    req_discrims: Vec<TestDiscrim1>,
+    single_expects: Vec<(TestDiscrim1, Option<Iso1>)>,
+    expect_all: Vec<(TestDiscrim1, Iso1)>,
+) {
+    #[system(dynec_as(crate))]
+    fn test_system(
+        #[dynec(param)] _req_discrims: &Vec<TestDiscrim1>,
+        #[dynec(param)] single_expects: &Vec<(TestDiscrim1, Option<Iso1>)>,
+        #[dynec(param)] expect_all: &Vec<(TestDiscrim1, Iso1)>,
+        #[dynec(isotope(discrim = _req_discrims))] iso1: impl system::ReadIsotope<TestArch, Iso1>,
+        #[dynec(global)] initials: &InitialEntities,
+    ) {
+        let ent1 = initials.ent1.as_ref().expect("ent1 is None");
+
+        for (discrim, expect) in single_expects {
+            let iso = iso1.try_get(ent1, *discrim);
+            assert_eq!(iso, expect.as_ref());
+        }
+
+        // should only include requested discriminants
+        let map = iso1.get_all(ent1);
+        let mut map_vec: Vec<(TestDiscrim1, &Iso1)> = map.collect();
+        map_vec.sort_by_key(|(TestDiscrim1(discrim), _)| *discrim);
+        let expect_all =
+            expect_all.iter().map(|(discrim, iso)| (*discrim, iso)).collect::<Vec<_>>();
+        assert_eq!(map_vec, expect_all);
+    }
+
+    let mut world = system_test!(
+        test_system.build(req_discrims, single_expects, expect_all);
+    );
+
+    let ent1 = world.create(crate::comps![@(crate) TestArch =>
+        @(TestDiscrim1(11), Iso1(3)),
+        @(TestDiscrim1(13), Iso1(5)),
+    ]);
+    world.get_global::<InitialEntities>().ent1 = Some(ent1);
+
+    world.execute(&tracer::Log(log::Level::Trace));
+}
+
+#[test]
+fn test_full_isotope_discrim_write() {
+    #[system(dynec_as(crate))]
+    fn test_system(
+        mut iso1: impl system::WriteIsotope<TestArch, Iso1>,
+        #[dynec(global)] initials: &InitialEntities,
+    ) {
+        let ent1 = initials.ent1.as_ref().expect("ent1 is None");
+
+        {
+            let iso = iso1.try_get_mut(ent1, TestDiscrim1(11));
+            let iso = iso.expect("was passed input");
+            assert_eq!(iso, &mut Iso1(3));
+            *iso = Iso1(23);
+        }
+
+        // should not panic on nonexistent storages
+        {
+            let iso = iso1.try_get_mut(ent1, TestDiscrim1(17));
+            assert_eq!(iso, None);
+        }
+
+        // should update new storages
+        {
+            let iso = iso1.set(ent1, TestDiscrim1(19), Some(Iso1(29)));
+            assert_eq!(iso, None);
+        }
+
+        // should include new discriminants
+        let map = iso1.get_all(ent1);
+        let mut map_vec: Vec<(TestDiscrim1, &Iso1)> = map.collect();
+        map_vec.sort_by_key(|(TestDiscrim1(discrim), _)| *discrim);
+        assert_eq!(
+            map_vec,
+            vec![
+                (TestDiscrim1(11), &Iso1(23)),
+                (TestDiscrim1(13), &Iso1(5)),
+                (TestDiscrim1(19), &Iso1(29)),
+            ]
+        );
+    }
+
+    let mut world = system_test!(test_system.build(););
+
+    let ent1 = world.create(crate::comps![@(crate) TestArch =>
+        @(TestDiscrim1(11), Iso1(3)),
+        @(TestDiscrim1(13), Iso1(5)),
+    ]);
+    world.get_global::<InitialEntities>().ent1 = Some(ent1);
+
+    world.execute(&tracer::Log(log::Level::Trace));
+}
+
+#[test]
+fn test_partial_isotope_discrim_write() {
+    partial_isotope_discrim_write(
+        vec![TestDiscrim1(7), TestDiscrim1(11), TestDiscrim1(17), TestDiscrim1(19)],
+        vec![
+            (TestDiscrim1(7), Some(Iso1(2)), Some(None)),
+            (TestDiscrim1(11), Some(Iso1(3)), Some(Some(Iso1(23)))),
+            (TestDiscrim1(17), None, None),
+            (TestDiscrim1(19), None, Some(Some(Iso1(29)))),
+        ],
+        vec![(TestDiscrim1(11), Iso1(23)), (TestDiscrim1(19), Iso1(29))],
+    );
+}
+
+#[test]
+#[should_panic = "Cannot access isotope 13 because it is not in the list of requested discriminants"]
+fn test_partial_isotope_discrim_write_panic() {
+    partial_isotope_discrim_write(
+        vec![TestDiscrim1(11)],
+        vec![(TestDiscrim1(13), None, None)],
+        vec![],
+    );
+}
+
+type SingleExpectUpdate = (TestDiscrim1, Option<Iso1>, Option<Option<Iso1>>);
+
+fn partial_isotope_discrim_write(
+    req_discrims: Vec<TestDiscrim1>,
+    single_expect_updates: Vec<SingleExpectUpdate>,
+    expect_all: Vec<(TestDiscrim1, Iso1)>,
+) {
+    #[system(dynec_as(crate))]
+    fn test_system(
+        #[dynec(param)] _req_discrims: &Vec<TestDiscrim1>,
+        #[dynec(param)] single_expect_updates: &mut Vec<SingleExpectUpdate>,
+        #[dynec(param)] expect_all: &Vec<(TestDiscrim1, Iso1)>,
+        #[dynec(isotope(discrim = _req_discrims))] mut iso1: impl system::WriteIsotope<TestArch, Iso1>,
+        #[dynec(global)] initials: &InitialEntities,
+    ) {
+        let ent1 = initials.ent1.as_ref().expect("ent1 is None");
+
+        for (discrim, mut expect, update) in single_expect_updates.drain(..) {
+            let iso = iso1.try_get_mut(ent1, discrim);
+            assert_eq!(iso, expect.as_mut());
+            if let Some(update) = update {
+                iso1.set(ent1, discrim, update);
+            }
+        }
+
+        // should only include requested discriminants
+        let map = iso1.get_all(ent1);
+        let map_vec: Vec<(TestDiscrim1, &Iso1)> = map.collect();
+        let expect_all =
+            expect_all.iter().map(|(discrim, iso)| (*discrim, iso)).collect::<Vec<_>>();
+        assert_eq!(map_vec, expect_all);
+    }
+
+    let mut world =
+        system_test!(test_system.build(req_discrims, single_expect_updates, expect_all););
+
+    let ent1 = world.create(crate::comps![@(crate) TestArch =>
+        @(TestDiscrim1(7), Iso1(2)),
+        @(TestDiscrim1(11), Iso1(3)),
+        @(TestDiscrim1(13), Iso1(5)),
     ]);
     world.get_global::<InitialEntities>().ent1 = Some(ent1);
 

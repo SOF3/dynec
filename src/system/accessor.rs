@@ -38,10 +38,10 @@ pub trait WriteSimple<A: Archetype, C: comp::Simple<A>>: ReadSimple<A, C> {
     /// Use [`WriteSimple::set`] to add/remove a component.
     fn try_get_mut<E: entity::Ref<Archetype = A>>(&mut self, entity: E) -> Option<&mut C>;
 
-    /// Returns an immutable reference to the component for the specified entity.
+    /// Returns a mutable reference to the component for the specified entity.
     ///
     /// This method is infallible, assuming [`comp::Must`] is only implemented
-    /// for components with [`comp::SimplePresence::Required`] presence.
+    /// for components with [`Required`](comp::SimplePresence::Required) presence.
     fn get_mut<E: entity::Ref<Archetype = A>>(&mut self, entity: E) -> &mut C
     where
         C: comp::Must<A>,
@@ -51,7 +51,7 @@ pub trait WriteSimple<A: Archetype, C: comp::Simple<A>>: ReadSimple<A, C> {
             None => panic!(
                 "Component {}/{} implements comp::Must but is not present",
                 any::type_name::<A>(),
-                any::type_name::<C>()
+                any::type_name::<C>(),
             ),
         }
     }
@@ -77,7 +77,7 @@ pub trait ReadIsotope<A: Archetype, C: comp::Isotope<A>> {
     where
         C: comp::Must<A>;
 
-    /// Returns an immutable reference to the component for the specified entity and ,
+    /// Returns an immutable reference to the component for the specified entity and discriminant,
     /// or `None` if the component is not present in the entity.
     fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E, discrim: C::Discrim) -> Option<&C>;
 
@@ -86,12 +86,14 @@ pub trait ReadIsotope<A: Archetype, C: comp::Isotope<A>> {
     where
         Self: 't;
     /// Iterates over all isotopes of the component type for the given entity.
+    ///
+    /// The yielded discriminants are not in any guaranteed order.
     fn get_all<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Self::IsotopeRefMap<'_>;
 
-    /// Creates an accessor with fixed discriminant.
-    fn with(&self, discrim: C::Discrim) -> FixedIsotope<&'_ Self, A, C> {
-        FixedIsotope { discrim, accessor: self }
-    }
+    // /// Return value of [`with`](Self::with).
+    // type With<'t>: SpecificWriteIsotope<A, C>;
+    // /// Creates an accessor with fixed discriminant.
+    // fn with(&self, discrim: C::Discrim) -> Self::With<'_>;
 }
 
 /// A lazy accessor that may return an owned default value.
@@ -114,17 +116,55 @@ impl<'t, C> ops::Deref for RefOrDefault<'t, C> {
 }
 
 /// Provides access to an isotope component in a specific archetype.
-pub trait WriteIsotope<A: Archetype, C: comp::Isotope<A>> {
-    // TODO
+pub trait WriteIsotope<A: Archetype, C: comp::Isotope<A>>: ReadIsotope<A, C> {
+    /// Returns a mutable reference to the component for the specified entity and discriminant,
+    /// automatically initialized with the default initializer if present,
+    /// or `None` if the component is unset and has no default initializer.
+    ///
+    /// Note that this method returns `Option<&mut C>`, not `&mut Option<C>`.
+    /// This means setting the Option itself to `Some`/`None` will not modify any stored value.
+    /// Use [`WriteIsotope::set`] to add/remove a component.
+    fn try_get_mut<E: entity::Ref<Archetype = A>>(
+        &mut self,
+        entity: E,
+        discrim: C::Discrim,
+    ) -> Option<&mut C>;
 
-    /// Creates an accessor with fixed discriminant.
-    fn with(&self, discrim: C::Discrim) -> FixedIsotope<&'_ Self, A, C> {
-        FixedIsotope { discrim, accessor: self }
+    /// Returns a mutable reference to the component for the specified entity and discriminant.
+    ///
+    /// This method is infallible, assuming [`comp::Must`] is only implemented
+    /// for components with [`Default`](comp::IsotopeInitStrategy::Default) init strategy.
+    fn get_mut<E: entity::Ref<Archetype = A>>(&mut self, entity: E, discrim: C::Discrim) -> &mut C
+    where
+        C: comp::Must<A>,
+    {
+        match self.try_get_mut(entity, discrim) {
+            Some(comp) => comp,
+            None => panic!(
+                "Component {}/{} implements comp::Must but does not have a default initializer",
+                any::type_name::<A>(),
+                any::type_name::<C>(),
+            ),
+        }
     }
+
+    /// Overwrites the component for the specified entity and discriminant.
+    ///
+    /// Passing `None` to this method removes the component from the entity.
+    /// A subsequent call to `try_get_mut` would still return `Some`
+    /// if the component uses [`Default`](comp::IsotopeInitStrategy::Default) init strategy.
+    fn set<E: entity::Ref<Archetype = A>>(
+        &mut self,
+        entity: E,
+        discrim: C::Discrim,
+        value: Option<C>,
+    ) -> Option<C>;
+
+    // /// Return value of [`with`](Self::with).
+    // type WithMut<'t>: SpecificWriteIsotope<A, C>;
+    // /// Creates an accessor with fixed discriminant.
+    // fn with_mut(&self, discrim: C::Discrim) -> Self::WithMut<'_>;
 }
 
-/// An isotope component accessor that only uses a specific isotope known at runtime.
-pub struct FixedIsotope<X, A: Archetype, C: comp::Isotope<A>> {
-    discrim:  C::Discrim,
-    accessor: X,
-}
+/// A [`WriteIsotope`] for a single specific discriminant.
+pub trait SpecificWriteIsotope<A: Archetype, C: comp::Isotope<A>> {}

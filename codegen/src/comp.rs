@@ -43,7 +43,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             "isotope components cannot be required because new isotopes may be created dynamically",
         ));
     }
-    let presence = match presence {
+    let presence_enum = match presence {
         Some(_) => quote!(#crate_name::comp::SimplePresence::Required),
         None => quote!(#crate_name::comp::SimplePresence::Optional),
     };
@@ -73,6 +73,10 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
         if let Some((_, discrim)) = isotope {
             let init = match init {
                 Some((_, func)) => {
+                    output.extend(
+                        generics.impl_trait(quote!(#crate_name::comp::Must<#archetype>), quote! {}),
+                    );
+
                     let func = func.as_fn_ptr(&generics)?;
                     quote!(#crate_name::comp::IsotopeInitStrategy::Default(#func))
                 }
@@ -103,7 +107,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             output.extend(generics.impl_trait(
                 quote!(#crate_name::comp::Simple<#archetype>),
                 quote! {
-                    const PRESENCE: #crate_name::comp::SimplePresence = #presence;
+                    const PRESENCE: #crate_name::comp::SimplePresence = #presence_enum;
                     const INIT_STRATEGY: #crate_name::comp::SimpleInitStrategy<#archetype> = #init_strategy;
                     const IS_FINALIZER: bool = #finalizer;
 
@@ -111,9 +115,11 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 },
             ));
 
-            output.extend(
-                generics.impl_trait(quote!(#crate_name::comp::Must<#archetype>), quote! {}),
-            );
+            if presence.is_some() {
+                output.extend(
+                    generics.impl_trait(quote!(#crate_name::comp::Must<#archetype>), quote! {}),
+                );
+            }
         }
     }
 

@@ -132,6 +132,15 @@ pub enum IsotopeInitStrategy<T> {
     Default(fn() -> T),
 }
 
+impl<T> IsotopeInitStrategy<T> {
+    pub(crate) fn call_option(&self) -> Option<T> {
+        match self {
+            Self::None => None,
+            Self::Default(f) => Some(f()),
+        }
+    }
+}
+
 pub(crate) fn must_isotope_init<A: Archetype, C: Isotope<A> + Must<A>>() -> C {
     match C::INIT_STRATEGY {
         IsotopeInitStrategy::None => {

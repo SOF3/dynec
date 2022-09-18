@@ -49,15 +49,14 @@ struct Comp6(i32);
 #[comp(dynec_as(crate), of = TestArch, finalizer)]
 struct CompFinal;
 
+/// Does not have auto init
 #[comp(dynec_as(crate), of = TestArch, isotope = TestDiscrim1)]
 #[derive(Debug, Clone, PartialEq)]
 struct Iso1(i32);
-#[comp(dynec_as(crate), of = TestArch, isotope = TestDiscrim2)]
-#[derive(Debug)]
+/// Has auto init
+#[comp(dynec_as(crate), of = TestArch, isotope = TestDiscrim2, init = || Iso2(-1))]
+#[derive(Debug, Clone, PartialEq)]
 struct Iso2(i32);
-#[comp(dynec_as(crate), of = TestArch, isotope = TestDiscrim1)]
-#[derive(Debug)]
-struct Iso3(i32);
 
 #[comp(dynec_as(crate), of = TestArch)]
 struct StrongRefSimple(#[entity] Entity<TestArch>);
@@ -190,19 +189,26 @@ fn test_full_isotope_discrim_read() {
     #[system(dynec_as(crate))]
     fn test_system(
         iso1: impl system::ReadIsotope<TestArch, Iso1>,
+        iso2: impl system::ReadIsotope<TestArch, Iso2>,
         #[dynec(global)] initials: &InitialEntities,
     ) {
         let ent1 = initials.ent1.as_ref().expect("ent1 is None");
 
         {
             let iso = iso1.try_get(ent1, TestDiscrim1(11));
-            assert_eq!(iso, Some(&Iso1(3)));
+            assert_eq!(iso.as_deref(), Some(&Iso1(3)));
         }
 
         // should not panic on nonexistent storages
         {
             let iso = iso1.try_get(ent1, TestDiscrim1(17));
-            assert_eq!(iso, None);
+            assert_eq!(iso.as_deref(), None);
+        }
+
+        // should return default value for autoinit isotopes
+        {
+            let iso = iso2.try_get(ent1, TestDiscrim2(31));
+            assert_eq!(iso.as_deref(), Some(&Iso2(-1)));
         }
 
         let map = iso1.get_all(ent1);
@@ -254,7 +260,7 @@ fn partial_isotope_discrim_read(
 
         for (discrim, expect) in single_expects {
             let iso = iso1.try_get(ent1, *discrim);
-            assert_eq!(iso, expect.as_ref());
+            assert_eq!(iso.as_deref(), expect.as_ref());
         }
 
         // should only include requested discriminants
@@ -284,6 +290,7 @@ fn test_full_isotope_discrim_write() {
     #[system(dynec_as(crate))]
     fn test_system(
         mut iso1: impl system::WriteIsotope<TestArch, Iso1>,
+        mut iso2: impl system::WriteIsotope<TestArch, Iso2>,
         #[dynec(global)] initials: &InitialEntities,
     ) {
         let ent1 = initials.ent1.as_ref().expect("ent1 is None");
@@ -307,6 +314,23 @@ fn test_full_isotope_discrim_write() {
             assert_eq!(iso, None);
         }
 
+        // should return default value
+        {
+            let iso = iso2.try_get(ent1, TestDiscrim2(31));
+            assert_eq!(iso.as_deref(), Some(&Iso2(-1)));
+        }
+
+        // should reset to default value
+        {
+            let iso = iso2.set(ent1, TestDiscrim2(37), None);
+            assert_eq!(iso, Some(Iso2(41)));
+        }
+        {
+            let iso = iso2.try_get(ent1, TestDiscrim2(37));
+            dbg!(iso.as_deref());
+            assert_eq!(iso.as_deref(), Some(&Iso2(-1)));
+        }
+
         // should include new discriminants
         let map = iso1.get_all(ent1);
         let mut map_vec: Vec<(TestDiscrim1, &Iso1)> = map.collect();
@@ -326,6 +350,7 @@ fn test_full_isotope_discrim_write() {
     let ent1 = world.create(crate::comps![@(crate) TestArch =>
         @(TestDiscrim1(11), Iso1(3)),
         @(TestDiscrim1(13), Iso1(5)),
+        @(TestDiscrim2(37), Iso2(41)),
     ]);
     world.get_global::<InitialEntities>().ent1 = Some(ent1);
 

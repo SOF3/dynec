@@ -338,32 +338,38 @@ impl<
         P: OnMissingStorage<A, C>,
     > system::ReadIsotope<A, C> for IsotopeAccessor<A, C, S, P>
 {
-    type IsotopeRefMap<'t> = impl Iterator<Item = (<C as comp::Isotope<A>>::Discrim, &'t C)> + 't where Self: 't;
+    type GetAll<'t> = impl Iterator<Item = (<C as comp::Isotope<A>>::Discrim, &'t C)> + 't where Self: 't;
 
-    type Get<'t> = RefOrDefault<'t, C> where Self: 't, C: comp::Must<A>;
+    type Get<'t> = RefOrDefault<'t, C> where Self: 't;
     fn get<E: entity::Ref<Archetype = A>>(&self, entity: E, discrim: C::Discrim) -> Self::Get<'_>
     where
         C: comp::Must<A>,
     {
         match self.try_get(entity, discrim) {
-            Some(value) => RefOrDefault::Borrowed(value),
-            None => RefOrDefault::Owned(comp::must_isotope_init()),
+            Some(value) => value,
+            None => panic!(
+                "{}: comp::Must<{}> but has no default initializer",
+                any::type_name::<C>(),
+                any::type_name::<A>()
+            ),
         }
     }
 
-    fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E, discrim: C::Discrim) -> Option<&C> {
-        let storage: &C::Storage = match self.storages.find(discrim.into_usize()) {
-            Some(storage) => storage,
-            None => {
+    fn try_get<E: entity::Ref<Archetype = A>>(
+        &self,
+        entity: E,
+        discrim: C::Discrim,
+    ) -> Option<Self::Get<'_>> {
+        let storage: Option<&S> = self.storages.find(discrim.into_usize());
+        storage.and_then(|storage| storage.get(entity.id()).map(RefOrDefault::Borrowed)).or_else(
+            || {
                 self.on_missing.handle(discrim);
-                return None;
-            }
-        };
-
-        storage.get(entity.id())
+                C::INIT_STRATEGY.call_option().map(RefOrDefault::Owned)
+            },
+        )
     }
 
-    fn get_all<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Self::IsotopeRefMap<'_> {
+    fn get_all<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Self::GetAll<'_> {
         let index: A::RawEntity = entity.id();
 
         fn filter_map_fn<S: ops::Deref<Target = C::Storage>, A: Archetype, C: comp::Isotope<A>>(
@@ -400,21 +406,19 @@ impl<'t, C> ops::Deref for RefOrDefault<'t, C> {
 impl<A: Archetype, C: comp::Isotope<A>, S: StorageGuard<C::Storage>, P: OnMissingStorage<A, C>>
     IsotopeAccessor<A, C, S, P>
 {
-    fn get_storage_mut(&mut self, discrim: C::Discrim) -> Option<&mut C::Storage> {
+    fn get_storage_mut(&mut self, discrim: C::Discrim) -> &mut C::Storage {
         // borrow checker bug circumvention
         if self.storages.find(discrim.into_usize()).is_some() {
-            Some(self.storages.find_mut(discrim.into_usize()).expect("find() returned Some"))
+            self.storages.find_mut(discrim.into_usize()).expect("find() returned Some")
         } else {
             match self.on_missing.handle_mut(discrim) {
-                HandleMutResult::None => None,
+                HandleMutResult::None => unreachable!(), // TODO clean up this mess
                 HandleMutResult::Added(storage) => {
                     let storage = S::from_arc(storage);
                     self.storages.extend([(discrim.into_usize(), storage)]);
-                    Some(
-                        self.storages
-                            .find_mut(discrim.into_usize())
-                            .expect("OnMissingStorage returned Handle::Retry"),
-                    )
+                    self.storages
+                        .find_mut(discrim.into_usize())
+                        .expect("OnMissingStorage returned Handle::Retry")
                 }
             }
         }
@@ -429,11 +433,11 @@ impl<A: Archetype, C: comp::Isotope<A>, S: StorageGuard<C::Storage>, P: OnMissin
         entity: E,
         discrim: C::Discrim,
     ) -> Option<&mut C> {
-        let storage = self.get_storage_mut(discrim)?;
+        let storage = self.get_storage_mut(discrim);
 
         // borrow checker bug circumvention
         if storage.get(entity.id()).is_some() {
-            return storage.get_mut(entity.id());
+            return Some(storage.get_mut(entity.id()).expect("storage.get().is_some()"));
         }
 
         match C::INIT_STRATEGY {
@@ -451,8 +455,7 @@ impl<A: Archetype, C: comp::Isotope<A>, S: StorageGuard<C::Storage>, P: OnMissin
         discrim: C::Discrim,
         value: Option<C>,
     ) -> Option<C> {
-        let storage = self.get_storage_mut(discrim)?;
-
+        let storage = self.get_storage_mut(discrim);
         storage.set(entity.id(), value)
     }
 }

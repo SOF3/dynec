@@ -3,7 +3,6 @@
 //! The intended flowchart can be found in `flow.dot`.
 
 #![allow(dead_code)]
-#![feature(generic_associated_types)]
 
 mod render;
 mod simulation;

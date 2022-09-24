@@ -118,8 +118,7 @@ pub struct Flow(pub u32);
 /// Identifies a type of item.
 /// This is a discriminant type used to identify multiple components of the same type.
 /// This is useful in systems where multiple item types operate almost independently.
-#[derive(Clone, Copy, dynec::Discrim)]
-#[dynec(map = discrim::BoundedVecMap)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, dynec::Discrim)]
 pub struct ItemType(usize);
 
 // Here are a few constants for the different item types.

@@ -1,5 +1,7 @@
+use core::fmt;
 use std::any::{self, TypeId};
 use std::collections::HashMap;
+use std::marker::PhantomData;
 use std::ops;
 use std::sync::Arc;
 
@@ -8,10 +10,11 @@ use parking_lot::{RawRwLock, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use super::storage::Storage;
 use super::typed;
-use crate::comp::discrim::Map as _;
-use crate::comp::Discrim;
+use crate::comp::{discrim, Discrim};
 use crate::util::DbgTypeId;
-use crate::{comp, entity, system, Archetype};
+use crate::{comp, entity, storage, system, Archetype};
+
+type LockedIsotopeStorage<A, C> = ArcRwLockWriteGuard<RawRwLock, <C as comp::Isotope<A>>::Storage>;
 
 /// Stores the component states in a world.
 pub struct Components {
@@ -142,6 +145,19 @@ impl Components {
         Ret { storage: guard }
     }
 
+    fn get_isotope_storage_map<A: Archetype, C: comp::Isotope<A>>(
+        &self,
+    ) -> &storage::IsotopeMap<A, C> {
+        match self.archetype::<A>().isotope_storage_maps.get(&TypeId::of::<C>()) {
+            Some(storage) => storage.downcast_ref::<C>(),
+            None => panic!(
+                "The component {}/{} cannot be used because it is not used in any systems",
+                any::type_name::<A>(),
+                any::type_name::<C>()
+            ),
+        }
+    }
+
     /// Creates a read-only, shared accessor to all discriminants of the given archetyped isotope component.
     ///
     /// # Panics
@@ -150,39 +166,35 @@ impl Components {
     pub fn read_full_isotope_storage<A: Archetype, C: comp::Isotope<A>>(
         &self,
     ) -> impl system::ReadIsotope<A, C> + '_ {
-        let storage_map = match self.archetype::<A>().isotope_storage_maps.get(&TypeId::of::<C>()) {
-            Some(storage) => storage.downcast_ref::<C>(),
-            None => panic!(
-                "The component {}/{} cannot be used because it is not used in any systems",
-                any::type_name::<A>(),
-                any::type_name::<C>()
-            ),
-        };
+        let storage_map = self.get_isotope_storage_map::<A, C>();
 
-        let storages: <C::Discrim as comp::Discrim>::Map<_> = {
+        let storages: <C::Discrim as Discrim>::FullMap<_> = {
             // note: lock contention may occur here if another thread is requesting write access to
             // storages of other discriminants.
             let map = storage_map.map.read();
 
             map.iter()
                 .map(|(&discrim, storage)| {
-                    let storage: Arc<RwLock<C::Storage>> = Arc::clone(storage);
-                    let storage = match storage.try_read_arc() {
-                        Some(guard) => guard,
-                        None => panic!(
-                            "The component {}/{}/{} is currently used by another system. Maybe \
-                             scheduler bug?",
-                            any::type_name::<A>(),
-                            any::type_name::<C>(),
-                            discrim,
-                        ),
-                    };
-                    (discrim, storage)
+                    (discrim, own_read_isotope_storage::<A, C>(discrim, storage))
                 })
                 .collect()
         };
 
-        IsotopeAccessor { storages, on_missing: NoneOnMissingStorage }
+        struct Proc<S>(PhantomData<S>);
+        impl<S> StorageMapProcessorRef for Proc<S> {
+            type Input = S;
+            type Output = S;
+            fn process<'t, D: fmt::Debug, F: FnOnce() -> D>(
+                &self,
+                input: Option<&'t S>,
+                _: F,
+            ) -> Option<&'t S> {
+                input
+            }
+            fn admit(input: &S) -> Option<&S> { Some(input) }
+        }
+
+        IsotopeAccessor { storages, processor: Proc(PhantomData), _ph: PhantomData }
     }
 
     /// Creates a read-only, shared accessor to specific discriminants of the given archetyped isotope component.
@@ -190,44 +202,47 @@ impl Components {
     /// # Panics
     /// - if the archetyped component is not used in any systems.
     /// - if another thread is exclusively accessing any of the requested discriminants.
-    pub fn read_partial_isotope_storage<'t, A: Archetype, C: comp::Isotope<A>>(
+    pub fn read_partial_isotope_storage<'t, A, C, T>(
         &'t self,
-        discrims: &'t [usize],
-    ) -> impl system::ReadIsotope<A, C> + 't {
-        let storage_map = match self.archetype::<A>().isotope_storage_maps.get(&TypeId::of::<C>()) {
-            Some(storage) => storage.downcast_ref::<C>(),
-            None => panic!(
-                "The component {}/{} cannot be used because it is not used in any systems",
-                any::type_name::<A>(),
-                any::type_name::<C>()
-            ),
-        };
+        discrims: &'t T,
+    ) -> impl system::ReadIsotope<A, C, T::Key> + 't
+    where
+        A: Archetype,
+        C: comp::Isotope<A>,
+        T: discrim::Set<C::Discrim>,
+    {
+        let storage_map = self.get_isotope_storage_map::<A, C>();
 
-        let storages: <C::Discrim as comp::Discrim>::Map<_> = {
+        let storages: T::Mapped<Option<_>> = {
             // note: lock contention may occur here if another thread is requesting write access to
             // storages of other discriminants.
             let map = storage_map.map.read();
 
-            map.iter()
-                .filter(|(&discrim, _)| discrims.contains(&discrim))
-                .map(|(&discrim, storage)| {
-                    let storage: Arc<RwLock<C::Storage>> = Arc::clone(storage);
-                    let storage = match storage.try_read_arc() {
-                        Some(guard) => guard,
-                        None => panic!(
-                            "The component {}/{}/{} is currently used by another system. Maybe \
-                             scheduler bug?",
-                            any::type_name::<A>(),
-                            any::type_name::<C>(),
-                            discrim,
-                        ),
-                    };
-                    (discrim, storage)
-                })
-                .collect()
+            discrims
+                .map(|discrim| Some(own_read_isotope_storage::<A, C>(discrim, map.get(&discrim)?)))
         };
 
-        IsotopeAccessor { storages, on_missing: PanicIfNotContainOnMissingStorage(discrims) }
+        struct Proc<A, C, S>(PhantomData<(A, C, S)>);
+        impl<A, C, S> StorageMapProcessorRef for Proc<A, C, S> {
+            type Input = Option<S>;
+            type Output = S;
+
+            fn process<'t, D: fmt::Debug, F: FnOnce() -> D>(
+                &self,
+                input: Option<&'t Option<S>>,
+                key: F,
+            ) -> Option<&'t S> {
+                match input {
+                    Some(Some(storage)) => Some(storage), // already initialized
+                    Some(None) => None, // valid discriminant, but not yet initialized
+                    None => panic_invalid_key::<A, C>(key()),
+                }
+            }
+
+            fn admit(input: &Option<S>) -> Option<&S> { input.as_ref() }
+        }
+
+        IsotopeAccessor { storages, processor: Proc::<A, C, _>(PhantomData), _ph: PhantomData }
     }
 
     /// Creates a writable, exclusive accessor to all discriminants of the given archetyped isotope component,
@@ -239,39 +254,74 @@ impl Components {
     pub fn write_full_isotope_storage<A: Archetype, C: comp::Isotope<A>>(
         &self,
     ) -> impl system::WriteIsotope<A, C> + '_ {
-        let storage_map = match self.archetype::<A>().isotope_storage_maps.get(&TypeId::of::<C>()) {
-            Some(storage) => storage.downcast_ref::<C>(),
-            None => panic!(
-                "The component {}/{} cannot be used because it is not used in any systems",
-                any::type_name::<A>(),
-                any::type_name::<C>()
-            ),
-        };
+        let storage_map = self.get_isotope_storage_map::<A, C>();
 
-        let full_map = storage_map.map.write();
+        let full_map: RwLockWriteGuard<'_, storage::IsotopeMapInner<A, C>> =
+            storage_map.map.write();
 
-        let accessor_storages: <C::Discrim as comp::Discrim>::Map<_> = full_map
-            .iter()
-            .map(|(&discrim, storage)| {
-                // cloning the arc is necessary to avoid self-referential types.
-                let storage: Arc<RwLock<C::Storage>> = Arc::clone(storage);
-                let storage = match storage.try_write_arc() {
-                    Some(guard) => ArcStorageGuard(guard),
-                    None => panic!(
-                        "The component {}/{}/{} is currently used by another system. Maybe \
-                         scheduler bug?",
-                        any::type_name::<A>(),
-                        any::type_name::<C>(),
-                        discrim,
-                    ),
-                };
-                (discrim, storage)
-            })
-            .collect();
+        let accessor_storages: <C::Discrim as Discrim>::FullMap<LockedIsotopeStorage<A, C>> =
+            full_map
+                .iter()
+                .map(|(&discrim, storage)| {
+                    (discrim, own_write_isotope_storage::<A, C>(discrim, storage))
+                })
+                .collect();
 
-        IsotopeAccessor {
-            storages:   accessor_storages,
-            on_missing: LazyCreateOnMissingStorage(full_map),
+        struct Proc<'t, A, C>
+        where
+            A: Archetype,
+            C: comp::Isotope<A>,
+        {
+            full_map: RwLockWriteGuard<'t, storage::IsotopeMapInner<A, C>>,
+            _ph:      PhantomData<(A, C)>,
+        }
+        impl<'t, A, C> StorageMapProcessorRef for Proc<'t, A, C>
+        where
+            A: Archetype,
+            C: comp::Isotope<A>,
+        {
+            type Input = LockedIsotopeStorage<A, C>;
+            type Output = Self::Input;
+            fn process<'u, D: fmt::Debug, F: FnOnce() -> D>(
+                &self,
+                input: Option<&'u Self::Input>,
+                _: F,
+            ) -> Option<&'u Self::Input> {
+                input
+            }
+            fn admit(input: &Self::Input) -> Option<&Self::Input> { Some(input) }
+        }
+        impl<'t, A, C, M> MutStorageAccessor<A, C, LockedIsotopeStorage<A, C>, M> for Proc<'t, A, C>
+        where
+            A: Archetype,
+            C: comp::Isotope<A>,
+            M: discrim::FullMap<
+                Discrim = C::Discrim,
+                Key = C::Discrim,
+                Value = LockedIsotopeStorage<A, C>,
+            >,
+        {
+            fn get_storage<'u>(
+                &mut self,
+                discrim: C::Discrim,
+                storages: &'u mut M,
+            ) -> &'u mut C::Storage
+            where
+                LockedIsotopeStorage<A, C>: 'u,
+            {
+                storages.get_by_or_insert(discrim, || {
+                    let arc = Arc::default();
+                    let ret = own_write_isotope_storage::<A, C>(discrim, &arc);
+                    self.full_map.insert(discrim, arc);
+                    ret
+                })
+            }
+        }
+
+        IsotopeAccessor::<A, C, LockedIsotopeStorage<A, C>, _, _> {
+            storages:  accessor_storages,
+            processor: Proc::<'_, A, C> { full_map, _ph: PhantomData },
+            _ph:       PhantomData,
         }
     }
 
@@ -281,108 +331,100 @@ impl Components {
     /// # Panics
     /// - if the archetyped component is not used in any systems
     /// - if another thread is accessing the same archetyped component.
-    pub fn write_partial_isotope_storage<A: Archetype, C: comp::Isotope<A>>(
-        &self,
-        discrims: &[usize],
-    ) -> impl system::WriteIsotope<A, C> + '_ {
-        let storage_map = match self.archetype::<A>().isotope_storage_maps.get(&TypeId::of::<C>()) {
-            Some(storage) => storage.downcast_ref::<C>(),
-            None => panic!(
-                "The component {}/{} cannot be used because it is not used in any systems",
-                any::type_name::<A>(),
-                any::type_name::<C>()
-            ),
-        };
+    pub fn write_partial_isotope_storage<
+        't,
+        A: Archetype,
+        C: comp::Isotope<A>,
+        S: discrim::Set<C::Discrim>,
+    >(
+        &'t self,
+        discrims: &'t S,
+    ) -> impl system::WriteIsotope<A, C, S::Key> + 't {
+        let storage_map = self.get_isotope_storage_map::<A, C>();
 
-        let storages: <C::Discrim as comp::Discrim>::Map<_> = {
+        let storages = {
             // note: lock contention may occur here if another thread is requesting write access to
             // storages of other discriminants.
             let mut map = storage_map.map.write();
 
-            discrims
-                .iter()
-                .map(|&discrim| {
-                    let storage =
-                        map.entry(discrim).or_insert_with(Arc::<RwLock<C::Storage>>::default);
-                    let storage = Arc::clone(storage);
-
-                    let storage = match storage.try_write_arc() {
-                        Some(guard) => ArcStorageGuard(guard),
-                        None => panic!(
-                            "The component {}/{}/{} is currently used by another system. Maybe \
-                             scheduler bug?",
-                            any::type_name::<A>(),
-                            any::type_name::<C>(),
-                            discrim,
-                        ),
-                    };
-
-                    (discrim, storage)
-                })
-                .collect()
+            discrims.map(|discrim| {
+                let storage = map.entry(discrim).or_insert_with(Arc::<RwLock<C::Storage>>::default);
+                own_write_isotope_storage::<A, C>(discrim, storage)
+            })
         };
 
-        IsotopeAccessor { storages, on_missing: PanicOnMissingStorage }
-    }
-}
+        struct Proc<A, C, S>(PhantomData<(A, C, S)>);
+        impl<A, C, S> StorageMapProcessorRef for Proc<A, C, S> {
+            type Input = S;
+            type Output = S;
 
-struct IsotopeAccessor<A: Archetype, C: comp::Isotope<A>, S, P> {
-    storages:   <C::Discrim as Discrim>::Map<S>,
-    on_missing: P,
-}
+            fn process<'t, D: fmt::Debug, F: FnOnce() -> D>(
+                &self,
+                input: Option<&'t S>,
+                key: F,
+            ) -> Option<&'t S> {
+                match input {
+                    Some(input) => Some(input),
+                    None => panic_invalid_key::<A, C>(key()),
+                }
+            }
 
-impl<
-        A: Archetype,
-        C: comp::Isotope<A>,
-        S: ops::Deref<Target = C::Storage>,
-        P: OnMissingStorage<A, C>,
-    > system::ReadIsotope<A, C> for IsotopeAccessor<A, C, S, P>
-{
-    type GetAll<'t> = impl Iterator<Item = (<C as comp::Isotope<A>>::Discrim, &'t C)> + 't where Self: 't;
-
-    type Get<'t> = RefOrDefault<'t, C> where Self: 't;
-    fn get<E: entity::Ref<Archetype = A>>(&self, entity: E, discrim: C::Discrim) -> Self::Get<'_>
-    where
-        C: comp::Must<A>,
-    {
-        match self.try_get(entity, discrim) {
-            Some(value) => value,
-            None => panic!(
-                "{}: comp::Must<{}> but has no default initializer",
-                any::type_name::<C>(),
-                any::type_name::<A>()
-            ),
+            fn admit(input: &Self::Input) -> Option<&Self::Output> { Some(input) }
         }
-    }
-
-    fn try_get<E: entity::Ref<Archetype = A>>(
-        &self,
-        entity: E,
-        discrim: C::Discrim,
-    ) -> Option<Self::Get<'_>> {
-        let storage: Option<&S> = self.storages.find(discrim.into_usize());
-        storage.and_then(|storage| storage.get(entity.id()).map(RefOrDefault::Borrowed)).or_else(
-            || {
-                self.on_missing.handle(discrim);
-                C::INIT_STRATEGY.call_option().map(RefOrDefault::Owned)
-            },
-        )
-    }
-
-    fn get_all<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Self::GetAll<'_> {
-        let index: A::RawEntity = entity.id();
-
-        fn filter_map_fn<S: ops::Deref<Target = C::Storage>, A: Archetype, C: comp::Isotope<A>>(
-            index: A::RawEntity,
-        ) -> impl Fn((usize, &S)) -> Option<(C::Discrim, &C)> {
-            move |(discrim, storage)| {
-                let discrim = <C::Discrim as comp::Discrim>::from_usize(discrim);
-                let comp = storage.get(index)?;
-                Some((discrim, comp))
+        impl<A, C, S, M> MutStorageAccessor<A, C, S, M> for Proc<A, C, S>
+        where
+            A: Archetype,
+            C: comp::Isotope<A>,
+            S: ops::DerefMut<Target = C::Storage>,
+            M: discrim::Mapped<Discrim = C::Discrim, Value = S>,
+        {
+            fn get_storage<'t>(&mut self, key: M::Key, storages: &'t mut M) -> &'t mut C::Storage
+            where
+                S: 't,
+            {
+                match storages.get_mut_by(&key).map(|s| &mut **s) {
+                    Some(storage) => storage,
+                    None => panic!(
+                        "Cannot access isotope indexed by {key:?} because it is not in the list \
+                         of requested discriminants",
+                    ),
+                }
             }
         }
 
-        self.storages.iter().filter_map(filter_map_fn(index))
+        IsotopeAccessor { storages, processor: Proc(PhantomData), _ph: PhantomData }
+    }
+}
+
+fn own_read_isotope_storage<A: Archetype, C: comp::Isotope<A>>(
+    discrim: C::Discrim,
+    storage: &Arc<RwLock<C::Storage>>,
+) -> impl ops::Deref<Target = C::Storage> {
+    let storage: Arc<RwLock<C::Storage>> = Arc::clone(storage);
+    match storage.try_read_arc() {
+        Some(guard) => guard,
+        None => panic!(
+            "The component {}/{}/{:?} is currently used by another system. Maybe scheduler bug?",
+            any::type_name::<A>(),
+            any::type_name::<C>(),
+            discrim,
+        ),
+    }
+}
+
+fn own_write_isotope_storage<A: Archetype, C: comp::Isotope<A>>(
+    discrim: C::Discrim,
+    storage: &Arc<RwLock<C::Storage>>,
+) -> LockedIsotopeStorage<A, C> {
+    let storage: Arc<RwLock<C::Storage>> = Arc::clone(storage);
+    match storage.try_write_arc() {
+        Some(guard) => guard,
+        None => panic!(
+            "The component {}/{}/{:?} is currently used by another system. Maybe scheduler bug?",
+            any::type_name::<A>(),
+            any::type_name::<C>(),
+            discrim,
+        ),
     }
 }
 
@@ -403,39 +445,111 @@ impl<'t, C> ops::Deref for RefOrDefault<'t, C> {
     }
 }
 
-impl<A: Archetype, C: comp::Isotope<A>, S: StorageGuard<C::Storage>, P: OnMissingStorage<A, C>>
-    IsotopeAccessor<A, C, S, P>
+struct IsotopeAccessor<A, C, S, M, P> {
+    /// Cloned arcs of the actual storage.
+    storages:  M,
+    processor: P,
+    _ph:       PhantomData<(A, C, S)>,
+}
+
+fn panic_invalid_key<A, C>(key: impl fmt::Debug) -> ! {
+    panic!(
+        "The index {key:?} is not available in the isotope request for {}/{}",
+        any::type_name::<A>(),
+        any::type_name::<C>(),
+    )
+}
+
+impl<A, C, S, M, P> IsotopeAccessor<A, C, S, M, P>
+where
+    A: Archetype,
+    C: comp::Isotope<A>,
+    S: ops::Deref<Target = C::Storage>,
+    M: discrim::Mapped<Discrim = C::Discrim>,
+    P: StorageMapProcessorRef<Input = M::Value, Output = S>,
 {
-    fn get_storage_mut(&mut self, discrim: C::Discrim) -> &mut C::Storage {
-        // borrow checker bug circumvention
-        if self.storages.find(discrim.into_usize()).is_some() {
-            self.storages.find_mut(discrim.into_usize()).expect("find() returned Some")
-        } else {
-            match self.on_missing.handle_mut(discrim) {
-                HandleMutResult::None => unreachable!(), // TODO clean up this mess
-                HandleMutResult::Added(storage) => {
-                    let storage = S::from_arc(storage);
-                    self.storages.extend([(discrim.into_usize(), storage)]);
-                    self.storages
-                        .find_mut(discrim.into_usize())
-                        .expect("OnMissingStorage returned Handle::Retry")
-                }
-            }
-        }
+    fn get_all_raw(
+        &self,
+        index: A::RawEntity,
+    ) -> impl Iterator<Item = (<C as comp::Isotope<A>>::Discrim, &C)> {
+        self.storages.iter_values().filter_map(move |(discrim, storage)| {
+            let storage = P::admit(storage)?;
+            let comp = storage.get(index)?;
+            Some((discrim, comp))
+        })
     }
 }
 
-impl<A: Archetype, C: comp::Isotope<A>, S: StorageGuard<C::Storage>, P: OnMissingStorage<A, C>>
-    system::WriteIsotope<A, C> for IsotopeAccessor<A, C, S, P>
+trait StorageMapProcessorRef {
+    type Input;
+    type Output;
+
+    fn process<'t, D: fmt::Debug, F: FnOnce() -> D>(
+        &self,
+        input: Option<&'t Self::Input>,
+        key: F,
+    ) -> Option<&'t Self::Output>;
+    fn admit(input: &Self::Input) -> Option<&Self::Output>;
+}
+
+impl<A, C, S, M, P> system::ReadIsotope<A, C, M::Key> for IsotopeAccessor<A, C, S, M, P>
+where
+    A: Archetype,
+    C: comp::Isotope<A>,
+    S: ops::Deref<Target = C::Storage>,
+    M: discrim::Mapped<Discrim = C::Discrim>,
+    P: StorageMapProcessorRef<Input = M::Value, Output = S>,
+{
+    type Get<'t> = RefOrDefault<'t, C> where Self: 't;
+    fn try_get<E: entity::Ref<Archetype = A>>(
+        &self,
+        entity: E,
+        key: M::Key,
+    ) -> Option<Self::Get<'_>> {
+        let storage: Option<&M::Value> = self.storages.get_by(&key);
+        let storage: Option<&S> = self.processor.process(storage, || key);
+        let comp = storage.and_then(|storage| storage.get(entity.id()));
+        match comp {
+            Some(comp) => Some(RefOrDefault::Borrowed(comp)),
+            None => C::INIT_STRATEGY.call_option().map(RefOrDefault::Owned),
+        }
+    }
+
+    type GetAll<'t> = impl Iterator<Item = (<C as comp::Isotope<A>>::Discrim, &'t C)> + 't where Self: 't;
+    fn get_all<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Self::GetAll<'_> {
+        let index: A::RawEntity = entity.id();
+        self.get_all_raw(index)
+    }
+}
+
+trait MutStorageAccessor<A, C, S, M>
+where
+    A: Archetype,
+    C: comp::Isotope<A>,
+    S: ops::Deref<Target = C::Storage>,
+    M: discrim::Mapped<Discrim = C::Discrim>,
+{
+    fn get_storage<'t>(&mut self, key: M::Key, storages: &'t mut M) -> &'t mut C::Storage
+    where
+        S: 't;
+}
+
+impl<A, C, S, M, P> system::WriteIsotope<A, C, M::Key> for IsotopeAccessor<A, C, S, M, P>
+where
+    A: Archetype,
+    C: comp::Isotope<A>,
+    S: ops::Deref<Target = C::Storage>,
+    M: discrim::Mapped<Discrim = C::Discrim>,
+    P: StorageMapProcessorRef<Input = M::Value, Output = S> + MutStorageAccessor<A, C, S, M>,
 {
     fn try_get_mut<E: entity::Ref<Archetype = A>>(
         &mut self,
         entity: E,
-        discrim: C::Discrim,
+        key: M::Key,
     ) -> Option<&mut C> {
-        let storage = self.get_storage_mut(discrim);
+        let storage = self.processor.get_storage(key, &mut self.storages);
 
-        // borrow checker bug circumvention
+        // borrowck bug workaround, change to `if let Some(...) = storage.get_mut` in the future
         if storage.get(entity.id()).is_some() {
             return Some(storage.get_mut(entity.id()).expect("storage.get().is_some()"));
         }
@@ -452,92 +566,11 @@ impl<A: Archetype, C: comp::Isotope<A>, S: StorageGuard<C::Storage>, P: OnMissin
     fn set<E: entity::Ref<Archetype = A>>(
         &mut self,
         entity: E,
-        discrim: C::Discrim,
+        key: M::Key,
         value: Option<C>,
     ) -> Option<C> {
-        let storage = self.get_storage_mut(discrim);
+        let storage = self.processor.get_storage(key, &mut self.storages);
         storage.set(entity.id(), value)
-    }
-}
-
-pub trait StorageGuard<S>: ops::DerefMut<Target = S> {
-    fn from_arc(arc: Arc<RwLock<S>>) -> Self;
-}
-struct ArcStorageGuard<S>(ArcRwLockWriteGuard<RawRwLock, S>);
-impl<S> ops::Deref for ArcStorageGuard<S> {
-    type Target = S;
-    fn deref(&self) -> &S { &self.0 }
-}
-impl<S> ops::DerefMut for ArcStorageGuard<S> {
-    fn deref_mut(&mut self) -> &mut S { &mut self.0 }
-}
-impl<S> StorageGuard<S> for ArcStorageGuard<S> {
-    fn from_arc(arc: Arc<RwLock<S>>) -> Self {
-        Self(arc.try_write_arc().expect("lock was just created"))
-    }
-}
-
-trait OnMissingStorage<A: Archetype, C: comp::Isotope<A>> {
-    fn handle(&self, discrim: C::Discrim);
-    fn handle_mut(&mut self, discrim: C::Discrim) -> HandleMutResult<C::Storage>;
-}
-enum HandleMutResult<S> {
-    Added(Arc<RwLock<S>>),
-    None,
-}
-
-struct PanicOnMissingStorage;
-fn panic_on_missing(discrim: usize) -> ! {
-    panic!(
-        "Cannot access isotope {} because it is not in the list of requested discriminants",
-        discrim,
-    )
-}
-impl<A: Archetype, C: comp::Isotope<A>> OnMissingStorage<A, C> for PanicOnMissingStorage {
-    fn handle(&self, discrim: C::Discrim) { panic_on_missing(discrim.into_usize()) }
-    fn handle_mut(&mut self, discrim: C::Discrim) -> HandleMutResult<C::Storage> {
-        panic_on_missing(discrim.into_usize())
-    }
-}
-
-struct NoneOnMissingStorage;
-impl<A: Archetype, C: comp::Isotope<A>> OnMissingStorage<A, C> for NoneOnMissingStorage {
-    fn handle(&self, _: C::Discrim) {}
-    fn handle_mut(&mut self, _: C::Discrim) -> HandleMutResult<C::Storage> { HandleMutResult::None }
-}
-
-struct PanicIfNotContainOnMissingStorage<'t>(&'t [usize]);
-impl<'t> PanicIfNotContainOnMissingStorage<'t> {
-    fn run(&self, discrim: usize) {
-        if !self.0.contains(&discrim) {
-            panic!(
-                "Cannot access isotope {} because it is not in the list of requested discriminants",
-                discrim.into_usize()
-            )
-        }
-    }
-}
-impl<'t, A: Archetype, C: comp::Isotope<A>> OnMissingStorage<A, C>
-    for PanicIfNotContainOnMissingStorage<'t>
-{
-    fn handle(&self, discrim: C::Discrim) { self.run(discrim.into_usize()) }
-    fn handle_mut(&mut self, discrim: C::Discrim) -> HandleMutResult<C::Storage> {
-        self.run(discrim.into_usize());
-        HandleMutResult::None
-    }
-}
-
-struct LazyCreateOnMissingStorage<R>(R);
-impl<R, A: Archetype, C: comp::Isotope<A>> OnMissingStorage<A, C> for LazyCreateOnMissingStorage<R>
-where
-    R: ops::DerefMut<Target = HashMap<usize, Arc<RwLock<C::Storage>>>>,
-{
-    fn handle(&self, _: C::Discrim) {}
-
-    fn handle_mut(&mut self, discrim: C::Discrim) -> HandleMutResult<C::Storage> {
-        let arc = Arc::default();
-        self.0.insert(discrim.into_usize(), Arc::clone(&arc));
-        HandleMutResult::Added(arc)
     }
 }
 

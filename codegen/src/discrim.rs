@@ -26,8 +26,8 @@ pub(crate) fn derive(input: TokenStream) -> Result<TokenStream> {
     let mut map =
         args.find_one(|opt| option_match!(opt, ItemOpt::Map(_, map) => map))?.map_or_else(
             || {
-                syn::parse2::<Box<syn::Type>>(quote!(discrim::LinearVecMap))
-                    .expect("discrim::LinearVecMap is a Type::Path")
+                syn::parse2::<Box<syn::Type>>(quote!(discrim::BoundedVecMap))
+                    .expect("discrim::BoundedVecMap is a Type::Path")
             },
             |(_, map)| map.clone(),
         );
@@ -36,7 +36,7 @@ pub(crate) fn derive(input: TokenStream) -> Result<TokenStream> {
             ty.path.segments.last_mut().expect("Type must have at least one segment");
         if last_segment.arguments.is_empty() {
             last_segment.arguments = syn::PathArguments::AngleBracketed(
-                syn::parse2(quote!(<T>)).expect("<T> is an ABGA"),
+                syn::parse2(quote!(<Self, T>)).expect("<Self, T> is an ABGA"),
             );
         }
     }
@@ -45,7 +45,7 @@ pub(crate) fn derive(input: TokenStream) -> Result<TokenStream> {
         syn::Data::Struct(item) => {
             let (field_ref, field_ty) = match &item.fields {
                 syn::Fields::Unit => {
-                    return Err(Error::new_spanned(&item.struct_token, INPUT_TYPE_ERROR))
+                    return Err(Error::new_spanned(item.struct_token, INPUT_TYPE_ERROR))
                 }
                 syn::Fields::Named(fields) => {
                     if fields.named.len() != 1 {
@@ -65,7 +65,7 @@ pub(crate) fn derive(input: TokenStream) -> Result<TokenStream> {
             };
 
             quote! {
-                type Map<T> = #map;
+                type FullMap<T> = #map;
 
                 fn from_usize(usize: usize) -> Self {
                     use #crate_name::_reexports::xias::Xias;
@@ -99,7 +99,7 @@ pub(crate) fn derive(input: TokenStream) -> Result<TokenStream> {
             }
 
             quote! {
-                type Map<T> = discrim::ArrayMap<T, #num_variants>;
+                type FullMap<T> = discrim::ArrayMap<Self, T, #num_variants>;
 
                 fn from_usize(usize: usize) -> Self {
                     match usize {
@@ -116,7 +116,7 @@ pub(crate) fn derive(input: TokenStream) -> Result<TokenStream> {
             }
         }
         syn::Data::Union(item) => {
-            return Err(Error::new_spanned(&item.union_token, INPUT_TYPE_ERROR));
+            return Err(Error::new_spanned(item.union_token, INPUT_TYPE_ERROR));
         }
     };
 

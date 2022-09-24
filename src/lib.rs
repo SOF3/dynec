@@ -67,7 +67,7 @@
 #![cfg_attr(not(debug_assertions), allow(dead_code))] // TODO remove
 #![cfg_attr(doc, warn(missing_docs))]
 #![feature(map_first_last)]
-#![feature(generic_associated_types, type_alias_impl_trait)]
+#![feature(type_alias_impl_trait)]
 
 /// Internal re-exports used in macros.
 #[doc(hidden)]

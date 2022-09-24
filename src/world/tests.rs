@@ -78,7 +78,7 @@ struct InitialEntities {
     ent1: Option<Entity<TestArch>>,
 }
 
-#[system(dynec_as(crate))]
+#[system(dynec_as(crate), __debug_print)]
 fn test_system(
     _comp3: impl system::ReadSimple<TestArch, Comp3>,
     _comp4: impl system::WriteSimple<TestArch, Comp4>,

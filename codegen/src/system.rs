@@ -21,6 +21,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
 
     let mut crate_name = quote!(::dynec);
     let mut system_thread_local = false;
+    let mut debug_print = false;
     let mut state_maybe_uninit = Vec::new();
 
     if !args.is_empty() {
@@ -34,6 +35,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
 
         system_thread_local =
             args.find_one(|opt| option_match!(opt, FnOpt::ThreadLocal => &()))?.is_some();
+        debug_print = args.find_one(|opt| option_match!(opt, FnOpt::DebugPrint => &()))?.is_some();
         state_maybe_uninit = args.merge_all(
             |opt| option_match!(opt, FnOpt::MaybeUninit(_, archs) => archs.iter().cloned()),
         );
@@ -42,6 +44,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             match &named.value {
                 FnOpt::DynecAs(_, _) => {} // already handled
                 FnOpt::ThreadLocal => {}   // already handled
+                FnOpt::DebugPrint => {}    // already handled
                 FnOpt::Before(_, inputs) => {
                     for dep in inputs {
                         deps.push(quote!(#crate_name::system::spec::Dependency::Before(Box::new(#dep) as Box<dyn #crate_name::system::Partition>)));
@@ -76,6 +79,8 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
     let mut initial_state_field_defaults = Vec::new();
 
     let mut isotope_discrim_idents = Vec::new();
+    let mut isotope_discrim_ty_params = Vec::new();
+    let mut isotope_discrim_type_bounds = Vec::new();
     let mut isotope_discrim_values = Vec::new();
 
     let mut input_types = Vec::new();
@@ -572,30 +577,37 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 }
             }
             ArgType::Isotope { mutable, arch, comp, discrim, maybe_uninit } => {
-                let discrim_vec = discrim.as_ref().map(|discrim| {
-                    quote!({
-                        let __iter = ::std::iter::IntoIterator::into_iter(#discrim);
-                        let __iter = ::std::iter::Iterator::map(__iter, |d| {
-                            let d: &(<#comp as #crate_name::comp::Isotope<#arch>>::Discrim) = &d; // auto deref
-                            #crate_name::comp::Discrim::into_usize(*d)
-                        });
-                        ::std::iter::Iterator::collect::<::std::vec::Vec<_>>(__iter)
-                    })
-                });
-
-                let discrim_field = discrim.map(|_| {
+                let discrim_field = discrim.is_some().then(|| {
                     let discrim_ident =
                         quote::format_ident!("__dynec_isotope_discrim_{}", param_index);
                     isotope_discrim_idents.push(discrim_ident.clone());
-                    isotope_discrim_values.push(discrim_vec);
+                    isotope_discrim_ty_params.push(quote::format_ident!(
+                        "__DynecDiscrimType{}",
+                        isotope_discrim_ty_params.len()
+                    ));
+                    isotope_discrim_type_bounds.push(quote!(
+                        Send + Sync + 'static + #crate_name::comp::discrim::Set<
+                            Value = <#comp as #crate_name::comp::Isotope<#arch>>::Discrim,
+                        >));
+                    isotope_discrim_values.push(discrim);
 
                     quote!(self.__dynec_isotope_discrim_idents.#discrim_ident)
                 });
 
                 let discrim_field_variadic = discrim_field.as_ref().map(|expr| quote!(&#expr));
-                let discrim_field_option = discrim_field
-                    .as_ref()
-                    .map_or_else(|| quote!(None), |expr| quote!(Some(#expr.clone())));
+                let discrim_field_option = discrim_field.as_ref().map_or_else(
+                    || quote!(None),
+                    |expr| {
+                        quote!(Some({
+                            let __iter = #crate_name::comp::discrim::Set::iter(&#expr);
+                            let __iter = ::std::iter::Iterator::map(__iter, |d| {
+                                let d: &(<#comp as #crate_name::comp::Isotope<#arch>>::Discrim) = &d; // auto deref
+                                #crate_name::comp::Discrim::into_usize(*d)
+                            });
+                            ::std::iter::Iterator::collect::<::std::vec::Vec<_>>(__iter)
+                        }))
+                    },
+                );
 
                 isotope_requests.push(quote! {
                     #crate_name::system::spec::IsotopeRequest::new::<#arch, #comp>(#discrim_field_option, #mutable)
@@ -676,15 +688,20 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
 
     let mut local_state_struct = syn::parse2(quote! {
         #[allow(non_camel_case_types)]
-        struct __dynec_local_state {
+        struct __dynec_local_state<#(
+            #isotope_discrim_ty_params: #isotope_discrim_type_bounds,
+        )*> {
             #(#local_state_entity_attrs #local_state_field_idents: #local_state_field_tys,)*
-            __dynec_isotope_discrim_idents: __dynec_isotope_discrim_idents,
+            #[not_entity = "no entities can be assigned here."]
+            __dynec_isotope_discrim_idents: __dynec_isotope_discrim_idents<#(#isotope_discrim_ty_params,)*>,
         }
     })?;
     let isotope_discrim_idents_struct = quote! {
         #[allow(non_camel_case_types)]
-        struct __dynec_isotope_discrim_idents {
-            #(#isotope_discrim_idents: Vec<usize>,)*
+        struct __dynec_isotope_discrim_idents<#(
+            #isotope_discrim_ty_params: #isotope_discrim_type_bounds,
+        )*> {
+            #(#isotope_discrim_idents: #isotope_discrim_ty_params,)*
         }
     };
     let local_state_impl_entity_ref = entity_ref::entity_ref(
@@ -701,6 +718,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
         #[allow(non_camel_case_types)]
         #vis struct #ident;
 
+        #[automatically_derived]
         const _: () = {
             impl #ident {
                 #vis fn build(
@@ -752,7 +770,9 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             }
             */
 
-            impl #crate_name::system::Descriptor for __dynec_local_state {
+            impl<#(
+                #isotope_discrim_ty_params: #isotope_discrim_type_bounds,
+            )*> #crate_name::system::Descriptor for __dynec_local_state<#(#isotope_discrim_ty_params,)*> {
                 fn get_spec(&self) -> #crate_name::system::Spec {
                     #destructure_local_states
 
@@ -781,7 +801,9 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 }
             }
 
-            impl #crate_name::system::#system_trait for __dynec_local_state {
+            impl<#(
+                #isotope_discrim_ty_params: #isotope_discrim_type_bounds,
+            )*> #crate_name::system::#system_trait for __dynec_local_state<#(#isotope_discrim_ty_params,)*> {
                 fn run(&mut self, #system_run_params) {
                     let offline_buffer = ::std::cell::RefCell::new(offline_buffer);
 
@@ -792,13 +814,18 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             }
         };
     };
-    // println!("{}", &output);
+
+    if debug_print {
+        println!("{}", &output);
+    }
+
     Ok(output)
 }
 
 enum FnOpt {
     DynecAs(syn::token::Paren, TokenStream),
     ThreadLocal,
+    DebugPrint, /* introduced due to high frequency of need to debug this macro and its enormous output */
     Before(syn::token::Paren, Punctuated<syn::Expr, syn::Token![,]>),
     After(syn::token::Paren, Punctuated<syn::Expr, syn::Token![,]>),
     Name(syn::Token![=], Box<syn::Expr>),
@@ -818,6 +845,7 @@ impl Parse for Named<FnOpt> {
                 FnOpt::DynecAs(paren, args)
             }
             "thread_local" => FnOpt::ThreadLocal,
+            "__debug_print" => FnOpt::DebugPrint,
             "before" => {
                 let inner;
                 let paren = syn::parenthesized!(inner in input);

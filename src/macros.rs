@@ -89,7 +89,7 @@ mod archetype_tests {}
 /// assert!(matches!(<Qux as comp::Simple<Foo>>::PRESENCE, comp::SimplePresence::Optional));
 /// assert!(<Qux as comp::Simple<Bar>>::IS_FINALIZER);
 ///
-/// #[derive(Debug, Clone, Copy, dynec::Discrim)]
+/// #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, dynec::Discrim)]
 /// #[dynec(map = discrim::BoundedVecMap)]
 /// struct Id(usize);
 ///
@@ -461,22 +461,22 @@ mod system_tests {
 /// ```
 /// #![feature(generic_associated_types)]
 ///
-/// #[derive(Clone, Copy, dynec::Discrim)]
+/// #[derive(Clone, Copy, PartialEq, Eq, Hash, dynec::Discrim)]
 /// struct Tuple(u16);
 ///
-/// #[derive(Clone, Copy, dynec::Discrim)]
+/// #[derive(Clone, Copy, PartialEq, Eq, Hash, dynec::Discrim)]
 /// #[dynec(map = discrim::BoundedVecMap)]
 /// struct Named {
 ///     field: u32,
 /// }
 ///
-/// #[derive(Clone, Copy, dynec::Discrim)]
+/// #[derive(Clone, Copy, PartialEq, Eq, Hash, dynec::Discrim)]
 /// #[dynec(map = discrim::ArrayMap<T, 16>)]
 /// struct UsesArray {
 ///     field: u8,
 /// }
 ///
-/// #[derive(Clone, Copy, dynec::Discrim)]
+/// #[derive(Clone, Copy, PartialEq, Eq, Hash, dynec::Discrim)]
 /// enum Enum {
 ///     Foo,
 ///     Bar,
@@ -499,7 +499,7 @@ pub use dynec_codegen::Discrim;
 /// dynec::archetype!(Foo);
 ///
 /// #[derive(dynec::EntityRef)]
-/// struct Enum {
+/// struct Bar {
 ///     #[entity]
 ///     entity: dynec::Entity<Foo>,
 /// }
@@ -511,13 +511,29 @@ pub use dynec_codegen::Discrim;
 /// dynec::archetype!(Foo);
 ///
 /// #[derive(dynec::EntityRef)]
-/// struct Enum {
+/// struct Bar {
 ///     entity: dynec::Entity<Foo>,
 /// }
 /// ```
 ///
 /// The above code will fail to compile with an error that contains
 /// `this_field_references_an_entity_so_it_should_have_the_entity_attribute`.
+///
+/// In the case where a field references a type parameter,
+/// dynec cannot check whether it correctly does not implement `Referrer`.
+/// In that case, apply the `#[not_entity]` attribute to assert its safety:
+///
+/// ```
+/// # dynec::archetype!(Foo);
+/// #
+/// #[derive(dynec::EntityRef)]
+/// struct Bar<T> {
+///     #[not_entity]
+///     value: T,
+/// }
+/// ```
+///
+/// It is the user's responsibility not to set `T` as a `Referrer` implementation.
 ///
 /// Note that this compile error is best-effort and not comprehensive &mdash;
 /// if the actual entity reference is hidden behind a complex type

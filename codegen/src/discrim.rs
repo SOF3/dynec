@@ -65,7 +65,7 @@ pub(crate) fn derive(input: TokenStream) -> Result<TokenStream> {
             };
 
             quote! {
-                type Map<T> = #map;
+                type FullMap<T> = #map;
 
                 fn from_usize(usize: usize) -> Self {
                     use #crate_name::_reexports::xias::Xias;
@@ -99,7 +99,7 @@ pub(crate) fn derive(input: TokenStream) -> Result<TokenStream> {
             }
 
             quote! {
-                type Map<T> = discrim::ArrayMap<T, #num_variants>;
+                type FullMap<T> = discrim::ArrayMap<T, #num_variants>;
 
                 fn from_usize(usize: usize) -> Self {
                     match usize {

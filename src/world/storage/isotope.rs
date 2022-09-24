@@ -10,7 +10,7 @@ use crate::{comp, Archetype};
 
 /// Isotope storages of the same type but different discriminants.
 pub(crate) struct Map<A: Archetype, C: comp::Isotope<A>> {
-    pub(crate) map: RwLock<HashMap<usize, Arc<RwLock<C::Storage>>>>,
+    pub(crate) map: RwLock<HashMap<C::Discrim, Arc<RwLock<C::Storage>>>>,
 }
 
 impl<A: Archetype, C: comp::Isotope<A>> Map<A, C> {

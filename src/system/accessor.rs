@@ -64,7 +64,10 @@ pub trait WriteSimple<A: Archetype, C: comp::Simple<A>>: ReadSimple<A, C> {
 }
 
 /// Provides access to an isotope component in a specific archetype.
-pub trait ReadIsotope<A: Archetype, C: comp::Isotope<A>> {
+///
+/// `K` is the type used to index the discriminant.
+/// For partial
+pub trait ReadIsotope<A: Archetype, C: comp::Isotope<A>, K = C::Discrim> {
     /// Return value of [`try_get`](Self::try_get) and [`get`](Self::get).
     type Get<'t>: ops::Deref<Target = C> + 't
     where
@@ -73,7 +76,7 @@ pub trait ReadIsotope<A: Archetype, C: comp::Isotope<A>> {
     ///
     /// This method is infallible for correctly implemented `comp::Must`,
     /// which returns the auto-initialized value for missing components.
-    fn get<E: entity::Ref<Archetype = A>>(&self, entity: E, discrim: C::Discrim) -> Self::Get<'_>
+    fn get<E: entity::Ref<Archetype = A>>(&self, entity: E, discrim: K) -> Self::Get<'_>
     where
         C: comp::Must<A>;
 
@@ -83,7 +86,7 @@ pub trait ReadIsotope<A: Archetype, C: comp::Isotope<A>> {
     fn try_get<E: entity::Ref<Archetype = A>>(
         &self,
         entity: E,
-        discrim: C::Discrim,
+        discrim: K,
     ) -> Option<Self::Get<'_>>;
 
     /// Return value of [`get_all`](Self::get_all).

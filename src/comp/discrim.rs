@@ -1,6 +1,8 @@
 //! Discriminants distinguish different isotopes of the same component type.
 
+use core::fmt;
 use std::any;
+use std::hash::Hash;
 use std::iter::FromIterator;
 
 /// A discriminant value that distinguishes different isotopes of the same component type.
@@ -8,9 +10,9 @@ use std::iter::FromIterator;
 /// For compact storage, the discriminant should have a one-to-one mapping to the `usize` type.
 /// The `usize` needs not be a small number; it can be any valid `usize`
 /// as long as it is one-to-one and consistent.
-pub trait Discrim: Copy {
+pub trait Discrim: fmt::Debug + Copy + PartialEq + Eq + Hash + Send + Sync + 'static {
     /// The optimized storage for indexing data of type `T` by discriminant.
-    type Map<T>: Map<T>;
+    type FullMap<T>: FullMap<T>;
 
     /// Constructs a discriminant from the usize.
     ///
@@ -24,15 +26,16 @@ pub trait Discrim: Copy {
 impl Discrim for usize {
     /// The default implementation uses linear search,
     /// which has reasonably small worst-case scenario for normal use.
-    type Map<T> = LinearVecMap<T>;
+    type FullMap<T> = LinearVecMap<T>;
 
     fn from_usize(usize: usize) -> Self { usize }
 
     fn into_usize(self) -> usize { self }
 }
 
-/// A map-like collection with discriminants as keys.
-pub trait Map<T>: FromIterator<(usize, T)> + Extend<(usize, T)> {
+/// A map-like collection with discriminants as keys,
+/// used to index storages when all discriminants are selected.
+pub trait FullMap<T>: FromIterator<(usize, T)> + Extend<(usize, T)> {
     /// Returns an immutable reference to the value indexed by the discriminant.
     fn find(&self, discrim: usize) -> Option<&T>;
 
@@ -82,7 +85,7 @@ impl<T> Extend<(usize, T)> for LinearVecMap<T> {
     fn extend<I: IntoIterator<Item = (usize, T)>>(&mut self, iter: I) { self.vec.extend(iter); }
 }
 
-impl<T> Map<T> for LinearVecMap<T> {
+impl<T> FullMap<T> for LinearVecMap<T> {
     fn find(&self, needle: usize) -> Option<&T> {
         self.vec.iter().find(|&&(discrim, _)| discrim == needle).map(|(_, item)| item)
     }
@@ -140,7 +143,7 @@ impl<T> Extend<(usize, T)> for BoundedVecMap<T> {
     }
 }
 
-impl<T> Map<T> for BoundedVecMap<T> {
+impl<T> FullMap<T> for BoundedVecMap<T> {
     fn find(&self, discrim: usize) -> Option<&T> { self.vec.get(discrim).and_then(Option::as_ref) }
 
     fn find_mut(&mut self, discrim: usize) -> Option<&mut T> {
@@ -171,7 +174,9 @@ impl<T> Map<T> for BoundedVecMap<T> {
 
 /// A wrapper for [`usize`] that implements [`Discrim`] with [`BoundedVecMap`] instead.
 #[repr(transparent)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default, dynec_codegen::Discrim)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default, dynec_codegen::Discrim,
+)]
 #[dynec(dynec_as(crate), map = BoundedVecMap)]
 pub struct BoundedUsize(
     /// The underlying value
@@ -209,7 +214,7 @@ impl<T, const N: usize> Extend<(usize, T)> for ArrayMap<T, N> {
     }
 }
 
-impl<T, const N: usize> Map<T> for ArrayMap<T, N> {
+impl<T, const N: usize> FullMap<T> for ArrayMap<T, N> {
     fn find(&self, discrim: usize) -> Option<&T> {
         self.array.get(discrim).and_then(Option::as_ref)
     }
@@ -244,4 +249,84 @@ impl<T, const N: usize> Map<T> for ArrayMap<T, N> {
             .enumerate()
             .filter_map(|(discrim, value)| Some((discrim, value.as_mut()?)))
     }
+}
+
+/// An ordered collection of distinct discriminants.
+pub trait Set {
+    type Key;
+    type Value;
+
+    /// Return value of [`Set::map`].
+    type Map<U>: Set<Value = U>;
+
+    /// Transforms each element in this set stored,
+    /// stored in a collection with a similar structure.
+    fn map<U, F>(&self, f: F) -> Self::Map<U>
+    where
+        Self::Value: Copy,
+        F: FnMut(Self::Value) -> U;
+
+    /// Gets a value from the set by index.
+    /// Panics if the key is invalid.
+    fn get_by(&self, key: Self::Key) -> &Self::Value;
+
+    /// Gets a value mutably from the set by index.
+    /// Panics if the key is invalid.
+    fn get_by_mut(&mut self, key: Self::Key) -> &mut Self::Value;
+
+    type Iter<'t>: Iterator<Item = &'t Self::Value> + 't
+    where
+        Self: 't,
+        Self::Value: 't;
+    fn iter(&self) -> Self::Iter<'_>;
+}
+
+impl<T, const N: usize> Set for [T; N] {
+    type Key = usize;
+    type Value = T;
+
+    type Map<U> = [U; N];
+
+    fn map<U, F>(&self, f: F) -> [U; N]
+    where
+        T: Copy,
+        F: FnMut(T) -> U,
+    {
+        <[T; N]>::map(*self, f)
+    }
+
+    fn get_by(&self, key: Self::Key) -> &T { self.get(key).expect("key out of bounds") }
+
+    fn get_by_mut(&mut self, key: Self::Key) -> &mut T {
+        self.get_mut(key).expect("key out of bounds")
+    }
+
+    type Iter<'t> = <&'t [T] as IntoIterator>::IntoIter
+        where T: 't;
+    fn iter(&self) -> Self::Iter<'_> { self[..].iter() }
+}
+
+impl<T> Set for Vec<T> {
+    type Key = usize;
+    type Value = T;
+
+    type Map<U> = Vec<U>;
+
+    fn map<U, F>(&self, f: F) -> Vec<U>
+    where
+        T: Copy,
+        F: FnMut(T) -> U,
+    {
+        self.iter().copied().map(f).collect()
+    }
+
+    fn get_by(&self, key: Self::Key) -> &T { self.get(key).expect("key out of bounds") }
+
+    fn get_by_mut(&mut self, key: Self::Key) -> &mut T {
+        self.get_mut(key).expect("key out of bounds")
+    }
+
+    type Iter<'t> = <&'t [T] as IntoIterator>::IntoIter
+        where T: 't;
+    fn iter(&self) -> Self::Iter<'_> { self[..].iter() }
 }

@@ -595,9 +595,8 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 });
 
                 let discrim_field_variadic = discrim_field.as_ref().map(|expr| quote!(&#expr));
-                let discrim_field_option = discrim_field.as_ref().map_or_else(
-                    || quote!(None),
-                    |expr| {
+                let discrim_value_option = match &discrim_field {
+                    Some(expr) => {
                         quote!(Some({
                             let __iter = #crate_name::comp::discrim::Set::iter(&#expr);
                             let __iter = ::std::iter::Iterator::map(__iter, |d| {
@@ -606,11 +605,12 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                             });
                             ::std::iter::Iterator::collect::<::std::vec::Vec<_>>(__iter)
                         }))
-                    },
-                );
+                    }
+                    None => quote!(None),
+                };
 
                 isotope_requests.push(quote! {
-                    #crate_name::system::spec::IsotopeRequest::new::<#arch, #comp>(#discrim_field_option, #mutable)
+                    #crate_name::system::spec::IsotopeRequest::new::<#arch, #comp>(#discrim_value_option, #mutable)
                         #(.maybe_uninit::<#maybe_uninit>())*
                 });
 

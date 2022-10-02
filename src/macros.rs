@@ -452,7 +452,8 @@ mod system_tests {
 /// Since maps are generic over `T`,
 /// the passed type actually can depend on the type parameter `T`,
 /// e.g. `#[dynec(map = discrim::ArrayMap<T, 16>)]`.
-/// Inputs without trailing type parameters are appended with `<T>` automatically.
+/// Inputs without trailing type parameters are appended with `<Self, T>` automatically,
+/// where `Self` is the derived type.
 ///
 /// Enums do not require customization because they always use
 /// [`ArrayMap`](crate::comp::discrim::ArrayMap).

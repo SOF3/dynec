@@ -67,7 +67,7 @@ pub trait WriteSimple<A: Archetype, C: comp::Simple<A>>: ReadSimple<A, C> {
 ///
 /// `K` is the type used to index the discriminant.
 /// For partial
-pub trait ReadIsotope<A: Archetype, C: comp::Isotope<A>, K = C::Discrim> {
+pub trait ReadIsotope<A: Archetype, C: comp::Isotope<A>, K = <C as comp::Isotope<A>>::Discrim> {
     /// Return value of [`try_get`](Self::try_get) and [`get`](Self::get).
     type Get<'t>: ops::Deref<Target = C> + 't
     where
@@ -78,7 +78,17 @@ pub trait ReadIsotope<A: Archetype, C: comp::Isotope<A>, K = C::Discrim> {
     /// which returns the auto-initialized value for missing components.
     fn get<E: entity::Ref<Archetype = A>>(&self, entity: E, discrim: K) -> Self::Get<'_>
     where
-        C: comp::Must<A>;
+        C: comp::Must<A>,
+    {
+        match self.try_get(entity, discrim) {
+            Some(value) => value,
+            None => panic!(
+                "{}: comp::Must<{}> but has no default initializer",
+                any::type_name::<C>(),
+                any::type_name::<A>()
+            ),
+        }
+    }
 
     /// Returns an immutable reference to the component for the specified entity and discriminant,
     /// or the default value for isotopes with a default initializer or `None`
@@ -105,7 +115,9 @@ pub trait ReadIsotope<A: Archetype, C: comp::Isotope<A>, K = C::Discrim> {
 }
 
 /// Provides access to an isotope component in a specific archetype.
-pub trait WriteIsotope<A: Archetype, C: comp::Isotope<A>>: ReadIsotope<A, C> {
+pub trait WriteIsotope<A: Archetype, C: comp::Isotope<A>, K = <C as comp::Isotope<A>>::Discrim>:
+    ReadIsotope<A, C, K>
+{
     /// Returns a mutable reference to the component for the specified entity and discriminant,
     /// automatically initialized with the default initializer if present,
     /// or `None` if the component is unset and has no default initializer.
@@ -116,14 +128,14 @@ pub trait WriteIsotope<A: Archetype, C: comp::Isotope<A>>: ReadIsotope<A, C> {
     fn try_get_mut<E: entity::Ref<Archetype = A>>(
         &mut self,
         entity: E,
-        discrim: C::Discrim,
+        discrim: K,
     ) -> Option<&mut C>;
 
     /// Returns a mutable reference to the component for the specified entity and discriminant.
     ///
     /// This method is infallible, assuming [`comp::Must`] is only implemented
     /// for components with [`Default`](comp::IsotopeInitStrategy::Default) init strategy.
-    fn get_mut<E: entity::Ref<Archetype = A>>(&mut self, entity: E, discrim: C::Discrim) -> &mut C
+    fn get_mut<E: entity::Ref<Archetype = A>>(&mut self, entity: E, discrim: K) -> &mut C
     where
         C: comp::Must<A>,
     {
@@ -145,7 +157,7 @@ pub trait WriteIsotope<A: Archetype, C: comp::Isotope<A>>: ReadIsotope<A, C> {
     fn set<E: entity::Ref<Archetype = A>>(
         &mut self,
         entity: E,
-        discrim: C::Discrim,
+        discrim: K,
         value: Option<C>,
     ) -> Option<C>;
 

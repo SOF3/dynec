@@ -36,7 +36,7 @@ pub(crate) fn derive(input: TokenStream) -> Result<TokenStream> {
             ty.path.segments.last_mut().expect("Type must have at least one segment");
         if last_segment.arguments.is_empty() {
             last_segment.arguments = syn::PathArguments::AngleBracketed(
-                syn::parse2(quote!(<T>)).expect("<T> is an ABGA"),
+                syn::parse2(quote!(<Self, T>)).expect("<Self, T> is an ABGA"),
             );
         }
     }
@@ -65,7 +65,7 @@ pub(crate) fn derive(input: TokenStream) -> Result<TokenStream> {
             };
 
             quote! {
-                type FullMap<T> = #map;
+                type FullSet<T> = #map;
 
                 fn from_usize(usize: usize) -> Self {
                     use #crate_name::_reexports::xias::Xias;
@@ -99,7 +99,7 @@ pub(crate) fn derive(input: TokenStream) -> Result<TokenStream> {
             }
 
             quote! {
-                type FullMap<T> = discrim::ArrayMap<T, #num_variants>;
+                type FullSet<T> = discrim::ArrayMap<T, #num_variants>;
 
                 fn from_usize(usize: usize) -> Self {
                     match usize {

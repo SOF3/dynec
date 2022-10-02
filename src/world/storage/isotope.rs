@@ -8,9 +8,12 @@ use super::Storage;
 use crate::entity::referrer;
 use crate::{comp, Archetype};
 
+pub(crate) type MapInner<A, C> =
+    HashMap<<C as comp::Isotope<A>>::Discrim, Arc<RwLock<<C as comp::Isotope<A>>::Storage>>>;
+
 /// Isotope storages of the same type but different discriminants.
 pub(crate) struct Map<A: Archetype, C: comp::Isotope<A>> {
-    pub(crate) map: RwLock<HashMap<C::Discrim, Arc<RwLock<C::Storage>>>>,
+    pub(crate) map: RwLock<MapInner<A, C>>,
 }
 
 impl<A: Archetype, C: comp::Isotope<A>> Map<A, C> {
@@ -43,8 +46,11 @@ impl<A: Archetype, C: comp::Isotope<A>> AnyMap<A> for Map<A, C> {
         entity: A::RawEntity,
         value: Box<dyn Any + Send + Sync>,
     ) {
-        let storage: &mut Arc<RwLock<C::Storage>> =
-            self.map.get_mut().entry(discrim).or_insert_with(Arc::<RwLock<C::Storage>>::default);
+        let storage: &mut Arc<RwLock<C::Storage>> = self
+            .map
+            .get_mut()
+            .entry(<C::Discrim as comp::Discrim>::from_usize(discrim))
+            .or_insert_with(Arc::<RwLock<C::Storage>>::default);
         let storage = Arc::get_mut(storage).expect("storage arc was leaked");
         let value = value.downcast::<C>().expect("TypeId mismatch");
         storage.get_mut().set(entity, Some(*value));
@@ -55,7 +61,7 @@ impl<A: Archetype, C: comp::Isotope<A>> AnyMap<A> for Map<A, C> {
             self.map
                 .get_mut()
                 .iter_mut()
-                .flat_map(|(_, value): (&usize, &mut Arc<RwLock<C::Storage>>)| {
+                .flat_map(|(_, value): (_, &mut Arc<RwLock<C::Storage>>)| {
                     Arc::get_mut(value).expect("storage arc was leaked").get_mut().iter_chunks_mut()
                 })
                 .flat_map(|chunk| chunk.slice),

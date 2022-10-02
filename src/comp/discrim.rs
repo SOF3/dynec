@@ -1,332 +1,175 @@
 //! Discriminants distinguish different isotopes of the same component type.
 
-use core::fmt;
-use std::any;
+use std::fmt;
 use std::hash::Hash;
-use std::iter::FromIterator;
 
 /// A discriminant value that distinguishes different isotopes of the same component type.
 ///
-/// For compact storage, the discriminant should have a one-to-one mapping to the `usize` type.
-/// The `usize` needs not be a small number; it can be any valid `usize`
-/// as long as it is one-to-one and consistent.
+/// A discriminant should have a one-to-one mapping to `usize`,
+/// which is used to represent the discriminant in type-erased code (such as scheduling).
+/// Furthermore, if [`FullSet`](Self::FullSet) is
+/// [`LinearVecMap`], [`SortedVecMap`] or [`BoundedVecMap`],
+/// this `usize` is used for indexing storages during all-isotopes read/write access.
+/// The range of mapped `usize`s should be bounded to a small number if [`BoundedVecMap`] is used.
 pub trait Discrim: fmt::Debug + Copy + PartialEq + Eq + Hash + Send + Sync + 'static {
-    /// The optimized storage for indexing data of type `T` by discriminant.
-    type FullMap<T>: FullMap<T>;
+    /// The data structure to index objects by all known discriminants.
+    ///
+    /// This is only used when storages of all isotopes are read/written in the same accessor
+    /// (through [`Components::read_full_isotope_storage`][read_full_isotope_storage],
+    /// or `system::ReadIsotope` without `#[dynec(isotope(discrim = xxx))]`).
+    ///
+    /// [read_full_isotope_storage]: dynec::world::Components::read_full_isotope_storage
+    type FullSet<S>: Mapped<Discrim = Self, Key = Self, Value = S>
+        + FromIterator<(Self, S)>
+        + Extend<(Self, S)>;
+
+    // TODO: can we remove usize conversion?
+    // Currently it is used in scheduler for type-agnostic collision checking.
 
     /// Constructs a discriminant from the usize.
+    ///
+    /// The returned value must be consistent and inverse of [`into_usize`](Self::into_usize).
     ///
     /// Can panic if the usize is not supported.
     fn from_usize(usize: usize) -> Self;
 
     /// Converts the discriminant to a usize.
+    ///
+    /// The returned value must be consistent and inverse of [`from_usize`](Self::from_usize).
+    /// `discrim1 == discrim2` if and only if `discrim1.into_usize() == discrim2.into_usize()`.
     fn into_usize(self) -> usize;
 }
 
-impl Discrim for usize {
-    /// The default implementation uses linear search,
-    /// which has reasonably small worst-case scenario for normal use.
-    type FullMap<T> = LinearVecMap<T>;
-
-    fn from_usize(usize: usize) -> Self { usize }
-
-    fn into_usize(self) -> usize { self }
-}
-
-/// A map-like collection with discriminants as keys,
-/// used to index storages when all discriminants are selected.
-pub trait FullMap<T>: FromIterator<(usize, T)> + Extend<(usize, T)> {
-    /// Returns an immutable reference to the value indexed by the discriminant.
-    fn find(&self, discrim: usize) -> Option<&T>;
-
-    /// Returns a mutable reference to the value indexed by the discriminant.
-    fn find_mut(&mut self, discrim: usize) -> Option<&mut T>;
-
-    /// Inserts an entry if it is missing. Returns a mutable reference to the entry.
-    fn get_or_insert<F: FnOnce() -> T>(&mut self, discrim: usize, factory: F) -> &mut T;
-
+/// A set of discriminants, used for specifying partial access in
+/// [`#[system]`](macro@crate::system).
+pub trait Set<D: Discrim> {
     /// Return value of [`iter`](Self::iter).
-    type Iter<'t>: Iterator<Item = (usize, &'t T)>
+    type Iter<'t>: Iterator<Item = D>
     where
-        Self: 't,
-        T: 't;
-    /// Returns an iterator over the map.
-    ///
-    /// The iterator yields all items along with their discriminant values.
-    /// The iteration order is undefined.
+        Self: 't;
+    /// Iterates over the discriminants in this set.
     fn iter(&self) -> Self::Iter<'_>;
 
-    /// Return value of [`iter_mut`](Self::iter_mut).
-    type IterMut<'t>: Iterator<Item = (usize, &'t mut T)>
+    /// The key used in mapping types.
+    type Key;
+    /// Return value of [`map`](Self::iter).
+    type Mapped<U>: Mapped<Discrim = D, Key = Self::Key, Value = U>;
+    /// Transforms each discriminant to another value.
+    fn map<U, F: FnMut(D) -> U>(&self, func: F) -> Self::Mapped<U>;
+}
+
+impl<D: Discrim, const N: usize> Set<D> for [D; N] {
+    type Iter<'t> = impl Iterator<Item = D> where Self: 't;
+    fn iter(&self) -> Self::Iter<'_> { (*self).into_iter() }
+
+    type Key = usize;
+    type Mapped<U> = [(D, U); N];
+    fn map<U, F: FnMut(D) -> U>(&self, mut func: F) -> Self::Mapped<U> {
+        <[D; N]>::map(*self, |discrim| (discrim, func(discrim)))
+    }
+}
+
+impl<D: Discrim> Set<D> for Vec<D> {
+    type Iter<'t> = impl Iterator<Item = D> where Self: 't;
+    fn iter(&self) -> Self::Iter<'_> { self[..].iter().copied() }
+
+    type Key = usize;
+    type Mapped<U> = Vec<(D, U)>;
+    fn map<U, F: FnMut(D) -> U>(&self, mut func: F) -> Self::Mapped<U> {
+        self[..].iter().map(|&discrim| (discrim, func(discrim))).collect()
+    }
+}
+
+/// A data structure derived from a [discriminant set](Set)
+/// that can efficiently access an item using [`Key`](Self::Key),
+/// which is based on the shape of the set.
+///
+/// This type is also used for the collection of isotope storages
+/// when all discriminants are selected.
+pub trait Mapped {
+    /// The discriminant type.
+    type Discrim: Discrim;
+    /// The type used for indexing data.
+    type Key: fmt::Debug;
+    type Value;
+
+    /// Gets a shared reference to an element.
+    fn get_by(&self, key: &Self::Key) -> Option<&Self::Value>;
+
+    /// Executes functions with mutable reference to an entry.
+    fn get_mut_by(&mut self, key: &Self::Key) -> Option<&mut Self::Value>;
+
+    /// return value of [`iter`](Self::iter).
+    type Iter<'t>: Iterator<Item = (Self::Discrim, &'t Self::Value)> + 't
     where
-        Self: 't,
-        T: 't;
-    /// Returns an iterator over the map.
-    ///
-    /// The iterator yields all items along with their discriminant values.
-    /// The iteration order is undefined.
+        Self: 't;
+    /// Iterates over the values in this set with the discriminant.
+    fn iter(&self) -> Self::Iter<'_>;
+
+    /// return value of [`iter`](Self::iter).
+    type IterMut<'t>: Iterator<Item = (Self::Discrim, &'t mut Self::Value)> + 't
+    where
+        Self: 't;
+    /// Iterates over the values in this set with the discriminant.
     fn iter_mut(&mut self) -> Self::IterMut<'_>;
 }
 
-/// Implements [`Map`] with O(n) search complexity, where `n` is the number of storages.
-/// Useful for discriminants with a small number of possible values
-/// but have an unbounded range, e.g. arbitrarily large IDs.
-pub struct LinearVecMap<T> {
-    vec: Vec<(usize, T)>,
-}
-
-impl<T> FromIterator<(usize, T)> for LinearVecMap<T> {
-    fn from_iter<I: IntoIterator<Item = (usize, T)>>(iter: I) -> Self {
-        Self { vec: Vec::from_iter(iter) }
-    }
-}
-
-impl<T> Extend<(usize, T)> for LinearVecMap<T> {
-    fn extend<I: IntoIterator<Item = (usize, T)>>(&mut self, iter: I) { self.vec.extend(iter); }
-}
-
-impl<T> FullMap<T> for LinearVecMap<T> {
-    fn find(&self, needle: usize) -> Option<&T> {
-        self.vec.iter().find(|&&(discrim, _)| discrim == needle).map(|(_, item)| item)
-    }
-    fn find_mut(&mut self, needle: usize) -> Option<&mut T> {
-        self.vec.iter_mut().find(|&&mut (discrim, _)| discrim == needle).map(|(_, item)| item)
-    }
-
-    fn get_or_insert<F: FnOnce() -> T>(&mut self, needle: usize, factory: F) -> &mut T {
-        if let Some(position) = self.vec.iter().position(|&(discrim, _)| discrim == needle) {
-            let (_, value) =
-                self.vec.get_mut(position).expect("position returned by .iter().position()");
-            return value;
-        }
-
-        self.vec.push((needle, factory()));
-        let (_, item) = self.vec.last_mut().expect("vec is nonempty after push");
-        item
-    }
-
-    type Iter<'t> = impl Iterator<Item = (usize, &'t T)> where Self: 't, T: 't;
-    fn iter(&self) -> Self::Iter<'_> { self.vec.iter().map(|(discrim, value)| (*discrim, value)) }
-
-    type IterMut<'t> = impl Iterator<Item = (usize, &'t mut T)> where Self: 't, T: 't;
-    fn iter_mut(&mut self) -> Self::IterMut<'_> {
-        self.vec.iter_mut().map(|(discrim, value)| (*discrim, value))
-    }
-}
-
-/// Implements [`Map`] with O(1) search complexity and O(m) memory,
-/// where `m` is the greatest discriminant value.
-/// Useful for discriminants that are known to be IDs counting from 0
-/// and hence have a reasonably bounded small value.
-pub struct BoundedVecMap<T> {
-    vec: Vec<Option<T>>,
-}
-
-impl<T> FromIterator<(usize, T)> for BoundedVecMap<T> {
-    fn from_iter<I: IntoIterator<Item = (usize, T)>>(iter: I) -> Self {
-        let iter = iter.into_iter();
-        let mut this = Self { vec: (0..iter.size_hint().0).map(|_| None).collect() };
-        this.extend(iter);
-        this
-    }
-}
-
-impl<T> Extend<(usize, T)> for BoundedVecMap<T> {
-    fn extend<I: IntoIterator<Item = (usize, T)>>(&mut self, iter: I) {
-        for (discrim, value) in iter {
-            if self.vec.len() <= discrim {
-                self.vec.resize_with(discrim + 1, || None);
-            }
-            let entry = self.vec.get_mut(discrim).expect("just reserved");
-            *entry = Some(value);
-        }
-    }
-}
-
-impl<T> FullMap<T> for BoundedVecMap<T> {
-    fn find(&self, discrim: usize) -> Option<&T> { self.vec.get(discrim).and_then(Option::as_ref) }
-
-    fn find_mut(&mut self, discrim: usize) -> Option<&mut T> {
-        self.vec.get_mut(discrim).and_then(Option::as_mut)
-    }
-
-    fn get_or_insert<F: FnOnce() -> T>(&mut self, discrim: usize, factory: F) -> &mut T {
-        if self.vec.len() <= discrim {
-            self.vec.resize_with(discrim + 1, || None);
-        }
-        let entry = self.vec.get_mut(discrim).expect("just reserved");
-        entry.get_or_insert_with(factory)
-    }
-
-    type Iter<'t> = impl Iterator<Item = (usize, &'t T)> where Self: 't, T: 't;
-    fn iter(&self) -> Self::Iter<'_> {
-        self.vec.iter().enumerate().filter_map(|(discrim, value)| Some((discrim, value.as_ref()?)))
-    }
-
-    type IterMut<'t> = impl Iterator<Item = (usize, &'t mut T)> where Self: 't, T: 't;
-    fn iter_mut(&mut self) -> Self::IterMut<'_> {
-        self.vec
-            .iter_mut()
-            .enumerate()
-            .filter_map(|(discrim, value)| Some((discrim, value.as_mut()?)))
-    }
-}
-
-/// A wrapper for [`usize`] that implements [`Discrim`] with [`BoundedVecMap`] instead.
-#[repr(transparent)]
-#[derive(
-    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default, dynec_codegen::Discrim,
-)]
-#[dynec(dynec_as(crate), map = BoundedVecMap)]
-pub struct BoundedUsize(
-    /// The underlying value
-    pub usize,
-);
-
-/// Implements [`Map`] with O(1) search complexity and O(N) memory,
-/// where `N` is a number known at compile time.
-/// Useful for discriminants that are have a statically bounded small value,
-/// e.g. if they are derived from an enum.
-pub struct ArrayMap<T, const N: usize> {
-    array: [Option<T>; N],
-}
-
-impl<T, const N: usize> FromIterator<(usize, T)> for ArrayMap<T, N> {
-    fn from_iter<I: IntoIterator<Item = (usize, T)>>(iter: I) -> Self {
-        let mut this = Self { array: [(); N].map(|()| None) };
-        this.extend(iter);
-        this
-    }
-}
-
-impl<T, const N: usize> Extend<(usize, T)> for ArrayMap<T, N> {
-    fn extend<I: IntoIterator<Item = (usize, T)>>(&mut self, iter: I) {
-        for (discrim, value) in iter {
-            let entry = match self.array.get_mut(discrim) {
-                Some(entry) => entry,
-                None => panic!(
-                    "{} is too small to contain all possible discriminants",
-                    any::type_name::<Self>()
-                ),
-            };
-            *entry = Some(value);
-        }
-    }
-}
-
-impl<T, const N: usize> FullMap<T> for ArrayMap<T, N> {
-    fn find(&self, discrim: usize) -> Option<&T> {
-        self.array.get(discrim).and_then(Option::as_ref)
-    }
-
-    fn find_mut(&mut self, discrim: usize) -> Option<&mut T> {
-        self.array.get_mut(discrim).and_then(Option::as_mut)
-    }
-
-    fn get_or_insert<F: FnOnce() -> T>(&mut self, discrim: usize, factory: F) -> &mut T {
-        let entry = match self.array.get_mut(discrim) {
-            Some(entry) => entry,
-            None => panic!(
-                "{} is too small to contain all possible discriminants",
-                any::type_name::<Self>()
-            ),
-        };
-        entry.get_or_insert_with(factory)
-    }
-
-    type Iter<'t> = impl Iterator<Item = (usize, &'t T)> where Self: 't, T: 't;
-    fn iter(&self) -> Self::Iter<'_> {
-        self.array
-            .iter()
-            .enumerate()
-            .filter_map(|(discrim, value)| Some((discrim, value.as_ref()?)))
-    }
-
-    type IterMut<'t> = impl Iterator<Item = (usize, &'t mut T)> where Self: 't, T: 't;
-    fn iter_mut(&mut self) -> Self::IterMut<'_> {
-        self.array
-            .iter_mut()
-            .enumerate()
-            .filter_map(|(discrim, value)| Some((discrim, value.as_mut()?)))
-    }
-}
-
-/// An ordered collection of distinct discriminants.
-pub trait Set {
-    type Key;
-    type Value;
-
-    /// Return value of [`Set::map`].
-    type Map<U>: Set<Value = U>;
-
-    /// Transforms each element in this set stored,
-    /// stored in a collection with a similar structure.
-    fn map<U, F>(&self, f: F) -> Self::Map<U>
-    where
-        Self::Value: Copy,
-        F: FnMut(Self::Value) -> U;
-
-    /// Gets a value from the set by index.
-    /// Panics if the key is invalid.
-    fn get_by(&self, key: Self::Key) -> &Self::Value;
-
-    /// Gets a value mutably from the set by index.
-    /// Panics if the key is invalid.
-    fn get_by_mut(&mut self, key: Self::Key) -> &mut Self::Value;
-
-    type Iter<'t>: Iterator<Item = &'t Self::Value> + 't
-    where
-        Self: 't,
-        Self::Value: 't;
-    fn iter(&self) -> Self::Iter<'_>;
-}
-
-impl<T, const N: usize> Set for [T; N] {
+impl<D: Discrim, V, const N: usize> Mapped for [(D, V); N] {
+    type Discrim = D;
     type Key = usize;
-    type Value = T;
+    type Value = V;
 
-    type Map<U> = [U; N];
-
-    fn map<U, F>(&self, f: F) -> [U; N]
-    where
-        T: Copy,
-        F: FnMut(T) -> U,
-    {
-        <[T; N]>::map(*self, f)
+    fn get_by(&self, &key: &usize) -> Option<&V> {
+        let (_, value) = self.get(key)?;
+        Some(value)
     }
 
-    fn get_by(&self, key: Self::Key) -> &T { self.get(key).expect("key out of bounds") }
-
-    fn get_by_mut(&mut self, key: Self::Key) -> &mut T {
-        self.get_mut(key).expect("key out of bounds")
+    fn get_mut_by(&mut self, &key: &usize) -> Option<&mut V> {
+        let (_, value) = self.get_mut(key)?;
+        Some(value)
     }
 
-    type Iter<'t> = <&'t [T] as IntoIterator>::IntoIter
-        where T: 't;
-    fn iter(&self) -> Self::Iter<'_> { self[..].iter() }
+    type Iter<'t> = impl Iterator<Item = (D, &'t V)> + 't where Self: 't;
+    fn iter(&self) -> Self::Iter<'_> { self[..].iter().map(|(discrim, value)| (*discrim, value)) }
+
+    type IterMut<'t> = impl Iterator<Item = (D, &'t mut V)> + 't where Self: 't;
+    fn iter_mut(&mut self) -> Self::IterMut<'_> {
+        self[..].iter_mut().map(|(discrim, value)| (*discrim, value))
+    }
 }
 
-impl<T> Set for Vec<T> {
+impl<D: Discrim, V> Mapped for Vec<(D, V)> {
+    type Discrim = D;
     type Key = usize;
-    type Value = T;
+    type Value = V;
 
-    type Map<U> = Vec<U>;
-
-    fn map<U, F>(&self, f: F) -> Vec<U>
-    where
-        T: Copy,
-        F: FnMut(T) -> U,
-    {
-        self.iter().copied().map(f).collect()
+    fn get_by(&self, &key: &usize) -> Option<&V> {
+        let (_, value) = self.get(key)?;
+        Some(value)
     }
 
-    fn get_by(&self, key: Self::Key) -> &T { self.get(key).expect("key out of bounds") }
-
-    fn get_by_mut(&mut self, key: Self::Key) -> &mut T {
-        self.get_mut(key).expect("key out of bounds")
+    fn get_mut_by(&mut self, &key: &usize) -> Option<&mut V> {
+        let (_, value) = self.get_mut(key)?;
+        Some(value)
     }
 
-    type Iter<'t> = <&'t [T] as IntoIterator>::IntoIter
-        where T: 't;
-    fn iter(&self) -> Self::Iter<'_> { self[..].iter() }
+    type Iter<'t> = impl Iterator<Item = (D, &'t V)> + 't where Self: 't;
+    fn iter(&self) -> Self::Iter<'_> { self[..].iter().map(|(discrim, value)| (*discrim, value)) }
+
+    type IterMut<'t> = impl Iterator<Item = (D, &'t mut V)> + 't where Self: 't;
+    fn iter_mut(&mut self) -> Self::IterMut<'_> {
+        self[..].iter_mut().map(|(discrim, value)| (*discrim, value))
+    }
+}
+
+pub struct LinearVecMap<D: Discrim, T> {
+    vec: Vec<(D, T)>,
+}
+
+pub struct SortedVecMap<D: Discrim, T> {
+    vec: Vec<(D, T)>,
+}
+
+pub struct BoundedVecMap<D: Discrim, T> {
+    vec: Vec<T>,
 }

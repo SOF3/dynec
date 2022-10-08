@@ -1,3 +1,5 @@
+use std::result::Result as StdResult;
+
 use matches2::option_match;
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
@@ -127,7 +129,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 arch:         Box<syn::Type>,
                 comp:         Box<syn::Type>,
                 discrim:      Option<Box<syn::Expr>>,
-                discrim_key:  Option<Box<syn::Type>>,
+                discrim_key:  StdResult<Box<syn::Type>, Span>,
                 maybe_uninit: Vec<syn::Type>,
             },
             EntityCreator {
@@ -218,7 +220,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
 
                 let &arch = args.get(0).expect("args.len() >= 2");
                 let &comp = args.get(1).expect("args.len() >= 2");
-                let discrim_key = args.get(2).map(|&ty| Box::new(ty.clone()));
+                let discrim_key = args.get(2).map(|&ty| Box::new(ty.clone())).ok_or(args_span);
 
                 Ok(ArgType::Isotope {
                     mutable: mutable || ident == "WriteIsotope",
@@ -367,9 +369,11 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                         let discrim = opts.find_one(
                             |opt| option_match!(opt, IsotopeArgOpt::Discrim(_, discrim) => discrim),
                         )?;
-                        let discrim_key = opts.find_one(
-                            |opt| option_match!(opt, IsotopeArgOpt::DiscrimKey(_, ty) => ty),
-                        )?;
+                        let discrim_key = opts
+                            .find_one(
+                                |opt| option_match!(opt, IsotopeArgOpt::DiscrimKey(_, ty) => ty),
+                            )?
+                            .ok_or_else(|| param.span());
                         let maybe_uninit = opts.merge_all(|opt| option_match!(opt, IsotopeArgOpt::MaybeUninit(_, tys) => tys.iter().cloned()));
 
                         match (arch, comp, mutable) {
@@ -618,10 +622,10 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             ArgType::Isotope { mutable, arch, comp, discrim, discrim_key, maybe_uninit } => {
                 let discrim_field = if let Some(discrim) = discrim {
                     let discrim_key = match discrim_key {
-                        Some(ty) => ty,
-                        None => {
-                            return Err(Error::new_spanned(
-                                &param.pat,
+                        Ok(ty) => ty,
+                        Err(span) => {
+                            return Err(Error::new(
+                                span,
                                 "Type parameter `K` must be specified for \
                                  `ReadIsotope`/`WriteIsotope` if partial isotope access is used",
                             ))

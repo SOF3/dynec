@@ -99,7 +99,7 @@ pub(crate) fn derive(input: TokenStream) -> Result<TokenStream> {
             }
 
             quote! {
-                type FullMap<T> = discrim::ArrayMap<T, #num_variants>;
+                type FullMap<T> = discrim::ArrayMap<Self, T, #num_variants>;
 
                 fn from_usize(usize: usize) -> Self {
                     match usize {

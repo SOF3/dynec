@@ -374,7 +374,8 @@ fn test_partial_isotope_discrim_write() {
 }
 
 #[test]
-#[should_panic = "Cannot access isotope 13 because it is not in the list of requested discriminants"]
+#[should_panic = "Cannot access isotope indexed by 42 because it is not in the list of requested \
+                  discriminants"]
 fn test_partial_isotope_discrim_write_panic() {
     partial_isotope_discrim_write(vec![TestDiscrim1(11)], vec![(42, None, None)], vec![]);
 }

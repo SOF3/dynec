@@ -95,6 +95,9 @@ pub trait Mapped {
     /// The value type stored in this data structure.
     type Value;
 
+    /// Gets the discriminant value associated with this key.
+    fn get_discrim(&self, key: &Self::Key) -> Option<Self::Discrim>;
+
     /// Gets a shared reference to an element.
     fn get_by(&self, key: &Self::Key) -> Option<&Self::Value>;
 
@@ -121,6 +124,8 @@ impl<D: Discrim, V, const N: usize> Mapped for [(D, V); N] {
     type Key = usize;
     type Value = V;
 
+    fn get_discrim(&self, &key: &usize) -> Option<Self::Discrim> { self.get(key).map(|&(d, _)| d) }
+
     fn get_by(&self, &key: &usize) -> Option<&V> {
         let (_, value) = self.get(key)?;
         Some(value)
@@ -146,6 +151,8 @@ impl<D: Discrim, V> Mapped for Vec<(D, V)> {
     type Discrim = D;
     type Key = usize;
     type Value = V;
+
+    fn get_discrim(&self, &key: &usize) -> Option<Self::Discrim> { self.get(key).map(|&(d, _)| d) }
 
     fn get_by(&self, &key: &usize) -> Option<&V> {
         let (_, value) = self.get(key)?;
@@ -186,6 +193,8 @@ impl<D: Discrim, T> Mapped for LinearVecMap<D, T> {
     type Discrim = D;
     type Key = D;
     type Value = T;
+
+    fn get_discrim(&self, &key: &D) -> Option<Self::Discrim> { Some(key) }
 
     fn get_by(&self, key: &D) -> Option<&T> {
         self.vec[..].iter().find(|(d, _)| d == key).map(|(_, s)| s)
@@ -242,6 +251,8 @@ impl<D: Discrim, T> Mapped for SortedVecMap<D, T> {
     type Discrim = D;
     type Key = D;
     type Value = T;
+
+    fn get_discrim(&self, &key: &D) -> Option<Self::Discrim> { Some(key) }
 
     fn get_by(&self, key: &D) -> Option<&T> {
         match self.vec[..].binary_search_by_key(&key.into_usize(), |(di, _)| di.into_usize()) {
@@ -309,6 +320,8 @@ impl<D: Discrim, T> Mapped for BoundedVecMap<D, T> {
     type Key = D;
     type Value = T;
 
+    fn get_discrim(&self, &key: &D) -> Option<Self::Discrim> { Some(key) }
+
     fn get_by(&self, key: &D) -> Option<&T> {
         self.vec.get(key.into_usize()).and_then(Option::as_ref)
     }
@@ -371,6 +384,8 @@ impl<D: Discrim, T, const N: usize> Mapped for ArrayMap<D, T, N> {
     type Discrim = D;
     type Key = D;
     type Value = T;
+
+    fn get_discrim(&self, &key: &D) -> Option<Self::Discrim> { Some(key) }
 
     fn get_by(&self, key: &D) -> Option<&T> {
         self.vec.get(key.into_usize()).and_then(Option::as_ref)

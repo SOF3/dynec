@@ -134,6 +134,8 @@ mod comp_tests {}
 ///
 /// # Example
 /// ```
+/// #![feature(generic_associated_types)]
+///
 /// dynec::archetype!(Foo);
 /// let empty = dynec::comps![Foo =>];
 /// assert_eq!(empty.len(), 0);
@@ -147,23 +149,26 @@ mod comp_tests {}
 /// #[dynec::comp(of = Foo)]
 /// struct Comp4 { value: i32 }
 ///
-/// #[dynec::comp(of = Foo, isotope = usize)]
+/// #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, dynec::Discrim)]
+/// struct MyDiscrim(usize);
+///
+/// #[dynec::comp(of = Foo, isotope = MyDiscrim)]
 /// struct Iso(&'static str);
 ///
-/// #[dynec::comp(of = Foo, isotope = usize)]
+/// #[dynec::comp(of = Foo, isotope = MyDiscrim)]
 /// struct Carbon { neutrons: i32 };
 ///
 /// let mut hashed = std::collections::HashMap::new();
-/// hashed.insert(10, Carbon { neutrons: 4 });
-/// hashed.insert(11, Carbon { neutrons: 5 });
-/// hashed.insert(12, Carbon { neutrons: 6 });
+/// hashed.insert(MyDiscrim(10), Carbon { neutrons: 4 });
+/// hashed.insert(MyDiscrim(11), Carbon { neutrons: 5 });
+/// hashed.insert(MyDiscrim(12), Carbon { neutrons: 6 });
 ///
 /// let map = dynec::comps![Foo =>
 ///     Comp1,
 ///     Comp2(2),
 ///     ?Some(Comp3{ value: 3 }),
 ///     ?None::<Comp4>,
-///     @(4, Iso("xxx")),
+///     @(MyDiscrim(4), Iso("xxx")),
 ///     @?hashed,
 /// ];
 /// assert_eq!(map.len(), 7);
@@ -431,7 +436,6 @@ mod global_tests {}
 /// ```
 /// #![feature(generic_associated_types)]
 ///
-/// use dynec::comp::discrim::BoundedUsize;
 /// use dynec::system;
 ///
 /// #[dynec::global(initial = Title("hello world"))]
@@ -450,7 +454,10 @@ mod global_tests {}
 /// #[dynec::comp(of = Player)]
 /// struct Direction(f32, f32);
 ///
-/// #[dynec::comp(of = Player, isotope = BoundedUsize, init = || SkillLevel(1))]
+/// #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, dynec::Discrim)]
+/// struct SkillType(usize);
+///
+/// #[dynec::comp(of = Player, isotope = SkillType, init = || SkillLevel(1))]
 /// struct SkillLevel(u8);
 ///
 /// #[system(
@@ -459,12 +466,16 @@ mod global_tests {}
 /// )]
 /// fn simulate(
 ///     #[dynec(local(initial = 0))] counter: &mut u16,
-///     #[dynec(param)] &skill_id: &BoundedUsize,
+///     #[dynec(param)] &skill_id: &SkillType,
 ///     #[dynec(global)] title: &mut Title,
 ///     x: impl system::WriteSimple<Player, PositionX>,
 ///     y: impl system::WriteSimple<Player, PositionY>,
 ///     dir: impl system::ReadSimple<Player, Direction>,
-///     #[dynec(isotope(discrim = [skill_id]))] skill: impl system::ReadIsotope<Player, SkillLevel>,
+///     #[dynec(isotope(discrim = [skill_id]))] skill: impl system::ReadIsotope<
+///         Player,
+///         SkillLevel,
+///         usize,
+///     >,
 /// ) {
 ///     *counter += 1;
 ///
@@ -473,10 +484,10 @@ mod global_tests {}
 ///     }
 /// }
 ///
-/// let system = simulate.build(BoundedUsize(3));
+/// let system = simulate.build(SkillType(3));
 /// assert_eq!(
 ///     system::Descriptor::get_spec(&system).debug_name.as_str(),
-///     "simulate[counter = 0, skill_id = BoundedUsize(3)]"
+///     "simulate[counter = 0, skill_id = SkillType(3)]"
 /// );
 ///
 /// {
@@ -486,7 +497,7 @@ mod global_tests {}
 ///     let mut title = Title("original");
 ///
 ///     let mut world = dynec::system_test! {
-///         simulate.build(BoundedUsize(2));
+///         simulate.build(SkillType(2));
 ///         _: Player = (
 ///             PositionX(0.0),
 ///             PositionY(0.0),
@@ -502,7 +513,7 @@ mod global_tests {}
 ///     /*
 ///     simulate::call(
 ///         &mut counter,
-///         &BoundedUsize(2),
+///         &SkillType(2),
 ///         &mut title,
 ///         todo!("component access logic"),
 ///         todo!("component access logic"),
@@ -565,7 +576,7 @@ mod system_tests {
 ///
 /// Since maps are generic over `T`,
 /// the passed type actually can depend on the type parameter `T`,
-/// e.g. `#[dynec(map = discrim::ArrayMap<T, 16>)]`.
+/// e.g. `#[dynec(map = discrim::ArrayMap<Self, T, 16>)]`.
 /// Inputs without trailing type parameters are appended with `<Self, T>` automatically,
 /// where `Self` is the derived type.
 ///
@@ -576,22 +587,22 @@ mod system_tests {
 /// ```
 /// #![feature(generic_associated_types)]
 ///
-/// #[derive(Clone, Copy, PartialEq, Eq, Hash, dynec::Discrim)]
+/// #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, dynec::Discrim)]
 /// struct Tuple(u16);
 ///
-/// #[derive(Clone, Copy, PartialEq, Eq, Hash, dynec::Discrim)]
+/// #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, dynec::Discrim)]
 /// #[dynec(map = discrim::SortedVecMap)]
 /// struct Named {
 ///     field: u32,
 /// }
 ///
-/// #[derive(Clone, Copy, PartialEq, Eq, Hash, dynec::Discrim)]
-/// #[dynec(map = discrim::ArrayMap<T, 16>)]
+/// #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, dynec::Discrim)]
+/// #[dynec(map = discrim::ArrayMap<Self, T, 16>)]
 /// struct UsesArray {
 ///     field: u8,
 /// }
 ///
-/// #[derive(Clone, Copy, PartialEq, Eq, Hash, dynec::Discrim)]
+/// #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, dynec::Discrim)]
 /// enum Enum {
 ///     Foo,
 ///     Bar,
@@ -642,7 +653,7 @@ pub use dynec_codegen::Discrim;
 /// # dynec::archetype!(Foo);
 /// #
 /// #[derive(dynec::EntityRef)]
-/// struct Bar<T> {
+/// struct Bar<T: 'static> {
 ///     #[not_entity]
 ///     value: T,
 /// }

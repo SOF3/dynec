@@ -297,11 +297,14 @@ impl Components {
             C: comp::Isotope<A>,
             M: discrim::Mapped<Discrim = C::Discrim, Key = C::Discrim>,
         {
-            fn get_storage(
+            fn get_storage<'u>(
                 &mut self,
                 discrim: C::Discrim,
-                storages: &mut M,
-            ) -> Option<&mut C::Storage> {
+                storages: &'u mut M,
+            ) -> &'u mut C::Storage
+            where
+                LockedIsotopeStorage<A, C>: 'u,
+            {
                 todo!()
             }
         }
@@ -363,10 +366,20 @@ impl Components {
         where
             A: Archetype,
             C: comp::Isotope<A>,
-            M: discrim::Mapped<Discrim = C::Discrim>,
+            S: ops::DerefMut<Target = C::Storage>,
+            M: discrim::Mapped<Discrim = C::Discrim, Value = S>,
         {
-            fn get_storage(&mut self, key: M::Key, storages: &mut M) -> Option<&mut C::Storage> {
-                todo!()
+            fn get_storage<'t>(&mut self, key: M::Key, storages: &'t mut M) -> &'t mut C::Storage
+            where
+                S: 't,
+            {
+                match storages.get_mut_by(&key).map(|s| &mut **s) {
+                    Some(storage) => storage,
+                    None => panic!(
+                        "Cannot access isotope indexed by {key:?} because it is not in the list \
+                         of requested discriminants",
+                    ),
+                }
             }
         }
 
@@ -504,9 +517,12 @@ trait MutStorageAccessor<A, C, S, M>
 where
     A: Archetype,
     C: comp::Isotope<A>,
+    S: ops::Deref<Target = C::Storage>,
     M: discrim::Mapped<Discrim = C::Discrim>,
 {
-    fn get_storage(&mut self, key: M::Key, storages: &mut M) -> Option<&mut C::Storage>;
+    fn get_storage<'t>(&mut self, key: M::Key, storages: &'t mut M) -> &'t mut C::Storage
+    where
+        S: 't;
 }
 
 impl<A, C, S, M, P> system::WriteIsotope<A, C, M::Key> for IsotopeAccessor<A, C, S, M, P>
@@ -522,7 +538,7 @@ where
         entity: E,
         key: M::Key,
     ) -> Option<&mut C> {
-        let storage = self.processor.get_storage(key, &mut self.storages)?;
+        let storage = self.processor.get_storage(key, &mut self.storages);
 
         // borrowck bug workaround, change to `if let Some(...) = storage.get_mut` in the future
         if storage.get(entity.id()).is_some() {
@@ -544,7 +560,7 @@ where
         key: M::Key,
         value: Option<C>,
     ) -> Option<C> {
-        let storage = self.processor.get_storage(key, &mut self.storages)?;
+        let storage = self.processor.get_storage(key, &mut self.storages);
         storage.set(entity.id(), value)
     }
 }

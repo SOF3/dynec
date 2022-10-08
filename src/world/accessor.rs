@@ -168,7 +168,7 @@ impl Components {
     ) -> impl system::ReadIsotope<A, C> + '_ {
         let storage_map = self.get_isotope_storage_map::<A, C>();
 
-        let storages: <C::Discrim as Discrim>::FullSet<_> = {
+        let storages: <C::Discrim as Discrim>::FullMap<_> = {
             // note: lock contention may occur here if another thread is requesting write access to
             // storages of other discriminants.
             let map = storage_map.map.read();
@@ -259,7 +259,7 @@ impl Components {
         let full_map: RwLockWriteGuard<'_, storage::IsotopeMapInner<A, C>> =
             storage_map.map.write();
 
-        let accessor_storages: <C::Discrim as Discrim>::FullSet<LockedIsotopeStorage<A, C>> =
+        let accessor_storages: <C::Discrim as Discrim>::FullMap<LockedIsotopeStorage<A, C>> =
             full_map
                 .iter()
                 .map(|(&discrim, storage)| {
@@ -450,7 +450,7 @@ where
         &self,
         index: A::RawEntity,
     ) -> impl Iterator<Item = (<C as comp::Isotope<A>>::Discrim, &C)> {
-        self.storages.iter().filter_map(move |(discrim, storage)| {
+        self.storages.iter_values().filter_map(move |(discrim, storage)| {
             let storage = P::admit(storage)?;
             let comp = storage.get(index)?;
             Some((discrim, comp))

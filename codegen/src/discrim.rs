@@ -26,8 +26,8 @@ pub(crate) fn derive(input: TokenStream) -> Result<TokenStream> {
     let mut map =
         args.find_one(|opt| option_match!(opt, ItemOpt::Map(_, map) => map))?.map_or_else(
             || {
-                syn::parse2::<Box<syn::Type>>(quote!(discrim::LinearVecMap))
-                    .expect("discrim::LinearVecMap is a Type::Path")
+                syn::parse2::<Box<syn::Type>>(quote!(discrim::BoundedVecMap))
+                    .expect("discrim::BoundedVecMap is a Type::Path")
             },
             |(_, map)| map.clone(),
         );
@@ -65,7 +65,7 @@ pub(crate) fn derive(input: TokenStream) -> Result<TokenStream> {
             };
 
             quote! {
-                type FullSet<T> = #map;
+                type FullMap<T> = #map;
 
                 fn from_usize(usize: usize) -> Self {
                     use #crate_name::_reexports::xias::Xias;
@@ -99,7 +99,7 @@ pub(crate) fn derive(input: TokenStream) -> Result<TokenStream> {
             }
 
             quote! {
-                type FullSet<T> = discrim::ArrayMap<T, #num_variants>;
+                type FullMap<T> = discrim::ArrayMap<T, #num_variants>;
 
                 fn from_usize(usize: usize) -> Self {
                     match usize {

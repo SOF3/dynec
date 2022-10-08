@@ -72,6 +72,7 @@ impl ParsedGenerics {
     ) -> proc_macro2::TokenStream {
         let Self { ident, decl, usage, where_ } = self;
         quote! {
+            #[automatically_derived]
             impl #decl #trait_ for #ident #usage #where_ {
                 #body
             }

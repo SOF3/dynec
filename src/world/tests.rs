@@ -78,7 +78,7 @@ struct InitialEntities {
     ent1: Option<Entity<TestArch>>,
 }
 
-#[system(dynec_as(crate), __debug_print)]
+#[system(dynec_as(crate))]
 fn test_system(
     _comp3: impl system::ReadSimple<TestArch, Comp3>,
     _comp4: impl system::WriteSimple<TestArch, Comp4>,
@@ -87,6 +87,7 @@ fn test_system(
     #[dynec(isotope(discrim = [TestDiscrim1(11), TestDiscrim1(17)]))] _iso1: impl system::ReadIsotope<
         TestArch,
         Iso1,
+        usize,
     >,
     #[dynec(global)] _aggregator: &mut Aggregator,
     #[dynec(global)] _initials: &InitialEntities,
@@ -232,28 +233,29 @@ fn test_full_isotope_discrim_read() {
 fn test_partial_isotope_discrim_read() {
     partial_isotope_discrim_read(
         vec![TestDiscrim1(11), TestDiscrim1(17)],
-        vec![(TestDiscrim1(11), Some(Iso1(3))), (TestDiscrim1(17), None)],
+        vec![(0, Some(Iso1(3))), (1, None)],
         vec![(TestDiscrim1(11), Iso1(3))],
     );
 }
 
 #[test]
-#[should_panic = "Cannot access isotope 13 because it is not in the list of requested discriminants"]
+#[should_panic = "The index 42 is not available in the isotope request for \
+                  dynec::test_util::TestArch/dynec::world::tests::Iso1"]
 fn test_partial_isotope_discrim_read_panic() {
-    partial_isotope_discrim_read(vec![TestDiscrim1(11)], vec![(TestDiscrim1(13), None)], vec![]);
+    partial_isotope_discrim_read(vec![TestDiscrim1(11)], vec![(42, None)], vec![]);
 }
 
 fn partial_isotope_discrim_read(
     req_discrims: Vec<TestDiscrim1>,
-    single_expects: Vec<(TestDiscrim1, Option<Iso1>)>,
+    single_expects: Vec<(usize, Option<Iso1>)>,
     expect_all: Vec<(TestDiscrim1, Iso1)>,
 ) {
     #[system(dynec_as(crate))]
     fn test_system(
         #[dynec(param)] _req_discrims: &Vec<TestDiscrim1>,
-        #[dynec(param)] single_expects: &Vec<(TestDiscrim1, Option<Iso1>)>,
+        #[dynec(param)] single_expects: &Vec<(usize, Option<Iso1>)>,
         #[dynec(param)] expect_all: &Vec<(TestDiscrim1, Iso1)>,
-        #[dynec(isotope(discrim = _req_discrims))] iso1: impl system::ReadIsotope<TestArch, Iso1>,
+        #[dynec(isotope(discrim = _req_discrims))] iso1: impl system::ReadIsotope<TestArch, Iso1, usize>,
         #[dynec(global)] initials: &InitialEntities,
     ) {
         let ent1 = initials.ent1.as_ref().expect("ent1 is None");
@@ -362,10 +364,10 @@ fn test_partial_isotope_discrim_write() {
     partial_isotope_discrim_write(
         vec![TestDiscrim1(7), TestDiscrim1(11), TestDiscrim1(17), TestDiscrim1(19)],
         vec![
-            (TestDiscrim1(7), Some(Iso1(2)), Some(None)),
-            (TestDiscrim1(11), Some(Iso1(3)), Some(Some(Iso1(23)))),
-            (TestDiscrim1(17), None, None),
-            (TestDiscrim1(19), None, Some(Some(Iso1(29)))),
+            (0, Some(Iso1(2)), Some(None)),
+            (1, Some(Iso1(3)), Some(Some(Iso1(23)))),
+            (2, None, None),
+            (3, None, Some(Some(Iso1(29)))),
         ],
         vec![(TestDiscrim1(11), Iso1(23)), (TestDiscrim1(19), Iso1(29))],
     );
@@ -374,14 +376,10 @@ fn test_partial_isotope_discrim_write() {
 #[test]
 #[should_panic = "Cannot access isotope 13 because it is not in the list of requested discriminants"]
 fn test_partial_isotope_discrim_write_panic() {
-    partial_isotope_discrim_write(
-        vec![TestDiscrim1(11)],
-        vec![(TestDiscrim1(13), None, None)],
-        vec![],
-    );
+    partial_isotope_discrim_write(vec![TestDiscrim1(11)], vec![(42, None, None)], vec![]);
 }
 
-type SingleExpectUpdate = (TestDiscrim1, Option<Iso1>, Option<Option<Iso1>>);
+type SingleExpectUpdate = (usize, Option<Iso1>, Option<Option<Iso1>>);
 
 fn partial_isotope_discrim_write(
     req_discrims: Vec<TestDiscrim1>,
@@ -393,7 +391,11 @@ fn partial_isotope_discrim_write(
         #[dynec(param)] _req_discrims: &Vec<TestDiscrim1>,
         #[dynec(param)] single_expect_updates: &mut Vec<SingleExpectUpdate>,
         #[dynec(param)] expect_all: &Vec<(TestDiscrim1, Iso1)>,
-        #[dynec(isotope(discrim = _req_discrims))] mut iso1: impl system::WriteIsotope<TestArch, Iso1>,
+        #[dynec(isotope(discrim = _req_discrims))] mut iso1: impl system::WriteIsotope<
+            TestArch,
+            Iso1,
+            usize,
+        >,
         #[dynec(global)] initials: &InitialEntities,
     ) {
         let ent1 = initials.ent1.as_ref().expect("ent1 is None");

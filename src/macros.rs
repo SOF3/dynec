@@ -90,7 +90,7 @@ mod archetype_tests {}
 /// assert!(<Qux as comp::Simple<Bar>>::IS_FINALIZER);
 ///
 /// #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, dynec::Discrim)]
-/// #[dynec(map = discrim::BoundedVecMap)]
+/// #[dynec(map = discrim::SortedVecMap)]
 /// struct Id(usize);
 ///
 /// #[comp(of = Foo, isotope = Id, init = Corge::make/0)]
@@ -251,6 +251,29 @@ mod global_tests {}
 ///
 /// Use global states instead if the local state needs to be accessed from multiple systems.
 ///
+/// Since entity references can be stored in local states,
+/// the struct used to store local states also implements
+/// [`entity::Referrer`](crate::entity::Referrer).
+/// The corresponding `entity` and `not_entity` attributes can be inside the `local()` instead.
+///
+/// Unlike global states, local states do not need to specify thread safety.
+/// Thread safety of local states is checked at compile time
+/// when the system is passed to the scheduler.
+///
+/// ### Syntax reference
+/// ```
+/// # /*
+/// #[dynec(local(
+///     // Required, the initial value of the local state.
+///     initial = $expr,
+///     // Optional, equivalent to #[entity] in #[derive(EntityRef)].
+///     entity,
+///     // Optional, equivalent to #[not_entity] in #[derive(EntityRef)].
+///     not_entity,
+/// ))]
+/// # */
+/// ```
+///
 /// ## Param states
 /// Parameters with the attribute `#[dynec(param)]` are "param states".
 /// The user has to pass initial values for param states in the `.build()` method.
@@ -261,6 +284,20 @@ mod global_tests {}
 /// (e.g. system canvas resources),
 /// or to schedule multiple systems declared from the same function
 /// (e.g. working on multiple discriminants of an isotope component).
+///
+/// Similar to local states, param states can also use `entity` and `not_entity`.
+///
+/// ### Syntax reference
+/// ```
+/// # /*
+/// #[dynec(param(
+///     // Optional, equivalent to #[entity] in #[derive(EntityRef)].
+///     entity,
+///     // Optional, equivalent to #[not_entity] in #[derive(EntityRef)].
+///     not_entity,
+/// ))]
+/// # */
+/// ```
 ///
 /// ## Global states
 /// Parameters with the attribute `#[dynec(global)]` are "global states".
@@ -273,46 +310,122 @@ mod global_tests {}
 /// As a result, systems that request thread-local global states
 /// will only be scheduled on the main thread.
 ///
+/// ### Syntax reference
+/// ```
+/// # /*
+/// #[dynec(global(
+///     // Optional, indicates that the global state is not thread-safe.
+///     // Forgetting to mark `thread_local` will result in compile error.
+///     thread_local,
+///     // Optional, acknowledges that the entities of the specified archetypes
+///     // contained in the global state may be uninitialized.
+///     maybe_uninit($ty, $ty, ...),
+/// ))]
+/// # */
+/// ```
+///
 /// ## Simple components
-/// Parameters with the attribute `#[dynec(simple(arch = Type1, comp = Type2))]`
-/// are "simple components".
-/// Alternatively, parameters that do not have a `#[dynec]` attribute
-/// but with a type `impl ReadSimple<Type1, Type2>`/`impl WriteSimple<Type1, Type2>`
-/// are also simple components
-/// (where `Simple` can be qualified by any path, e.g. `system::Simple`).
-/// This requests access to a [simple component](crate::comp::Simple) of type `Type2`
-/// from entities of the [archetype](crate::Archetype) `Type1`,
+/// Parameters in the form `impl ReadSimple<A, C>` or `impl WriteSimple<A, C>`,
+/// request access to a [simple component](crate::comp::Simple) of type `C`
+/// from entities of the [archetype](crate::Archetype) `A`,
 /// exposed through a type that implements [`system::ReadSimple`](crate::system::ReadSimple)
 /// or [`system::WriteSimple`](crate::system::WriteSimple).
+/// The latter provides mutable and exclusive access to the component storages.
 ///
-/// With the attribute, only read access is permitted by default.
-/// To allow write access, add `mut` to the `simple` option list with the first syntax.
-/// No information is inferred from the type if `#[dync(simple)]`
+/// ### Using other bounds
+/// Other trait bounds for the parameter are also allowed,
+/// but the macro would not be able to infer type parameters and mutability.
+/// In such cases, they must be indicated explicitly in the attribute.
+/// See the syntax reference below for details.
+///
+/// ### Uninitialized entity references.
+/// Entity creation ordering is automatically enforced if `C` contains entity references,
+/// Use the `maybe_uninit` attribute to remove this ordering.
+///
+/// See [`EntityCreationPartition`](crate::system::partition::EntityCreationPartition#component-accessors)
+/// for more information.
+///
+/// ### Syntax reference
+/// ```
+/// # /*
+/// #[dynec(simple(
+///     // Optional, specifies the archetype and component explicitly.
+///     // Only required when the parameter type is not `impl ReadSimple`/`impl WriteSimple`.
+///     arch = $ty, comp = $ty,
+///     // Optional, indicates that the component access is exclusive explicitly.
+///     // Only required when the parameter type is not `impl WriteSimple`.
+///     mut,
+///     // Optional, acknowledges that the entities of the specified archetypes
+///     // contained in the simple components may be uninitialized.
+///     maybe_uninit($ty, $ty, ...),
+/// ))]
+/// # */
+/// ```
 ///
 /// ## Isotope components
-/// Parameters with the attribute `#[dynec(isotope(arch = Type1, comp = Type2))]`
-/// are "isotope components".
-/// Alternatively, parameters that do not have a `#[dynec]` attribute
-/// but with a type `Isotope<Type1, &Type2>` are also isotope components.
-/// This requests access to an [isotope component](crate::comp::Isotope) of type `Type2`
-/// from entities of the [archetype](crate::Archetype) `Type1`,
+/// Parameters in the form `impl ReadIsotope<A, C>` or `impl WriteIsotope<A, C>`,
+/// request access to an [isotope component](crate::comp::Isotope) of type `C`
+/// from entities of the [archetype](crate::Archetype) `A`,
 /// exposed through a type that implements [`system::ReadIsotope`](crate::system::ReadIsotope)
 /// or [`system::WriteIsotope`](crate::system::WriteIsotope).
+/// The latter provides mutable and exclusive access to the component storages.
 ///
-/// Only read access is permitted by default.
-/// To allow write access, add `mut` to the `isotope` option list with the first syntax,
-/// or change the component reference to `&mut` with the second syntax.
+/// ### Partial isotope access
+/// By default, all discriminants of the isotope component are requested,
+/// such that writes are exclusive with all systems that read any part of the discriminants.
+/// The accessor can be made partial instead:
 ///
-/// By default, all discriminants of the isotope component are requested.
-/// To request only particular discriminants,
-/// add `discrim = expr` to the `isotope` option list with the first syntax,
-/// or add the `#[dynec(isotope(discrim = expr))]` with the second syntax,
-/// where `expr` is a value that implements `IntoIterator<Item = Type2::Discrim>`
-/// Note that `arch`, `comp` and `mut` must not be used if the second syntax is intended.
+/// ```
+/// # /*
+/// #[dynec(isotope(discrim = discrim_set))] param_name: impl ReadIsotope<A, C, K>,
+/// # */
+/// ```
 ///
-/// Similar to `name`, the expressions can read local and param states directly.
-/// However, only the expressions are only resolved once before the first run of the system,
-/// so mutating states has no effect on the system schedule.
+/// The expression `discrim_set` implements
+/// <code>[discrim::Set](crate::comp::discrim::Set)<C::[Discrim](crate::comp::Discrim)></code>,
+/// which is the set of discriminants that this system uses.
+/// The expression can reference local and param states directly.
+/// However, since it is only evaluated once before the first run of the system,
+/// subsequent writes to the states have no effect on the resolved discriminant set.
+///
+/// `K` is the type of the [key](crate::comp::discrim::Set::Key) to index the discriminant set.
+///
+/// See the documentation of [`discrim::Set`](crate::comp::discrim::Set) for more information.
+///
+/// ### Using other bounds
+/// Other trait bounds for the parameter are also allowed,
+/// but the macro would not be able to infer type parameters and mutability.
+/// In such cases, they must be indicated explicitly in the attribute.
+/// See the syntax reference below for details.
+///
+/// ### Uninitialized entity references.
+/// Entity creation ordering is automatically enforced if `C` contains entity references,
+/// Use the `maybe_uninit` attribute to remove this ordering.
+///
+/// See [`EntityCreationPartition`](crate::system::partition::EntityCreationPartition#component-accessors)
+/// for more information.
+///
+/// ### Syntax reference
+/// ```
+/// # /*
+/// #[dynec(isotope(
+///     // Optional, indicates that this accessor only uses the given subset of discriminants.
+///     discrim = $expr,
+///     // Optional, must be the same as the `Key` associated type of the `discrim` expression.
+///     // Only required when the parameter type is not `impl ReadIsotope`/`impl WriteIsotope`.
+///     discrim_key = $ty,
+///     // Optional, specifies the archetype and component explicitly.
+///     // Only required when the parameter type is not `impl ReadIsotope`/`impl WriteIsotope`.
+///     arch = $ty, comp = $ty,
+///     // Optional, indicates that the component access is exclusive explicitly.
+///     // Only required when the parameter type is not `impl WriteSimple`.
+///     mut,
+///     // Optional, acknowledges that the entities of the specified archetypes
+///     // contained in the simple components may be uninitialized.
+///     maybe_uninit($ty, $ty, ...),
+/// ))]
+/// # */
+/// ```
 ///
 /// # Example
 /// ```
@@ -443,11 +556,12 @@ mod system_tests {
 ///
 /// # Customizing the discriminant map
 /// Implementations for structs use
-/// [`discrim::LinearVecMap`](crate::comp::discrim::LinearVecMap) by default.
+/// [`discrim::BoundedVecMap`](crate::comp::discrim::BoundedVecMap) by default,
+/// which is optimized for small discriminants.
 /// This can be customized by adding `#[dynec(map = path::to::another::Impl)]` on the struct.
 /// [`dynec::comp::discrim`](crate::comp::discrim)
 /// is automatically imported for the map reference,
-/// so users only need to specify e.g. `#[dynec(map = discrim::BoundedVecMap)]`.
+/// so users only need to specify e.g. `#[dynec(map = discrim::LinearVecMap)]`.
 ///
 /// Since maps are generic over `T`,
 /// the passed type actually can depend on the type parameter `T`,
@@ -466,7 +580,7 @@ mod system_tests {
 /// struct Tuple(u16);
 ///
 /// #[derive(Clone, Copy, PartialEq, Eq, Hash, dynec::Discrim)]
-/// #[dynec(map = discrim::BoundedVecMap)]
+/// #[dynec(map = discrim::SortedVecMap)]
 /// struct Named {
 ///     field: u32,
 /// }

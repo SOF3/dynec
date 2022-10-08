@@ -19,6 +19,8 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
 
     let mut name = quote!(concat!(module_path!(), "::", stringify!(#ident)));
 
+    // 1. Parse item-level attributes.
+
     let mut crate_name = quote!(::dynec);
     let mut system_thread_local = false;
     let mut debug_print = false;
@@ -67,29 +69,31 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
         return Err(Error::new_spanned(&input.sig.output, "system functions must return unit"));
     }
 
-    let mut local_state_field_idents = Vec::new();
-    let mut local_state_field_pats = Vec::new();
-    let mut local_state_field_tys = Vec::new();
-    let mut local_state_entity_attrs = Vec::new();
+    // 2. Parse parameters.
 
-    let mut param_state_field_idents = Vec::new();
-    let mut param_state_field_tys = Vec::new();
+    let mut local_state_field_idents: Vec<syn::Ident> = Vec::new();
+    let mut local_state_field_pats: Vec<Box<syn::Pat>> = Vec::new();
+    let mut local_state_field_tys: Vec<syn::Type> = Vec::new();
+    let mut local_state_entity_attrs: Vec<TokenStream> = Vec::new();
 
-    let mut initial_state_field_idents = Vec::new();
-    let mut initial_state_field_defaults = Vec::new();
+    let mut param_state_field_idents: Vec<syn::Ident> = Vec::new();
+    let mut param_state_field_tys: Vec<syn::Type> = Vec::new();
 
-    let mut isotope_discrim_idents = Vec::new();
-    let mut isotope_discrim_ty_params = Vec::new();
-    let mut isotope_discrim_type_bounds = Vec::new();
-    let mut isotope_discrim_values = Vec::new();
+    let mut initial_state_field_idents: Vec<syn::Ident> = Vec::new();
+    let mut initial_state_field_defaults: Vec<Box<syn::Expr>> = Vec::new();
 
-    let mut input_types = Vec::new();
-    let mut system_run_args = Vec::new();
+    let mut isotope_discrim_idents: Vec<syn::Ident> = Vec::new();
+    let mut isotope_discrim_ty_params: Vec<syn::Ident> = Vec::new();
+    let mut isotope_discrim_type_bounds: Vec<TokenStream> = Vec::new();
+    let mut isotope_discrim_values: Vec<Box<syn::Expr>> = Vec::new();
 
-    let mut global_requests = Vec::new();
-    let mut simple_requests = Vec::new();
-    let mut isotope_requests = Vec::new();
-    let mut entity_creator_requests = Vec::new();
+    let mut input_types: Vec<syn::Type> = Vec::new();
+    let mut system_run_args: Vec<TokenStream> = Vec::new();
+
+    let mut global_requests: Vec<TokenStream> = Vec::new();
+    let mut simple_requests: Vec<TokenStream> = Vec::new();
+    let mut isotope_requests: Vec<TokenStream> = Vec::new();
+    let mut entity_creator_requests: Vec<TokenStream> = Vec::new();
 
     for (param_index, param) in input.sig.inputs.iter_mut().enumerate() {
         let param = match param {
@@ -101,10 +105,12 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
 
         input_types.push(syn::Type::clone(&param.ty));
 
+        // 2.1. Collect user input into ArgType.
+
         enum ArgType {
             Local {
-                default:    Option<Box<syn::Expr>>,
-                has_entity: bool,
+                default:       Option<Box<syn::Expr>>,
+                referrer_attr: Option<bool>,
             },
             Global {
                 thread_local: bool,
@@ -121,6 +127,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 arch:         Box<syn::Type>,
                 comp:         Box<syn::Type>,
                 discrim:      Option<Box<syn::Expr>>,
+                discrim_key:  Option<Box<syn::Type>>,
                 maybe_uninit: Vec<syn::Type>,
             },
             EntityCreator {
@@ -200,20 +207,25 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             maybe_uninit: Vec<syn::Type>,
         ) -> PartialArgTypeBuilder {
             Box::new(move |ident, args, args_span| {
-                let [arch, comp]: [&syn::Type; 2] = args.try_into().map_err(|_| {
-                    Error::new(
+                if args.len() != 2 && args.len() != 3 {
+                    return Err(Error::new(
                         args_span,
                         "Cannot infer archetype and component for component access. Specify \
                          explicitly with `#[dynec(isotope(arch = X, comp = Y))]`, or use `impl \
                          ReadIsotope<X, Y>`/`impl WriteIsotope<X, Y>`.",
-                    )
-                })?;
+                    ));
+                }
+
+                let &arch = args.get(0).expect("args.len() >= 2");
+                let &comp = args.get(1).expect("args.len() >= 2");
+                let discrim_key = args.get(2).map(|&ty| Box::new(ty.clone()));
 
                 Ok(ArgType::Isotope {
                     mutable: mutable || ident == "WriteIsotope",
                     arch: Box::new(arch.clone()),
                     comp: Box::new(comp.clone()),
                     discrim,
+                    discrim_key,
                     maybe_uninit,
                 })
             })
@@ -253,13 +265,17 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             for arg in arg_attr.items {
                 match arg.value {
                     ArgOpt::Param(_, opts) => {
-                        let has_entity = opts
-                            .find_one(|opt| option_match!(opt, ParamArgOpt::HasEntity => &()))?
-                            .is_some();
+                        let referrer_attr = opts
+                            .find_one(|opt| match opt {
+                                ParamArgOpt::HasEntity => Some(&true),
+                                ParamArgOpt::HasNoEntity => Some(&false),
+                            })?
+                            .map(|(_, &bool)| bool);
+
                         set_arg_type(
                             &mut arg_type,
                             arg.name,
-                            ArgType::Local { default: None, has_entity },
+                            ArgType::Local { default: None, referrer_attr },
                         )?;
                     }
                     ArgOpt::Local(_, opts) => {
@@ -275,13 +291,19 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                                 ))
                             }
                         };
-                        let has_entity = opts
-                            .find_one(|opt| option_match!(opt, LocalArgOpt::HasEntity => &()))?
-                            .is_some();
+
+                        let referrer_attr = opts
+                            .find_one(|opt| match opt {
+                                LocalArgOpt::HasEntity => Some(&true),
+                                LocalArgOpt::HasNoEntity => Some(&false),
+                                _ => None,
+                            })?
+                            .map(|(_, &bool)| bool);
+
                         set_arg_type(
                             &mut arg_type,
                             arg.name,
-                            ArgType::Local { default: Some(initial.clone()), has_entity },
+                            ArgType::Local { default: Some(initial.clone()), referrer_attr },
                         )?;
                     }
                     ArgOpt::Global(_, opts) => {
@@ -345,6 +367,9 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                         let discrim = opts.find_one(
                             |opt| option_match!(opt, IsotopeArgOpt::Discrim(_, discrim) => discrim),
                         )?;
+                        let discrim_key = opts.find_one(
+                            |opt| option_match!(opt, IsotopeArgOpt::DiscrimKey(_, ty) => ty),
+                        )?;
                         let maybe_uninit = opts.merge_all(|opt| option_match!(opt, IsotopeArgOpt::MaybeUninit(_, tys) => tys.iter().cloned()));
 
                         match (arch, comp, mutable) {
@@ -357,6 +382,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                                         arch: arch.clone(),
                                         comp: comp.clone(),
                                         discrim: discrim.map(|(_, discrim)| discrim.clone()),
+                                        discrim_key: discrim_key.map(|(_, ty)| ty.clone()),
                                         maybe_uninit,
                                     },
                                 )?;
@@ -494,8 +520,16 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             }
         };
 
+        // 2.2. Handle argument.
+
         let run_arg = match arg_type {
-            ArgType::Local { default, has_entity } => {
+            ArgType::Local { default, referrer_attr } => {
+                let referrer_attr = match referrer_attr {
+                    Some(true) => quote!(#[entity]),
+                    Some(false) => quote!(#[not_entity]),
+                    None => quote!(),
+                };
+
                 let field_name = match &*param.pat {
                     syn::Pat::Ident(ident) => ident.ident.clone(),
                     syn::Pat::Reference(pat) => match &*pat.pat {
@@ -518,7 +552,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 local_state_field_idents.push(field_name.clone());
                 local_state_field_pats.push(param.pat.clone());
                 local_state_field_tys.push(syn::Type::clone(param_ty));
-                local_state_entity_attrs.push(has_entity.then(|| quote!(#[entity])));
+                local_state_entity_attrs.push(referrer_attr);
 
                 if let Some(default) = default {
                     initial_state_field_idents.push(field_name.clone());
@@ -528,7 +562,12 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                     param_state_field_tys.push(syn::Type::clone(param_ty));
                 }
 
-                quote!(&mut self.#field_name)
+                quote! {
+                    #[allow(clippy::unnecessary_mut_passed)]
+                    {
+                        &mut self.#field_name
+                    }
+                }
             }
             ArgType::Global { thread_local, maybe_uninit } => {
                 if thread_local && !system_thread_local {
@@ -576,8 +615,19 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                     false => quote!(components.read_simple_storage::<#arch, #comp>()),
                 }
             }
-            ArgType::Isotope { mutable, arch, comp, discrim, maybe_uninit } => {
-                let discrim_field = discrim.is_some().then(|| {
+            ArgType::Isotope { mutable, arch, comp, discrim, discrim_key, maybe_uninit } => {
+                let discrim_field = if let Some(discrim) = discrim {
+                    let discrim_key = match discrim_key {
+                        Some(ty) => ty,
+                        None => {
+                            return Err(Error::new_spanned(
+                                &param.pat,
+                                "Type parameter `K` must be specified for \
+                                 `ReadIsotope`/`WriteIsotope` if partial isotope access is used",
+                            ))
+                        }
+                    };
+
                     let discrim_ident =
                         quote::format_ident!("__dynec_isotope_discrim_{}", param_index);
                     isotope_discrim_idents.push(discrim_ident.clone());
@@ -586,21 +636,24 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                         isotope_discrim_ty_params.len()
                     ));
                     isotope_discrim_type_bounds.push(quote!(
-                        Send + Sync + 'static + #crate_name::comp::discrim::Set<
-                            Value = <#comp as #crate_name::comp::Isotope<#arch>>::Discrim,
+                        #crate_name::comp::discrim::Set<
+                            <#comp as #crate_name::comp::Isotope<#arch>>::Discrim,
+                            Key = #discrim_key,
                         >));
                     isotope_discrim_values.push(discrim);
 
-                    quote!(self.__dynec_isotope_discrim_idents.#discrim_ident)
-                });
+                    Some(quote!(self.__dynec_isotope_discrim_idents.#discrim_ident))
+                } else {
+                    None
+                };
 
                 let discrim_field_variadic = discrim_field.as_ref().map(|expr| quote!(&#expr));
                 let discrim_value_option = match &discrim_field {
                     Some(expr) => {
                         quote!(Some({
-                            let __iter = #crate_name::comp::discrim::Set::iter(&#expr);
+                            let __iter = #crate_name::comp::discrim::Set::iter_discrims(&#expr);
                             let __iter = ::std::iter::Iterator::map(__iter, |d| {
-                                let d: &(<#comp as #crate_name::comp::Isotope<#arch>>::Discrim) = &d; // auto deref
+                                let d: &<#comp as #crate_name::comp::Isotope<#arch>>::Discrim = &d; // auto deref
                                 #crate_name::comp::Discrim::into_usize(*d)
                             });
                             ::std::iter::Iterator::collect::<::std::vec::Vec<_>>(__iter)
@@ -615,13 +668,13 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 });
 
                 let method_ident = match (mutable, discrim_field.is_some()) {
-                    (true, true) => quote!(write_partial_isotope_storage),
-                    (true, false) => quote!(write_full_isotope_storage),
-                    (false, true) => quote!(read_partial_isotope_storage),
-                    (false, false) => quote!(read_full_isotope_storage),
+                    (true, true) => quote!(write_partial_isotope_storage::<#arch, #comp, _>),
+                    (true, false) => quote!(write_full_isotope_storage::<#arch, #comp>),
+                    (false, true) => quote!(read_partial_isotope_storage::<#arch, #comp, _>),
+                    (false, false) => quote!(read_full_isotope_storage::<#arch, #comp>),
                 };
 
-                quote!(components.#method_ident::<#arch, #comp>(#discrim_field_variadic))
+                quote!(components.#method_ident(#discrim_field_variadic))
             }
             ArgType::EntityCreator { arch, no_partition } => {
                 let no_partition_call = no_partition.then(|| quote!(.no_partition()));
@@ -645,6 +698,8 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
         system_run_args.push(run_arg);
     }
 
+    // 3. Generate code.
+
     let fn_body = &*input.block;
 
     let input_args: Vec<_> = input.sig.inputs.iter().collect();
@@ -653,13 +708,14 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
         (0..input.sig.inputs.len()).map(|i| quote::format_ident!("arg_{}", i)).collect();
 
     let destructure_local_states = quote! {
+        // Destructure all local states into local variables.
         #[allow(unused_variables, clippy::unused_unit)]
         let (#(#local_state_field_pats,)*) = {
             let &Self {
                 #(ref #local_state_field_idents,)*
-                ref __dynec_isotope_discrim_idents,
+                __dynec_isotope_discrim_idents: _,
             } = self;
-            let __dynec_isotope_discrim_idents { #(#isotope_discrim_idents: _,)* } = __dynec_isotope_discrim_idents;
+            // let __dynec_isotope_discrim_idents { #(#isotope_discrim_idents: _,)* } = __dynec_isotope_discrim_idents;
             (#(#local_state_field_idents,)*)
         };
     };
@@ -718,21 +774,16 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
         #[allow(non_camel_case_types)]
         #vis struct #ident;
 
-        #[automatically_derived]
         const _: () = {
+            #[automatically_derived]
             impl #ident {
                 #vis fn build(
                     &self,
                     #(#param_state_field_idents: #param_state_field_tys,)*
                 ) -> impl #crate_name::system::#system_trait {
                     let __dynec_isotope_discrim_idents = {
-                        #(
-                            #[allow(unused_variables)]
-                            let #param_state_field_idents = &#param_state_field_idents;
-                        )*
-
                         __dynec_isotope_discrim_idents {
-                            #(#isotope_discrim_idents: #isotope_discrim_values,)*
+                            #(#isotope_discrim_idents: ::std::clone::Clone::clone(&#isotope_discrim_values),)*
                         }
                     };
 
@@ -754,22 +805,14 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 #fn_body
             }
 
+            #[automatically_derived]
             impl #ident {
                 #vis fn call(#(#input_proxy_args: #input_types),*) {
                     __dynec_original(#(#input_proxy_args),*)
                 }
             }
-            /*
-            // TODO: can we figure out another way to let user call the original function directly?
-            impl ::std::ops::Deref for #ident {
-                type Target = fn(#(#input_types),*);
 
-                fn deref(&self) -> &Self::Target {
-                    &(__dynec_original as fn(#(#input_types),*))
-                }
-            }
-            */
-
+            #[automatically_derived]
             impl<#(
                 #isotope_discrim_ty_params: #isotope_discrim_type_bounds,
             )*> #crate_name::system::Descriptor for __dynec_local_state<#(#isotope_discrim_ty_params,)*> {
@@ -801,6 +844,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 }
             }
 
+            #[automatically_derived]
             impl<#(
                 #isotope_discrim_ty_params: #isotope_discrim_type_bounds,
             )*> #crate_name::system::#system_trait for __dynec_local_state<#(#isotope_discrim_ty_params,)*> {
@@ -919,6 +963,7 @@ where
 
 enum LocalArgOpt {
     HasEntity,
+    HasNoEntity,
     Initial(syn::Token![=], Box<syn::Expr>),
 }
 
@@ -929,6 +974,7 @@ impl Parse for Named<LocalArgOpt> {
 
         let value = match name_string.as_str() {
             "entity" => LocalArgOpt::HasEntity,
+            "not_entity" => LocalArgOpt::HasNoEntity,
             "initial" => {
                 let eq = input.parse::<syn::Token![=]>()?;
                 let expr = input.parse::<syn::Expr>()?;
@@ -942,6 +988,7 @@ impl Parse for Named<LocalArgOpt> {
 
 enum ParamArgOpt {
     HasEntity,
+    HasNoEntity,
 }
 
 impl Parse for Named<ParamArgOpt> {
@@ -951,6 +998,7 @@ impl Parse for Named<ParamArgOpt> {
 
         let value = match name_string.as_str() {
             "entity" => ParamArgOpt::HasEntity,
+            "not_entity" => ParamArgOpt::HasNoEntity,
             _ => return Err(Error::new_spanned(&name, "Unknown option for #[dynec(param)]")),
         };
         Ok(Named { name, value })
@@ -1012,6 +1060,7 @@ enum IsotopeArgOpt {
     Arch(syn::Token![=], Box<syn::Type>),
     Comp(syn::Token![=], Box<syn::Type>),
     Discrim(syn::Token![=], Box<syn::Expr>),
+    DiscrimKey(syn::Token![=], Box<syn::Type>),
     MaybeUninit(syn::token::Paren, Punctuated<syn::Type, syn::Token![,]>),
 }
 
@@ -1036,6 +1085,11 @@ impl Parse for Named<IsotopeArgOpt> {
                 let eq = input.parse::<syn::Token![=]>()?;
                 let discrim = input.parse::<syn::Expr>()?;
                 IsotopeArgOpt::Discrim(eq, Box::new(discrim))
+            }
+            "discrim_key" => {
+                let eq = input.parse::<syn::Token![=]>()?;
+                let ty = input.parse::<syn::Type>()?;
+                IsotopeArgOpt::DiscrimKey(eq, Box::new(ty))
             }
             "maybe_uninit" => parse_maybe_uninit(input, IsotopeArgOpt::MaybeUninit)?,
             _ => return Err(Error::new_spanned(&name, "Unknown option for #[dynec(isotope)]")),

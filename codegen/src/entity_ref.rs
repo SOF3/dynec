@@ -147,7 +147,7 @@ pub(crate) fn entity_ref(
             )
         }
         syn::Data::Union(u) => {
-            return Err(Error::new_spanned(&u.union_token, "only structs and enums are supported"))
+            return Err(Error::new_spanned(u.union_token, "only structs and enums are supported"))
         }
     };
 

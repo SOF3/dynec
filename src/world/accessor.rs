@@ -295,7 +295,11 @@ impl Components {
         where
             A: Archetype,
             C: comp::Isotope<A>,
-            M: discrim::Mapped<Discrim = C::Discrim, Key = C::Discrim>,
+            M: discrim::FullMap<
+                Discrim = C::Discrim,
+                Key = C::Discrim,
+                Value = LockedIsotopeStorage<A, C>,
+            >,
         {
             fn get_storage<'u>(
                 &mut self,
@@ -305,7 +309,12 @@ impl Components {
             where
                 LockedIsotopeStorage<A, C>: 'u,
             {
-                todo!()
+                storages.get_by_or_insert(discrim, || {
+                    let arc = Arc::default();
+                    let ret = own_write_isotope_storage::<A, C>(discrim, &arc);
+                    self.full_map.insert(discrim, arc);
+                    ret
+                })
             }
         }
 

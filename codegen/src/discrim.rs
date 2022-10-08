@@ -45,7 +45,7 @@ pub(crate) fn derive(input: TokenStream) -> Result<TokenStream> {
         syn::Data::Struct(item) => {
             let (field_ref, field_ty) = match &item.fields {
                 syn::Fields::Unit => {
-                    return Err(Error::new_spanned(&item.struct_token, INPUT_TYPE_ERROR))
+                    return Err(Error::new_spanned(item.struct_token, INPUT_TYPE_ERROR))
                 }
                 syn::Fields::Named(fields) => {
                     if fields.named.len() != 1 {
@@ -116,7 +116,7 @@ pub(crate) fn derive(input: TokenStream) -> Result<TokenStream> {
             }
         }
         syn::Data::Union(item) => {
-            return Err(Error::new_spanned(&item.union_token, INPUT_TYPE_ERROR));
+            return Err(Error::new_spanned(item.union_token, INPUT_TYPE_ERROR));
         }
     };
 

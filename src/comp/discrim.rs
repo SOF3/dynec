@@ -13,16 +13,9 @@ use std::marker::PhantomData;
 /// this `usize` is used for indexing storages during all-isotopes read/write access.
 /// The range of mapped `usize`s should be bounded to a small number if [`BoundedVecMap`] is used.
 pub trait Discrim: fmt::Debug + Copy + PartialEq + Eq + Hash + Send + Sync + 'static {
-    /// The data structure to index objects by all known discriminants.
-    ///
-    /// This is only used when storages of all isotopes are read/written in the same accessor
-    /// (through [`Components::read_full_isotope_storage`][read_full_isotope_storage],
-    /// or `system::ReadIsotope` without `#[dynec(isotope(discrim = xxx))]`).
-    ///
-    /// [read_full_isotope_storage]: crate::world::Components::read_full_isotope_storage
-    type FullMap<S>: Mapped<Discrim = Self, Key = Self, Value = S>
-        + FromIterator<(Self, S)>
-        + Extend<(Self, S)>;
+    /// The data structure that can efficiently access an item
+    /// based on discriminants from a [`Set`].
+    type FullMap<S>: FullMap<Discrim = Self, Key = Self, Value = S>;
 
     // TODO: can we remove usize conversion?
     // Currently it is used in scheduler for type-agnostic collision checking.
@@ -119,6 +112,24 @@ pub trait Mapped {
     fn iter_values_mut(&mut self) -> Self::IterMut<'_>;
 }
 
+/// A data structure to index objects by all known discriminants.
+///
+/// This is only used when storages of all isotopes are read/written in the same accessor
+/// (through [`Components::read_full_isotope_storage`][read_full_isotope_storage],
+/// or `system::ReadIsotope` without `#[dynec(isotope(discrim = xxx))]`).
+///
+/// [read_full_isotope_storage]: crate::world::Components::read_full_isotope_storage
+pub trait FullMap:
+    Mapped<Key = <Self as Mapped>::Discrim> + FromIterator<(Self::Discrim, Self::Value)>
+{
+    /// Lazily initializes the entry and returns a mutable reference
+    fn get_by_or_insert<F: FnOnce() -> Self::Value>(
+        &mut self,
+        discrim: Self::Discrim,
+        inserter: F,
+    ) -> &mut Self::Value;
+}
+
 impl<D: Discrim, V, const N: usize> Mapped for [(D, V); N] {
     type Discrim = D;
     type Key = usize;
@@ -186,9 +197,6 @@ impl<D: Discrim, T> FromIterator<(D, T)> for LinearVecMap<D, T> {
         Self { vec: iter.into_iter().collect() }
     }
 }
-impl<D: Discrim, T> Extend<(D, T)> for LinearVecMap<D, T> {
-    fn extend<I: IntoIterator<Item = (D, T)>>(&mut self, iter: I) { self.vec.extend(iter); }
-}
 impl<D: Discrim, T> Mapped for LinearVecMap<D, T> {
     type Discrim = D;
     type Key = D;
@@ -214,6 +222,23 @@ impl<D: Discrim, T> Mapped for LinearVecMap<D, T> {
         self.vec[..].iter_mut().map(|(discrim, value)| (*discrim, value))
     }
 }
+impl<D: Discrim, T> FullMap for LinearVecMap<D, T> {
+    fn get_by_or_insert<F: FnOnce() -> T>(
+        &mut self,
+        discrim: Self::Discrim,
+        inserter: F,
+    ) -> &mut T {
+        // cannot use iter_mut() here due to borrowck bug
+        for (i, &(d, _)) in self.vec.iter().enumerate() {
+            if d == discrim {
+                return &mut self.vec.get_mut(i).expect("i comes from iterator").1;
+            }
+        }
+
+        self.vec.push((discrim, inserter()));
+        &mut self.vec.last_mut().expect("vec should be nonempty after push").1
+    }
+}
 
 /// Implements the requirements of [`Discrim::FullMap`] with O(log n) search complexity.
 ///
@@ -230,21 +255,6 @@ impl<D: Discrim, T> FromIterator<(D, T)> for SortedVecMap<D, T> {
         let mut vec: Vec<_> = iter.into_iter().collect();
         vec.sort_by_key(|(d, _)| d.into_usize());
         Self { vec }
-    }
-}
-impl<D: Discrim, T> Extend<(D, T)> for SortedVecMap<D, T> {
-    fn extend<I: IntoIterator<Item = (D, T)>>(&mut self, iter: I) {
-        self.vec.extend(iter);
-        self.vec.sort_by_key(|(d, _)| d.into_usize());
-    }
-
-    fn extend_one(&mut self, (d, s): (D, T)) {
-        let index = match self.vec.binary_search_by_key(&d.into_usize(), |(di, _)| di.into_usize())
-        {
-            Ok(_) => panic!("Cannot insert the same item to SortedVecMap twice"),
-            Err(index) => index,
-        };
-        self.vec.insert(index, (d, s));
     }
 }
 impl<D: Discrim, T> Mapped for SortedVecMap<D, T> {
@@ -278,6 +288,21 @@ impl<D: Discrim, T> Mapped for SortedVecMap<D, T> {
     type IterMut<'t> = impl Iterator<Item = (D, &'t mut T)> + 't where Self: 't;
     fn iter_values_mut(&mut self) -> Self::IterMut<'_> {
         self.vec[..].iter_mut().map(|(discrim, value)| (*discrim, value))
+    }
+}
+impl<D: Discrim, T> FullMap for SortedVecMap<D, T> {
+    fn get_by_or_insert<F: FnOnce() -> T>(
+        &mut self,
+        discrim: Self::Discrim,
+        inserter: F,
+    ) -> &mut T {
+        match self.vec[..].binary_search_by_key(&discrim.into_usize(), |(d, _)| d.into_usize()) {
+            Ok(index) => &mut self.vec.get_mut(index).expect("result of binary_search_by_key").1,
+            Err(index) => {
+                self.vec.insert(index, (discrim, inserter()));
+                &mut self.vec.get_mut(index).expect("vec.insert(index) called above").1
+            }
+        }
     }
 }
 
@@ -346,6 +371,21 @@ impl<D: Discrim, T> Mapped for BoundedVecMap<D, T> {
             .filter_map(|(discrim, value)| Some((D::from_usize(discrim), value.as_mut()?)))
     }
 }
+impl<D: Discrim, T> FullMap for BoundedVecMap<D, T> {
+    fn get_by_or_insert<F: FnOnce() -> T>(
+        &mut self,
+        discrim: Self::Discrim,
+        inserter: F,
+    ) -> &mut Self::Value {
+        let index = discrim.into_usize();
+        if self.vec.len() <= index {
+            self.vec.resize_with(index + 1, || None);
+        }
+
+        let entry = self.vec.get_mut(index).expect("just resized");
+        entry.get_or_insert_with(inserter)
+    }
+}
 
 /// Implements the requirements of [`Discrim::FullMap`] with O(1) search complexity,
 /// using the `into_usize()` value as the index.
@@ -353,31 +393,24 @@ impl<D: Discrim, T> Mapped for BoundedVecMap<D, T> {
 /// Optimized for discriminant types with bounded domain known at compile time,
 /// e.g. if the discriminant is derived from a enum without fields.
 pub struct ArrayMap<D: Discrim, T, const N: usize> {
-    vec: [Option<T>; N],
-    _ph: PhantomData<D>,
+    array: [Option<T>; N],
+    _ph:   PhantomData<D>,
 }
 impl<D: Discrim, T, const N: usize> FromIterator<(D, T)> for ArrayMap<D, T, N> {
     fn from_iter<I: IntoIterator<Item = (D, T)>>(iter: I) -> Self {
-        let iter = iter.into_iter();
-
-        let vec: [Option<T>; N] = [(); N].map(|()| None);
-        let mut this = Self { vec, _ph: PhantomData };
-        this.extend(iter);
-        this
-    }
-}
-impl<D: Discrim, T, const N: usize> Extend<(D, T)> for ArrayMap<D, T, N> {
-    fn extend<I: IntoIterator<Item = (D, T)>>(&mut self, iter: I) {
+        let array: [Option<T>; N] = [(); N].map(|()| None);
+        let mut this = Self { array, _ph: PhantomData };
         for (d, s) in iter {
-            let entry = match self.vec.get_mut(d.into_usize()) {
-                Some(entry) => entry,
+            match this.array.get_mut(d.into_usize()) {
+                Some(Some(_)) => panic!("Duplicate value with discriminant {d:?}"),
+                Some(option) => *option = Some(s),
                 None => panic!(
                     "Discriminants using ArrayMap<N = {N}> must return integers less than {N} in \
-                     into_usize()"
+                     into_usize()",
                 ),
-            };
-            *entry = Some(s);
+            }
         }
+        this
     }
 }
 impl<D: Discrim, T, const N: usize> Mapped for ArrayMap<D, T, N> {
@@ -388,16 +421,15 @@ impl<D: Discrim, T, const N: usize> Mapped for ArrayMap<D, T, N> {
     fn get_discrim(&self, &key: &D) -> Option<Self::Discrim> { Some(key) }
 
     fn get_by(&self, key: &D) -> Option<&T> {
-        self.vec.get(key.into_usize()).and_then(Option::as_ref)
+        self.array.get(key.into_usize()).and_then(Option::as_ref)
     }
-
     fn get_mut_by(&mut self, key: &D) -> Option<&mut T> {
-        self.vec.get_mut(key.into_usize()).and_then(Option::as_mut)
+        self.array.get_mut(key.into_usize()).and_then(Option::as_mut)
     }
 
     type Iter<'t> = impl Iterator<Item = (D, &'t T)> + 't where Self: 't;
     fn iter_values(&self) -> Self::Iter<'_> {
-        self.vec[..]
+        self.array[..]
             .iter()
             .enumerate()
             .filter_map(|(discrim, value)| Some((D::from_usize(discrim), value.as_ref()?)))
@@ -405,9 +437,27 @@ impl<D: Discrim, T, const N: usize> Mapped for ArrayMap<D, T, N> {
 
     type IterMut<'t> = impl Iterator<Item = (D, &'t mut T)> + 't where Self: 't;
     fn iter_values_mut(&mut self) -> Self::IterMut<'_> {
-        self.vec[..]
+        self.array[..]
             .iter_mut()
             .enumerate()
             .filter_map(|(discrim, value)| Some((D::from_usize(discrim), value.as_mut()?)))
+    }
+}
+impl<D: Discrim, T, const N: usize> FullMap for ArrayMap<D, T, N> {
+    fn get_by_or_insert<F: FnOnce() -> T>(
+        &mut self,
+        discrim: Self::Discrim,
+        inserter: F,
+    ) -> &mut T {
+        match self.array.get_mut(discrim.into_usize()) {
+            Some(Some(entry)) => entry,
+            Some(option) => option.insert(inserter()),
+            None => {
+                panic!(
+                    "Discriminants using ArrayMap<N = {N}> must return integers less than {N} in \
+                     into_usize()",
+                )
+            }
+        }
     }
 }

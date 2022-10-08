@@ -76,8 +76,6 @@ mod archetype_tests {}
 ///
 /// # Example
 /// ```
-/// #![feature(generic_associated_types)]
-///
 /// use dynec::comp;
 ///
 /// dynec::archetype!(Foo; Bar);
@@ -134,8 +132,6 @@ mod comp_tests {}
 ///
 /// # Example
 /// ```
-/// #![feature(generic_associated_types)]
-///
 /// dynec::archetype!(Foo);
 /// let empty = dynec::comps![Foo =>];
 /// assert_eq!(empty.len(), 0);
@@ -434,8 +430,6 @@ mod global_tests {}
 ///
 /// # Example
 /// ```
-/// #![feature(generic_associated_types)]
-///
 /// use dynec::system;
 ///
 /// #[dynec::global(initial = Title("hello world"))]
@@ -585,8 +579,6 @@ mod system_tests {
 ///
 /// # Example
 /// ```
-/// #![feature(generic_associated_types)]
-///
 /// #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, dynec::Discrim)]
 /// struct Tuple(u16);
 ///

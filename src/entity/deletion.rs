@@ -1,39 +1,20 @@
 //! Manages entity deletion logic.
 
-use std::any::TypeId;
-use std::collections::HashMap;
+use crate::{comp, storage, Archetype};
 
-use bitvec::prelude::BitVec;
+/// The flag exists as a component of an entity
+/// if and only if the entity was marked for deletion.
+pub(crate) struct Flag(pub(crate) ());
 
-use super::Raw;
-use crate::util::DbgTypeId;
-use crate::Archetype;
-
-/// Stores whether an entity is marked for deletion.
-#[crate::global(dynec_as(crate))]
-#[derive(Default)]
-pub struct Flags {
-    flags: HashMap<DbgTypeId, BitVec>,
+impl super::Referrer for Flag {
+    fn visit_type(arg: &mut super::referrer::VisitTypeArg) { arg.mark::<Self>(); }
+    fn visit_mut<V: super::referrer::VisitMutArg>(&mut self, _: &mut V) {}
 }
 
-impl Flags {
-    /// Checks whether an entity is marked for deletion.
-    pub fn get<A: Archetype>(&self, id: A::RawEntity) -> bool {
-        match self.flags.get(&TypeId::of::<A>()) {
-            Some(flags) => flags.get(id.to_primitive()).as_deref().copied().unwrap_or(false),
-            None => false,
-        }
-    }
+impl<A: Archetype> comp::Simple<A> for Flag {
+    type Storage = storage::Vec<A::RawEntity, Self>;
 
-    /// Marks or unmarks an entity for deletion.
-    pub fn set<A: Archetype>(&mut self, id: A::RawEntity, value: bool) {
-        let id = id.to_primitive();
-
-        let vec = self.flags.entry(DbgTypeId::of::<A>()).or_default();
-        if vec.len() <= id {
-            vec.resize(id + 1, false);
-        }
-
-        vec.set(id, value);
-    }
+    const PRESENCE: comp::SimplePresence = comp::SimplePresence::Optional;
+    const INIT_STRATEGY: comp::SimpleInitStrategy<A> = comp::SimpleInitStrategy::None;
+    const IS_FINALIZER: bool = false;
 }

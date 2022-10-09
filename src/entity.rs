@@ -8,6 +8,8 @@
 //!
 //! All strong references to an entity must be dropped before it gets deleted.
 
+use std::marker::PhantomData;
+
 use crate::Archetype;
 
 mod raw;
@@ -42,29 +44,33 @@ pub trait Ref: sealed::Sealed {
     fn id(&self) -> <Self::Archetype as Archetype>::RawEntity;
 }
 
-/// An unclonable reference to an entity.
+/// A temporary, non-`'static` reference to an entity.
 ///
 /// This type is not ref-counted.
 /// It is only used as a short-lived pointer passed from the dynec API
 /// for entity references that should not outlive a short scope (e.g. an API callback).
-/// Thus, it is always passed to users as a reference and cannot be cloned.
-///
-/// This type deliberately does **not** implement [`Clone`] and [`Copy`] for the reasons above.
 #[repr(transparent)]
-pub struct UnclonableRef<A: Archetype> {
+pub struct TempRef<'t, A: Archetype> {
     value: A::RawEntity,
+    _ph:   PhantomData<&'t ()>,
 }
 
-impl<A: Archetype> UnclonableRef<A> {
-    /// Creates a new UnclonableRef.
-    pub(crate) fn new(value: A::RawEntity) -> Self { Self { value } }
+impl<'t, A: Archetype> TempRef<'t, A> {
+    /// Creates a new TemporaryRef with a lifetime.
+    pub(crate) fn new(value: A::RawEntity) -> Self { Self { value, _ph: PhantomData } }
 }
 
-impl<A: Archetype> sealed::Sealed for UnclonableRef<A> {}
-impl<A: Archetype> Ref for UnclonableRef<A> {
+impl<'t, A: Archetype> sealed::Sealed for TempRef<'t, A> {}
+impl<'t, A: Archetype> Ref for TempRef<'t, A> {
     type Archetype = A;
     fn id(&self) -> A::RawEntity { self.value }
 }
+
+impl<'t, A: Archetype> Clone for TempRef<'t, A> {
+    fn clone(&self) -> Self { Self { value: self.value, _ph: PhantomData } }
+}
+
+impl<'t, A: Archetype> Copy for TempRef<'t, A> {}
 
 #[cfg(any(
     all(debug_assertions, feature = "debug-entity-rc"),
@@ -94,6 +100,12 @@ mod maybe {
 }
 
 pub(crate) use maybe::{MaybeArc, MaybeWeak};
+
+impl<'t, T: Ref> sealed::Sealed for &'t T {}
+impl<'t, T: Ref> Ref for &'t T {
+    type Archetype = T::Archetype;
+    fn id(&self) -> <T::Archetype as Archetype>::RawEntity { Ref::id(&**self) }
+}
 
 /// A strong reference to an entity.
 ///
@@ -140,12 +152,6 @@ impl<A: Archetype> Clone for Entity<A> {
             rc: Clone::clone(&self.rc),
         }
     }
-}
-
-impl<'t, T: Ref> sealed::Sealed for &'t T {}
-impl<'t, T: Ref> Ref for &'t T {
-    type Archetype = T::Archetype;
-    fn id(&self) -> <T::Archetype as Archetype>::RawEntity { Ref::id(&**self) }
 }
 
 /// A weak counted reference to an entity.

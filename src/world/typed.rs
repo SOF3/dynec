@@ -3,7 +3,7 @@ use std::collections::{hash_map, HashMap};
 use std::sync::Arc;
 
 use super::storage;
-use crate::entity::referrer;
+use crate::entity::{self, referrer};
 use crate::util::DbgTypeId;
 use crate::{comp, Archetype};
 
@@ -24,7 +24,14 @@ pub(crate) trait AnyBuilder {
 }
 
 pub(crate) fn builder<A: Archetype>() -> impl AnyBuilder {
-    Builder::<A> { simple_storages: HashMap::new(), isotope_storage_maps: HashMap::new() }
+    let mut builder =
+        Builder::<A> { simple_storages: HashMap::new(), isotope_storage_maps: HashMap::new() };
+    populate_default_component::<A, entity::deletion::Flag>(&mut builder);
+    builder
+}
+
+fn populate_default_component<A: Archetype, C: comp::Simple<A>>(builder: &mut Builder<A>) {
+    builder.simple_storages.insert(DbgTypeId::of::<C>(), storage::Simple::new::<C>());
 }
 
 struct Builder<A: Archetype> {

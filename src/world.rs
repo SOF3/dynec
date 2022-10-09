@@ -198,7 +198,6 @@ fn init_entity<A: Archetype>(
     comp_map: comp::Map<A>,
 ) {
     sync_globals.get_mut::<generation::StoreMap>().next::<A>(id.to_primitive());
-    sync_globals.get_mut::<deletion::Flags>().set::<A>(id, false);
 
     #[cfg(any(
         all(debug_assertions, feature = "debug-entity-rc"),
@@ -230,7 +229,12 @@ fn flag_delete_entity<A: Archetype>(
     systems: &mut [(&str, &mut dyn system::Descriptor)],
     ealloc_map: &mut ealloc::Map,
 ) -> DeleteResult {
-    sync_globals.get_mut::<deletion::Flags>().set::<A>(id, true);
+    let storage = components
+        .archetype_mut::<A>()
+        .simple_storages
+        .get_mut(&TypeId::of::<deletion::Flag>())
+        .expect("deletion::Flags storage is always available");
+    storage.get_storage::<deletion::Flag>().set(id, Some(deletion::Flag(())));
 
     try_real_delete_entity::<A>(components, id, sync_globals, unsync_globals, systems, ealloc_map)
 }

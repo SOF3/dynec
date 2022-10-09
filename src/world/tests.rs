@@ -1,7 +1,7 @@
 #![allow(clippy::ptr_arg)]
 
 use super::tracer;
-use crate::entity::{deletion, generation, Ref};
+use crate::entity::{deletion, generation};
 use crate::{
     comp, global, system, system_test, world, Entity, TestArch, TestDiscrim1, TestDiscrim2,
 };
@@ -714,12 +714,12 @@ fn test_offline_finalizer_delete() {
     fn test_system(
         mut entity_deleter: impl system::EntityDeleter<TestArch>,
         #[dynec(global)] initials: &mut InitialEntities,
-        #[dynec(global)] deletion_flags: &deletion::Flags,
+        deletion_flags: impl system::ReadSimple<TestArch, deletion::Flag>,
         mut comp_final: impl system::WriteSimple<TestArch, CompFinal>,
         _comp1: impl system::ReadSimple<TestArch, Comp1>,
     ) {
         let ent1 = initials.ent1.as_ref().expect("ent1 missing");
-        if deletion_flags.get::<TestArch>(ent1.id()) {
+        if deletion_flags.try_get(ent1).is_some() {
             comp_final.set(ent1, None);
             initials.ent1 = None;
         } else {
@@ -728,19 +728,22 @@ fn test_offline_finalizer_delete() {
     }
 
     let mut world = system_test!(test_system.build(););
-    let ent1 = world.create(crate::comps![@(crate) TestArch => Comp1(13), CompFinal]);
-    let ent1_weak = ent1.weak(world.get_global::<generation::StoreMap>());
-    world.get_global::<InitialEntities>().ent1 = Some(ent1);
 
-    // first iteration
-    world.execute(&tracer::Log(log::Level::Trace));
+    for _ in 0..3 {
+        let ent1 = world.create(crate::comps![@(crate) TestArch => Comp1(13), CompFinal]);
+        let ent1_weak = ent1.weak(world.get_global::<generation::StoreMap>());
+        world.get_global::<InitialEntities>().ent1 = Some(ent1);
 
-    let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent1_weak);
-    assert_eq!(comp1, Some(&mut Comp1(13)));
+        // first iteration
+        world.execute(&tracer::Log(log::Level::Trace));
 
-    // second iteration
-    world.execute(&tracer::Log(log::Level::Trace));
+        let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent1_weak);
+        assert_eq!(comp1, Some(&mut Comp1(13)));
 
-    let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent1_weak);
-    assert_eq!(comp1, None);
+        // second iteration
+        world.execute(&tracer::Log(log::Level::Trace));
+
+        let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent1_weak);
+        assert_eq!(comp1, None);
+    }
 }

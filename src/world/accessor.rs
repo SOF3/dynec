@@ -74,19 +74,7 @@ impl Components {
         };
         let guard = RwLockReadGuard::map(guard, |storage| storage.downcast_ref::<C>());
 
-        struct Ret<R: ops::Deref> {
-            storage: R,
-        }
-
-        impl<A: Archetype, C: comp::Simple<A>, R: ops::Deref<Target = C::Storage>>
-            system::ReadSimple<A, C> for Ret<R>
-        {
-            fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Option<&C> {
-                self.storage.get(entity.id())
-            }
-        }
-
-        Ret { storage: guard }
+        SimpleAccessor { storage: guard }
     }
 
     /// Creates a writable, exclusive accessor to the given archetyped simple component.
@@ -115,34 +103,7 @@ impl Components {
         };
         let guard = RwLockWriteGuard::map(guard, |storage| storage.downcast_mut::<C>());
 
-        struct Ret<R: ops::DerefMut> {
-            storage: R,
-        }
-
-        impl<A: Archetype, C: comp::Simple<A>, S: ops::DerefMut<Target = C::Storage>>
-            system::ReadSimple<A, C> for Ret<S>
-        {
-            fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Option<&C> {
-                self.storage.get(entity.id())
-            }
-        }
-        impl<A: Archetype, C: comp::Simple<A>, S: ops::DerefMut<Target = C::Storage>>
-            system::WriteSimple<A, C> for Ret<S>
-        {
-            fn try_get_mut<E: entity::Ref<Archetype = A>>(&mut self, entity: E) -> Option<&mut C> {
-                self.storage.get_mut(entity.id())
-            }
-
-            fn set<E: entity::Ref<Archetype = A>>(
-                &mut self,
-                entity: E,
-                value: Option<C>,
-            ) -> Option<C> {
-                self.storage.set(entity.id(), value)
-            }
-        }
-
-        Ret { storage: guard }
+        SimpleAccessor { storage: guard }
     }
 
     fn get_isotope_storage_map<A: Archetype, C: comp::Isotope<A>>(
@@ -393,6 +354,46 @@ impl Components {
         }
 
         IsotopeAccessor { storages, processor: Proc(PhantomData), _ph: PhantomData }
+    }
+}
+
+struct SimpleAccessor<S> {
+    storage: S,
+}
+
+impl<A, C, S> system::ReadSimple<A, C> for SimpleAccessor<S>
+where
+    A: Archetype,
+    C: comp::Simple<A>,
+    S: ops::Deref<Target = C::Storage>,
+{
+    fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Option<&C> {
+        self.storage.get(entity.id())
+    }
+
+    type Iter<'t> = impl Iterator<Item = (entity::TempRef<'t, A>, &'t C)> where Self: 't;
+    fn iter(&self) -> Self::Iter<'_> {
+        self.storage.iter().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
+    }
+}
+
+impl<A, C, S> system::WriteSimple<A, C> for SimpleAccessor<S>
+where
+    A: Archetype,
+    C: comp::Simple<A>,
+    S: ops::DerefMut<Target = C::Storage>,
+{
+    fn try_get_mut<E: entity::Ref<Archetype = A>>(&mut self, entity: E) -> Option<&mut C> {
+        self.storage.get_mut(entity.id())
+    }
+
+    fn set<E: entity::Ref<Archetype = A>>(&mut self, entity: E, value: Option<C>) -> Option<C> {
+        self.storage.set(entity.id(), value)
+    }
+
+    type IterMut<'t> = impl Iterator<Item = (entity::TempRef<'t, A>, &'t mut C)> where Self: 't;
+    fn iter_mut(&mut self) -> Self::IterMut<'_> {
+        self.storage.iter_mut().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
     }
 }
 

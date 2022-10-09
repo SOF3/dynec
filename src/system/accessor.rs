@@ -26,6 +26,13 @@ pub trait ReadSimple<A: Archetype, C: comp::Simple<A>> {
             ),
         }
     }
+
+    /// Return value of [`iter`](Self::iter).
+    type Iter<'t>: Iterator<Item = (entity::TempRef<'t, A>, &'t C)>
+    where
+        Self: 't;
+    /// Returns an iterator over all initialized components in this storage.
+    fn iter(&self) -> Self::Iter<'_>;
 }
 
 /// Provides access to a simple component in a specific archetype.
@@ -61,6 +68,13 @@ pub trait WriteSimple<A: Archetype, C: comp::Simple<A>>: ReadSimple<A, C> {
     /// Passing `None` to this method removes the component from the entity.
     /// This leads to a panic for components with [`comp::SimplePresence::Required`] presence.
     fn set<E: entity::Ref<Archetype = A>>(&mut self, entity: E, value: Option<C>) -> Option<C>;
+
+    /// Return value of [`iter`](Self::iter).
+    type IterMut<'t>: Iterator<Item = (entity::TempRef<'t, A>, &'t mut C)>
+    where
+        Self: 't;
+    /// Returns an iterator over all initialized components in this storage as mutable references.
+    fn iter_mut(&mut self) -> Self::IterMut<'_>;
 }
 
 /// Provides access to an isotope component in a specific archetype.

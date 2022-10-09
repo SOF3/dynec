@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use parking_lot::RwLock;
 
 use super::{scheduler, typed};
-use crate::entity::{deletion, ealloc, generation, referrer};
+use crate::entity::{ealloc, generation, referrer};
 use crate::system::spec;
 use crate::util::DbgTypeId;
 use crate::{system, Global};
@@ -290,7 +290,6 @@ fn populate_default_globals(map: &mut GlobalBuilderMap<dyn Any + Send + Sync>) {
     }
 
     put_global(map, generation::StoreMap::default());
-    put_global(map, deletion::Flags::default());
 
     #[cfg(any(
         all(debug_assertions, feature = "debug-entity-rc"),

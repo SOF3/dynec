@@ -1,13 +1,12 @@
 use std::hash;
 use std::num::NonZeroU32;
 
-use super::{Ref, UnclonableRef};
+use super::{Ref, TempRef};
 use crate::TestArch;
 
 // ensure that Ref<Archetype = A> for a fixed `A` must be object-safe.
 fn test_object_safety() {
-    let _: &dyn Ref<Archetype = TestArch> =
-        &UnclonableRef::new(NonZeroU32::new(1).expect("1 != 0"));
+    let _: &dyn Ref<Archetype = TestArch> = &TempRef::new(NonZeroU32::new(1).expect("1 != 0"));
 }
 
 // Make sure that Entity is not collatable and hashable,

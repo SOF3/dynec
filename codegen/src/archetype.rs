@@ -2,9 +2,9 @@ use matches2::option_match;
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 use syn::parse::{Parse, ParseStream};
-use syn::{Error, Result};
+use syn::Error;
 
-use crate::util::{Attr, Named};
+use crate::util::{Attr, Named, Result};
 
 pub(crate) fn imp(input: TokenStream) -> Result<TokenStream> {
     let inputs: Inputs = syn::parse2(input)?;

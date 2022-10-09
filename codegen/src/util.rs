@@ -3,29 +3,9 @@ use quote::{quote, quote_spanned, ToTokens};
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
-use syn::{Error, Result};
+use syn::Error;
 
-/// A poorly optimized but stable implementation of `drain_filter`.
-pub(crate) fn slow_drain_filter<T>(
-    vec: &mut Vec<T>,
-    mut filter: impl FnMut(&T) -> bool,
-) -> impl IntoIterator<Item = T> {
-    let mut i = 0;
-    let mut output = Vec::new();
-
-    while i < vec.len() {
-        if !filter(vec.get(i).expect("just checked")) {
-            i += 1;
-            continue;
-        }
-
-        let item = vec.remove(i);
-        output.push(item);
-        // continue with same i since vec is updated
-    }
-
-    output
-}
+pub(crate) type Result<T, E = syn::Error> = std::result::Result<T, E>;
 
 pub(crate) fn parse_generics(input: &syn::DeriveInput) -> ParsedGenerics {
     let generics = &input.generics;

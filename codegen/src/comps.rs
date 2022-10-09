@@ -3,7 +3,8 @@ use quote::{quote, quote_spanned};
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
-use syn::Result;
+
+use crate::util::Result;
 
 pub(crate) fn imp(input: TokenStream) -> Result<TokenStream> {
     let Input { dynec_as, archetype, components, .. } = syn::parse2(input)?;

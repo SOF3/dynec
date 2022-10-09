@@ -2,9 +2,9 @@ use matches2::option_match;
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::parse::{Parse, ParseStream};
-use syn::{Error, Result};
+use syn::Error;
 
-use crate::util::{Attr, Named};
+use crate::util::{Attr, Named, Result};
 use crate::{entity_ref, util};
 
 pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> {

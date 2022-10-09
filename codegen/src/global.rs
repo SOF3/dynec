@@ -2,10 +2,10 @@ use matches2::option_match;
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::parse::{Parse, ParseStream};
-use syn::{Error, Result};
+use syn::Error;
 
 use crate::entity_ref;
-use crate::util::{Attr, Named};
+use crate::util::{Attr, Named, Result};
 
 pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
     let mut initial = None;

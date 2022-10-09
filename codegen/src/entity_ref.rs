@@ -1,9 +1,9 @@
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::spanned::Spanned;
-use syn::{Error, Result};
+use syn::Error;
 
-use crate::util;
+use crate::util::{self, Result};
 
 pub(crate) fn derive(input: TokenStream) -> Result<TokenStream> {
     let mut input: syn::DeriveInput = syn::parse2(input)?;

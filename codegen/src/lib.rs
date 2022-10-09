@@ -1,6 +1,6 @@
-use proc_macro::TokenStream;
+#![feature(drain_filter)]
 
-extern crate proc_macro;
+use proc_macro::TokenStream;
 
 mod archetype;
 mod comp;

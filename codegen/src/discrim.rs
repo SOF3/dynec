@@ -2,9 +2,9 @@ use matches2::option_match;
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 use syn::parse::Parse;
-use syn::{Error, Result};
+use syn::Error;
 
-use crate::util::{Attr, Named};
+use crate::util::{Attr, Named, Result};
 
 const INPUT_TYPE_ERROR: &str =
     "Discrim can only be derived from single-field structs and fieldless enums";

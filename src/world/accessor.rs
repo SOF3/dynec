@@ -1,9 +1,8 @@
-use core::fmt;
 use std::any::{self, TypeId};
 use std::collections::HashMap;
 use std::marker::PhantomData;
-use std::ops;
 use std::sync::Arc;
+use std::{fmt, ops};
 
 use parking_lot::lock_api::ArcRwLockWriteGuard;
 use parking_lot::{RawRwLock, RwLock, RwLockReadGuard, RwLockWriteGuard};

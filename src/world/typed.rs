@@ -206,7 +206,7 @@ impl<A: Archetype> AnyTyped for Typed<A> {
     fn as_any_mut(&mut self) -> &mut (dyn Any + Send + Sync) { self }
 
     fn referrer_dyn_iter<'t>(&'t mut self, archetype: &'t str) -> Box<dyn referrer::Object + 't> {
-        Box::new(referrer::DynIter(
+        Box::new(referrer::NamedBoxIter(
             self.simple_storages
                 .iter_mut()
                 .map(move |(comp_ty, storage)| {
@@ -214,11 +214,11 @@ impl<A: Archetype> AnyTyped for Typed<A> {
                         .expect("storage arc was leaked")
                         .get_mut()
                         .referrer_dyn();
-                    (Some(format!("{archetype}/{comp_ty}")), referrer_dyn)
+                    (Some(format!("{archetype} / {comp_ty}")), referrer_dyn)
                 })
                 .chain(self.isotope_storage_maps.iter_mut().map(move |(comp_ty, storage)| {
                     let storage = Arc::get_mut(storage).expect("storage arc was leaked");
-                    (Some(format!("{archetype}/{comp_ty}")), storage.referrer_dyn())
+                    (Some(format!("{archetype} / {comp_ty}")), storage.referrer_dyn())
                 })),
         ))
     }

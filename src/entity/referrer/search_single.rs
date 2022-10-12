@@ -1,6 +1,7 @@
 use super::{VisitMutArg, VisitStrongArgs, VisitStrongResult, VisitWeakArgs, VisitWeakResult};
 use crate::util::DbgTypeId;
 
+#[derive(Debug)]
 pub(crate) struct SearchSingleStrong {
     ty:                 DbgTypeId,
     raw:                usize,

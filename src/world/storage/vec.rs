@@ -1,3 +1,4 @@
+use std::iter;
 use std::marker::PhantomData;
 use std::mem::{self, MaybeUninit};
 
@@ -128,11 +129,13 @@ impl<E: entity::Raw, C: Send + Sync + 'static> Storage for VecStorage<E, C> {
 
     type IterChunks<'t> = impl Iterator<Item = ChunkRef<'t, Self>> + 't;
     fn iter_chunks(&self) -> Self::IterChunks<'_> {
-        let indices = self.bits.iter_zeros();
+        let tail = self.bits.len(); // add tail to ensure trailing ones get included
+        let indices = self.bits.iter_zeros().chain(iter::once(tail));
         let data = &self.data;
 
         // the first bit is always zero, so no need to worry about the initila `0..from`
 
+        // TODO this unsafe function requires unit tests
         indices
             .tuple_windows()
             .map(|(from, to)| (from + 1)..to)
@@ -162,25 +165,25 @@ impl<E: entity::Raw, C: Send + Sync + 'static> Storage for VecStorage<E, C> {
 
     type IterChunksMut<'t> = impl Iterator<Item = ChunkMut<'t, Self>> + 't;
     fn iter_chunks_mut(&mut self) -> Self::IterChunksMut<'_> {
-        let indices = self.bits.iter_zeros().peekable();
+        let tail = self.bits.len(); // add tail to ensure trailing ones get included
+        let indices = self.bits.iter_zeros().chain(iter::once(tail));
         let data = &mut self.data;
 
-        // the first bit is always zero, so no need to worry about the initila `0..from`
+        // the first bit is always zero, so no need to worry about the initial `0..from`
 
-        Box::new(
-            indices
-                .tuple_windows()
-                .map(|(from, to)| (from + 1)..to)
-                .map(move |range| ChunkMut {
-                    slice: unsafe {
-                        let uninit = data.get_mut(range.clone()).expect("bits mismatch");
-                        let slice = slice_assume_init_mut(uninit);
-                        mem::transmute::<&mut [C], &mut [C]>(slice)
-                    },
-                    start: E::from_primitive(range.start),
-                })
-                .filter(|chunk| !chunk.slice.is_empty()),
-        )
+        // TODO this unsafe function requires unit tests
+        indices
+            .tuple_windows()
+            .map(|(from, to)| (from + 1)..to)
+            .map(move |range| ChunkMut {
+                slice: unsafe {
+                    let uninit = data.get_mut(range.clone()).expect("bits mismatch");
+                    let slice = slice_assume_init_mut(uninit);
+                    mem::transmute::<&mut [C], &mut [C]>(slice)
+                },
+                start: E::from_primitive(range.start),
+            })
+            .filter(|chunk| !chunk.slice.is_empty())
     }
 }
 

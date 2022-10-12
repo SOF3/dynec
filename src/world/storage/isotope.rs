@@ -1,4 +1,4 @@
-use std::any::Any;
+use std::any::{self, Any};
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -57,15 +57,18 @@ impl<A: Archetype, C: comp::Isotope<A>> AnyMap<A> for Map<A, C> {
     }
 
     fn referrer_dyn<'t>(&'t mut self) -> Box<dyn referrer::Object + 't> {
-        Box::new(referrer::ReferrerIter(
-            self.map
-                .get_mut()
-                .iter_mut()
-                .flat_map(|(_, value): (_, &mut Arc<RwLock<C::Storage>>)| {
-                    Arc::get_mut(value).expect("storage arc was leaked").get_mut().iter_chunks_mut()
-                })
-                .flat_map(|chunk| chunk.slice),
-        ))
+        Box::new(referrer::NamedIter(self.map.get_mut().iter_mut().map(|(discrim, value)| {
+            let storage: &mut C::Storage =
+                Arc::get_mut(value).expect("storage arc was leaked").get_mut();
+            (
+                Some(format!(
+                    "{} / {} # {discrim:?}",
+                    any::type_name::<A>(),
+                    any::type_name::<C>()
+                )),
+                referrer::UnnamedIter(storage.iter_chunks_mut().flat_map(|chunk| chunk.slice)),
+            )
+        })))
     }
 }
 

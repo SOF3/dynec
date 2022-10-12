@@ -128,6 +128,6 @@ impl<A: Archetype, C: comp::Simple<A>> AnySimpleStorage<A> for SimpleStorage<A, 
     fn clear_entry(&mut self, entity: A::RawEntity) { self.0.set(entity, None); }
 
     fn referrer_dyn<'t>(&'t mut self) -> Box<dyn referrer::Object + 't> {
-        Box::new(referrer::ReferrerIter(self.0.iter_chunks_mut().flat_map(|chunk| chunk.slice)))
+        Box::new(referrer::UnnamedIter(self.0.iter_chunks_mut().flat_map(|chunk| chunk.slice)))
     }
 }

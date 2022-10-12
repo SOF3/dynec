@@ -1,7 +1,7 @@
 #![allow(clippy::ptr_arg)]
 
 use super::tracer;
-use crate::entity::{deletion, generation};
+use crate::entity::{self, deletion, generation};
 use crate::{
     comp, global, system, system_test, world, Entity, TestArch, TestDiscrim1, TestDiscrim2,
 };
@@ -75,7 +75,9 @@ struct Aggregator {
 #[derive(Default)]
 struct InitialEntities {
     #[entity]
-    ent1: Option<Entity<TestArch>>,
+    strong: Option<Entity<TestArch>>,
+    #[entity]
+    weak:   Option<entity::Weak<TestArch>>,
 }
 
 #[system(dynec_as(crate))]
@@ -167,21 +169,21 @@ fn test_simple_fetch() {
         mut comp5: impl system::WriteSimple<TestArch, Comp5>,
         #[dynec(global)] initials: &InitialEntities,
     ) {
-        let ent1 = initials.ent1.as_ref().expect("ent1 is None");
+        let ent = initials.strong.as_ref().expect("initials.strong is None");
 
-        let comp = comp5.get_mut(ent1);
+        let comp = comp5.get_mut(ent);
         assert_eq!(comp.0, 7);
         comp.0 += 13;
     }
 
     let mut world = system_test!(test_system.build(););
 
-    let ent1 = world.create(crate::comps![@(crate) TestArch => Comp5(7)]);
-    world.get_global::<InitialEntities>().ent1 = Some(ent1.clone());
+    let ent = world.create(crate::comps![@(crate) TestArch => Comp5(7)]);
+    world.get_global::<InitialEntities>().strong = Some(ent.clone());
 
     world.execute(&tracer::Log(log::Level::Trace));
 
-    let comp = world.get_simple::<TestArch, Comp5, _>(ent1);
+    let comp = world.get_simple::<TestArch, Comp5, _>(ent);
     assert_eq!(comp, Some(&mut Comp5(20)));
 }
 
@@ -193,26 +195,26 @@ fn test_full_isotope_discrim_read() {
         iso2: impl system::ReadIsotope<TestArch, Iso2>,
         #[dynec(global)] initials: &InitialEntities,
     ) {
-        let ent1 = initials.ent1.as_ref().expect("ent1 is None");
+        let ent = initials.strong.as_ref().expect("initials.strong is None");
 
         {
-            let iso = iso1.try_get(ent1, TestDiscrim1(11));
+            let iso = iso1.try_get(ent, TestDiscrim1(11));
             assert_eq!(iso.as_deref(), Some(&Iso1(3)));
         }
 
         // should not panic on nonexistent storages
         {
-            let iso = iso1.try_get(ent1, TestDiscrim1(17));
+            let iso = iso1.try_get(ent, TestDiscrim1(17));
             assert_eq!(iso.as_deref(), None);
         }
 
         // should return default value for autoinit isotopes
         {
-            let iso = iso2.try_get(ent1, TestDiscrim2(31));
+            let iso = iso2.try_get(ent, TestDiscrim2(31));
             assert_eq!(iso.as_deref(), Some(&Iso2(-1)));
         }
 
-        let map = iso1.get_all(ent1);
+        let map = iso1.get_all(ent);
         let mut map_vec: Vec<(TestDiscrim1, &Iso1)> = map.collect();
         map_vec.sort_by_key(|(TestDiscrim1(discrim), _)| *discrim);
         assert_eq!(map_vec, vec![(TestDiscrim1(11), &Iso1(3)), (TestDiscrim1(13), &Iso1(5))]);
@@ -220,11 +222,11 @@ fn test_full_isotope_discrim_read() {
 
     let mut world = system_test!(test_system.build(););
 
-    let ent1 = world.create(crate::comps![@(crate) TestArch =>
+    let ent = world.create(crate::comps![@(crate) TestArch =>
         @(TestDiscrim1(11), Iso1(3)),
         @(TestDiscrim1(13), Iso1(5)),
     ]);
-    world.get_global::<InitialEntities>().ent1 = Some(ent1);
+    world.get_global::<InitialEntities>().strong = Some(ent);
 
     world.execute(&tracer::Log(log::Level::Trace));
 }
@@ -258,15 +260,15 @@ fn partial_isotope_discrim_read(
         #[dynec(isotope(discrim = _req_discrims))] iso1: impl system::ReadIsotope<TestArch, Iso1, usize>,
         #[dynec(global)] initials: &InitialEntities,
     ) {
-        let ent1 = initials.ent1.as_ref().expect("ent1 is None");
+        let ent = initials.strong.as_ref().expect("initials.strong is None");
 
         for (discrim, expect) in single_expects {
-            let iso = iso1.try_get(ent1, *discrim);
+            let iso = iso1.try_get(ent, *discrim);
             assert_eq!(iso.as_deref(), expect.as_ref());
         }
 
         // should only include requested discriminants
-        let map = iso1.get_all(ent1);
+        let map = iso1.get_all(ent);
         let mut map_vec: Vec<(TestDiscrim1, &Iso1)> = map.collect();
         map_vec.sort_by_key(|(TestDiscrim1(discrim), _)| *discrim);
         let expect_all =
@@ -278,11 +280,11 @@ fn partial_isotope_discrim_read(
         test_system.build(req_discrims, single_expects, expect_all);
     );
 
-    let ent1 = world.create(crate::comps![@(crate) TestArch =>
+    let ent = world.create(crate::comps![@(crate) TestArch =>
         @(TestDiscrim1(11), Iso1(3)),
         @(TestDiscrim1(13), Iso1(5)),
     ]);
-    world.get_global::<InitialEntities>().ent1 = Some(ent1);
+    world.get_global::<InitialEntities>().strong = Some(ent);
 
     world.execute(&tracer::Log(log::Level::Trace));
 }
@@ -295,10 +297,10 @@ fn test_full_isotope_discrim_write() {
         mut iso2: impl system::WriteIsotope<TestArch, Iso2>,
         #[dynec(global)] initials: &InitialEntities,
     ) {
-        let ent1 = initials.ent1.as_ref().expect("ent1 is None");
+        let ent = initials.strong.as_ref().expect("initials.strong is None");
 
         {
-            let iso = iso1.try_get_mut(ent1, TestDiscrim1(11));
+            let iso = iso1.try_get_mut(ent, TestDiscrim1(11));
             let iso = iso.expect("was passed input");
             assert_eq!(iso, &mut Iso1(3));
             *iso = Iso1(23);
@@ -306,35 +308,34 @@ fn test_full_isotope_discrim_write() {
 
         // should not panic on nonexistent storages
         {
-            let iso = iso1.try_get_mut(ent1, TestDiscrim1(17));
+            let iso = iso1.try_get_mut(ent, TestDiscrim1(17));
             assert_eq!(iso, None);
         }
 
         // should update new storages
         {
-            let iso = iso1.set(ent1, TestDiscrim1(19), Some(Iso1(29)));
+            let iso = iso1.set(ent, TestDiscrim1(19), Some(Iso1(29)));
             assert_eq!(iso, None);
         }
 
         // should return default value
         {
-            let iso = iso2.try_get(ent1, TestDiscrim2(31));
+            let iso = iso2.try_get(ent, TestDiscrim2(31));
             assert_eq!(iso.as_deref(), Some(&Iso2(-1)));
         }
 
         // should reset to default value
         {
-            let iso = iso2.set(ent1, TestDiscrim2(37), None);
+            let iso = iso2.set(ent, TestDiscrim2(37), None);
             assert_eq!(iso, Some(Iso2(41)));
         }
         {
-            let iso = iso2.try_get(ent1, TestDiscrim2(37));
-            dbg!(iso.as_deref());
+            let iso = iso2.try_get(ent, TestDiscrim2(37));
             assert_eq!(iso.as_deref(), Some(&Iso2(-1)));
         }
 
         // should include new discriminants
-        let map = iso1.get_all(ent1);
+        let map = iso1.get_all(ent);
         let mut map_vec: Vec<(TestDiscrim1, &Iso1)> = map.collect();
         map_vec.sort_by_key(|(TestDiscrim1(discrim), _)| *discrim);
         assert_eq!(
@@ -349,12 +350,12 @@ fn test_full_isotope_discrim_write() {
 
     let mut world = system_test!(test_system.build(););
 
-    let ent1 = world.create(crate::comps![@(crate) TestArch =>
+    let ent = world.create(crate::comps![@(crate) TestArch =>
         @(TestDiscrim1(11), Iso1(3)),
         @(TestDiscrim1(13), Iso1(5)),
         @(TestDiscrim2(37), Iso2(41)),
     ]);
-    world.get_global::<InitialEntities>().ent1 = Some(ent1);
+    world.get_global::<InitialEntities>().strong = Some(ent);
 
     world.execute(&tracer::Log(log::Level::Trace));
 }
@@ -399,18 +400,18 @@ fn partial_isotope_discrim_write(
         >,
         #[dynec(global)] initials: &InitialEntities,
     ) {
-        let ent1 = initials.ent1.as_ref().expect("ent1 is None");
+        let ent = initials.strong.as_ref().expect("initials.strong is None");
 
         for (discrim, mut expect, update) in single_expect_updates.drain(..) {
-            let iso = iso1.try_get_mut(ent1, discrim);
+            let iso = iso1.try_get_mut(ent, discrim);
             assert_eq!(iso, expect.as_mut());
             if let Some(update) = update {
-                iso1.set(ent1, discrim, update);
+                iso1.set(ent, discrim, update);
             }
         }
 
         // should only include requested discriminants
-        let map = iso1.get_all(ent1);
+        let map = iso1.get_all(ent);
         let map_vec: Vec<(TestDiscrim1, &Iso1)> = map.collect();
         let expect_all =
             expect_all.iter().map(|(discrim, iso)| (*discrim, iso)).collect::<Vec<_>>();
@@ -420,12 +421,12 @@ fn partial_isotope_discrim_write(
     let mut world =
         system_test!(test_system.build(req_discrims, single_expect_updates, expect_all););
 
-    let ent1 = world.create(crate::comps![@(crate) TestArch =>
+    let ent = world.create(crate::comps![@(crate) TestArch =>
         @(TestDiscrim1(7), Iso1(2)),
         @(TestDiscrim1(11), Iso1(3)),
         @(TestDiscrim1(13), Iso1(5)),
     ]);
-    world.get_global::<InitialEntities>().ent1 = Some(ent1);
+    world.get_global::<InitialEntities>().strong = Some(ent);
 
     world.execute(&tracer::Log(log::Level::Trace));
 }
@@ -449,7 +450,7 @@ fn test_offline_create() {
     ) {
         match step {
             Step::Create => {
-                initials.ent1 =
+                initials.strong =
                     Some(entity_creator.create(crate::comps![@(crate) TestArch => Comp1(5)]));
             }
             Step::Access => {}
@@ -464,11 +465,11 @@ fn test_offline_create() {
     ) {
         match step {
             Step::Create => {
-                assert!(initials.ent1.is_none());
+                assert!(initials.strong.is_none());
             }
             Step::Access => {
-                let ent = initials.ent1.as_ref().expect("ent1 should have been set");
-                comp1.try_get(ent).expect("ent1 should have been initialized");
+                let ent = initials.strong.as_ref().expect("initials.strong should have been set");
+                comp1.try_get(ent).expect("initials.strong should have been initialized");
             }
         }
     }
@@ -482,12 +483,12 @@ fn test_offline_create() {
     ) {
         match step {
             Step::Create => {
-                let ent = initials.ent1.as_ref().expect("ent1 should have been set");
+                let ent = initials.strong.as_ref().expect("initials.strong should have been set");
                 assert!(comp1.try_get(ent).is_none(), "entity should be in pre-initialize state");
             }
             Step::Access => {
-                let ent = initials.ent1.as_ref().expect("ent1 should have been set");
-                comp1.try_get(ent).expect("ent1 should have been initialized");
+                let ent = initials.strong.as_ref().expect("initials.strong should have been set");
+                comp1.try_get(ent).expect("initials.strong should have been initialized");
             }
         }
     }
@@ -498,12 +499,12 @@ fn test_offline_create() {
     *world.get_global::<Step>() = Step::Access;
     world.execute(&tracer::Log(log::Level::Trace));
 
-    let ent1 = {
+    let ent = {
         let initials = world.get_global::<InitialEntities>();
-        let ent1 = initials.ent1.as_ref().expect("ent1 missing");
-        ent1.clone()
+        let ent = initials.strong.as_ref().expect("initials.strong missing");
+        ent.clone()
     };
-    let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent1);
+    let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent);
     assert_eq!(comp1, Some(&mut Comp1(5)));
 }
 
@@ -516,19 +517,19 @@ fn test_offline_create_conflict() {
         #[dynec(global)] initials: &mut InitialEntities,
         _comp1: impl system::ReadSimple<TestArch, Comp1>,
     ) {
-        initials.ent1 = Some(entity_creator.create(crate::comps![@(crate) TestArch => Comp1(5)]));
+        initials.strong = Some(entity_creator.create(crate::comps![@(crate) TestArch => Comp1(5)]));
     }
 
     let mut world = system_test!(test_system.build(););
 
     world.execute(&tracer::Log(log::Level::Trace));
 
-    let ent1 = {
+    let ent = {
         let initials = world.get_global::<InitialEntities>();
-        let ent1 = initials.ent1.as_ref().expect("ent1 missing");
-        ent1.clone()
+        let ent = initials.strong.as_ref().expect("initials.strong missing");
+        ent.clone()
     };
-    let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent1);
+    let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent);
     assert_eq!(comp1, Some(&mut Comp1(5)));
 }
 
@@ -540,17 +541,17 @@ fn test_offline_delete() {
         #[dynec(global)] initials: &mut InitialEntities,
         _comp1: impl system::ReadSimple<TestArch, Comp1>,
     ) {
-        entity_deleter.queue(initials.ent1.take().expect("ent1 missing"));
+        entity_deleter.queue(initials.strong.take().expect("initials.strong missing"));
     }
 
     let mut world = system_test!(test_system.build(););
-    let ent1 = world.create(crate::comps![@(crate) TestArch => Comp1(7)]);
-    let ent1_weak = ent1.weak(world.get_global::<generation::StoreMap>());
-    world.get_global::<InitialEntities>().ent1 = Some(ent1);
+    let ent = world.create(crate::comps![@(crate) TestArch => Comp1(7)]);
+    let weak = ent.weak(world.get_global::<generation::StoreMap>());
+    world.get_global::<InitialEntities>().strong = Some(ent);
 
     world.execute(&tracer::Log(log::Level::Trace));
 
-    let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent1_weak);
+    let comp1 = world.get_simple::<TestArch, Comp1, _>(&weak);
     assert_eq!(comp1, None);
 }
 
@@ -572,7 +573,7 @@ fn test_offline_delete_send_system_leak() {
         #[dynec(global)] initials: &mut InitialEntities,
         _comp1: impl system::ReadSimple<TestArch, Comp1>,
     ) {
-        if let Some(ent) = initials.ent1.take() {
+        if let Some(ent) = initials.strong.take() {
             *entity = Some(ent);
         }
 
@@ -586,13 +587,13 @@ fn test_offline_delete_send_system_leak() {
 
     let mut world = builder.build();
 
-    let ent1 = world.create(crate::comps![@(crate) TestArch => Comp1(7)]);
-    let ent1_weak = ent1.weak(world.get_global::<generation::StoreMap>());
-    world.get_global::<InitialEntities>().ent1 = Some(ent1);
+    let ent = world.create(crate::comps![@(crate) TestArch => Comp1(7)]);
+    let weak = ent.weak(world.get_global::<generation::StoreMap>());
+    world.get_global::<InitialEntities>().strong = Some(ent);
 
     world.execute(&tracer::Log(log::Level::Trace));
 
-    let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent1_weak);
+    let comp1 = world.get_simple::<TestArch, Comp1, _>(&weak);
     assert_eq!(comp1, None);
 }
 
@@ -614,7 +615,7 @@ fn test_offline_delete_unsend_system_leak() {
         #[dynec(global)] initials: &mut InitialEntities,
         _comp1: impl system::ReadSimple<TestArch, Comp1>,
     ) {
-        if let Some(ent) = initials.ent1.take() {
+        if let Some(ent) = initials.strong.take() {
             *entity = Some(ent);
         }
 
@@ -628,13 +629,13 @@ fn test_offline_delete_unsend_system_leak() {
 
     let mut world = builder.build();
 
-    let ent1 = world.create(crate::comps![@(crate) TestArch => Comp1(7)]);
-    let ent1_weak = ent1.weak(world.get_global::<generation::StoreMap>());
-    world.get_global::<InitialEntities>().ent1 = Some(ent1);
+    let ent = world.create(crate::comps![@(crate) TestArch => Comp1(7)]);
+    let weak = ent.weak(world.get_global::<generation::StoreMap>());
+    world.get_global::<InitialEntities>().strong = Some(ent);
 
     world.execute(&tracer::Log(log::Level::Trace));
 
-    let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent1_weak);
+    let comp1 = world.get_simple::<TestArch, Comp1, _>(&weak);
     assert_eq!(comp1, None);
 }
 
@@ -656,18 +657,14 @@ fn test_offline_delete_sync_global_leak() {
         #[dynec(global)] initials: &mut InitialEntities,
         _comp1: impl system::ReadSimple<TestArch, Comp1>,
     ) {
-        entity_deleter.queue(initials.ent1.as_ref().expect("ent1 missing"));
+        entity_deleter.queue(initials.strong.as_ref().expect("initials.strong missing"));
     }
 
     let mut world = system_test!(test_system.build(););
-    let ent1 = world.create(crate::comps![@(crate) TestArch => Comp1(7)]);
-    let ent1_weak = ent1.weak(world.get_global::<generation::StoreMap>());
-    world.get_global::<InitialEntities>().ent1 = Some(ent1);
+    let ent = world.create(crate::comps![@(crate) TestArch => Comp1(7)]);
+    world.get_global::<InitialEntities>().strong = Some(ent);
 
     world.execute(&tracer::Log(log::Level::Trace));
-
-    let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent1_weak);
-    assert_eq!(comp1, None);
 }
 
 #[test]
@@ -688,7 +685,7 @@ fn test_offline_delete_unsync_global_leak() {
         #[dynec(global(thread_local))] initials: &mut InitialEntities,
         _comp1: impl system::ReadSimple<TestArch, Comp1>,
     ) {
-        entity_deleter.queue(initials.ent1.as_ref().expect("ent1 missing"));
+        entity_deleter.queue(initials.strong.as_ref().expect("initials.strong missing"));
     }
 
     let mut builder = world::Builder::new(0);
@@ -696,17 +693,83 @@ fn test_offline_delete_unsync_global_leak() {
 
     let mut world = builder.build();
 
-    let ent1 = world.create(crate::comps![@(crate) TestArch => Comp1(7)]);
-    let ent1_weak = ent1.weak(world.get_global::<generation::StoreMap>());
-    world.get_global_unsync::<InitialEntities>().ent1 = Some(ent1);
+    let ent = world.create(crate::comps![@(crate) TestArch => Comp1(7)]);
+    world.get_global_unsync::<InitialEntities>().strong = Some(ent);
 
     world.execute(&tracer::Log(log::Level::Trace));
-
-    let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent1_weak);
-    assert_eq!(comp1, None);
 }
 
-// TODO add tests for leaking from simple and isotope components
+#[test]
+#[cfg_attr(
+    any(
+        all(debug_assertions, feature = "debug-entity-rc"),
+        all(not(debug_assertions), feature = "release-entity-rc"),
+    ),
+    should_panic = "Detected dangling strong reference to entity dynec::test_util::TestArch#1 in \
+                    dynec::test_util::TestArch / dynec::world::tests::StrongRefSimple. All strong \
+                    references to an entity must be dropped before queuing for deletion and \
+                    removing all finalizers."
+)]
+fn test_offline_delete_simple_leak() {
+    #[system(dynec_as(crate))]
+    fn test_system(
+        mut entity_deleter: impl system::EntityDeleter<TestArch>,
+        #[dynec(global)] initials: &mut InitialEntities,
+        _srs: impl system::ReadSimple<TestArch, StrongRefSimple>,
+    ) {
+        let entity = initials.weak.as_ref().expect("initials.strong missing");
+        entity_deleter.queue(entity);
+    }
+
+    let mut builder = world::Builder::new(0);
+    builder.schedule(Box::new(test_system.build()));
+
+    let mut world = builder.build();
+
+    let ent = world.create(crate::comps![@(crate) TestArch =>]);
+    let weak = ent.weak(world.get_global::<generation::StoreMap>());
+    world.get_global::<InitialEntities>().weak = Some(weak);
+
+    world.create(crate::comps![@(crate) TestArch => StrongRefSimple(ent)]);
+
+    world.execute(&tracer::Log(log::Level::Trace));
+}
+
+#[test]
+#[cfg_attr(
+    any(
+        all(debug_assertions, feature = "debug-entity-rc"),
+        all(not(debug_assertions), feature = "release-entity-rc"),
+    ),
+    should_panic = "Detected dangling strong reference to entity dynec::test_util::TestArch#1 in \
+                    dynec::test_util::TestArch / dynec::world::tests::StrongRefIsotope # \
+                    TestDiscrim1(29). All strong references to an entity must be dropped before \
+                    queuing for deletion and removing all finalizers."
+)]
+fn test_offline_delete_isotope_leak() {
+    #[system(dynec_as(crate))]
+    fn test_system(
+        mut entity_deleter: impl system::EntityDeleter<TestArch>,
+        #[dynec(global)] initials: &mut InitialEntities,
+        _sri: impl system::ReadIsotope<TestArch, StrongRefIsotope>,
+    ) {
+        let entity = initials.weak.as_ref().expect("initials.strong missing");
+        entity_deleter.queue(entity);
+    }
+
+    let mut builder = world::Builder::new(0);
+    builder.schedule(Box::new(test_system.build()));
+
+    let mut world = builder.build();
+
+    let ent = world.create(crate::comps![@(crate) TestArch =>]);
+    let weak = ent.weak(world.get_global::<generation::StoreMap>());
+    world.get_global::<InitialEntities>().weak = Some(weak);
+
+    world.create(crate::comps![@(crate) TestArch => @(TestDiscrim1(29), StrongRefIsotope(ent))]);
+
+    world.execute(&tracer::Log(log::Level::Trace));
+}
 
 #[test]
 fn test_offline_finalizer_delete() {
@@ -718,32 +781,32 @@ fn test_offline_finalizer_delete() {
         mut comp_final: impl system::WriteSimple<TestArch, CompFinal>,
         _comp1: impl system::ReadSimple<TestArch, Comp1>,
     ) {
-        let ent1 = initials.ent1.as_ref().expect("ent1 missing");
-        if deletion_flags.try_get(ent1).is_some() {
-            comp_final.set(ent1, None);
-            initials.ent1 = None;
+        let ent = initials.strong.as_ref().expect("initials.strong missing");
+        if deletion_flags.try_get(ent).is_some() {
+            comp_final.set(ent, None);
+            initials.strong = None;
         } else {
-            entity_deleter.queue(ent1);
+            entity_deleter.queue(ent);
         }
     }
 
     let mut world = system_test!(test_system.build(););
 
     for _ in 0..3 {
-        let ent1 = world.create(crate::comps![@(crate) TestArch => Comp1(13), CompFinal]);
-        let ent1_weak = ent1.weak(world.get_global::<generation::StoreMap>());
-        world.get_global::<InitialEntities>().ent1 = Some(ent1);
+        let ent = world.create(crate::comps![@(crate) TestArch => Comp1(13), CompFinal]);
+        let weak = ent.weak(world.get_global::<generation::StoreMap>());
+        world.get_global::<InitialEntities>().strong = Some(ent);
 
         // first iteration
         world.execute(&tracer::Log(log::Level::Trace));
 
-        let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent1_weak);
+        let comp1 = world.get_simple::<TestArch, Comp1, _>(&weak);
         assert_eq!(comp1, Some(&mut Comp1(13)));
 
         // second iteration
         world.execute(&tracer::Log(log::Level::Trace));
 
-        let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent1_weak);
+        let comp1 = world.get_simple::<TestArch, Comp1, _>(&weak);
         assert_eq!(comp1, None);
     }
 }

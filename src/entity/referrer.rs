@@ -187,7 +187,7 @@ pub struct AsObject<'t>(pub(crate) Box<dyn Object + 't>);
 impl<'t> AsObject<'t> {
     /// Constructs an `AsObject` that delegates to the given [`Referrer`].
     pub fn of(value: &'t mut impl Referrer) -> Self {
-        Self(Box::new(ReferrerIter(iter::once(value))))
+        Self(Box::new(UnnamedIter(iter::once(value))))
     }
 }
 
@@ -222,9 +222,9 @@ impl SingleVtable {
 }
 
 #[repr(transparent)]
-pub(crate) struct ReferrerIter<I>(pub(crate) I);
+pub(crate) struct UnnamedIter<I>(pub(crate) I);
 
-impl<I: Iterator> Object for ReferrerIter<I>
+impl<I: Iterator> Object for UnnamedIter<I>
 where
     <I as Iterator>::Item: ops::DerefMut,
     <<I as Iterator>::Item as ops::Deref>::Target: Referrer,
@@ -237,9 +237,24 @@ where
     }
 }
 
-pub(crate) struct DynIter<I>(pub(crate) I);
+/// An iterator over `T: Object` that delegates to each object.
+pub(crate) struct NamedIter<I>(pub(crate) I);
 
-impl<'t, I: Iterator<Item = (Option<String>, Box<dyn Object + 't>)>> Object for DynIter<I> {
+impl<T: Object, I: Iterator<Item = (Option<String>, T)>> Object for NamedIter<I> {
+    fn search_single_strong(&mut self, state: &mut SearchSingleStrong) {
+        for (debug_name, mut item) in self.0.by_ref() {
+            if let Some(name) = debug_name {
+                state._set_debug_name(name);
+            }
+            item.search_single_strong(state);
+        }
+    }
+}
+
+/// An iterator over `Box<dyn Object>` that delegates to each object.
+pub(crate) struct NamedBoxIter<I>(pub(crate) I);
+
+impl<'t, I: Iterator<Item = (Option<String>, Box<dyn Object + 't>)>> Object for NamedBoxIter<I> {
     fn search_single_strong(&mut self, state: &mut SearchSingleStrong) {
         for (debug_name, mut item) in self.0.by_ref() {
             if let Some(name) = debug_name {

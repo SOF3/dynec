@@ -194,14 +194,20 @@ mod comps_tests {}
 /// struct Bar(i32);
 /// ```
 ///
+/// If a required global state has no initial value
+/// and it is not set in the builder,
+/// building the world would panic.
+///
 /// ```should_panic
 /// #[dynec::global]
 /// struct Qux(i32);
 ///
-/// todo!(
-///     "Verify that this test case panics upon world build if `Qux` is used in a system and the \
-///      global is not initialized"
-/// )
+/// #[dynec::system]
+/// fn test_system(#[dynec(global)] _qux: &Qux) {}
+///
+/// let mut builder = dynec::world::Builder::new(1);
+/// builder.schedule(Box::new(test_system.build()));
+/// builder.build();
 /// ```
 #[doc(inline)]
 pub use dynec_codegen::global;
@@ -504,20 +510,18 @@ mod global_tests {}
 ///         );
 ///     };
 ///
-///     /*
 ///     simulate::call(
 ///         &mut counter,
 ///         &SkillType(2),
 ///         &mut title,
-///         todo!("component access logic"),
-///         todo!("component access logic"),
-///         todo!("component access logic"),
-///         todo!("component access logic"),
+///         world.components.write_simple_storage(),
+///         world.components.write_simple_storage(),
+///         world.components.read_simple_storage(),
+///         world.components.read_partial_isotope_storage(&[SkillType(3)]),
 ///     );
 ///
 ///     assert_eq!(counter, 1);
 ///     assert_eq!(title.0, "changed");
-///     */
 /// }
 /// ```
 #[doc(inline)]

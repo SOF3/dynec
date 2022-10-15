@@ -130,7 +130,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                     _ => {
                         return Err(Error::new_spanned(
                             &param.ty,
-                            "#[local] and #[param] can only be used on reference type parameters",
+                            "#[global] can only be used on reference type parameters",
                         ))
                     }
                 };

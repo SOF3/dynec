@@ -82,15 +82,15 @@ pub fn new_with_concurrency<'t>(
 /// The data structure that stores all states in the game.
 pub struct World {
     /// Stores the [`entity::Ealloc`] implementations for each archetype.
-    ealloc_map:     ealloc::Map,
+    ealloc_map:         ealloc::Map,
     /// Stores the component states in a world.
-    components:     Components,
+    pub components:     Components,
     /// Stores the system-local states and the scheduler topology.
-    scheduler:      scheduler::Scheduler,
+    scheduler:          scheduler::Scheduler,
     /// Global states that can be concurrently accessed by systems on other threads.
-    sync_globals:   SyncGlobals,
+    pub sync_globals:   SyncGlobals,
     /// Global states that must be accessed on the main thread.
-    unsync_globals: UnsyncGlobals,
+    pub unsync_globals: UnsyncGlobals,
 }
 
 impl World {

@@ -360,7 +360,7 @@ struct SimpleAccessor<S> {
     storage: S,
 }
 
-impl<A, C, S> system::ReadSimple<A, C> for SimpleAccessor<S>
+impl<A, C, S> system::Read<A, C> for SimpleAccessor<S>
 where
     A: Archetype,
     C: comp::Simple<A>,
@@ -375,8 +375,15 @@ where
         self.storage.iter().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
     }
 }
+impl<A, C, S> system::ReadSimple<A, C> for SimpleAccessor<S>
+where
+    A: Archetype,
+    C: comp::Simple<A>,
+    S: ops::Deref<Target = C::Storage>,
+{
+}
 
-impl<A, C, S> system::WriteSimple<A, C> for SimpleAccessor<S>
+impl<A, C, S> system::Write<A, C> for SimpleAccessor<S>
 where
     A: Archetype,
     C: comp::Simple<A>,
@@ -394,6 +401,13 @@ where
     fn iter_mut(&mut self) -> Self::IterMut<'_> {
         self.storage.iter_mut().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
     }
+}
+impl<A, C, S> system::WriteSimple<A, C> for SimpleAccessor<S>
+where
+    A: Archetype,
+    C: comp::Simple<A>,
+    S: ops::DerefMut<Target = C::Storage>,
+{
 }
 
 fn own_read_isotope_storage<A: Archetype, C: comp::Isotope<A>>(

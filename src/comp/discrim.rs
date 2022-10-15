@@ -45,7 +45,7 @@ pub trait Set<D: Discrim>: Send + Sync + 'static {
     fn iter_discrims(&self) -> Self::Iter<'_>;
 
     /// The key used in mapping types.
-    type Key;
+    type Key: fmt::Debug + Copy + 'static;
     /// Return value of [`map`](Self::map).
     type Mapped<U>: Mapped<Discrim = D, Key = Self::Key, Value = U>;
     /// Transforms each discriminant to another value.
@@ -84,27 +84,27 @@ pub trait Mapped {
     /// The discriminant type.
     type Discrim: Discrim;
     /// The type used for indexing data.
-    type Key: fmt::Debug;
+    type Key: fmt::Debug + Copy + 'static;
     /// The value type stored in this data structure.
     type Value;
 
     /// Gets the discriminant value associated with this key.
-    fn get_discrim(&self, key: &Self::Key) -> Option<Self::Discrim>;
+    fn get_discrim(&self, key: Self::Key) -> Option<Self::Discrim>;
 
     /// Gets a shared reference to an element.
-    fn get_by(&self, key: &Self::Key) -> Option<&Self::Value>;
+    fn get_by(&self, key: Self::Key) -> Option<&Self::Value>;
 
     /// Executes functions with mutable reference to an entry.
-    fn get_mut_by(&mut self, key: &Self::Key) -> Option<&mut Self::Value>;
+    fn get_mut_by(&mut self, key: Self::Key) -> Option<&mut Self::Value>;
 
-    /// return value of [`iter_values`](Self::iter_values).
+    /// Return value of [`iter_values`](Self::iter_values).
     type Iter<'t>: Iterator<Item = (Self::Discrim, &'t Self::Value)> + 't
     where
         Self: 't;
     /// Iterates over the values in this set with the discriminant.
     fn iter_values(&self) -> Self::Iter<'_>;
 
-    /// return value of [`iter_values_mut`](Self::iter_values_mut).
+    /// Return value of [`iter_values_mut`](Self::iter_values_mut).
     type IterMut<'t>: Iterator<Item = (Self::Discrim, &'t mut Self::Value)> + 't
     where
         Self: 't;
@@ -135,14 +135,14 @@ impl<D: Discrim, V, const N: usize> Mapped for [(D, V); N] {
     type Key = usize;
     type Value = V;
 
-    fn get_discrim(&self, &key: &usize) -> Option<Self::Discrim> { self.get(key).map(|&(d, _)| d) }
+    fn get_discrim(&self, key: usize) -> Option<Self::Discrim> { self.get(key).map(|&(d, _)| d) }
 
-    fn get_by(&self, &key: &usize) -> Option<&V> {
+    fn get_by(&self, key: usize) -> Option<&V> {
         let (_, value) = self.get(key)?;
         Some(value)
     }
 
-    fn get_mut_by(&mut self, &key: &usize) -> Option<&mut V> {
+    fn get_mut_by(&mut self, key: usize) -> Option<&mut V> {
         let (_, value) = self.get_mut(key)?;
         Some(value)
     }
@@ -163,14 +163,14 @@ impl<D: Discrim, V> Mapped for Vec<(D, V)> {
     type Key = usize;
     type Value = V;
 
-    fn get_discrim(&self, &key: &usize) -> Option<Self::Discrim> { self.get(key).map(|&(d, _)| d) }
+    fn get_discrim(&self, key: usize) -> Option<Self::Discrim> { self.get(key).map(|&(d, _)| d) }
 
-    fn get_by(&self, &key: &usize) -> Option<&V> {
+    fn get_by(&self, key: usize) -> Option<&V> {
         let (_, value) = self.get(key)?;
         Some(value)
     }
 
-    fn get_mut_by(&mut self, &key: &usize) -> Option<&mut V> {
+    fn get_mut_by(&mut self, key: usize) -> Option<&mut V> {
         let (_, value) = self.get_mut(key)?;
         Some(value)
     }
@@ -202,14 +202,14 @@ impl<D: Discrim, T> Mapped for LinearVecMap<D, T> {
     type Key = D;
     type Value = T;
 
-    fn get_discrim(&self, &key: &D) -> Option<Self::Discrim> { Some(key) }
+    fn get_discrim(&self, key: D) -> Option<Self::Discrim> { Some(key) }
 
-    fn get_by(&self, key: &D) -> Option<&T> {
-        self.vec[..].iter().find(|(d, _)| d == key).map(|(_, s)| s)
+    fn get_by(&self, key: D) -> Option<&T> {
+        self.vec[..].iter().find(|&&(d, _)| d == key).map(|(_, s)| s)
     }
 
-    fn get_mut_by(&mut self, key: &D) -> Option<&mut T> {
-        self.vec[..].iter_mut().find(|(d, _)| d == key).map(|(_, s)| s)
+    fn get_mut_by(&mut self, key: D) -> Option<&mut T> {
+        self.vec[..].iter_mut().find(|&&mut (d, _)| d == key).map(|(_, s)| s)
     }
 
     type Iter<'t> = impl Iterator<Item = (D, &'t T)> + 't where Self: 't;
@@ -262,16 +262,16 @@ impl<D: Discrim, T> Mapped for SortedVecMap<D, T> {
     type Key = D;
     type Value = T;
 
-    fn get_discrim(&self, &key: &D) -> Option<Self::Discrim> { Some(key) }
+    fn get_discrim(&self, key: D) -> Option<Self::Discrim> { Some(key) }
 
-    fn get_by(&self, key: &D) -> Option<&T> {
+    fn get_by(&self, key: D) -> Option<&T> {
         match self.vec[..].binary_search_by_key(&key.into_usize(), |(di, _)| di.into_usize()) {
             Ok(index) => Some(&self.vec.get(index).expect("result of binary_search_by_key").1),
             Err(_) => None,
         }
     }
 
-    fn get_mut_by(&mut self, key: &D) -> Option<&mut T> {
+    fn get_mut_by(&mut self, key: D) -> Option<&mut T> {
         match self.vec[..].binary_search_by_key(&key.into_usize(), |(di, _)| di.into_usize()) {
             Ok(index) => {
                 Some(&mut self.vec.get_mut(index).expect("result of binary_search_by_key").1)
@@ -345,13 +345,13 @@ impl<D: Discrim, T> Mapped for BoundedVecMap<D, T> {
     type Key = D;
     type Value = T;
 
-    fn get_discrim(&self, &key: &D) -> Option<Self::Discrim> { Some(key) }
+    fn get_discrim(&self, key: D) -> Option<Self::Discrim> { Some(key) }
 
-    fn get_by(&self, key: &D) -> Option<&T> {
+    fn get_by(&self, key: D) -> Option<&T> {
         self.vec.get(key.into_usize()).and_then(Option::as_ref)
     }
 
-    fn get_mut_by(&mut self, key: &D) -> Option<&mut T> {
+    fn get_mut_by(&mut self, key: D) -> Option<&mut T> {
         self.vec.get_mut(key.into_usize()).and_then(Option::as_mut)
     }
 
@@ -418,12 +418,12 @@ impl<D: Discrim, T, const N: usize> Mapped for ArrayMap<D, T, N> {
     type Key = D;
     type Value = T;
 
-    fn get_discrim(&self, &key: &D) -> Option<Self::Discrim> { Some(key) }
+    fn get_discrim(&self, key: D) -> Option<Self::Discrim> { Some(key) }
 
-    fn get_by(&self, key: &D) -> Option<&T> {
+    fn get_by(&self, key: D) -> Option<&T> {
         self.array.get(key.into_usize()).and_then(Option::as_ref)
     }
-    fn get_mut_by(&mut self, key: &D) -> Option<&mut T> {
+    fn get_mut_by(&mut self, key: D) -> Option<&mut T> {
         self.array.get_mut(key.into_usize()).and_then(Option::as_mut)
     }
 

@@ -342,7 +342,7 @@ impl Components {
             where
                 S: 't,
             {
-                match storages.get_mut_by(&key).map(|s| &mut **s) {
+                match storages.get_mut_by(key).map(|s| &mut **s) {
                     Some(storage) => storage,
                     None => panic!(
                         "Cannot access isotope indexed by {key:?} because it is not in the list \
@@ -366,6 +366,7 @@ where
     C: comp::Simple<A>,
     S: ops::Deref<Target = C::Storage>,
 {
+    type Get<'t> = &'t C where S: 't;
     fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Option<&C> {
         self.storage.get(entity.id())
     }
@@ -520,7 +521,7 @@ where
         entity: E,
         key: M::Key,
     ) -> Option<Self::Get<'_>> {
-        let storage: Option<&M::Value> = self.storages.get_by(&key);
+        let storage: Option<&M::Value> = self.storages.get_by(key);
         let storage: Option<&S> = self.processor.process(storage, || key);
         let comp = storage.and_then(|storage| storage.get(entity.id()));
         match comp {
@@ -533,6 +534,17 @@ where
     fn get_all<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Self::GetAll<'_> {
         let index: A::RawEntity = entity.id();
         self.get_all_raw(index)
+    }
+
+    type Iter<'t> = impl Iterator<Item = (entity::TempRef<'t, A>, &'t C)>
+    where
+        Self: 't;
+    fn iter(&self, key: M::Key) -> Self::Iter<'_> {
+        let storage: Option<&M::Value> = self.storages.get_by(key);
+        let storage: Option<&S> = self.processor.process(storage, || key);
+        storage.into_iter().flat_map(|storage| {
+            storage.iter().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
+        })
     }
 }
 
@@ -585,6 +597,15 @@ where
     ) -> Option<C> {
         let storage = self.processor.get_storage(key, &mut self.storages);
         storage.set(entity.id(), value)
+    }
+
+    type IterMut<'t> = impl Iterator<Item = (entity::TempRef<'t, A>, &'t mut C)>
+    where
+        Self: 't;
+    /// Iterates over mutable references to all components of a specific discriminant.
+    fn iter_mut(&mut self, key: M::Key) -> Self::IterMut<'_> {
+        let storage = self.processor.get_storage(key, &mut self.storages);
+        storage.iter_mut().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
     }
 }
 

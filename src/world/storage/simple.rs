@@ -76,7 +76,7 @@ pub(crate) trait AnySimpleStorage<A: Archetype>: Send + Sync {
     /// Fills a simple component of with the initial value.
     fn fill_init_simple(&mut self, entity: A::RawEntity, comp_map: &mut comp::Map<A>);
 
-    /// Returns true if [`C::IS_FINALIZER`](comp::Simple::IS_FINALIZER)
+    /// Returns true if [`C::IS_FINALIZER`](comp::Simple::IS_FINALIZER).
     /// and the component exists for the given entity.
     fn has_finalizer(&self, entity: A::RawEntity) -> bool;
 

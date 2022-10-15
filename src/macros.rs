@@ -434,6 +434,66 @@ mod global_tests {}
 /// # */
 /// ```
 ///
+/// ## Entity creation
+/// Parameters that require an implementation of [`EntityCreator`](crate::system::EntityCreator)
+/// can be used to create entities.
+/// The archetype of created entities is specified in the type bounds.
+/// Note that entity creation is asynchronous to ensure synchronization,
+/// i.e. components of the created entity are deferred until the current cycle completes.
+///
+/// Systems that create entities of an archetype `A` should be scheduled to execute
+/// after all systems that may read entity references of archetype `A`
+/// (through strong or weak references stored in
+/// local states, global states, simple components or isotope components).
+/// See [`EntityCreationPartition`](crate::system::partition::EntityCreationPartition#entity-creators)
+/// for more information.
+///
+/// If it can be ensured that the new uninitialized entities cannot be leaked to other systems,
+/// e.g. if the created entity ID is not stored into any states,
+/// the attribute `#[dynec(entity_creator(no_partition))]`
+/// can be applied on the entity-creating parameter
+/// to avoid registering the automatic dependency to run after `EntityCreationPartition<A>`.
+///
+/// ### Syntax reference
+/// ```
+/// # /*
+/// /// This attribute is not required unless `EntityCreator` is aliased.
+/// #[dynec(entity_creator(
+///     // Optional, specifies the archetype if `EntityCreator` is aliased.
+///     arch = $ty,
+///     // Optional, allows the derived system to execute before
+///     // the EntityCreationPartition of this archetype.
+///     no_partition,
+/// ))]
+/// # */
+/// ```
+///
+/// ## Entity deletion
+/// Parameters that require an implementation of [`EntityDeleter`](crate::system::EntityDeleter)
+/// can be used to delete entities.
+/// The archetype of deleted entities is specified in the type bounds.
+/// Note that `EntityDeleter` can only be used to mark entities as "deleting";
+/// the entity is only deleted after
+/// all [finalizer](crate::comp::Simple::IS_FINALIZER) components are unset.
+///
+/// It is advisable to execute finalizer-removing systems
+/// after systems that mark entities for deletion finish executing.
+/// This allows deletion to happen in the same cycle,
+/// thus slightly improving entity deletion performance
+/// (but this is not supposed to be critical anyway).
+/// Nevertheless, unlike entity creation, entity deletion does not have an automatic partition.
+///
+/// ### Syntax reference
+/// ```
+/// # /*
+/// /// This attribute is not required unless `EntityDeleter` is aliased.
+/// #[dynec(entity_deleter(
+///     // Optional, specifies the archetype if `EntityDeleter` is aliased.
+///     arch = $ty,
+/// ))]
+/// # */
+/// ```
+///
 /// # Example
 /// ```
 /// use dynec::system;

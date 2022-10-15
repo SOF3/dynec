@@ -1,16 +1,15 @@
-# Introduction
+# ECS
 
-## ECS
+dynec is an ECS (Entity-Component-System) framework.
+Data are mostly stored in "components" for different "entities".
+Logic is run in "systems" that process the data.
 
-dynec is an ECS (Entity-Component-System) framework,
-where game data are mostly stored in *entities* and *components*
-and game logic are run in *systems*.
+## Data
 
-### Game data
-
-An entity refers to a game object,
-and a component is a small pieve of data that describes an entity.
-I like to visualize them as rows and columns:
+An entity corresponds to an object.
+Different components store the data related to an object.
+I like visualizing them as rows and columns,
+where each row is an entity and each cell is a component of that entity:
 
 | Entity \# | Location | Hitpoint | Experience |
 | :---: | :---: | :---: | :---: |
@@ -18,23 +17,22 @@ I like to visualize them as rows and columns:
 | 1 | (1, 3, 4) | 80 | 4 |
 | &vellip; | &vellip; | &vellip; | &vellip; |
 
-Each row is one entity, and each cell is a component of that entity.
-
 Everything can be entities!
-For example, in a shooters game, players and bullets may be different entities,
-where bullets have different components from players:
+For example, in a shooters game,
+each player and and each bullet is a separate entity.
+The components for a bullet are different from those for a player:
 
 | Entity \# | Location | Speed | Damage |
 | :---: | :---: | :---: | :---: |
 | 0 | (1, 2.5, 3.5) | (0, 0.5, 0.5) | 20 |
 | &vellip; | &vellip; | &vellip; | &vellip; |
 
-### Game logic
-Game logic is implemented in "systems",
-which are basically functions with access to the entity data,
-executed once per game tick.
-Usually, systems are implemented as loops that execute over all entities of a type
-like in the following pseudocode:
+## Logic
+
+A system is a function that processes data.
+In a typical game or simulation,
+each system are executed once per "cycle" (a.k.a. "ticks") in the main loop.
+Usually, systems are implemented as loops that execute over all entities of a type:
 
 ```
 for each bullet entity {

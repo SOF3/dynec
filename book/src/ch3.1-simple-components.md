@@ -140,7 +140,7 @@ if the wrapped type requires an alignment of 64 bits (e.g. `u64`/`f64`).
 Avoid allocating heap memory for each entity component.
 In other words, use of `Box`/`Vec`/etc should be avoided in component types,
 because heap allocation is slow and results in memory fragmentation,
-which greatly deterriorates the performance gain provided by ECS.
+which greatly deteriorates the performance gain provided by ECS.
 
 [comp.simple]: https://sof3.github.io/dynec/master/dynec/comp/trait.Simple.html
 [comp.simple.presence]: https://sof3.github.io/dynec/master/dynec/comp/trait.Simple.html#associatedconstant.PRESENCE

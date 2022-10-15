@@ -1,6 +1,6 @@
 # Summary
 
-- [Introduction](./ch1-intro.md)
+- [ECS](./ch1-ecs.md)
 - [Archetypes](./ch2-archetypes.md)
 - [Components](./ch3-components.md)
     - [Simple Components](./ch3.1-simple-components.md)

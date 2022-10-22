@@ -54,8 +54,8 @@ or as a function pointer with arity (i.e. number of parameters for the function)
 ```rust
 use dynec::comp;
 
-fn default_damage(damage: &Damage) -> Damage {
-    Damage(speed.norm()) 
+fn default_damage(velocity: &Velocity) -> Damage {
+    Damage(velocity.norm()) 
 }
 
 #[comp(of = Bullet, init = default_damage/1)]

@@ -8,13 +8,13 @@ pub struct Bundle;
 
 impl dynec::world::Bundle for Bundle {
     /// Initializes the plugin, registering systems and initializing globals.
-    fn register(&self, _builder: &mut dynec::world::Builder) {
+    fn register(&mut self, _builder: &mut dynec::world::Builder) {
         // builder.schedule(tick);
     }
 
     /// Populates the world with entities.
     /// In actual games, this function should load the world from a save file instead.
-    fn populate(&self, _: &mut dynec::World) {}
+    fn populate(&mut self, _: &mut dynec::World) {}
 }
 
 // Normally this should be a `std::time::Instant`, but we use `u64` for mocking.

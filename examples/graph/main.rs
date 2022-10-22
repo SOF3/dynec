@@ -10,9 +10,9 @@ mod time;
 
 fn main() {
     let _world = dynec::new([
-        &render::Bundle as &dyn dynec::world::Bundle,
-        &time::Bundle,
-        &simulation::Bundle,
+        Box::new(render::Bundle) as Box<dyn dynec::Bundle>,
+        Box::new(time::Bundle),
+        Box::new(simulation::Bundle),
     ]);
 
     // assert_eq!(world.get_multi::<Node, Capacity, _, _>(CROPS, farm, |x| *x), Some(Capacity(100)));

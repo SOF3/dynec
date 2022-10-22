@@ -98,6 +98,6 @@ mod test_util;
 use test_util::{TestArch, TestDiscrim1, TestDiscrim2};
 
 pub mod world;
-pub use world::{new, storage, tracer, World};
+pub use world::{new, storage, tracer, Bundle, World};
 
 pub mod util;

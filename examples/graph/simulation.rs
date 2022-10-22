@@ -6,13 +6,13 @@ pub struct Bundle;
 
 impl dynec::world::Bundle for Bundle {
     /// Initializes the plugin, registering systems and initializing globals.
-    fn register(&self, _builder: &mut dynec::world::Builder) {
+    fn register(&mut self, _builder: &mut dynec::world::Builder) {
         // builder.schedule(simulation_flow);
     }
 
     /// Populates the world with entities.
     /// In actual games, this function should load the world from a save file instead.
-    fn populate(&self, world: &mut dynec::World) {
+    fn populate(&mut self, world: &mut dynec::World) {
         // First, we populate the world with entities with archetype `Node`.
         // Note that no components from the `render` crate are specified here.
         let farm = world.create::<Node>(dynec::comps![ Node =>

@@ -35,23 +35,16 @@ which is a realistically small number that does not grow with the game over time
 
 ## Initializer
 
-Since there can be an indefinite number of isotopes for the same type,
-it is not possible to auto-initialize isotopes when an entity is created.
-However, isotope components can be *lazily* initialized &mdash;
-when a system requests the value of an isotope component that does not exist,
-the initializer is called to create a new value.
+As mentioned above, isotope components are just like simple components with the type
+`HashMap<Discriminant, Value>`.
+Initializers for isotope components return
+iterators of (discriminant, value) tuples instead.
 
-Since isotope components are lazily initialized during the tick,
-the current thread may not have access to other components of the entity.
-Therefore, isotope lazy initializers cannot accept any parameters,
-and only basic usage (e.g. returning the zero value) is expected.
-Users who wish to initialize isotope components from other component values
-have to do this manually from the accessing systems.
-
-Due to thread safety, lazily initialized values requested from read-only systems
-does not actually get stored with the entity after use.
-Therefore, types with interior mutability (such as `AtomicUsize`)
-would not work as expected.
-Nevertheless, interior mutability is frowned upon for component data in general.
+Since the returned iterator involves dynamic discriminant values,
+it is not possible to implement [`comp::Must`][must] for isotope components automatically.
+Nevertheless, if the user is sure that all discriminants are populated
+in the initializer through exhausting the domain of discriminants,
+they can implement this trait manually.
 
 [comp.isotope]: https://sof3.github.io/dynec/master/dynec/comp/trait.Isotope.html
+[must]: https://sof3.github.io/dynec/master/dynec/comp/trait.Must.html

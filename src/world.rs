@@ -33,14 +33,14 @@ pub trait Bundle {
     /// Schedules the systems used by this bundle.
     ///
     /// Scheduling a system automatically registers the archetypes and components used by the system.
-    fn register(&self, _builder: &mut Builder) {}
+    fn register(&mut self, _builder: &mut Builder) {}
 
     /// Populates the world with entities and global states.
-    fn populate(&self, _world: &mut World) {}
+    fn populate(&mut self, _world: &mut World) {}
 }
 
 /// Creates a dynec world from bundles.
-pub fn new<'t>(bundles: impl IntoIterator<Item = &'t dyn Bundle> + Copy) -> World {
+pub fn new(bundles: impl IntoIterator<Item = Box<dyn Bundle>>) -> World {
     new_with_concurrency(
         bundles,
         match std::thread::available_parallelism() {
@@ -54,25 +54,27 @@ pub fn new<'t>(bundles: impl IntoIterator<Item = &'t dyn Bundle> + Copy) -> Worl
 }
 
 /// Creates a dynec world from bundles with threading disabled.
-pub fn new_unthreaded<'t>(bundles: impl IntoIterator<Item = &'t dyn Bundle> + Copy) -> World {
+pub fn new_unthreaded(bundles: impl IntoIterator<Item = Box<dyn Bundle>>) -> World {
     new_with_concurrency(bundles, 0)
 }
 
 /// Creates a dynec world from bundles and specify the number of worker threads
 /// (not counting the main thread, which only executes thread-local tasks).
-pub fn new_with_concurrency<'t>(
-    bundles: impl IntoIterator<Item = &'t dyn Bundle> + Copy,
+pub fn new_with_concurrency(
+    bundles: impl IntoIterator<Item = Box<dyn Bundle>>,
     concurrency: usize,
 ) -> World {
+    let mut bundles: Vec<_> = bundles.into_iter().collect();
+
     let mut builder = Builder::new(concurrency);
 
-    for bundle in bundles {
+    for bundle in &mut bundles {
         bundle.register(&mut builder);
     }
 
     let mut world = builder.build();
 
-    for bundle in bundles {
+    for bundle in &mut bundles {
         bundle.populate(&mut world);
     }
 

@@ -45,7 +45,7 @@ either as a closure:
 ```rust
 use dynec::comp;
 
-#[comp(of = Bullet, init = |speed: &Speed| Damage(speed.modulus()))]
+#[comp(of = Bullet, init = |velocity: &Velocity| Damage(velocity.norm()))]
 struct Damage(f32);
 ```
 
@@ -54,8 +54,8 @@ or as a function pointer with arity (i.e. number of parameters for the function)
 ```rust
 use dynec::comp;
 
-fn default_damage(speed: &Speed) -> Damage {
-    Damage(speed.modulus()) 
+fn default_damage(damage: &Damage) -> Damage {
+    Damage(speed.norm()) 
 }
 
 #[comp(of = Bullet, init = default_damage/1)]

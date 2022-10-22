@@ -67,6 +67,10 @@ mod archetype_tests {}
 /// This initializer should be either a closure with explicit parameter types,
 /// or a function reference with arity in the form `path/arity` (e.g. `count/1`).
 ///
+/// For isotope components, the initializer should return an iterator of `(C::Discrim, C)` tuples,
+/// which is similar to the iterator from a HashMap when values of `C` are indexed by the
+/// discriminant.
+///
 /// ## `storage`
 /// Specify the [storage](crate::world::storage) type for the component.
 /// The argument should be a path that specifies the target type.
@@ -91,11 +95,14 @@ mod archetype_tests {}
 /// #[dynec(map = discrim::SortedVecMap)]
 /// struct Id(usize);
 ///
-/// #[comp(of = Foo, isotope = Id, init = Corge::make/0)]
+/// #[comp(of = Foo, isotope = Id, init = Self::make/0)]
 /// struct Corge(i32);
 ///
 /// impl Corge {
-///     fn make() -> Self { Self(1) }
+///     fn make() -> [(Id, Self); 2] { [
+///         (Id(3), Self(7)),
+///         (Id(13), Self(17)),
+///     ] }
 /// }
 /// ```
 #[doc(inline)]
@@ -517,7 +524,7 @@ mod global_tests {}
 /// #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, dynec::Discrim)]
 /// struct SkillType(usize);
 ///
-/// #[dynec::comp(of = Player, isotope = SkillType, init = || SkillLevel(1))]
+/// #[dynec::comp(of = Player, isotope = SkillType, init = || [(SkillType(0), SkillLevel(1))])]
 /// struct SkillLevel(u8);
 ///
 /// #[system(

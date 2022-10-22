@@ -443,23 +443,6 @@ fn own_write_isotope_storage<A: Archetype, C: comp::Isotope<A>>(
     }
 }
 
-/// A lazy accessor that may return an owned default value.
-enum RefOrDefault<'t, C> {
-    Borrowed(&'t C),
-    Owned(C),
-}
-
-impl<'t, C> ops::Deref for RefOrDefault<'t, C> {
-    type Target = C;
-
-    fn deref(&self) -> &C {
-        match self {
-            Self::Borrowed(ref_) => ref_,
-            Self::Owned(ref owned) => owned,
-        }
-    }
-}
-
 struct IsotopeAccessor<A, C, S, M, P> {
     /// Cloned arcs of the actual storage.
     storages:  M,
@@ -515,7 +498,7 @@ where
     M: discrim::Mapped<Discrim = C::Discrim>,
     P: StorageMapProcessorRef<Input = M::Value, Output = S>,
 {
-    type Get<'t> = RefOrDefault<'t, C> where Self: 't;
+    type Get<'t> = &'t C where Self: 't;
     fn try_get<E: entity::Ref<Archetype = A>>(
         &self,
         entity: E,
@@ -523,11 +506,7 @@ where
     ) -> Option<Self::Get<'_>> {
         let storage: Option<&M::Value> = self.storages.get_by(key);
         let storage: Option<&S> = self.processor.process(storage, || key);
-        let comp = storage.and_then(|storage| storage.get(entity.id()));
-        match comp {
-            Some(comp) => Some(RefOrDefault::Borrowed(comp)),
-            None => C::INIT_STRATEGY.call_option().map(RefOrDefault::Owned),
-        }
+        storage.and_then(|storage| storage.get(entity.id()))
     }
 
     type GetAll<'t> = impl Iterator<Item = (<C as comp::Isotope<A>>::Discrim, &'t C)> + 't where Self: 't;
@@ -575,18 +554,7 @@ where
     ) -> Option<&mut C> {
         let storage = self.processor.get_storage(key, &mut self.storages);
 
-        // borrowck bug workaround, change to `if let Some(...) = storage.get_mut` in the future
-        if storage.get(entity.id()).is_some() {
-            return Some(storage.get_mut(entity.id()).expect("storage.get().is_some()"));
-        }
-
-        match C::INIT_STRATEGY {
-            comp::IsotopeInitStrategy::None => None,
-            comp::IsotopeInitStrategy::Default(default) => {
-                storage.set(entity.id(), Some(default()));
-                Some(storage.get_mut(entity.id()).expect("entity was just assigned as Some"))
-            }
-        }
+        storage.get_mut(entity.id())
     }
 
     fn set<E: entity::Ref<Archetype = A>>(

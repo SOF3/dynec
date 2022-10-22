@@ -78,11 +78,11 @@ pub struct Position(pub [f32; 2]);
 /// Multi-components do not have the `required`/`optional`/`auto` argument,
 /// because they are all `[]` by default.
 /// To put it another way, they are all `optional` on each discriminant.
-#[dynec::comp(of = Node, isotope = ItemType, init = Default::default/0)]
+#[dynec::comp(of = Node, isotope = ItemType)]
 #[derive(Default)]
 pub struct Capacity(pub u32);
 
-#[dynec::comp(of = Node, isotope = ItemType, init = || Volume(0))]
+#[dynec::comp(of = Node, isotope = ItemType, init = || [(ItemType(0), Volume(0))])]
 pub struct Volume(pub u32);
 
 dynec::archetype! {

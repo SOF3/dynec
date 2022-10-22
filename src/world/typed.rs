@@ -73,7 +73,8 @@ impl<A: Archetype> AnyBuilder for Builder<A> {
     }
 
     fn build(mut self: Box<Self>) -> Box<dyn AnyTyped> {
-        let populators = toposort_populators(&mut self.simple_storages);
+        let populators =
+            toposort_populators(&mut self.simple_storages, &mut self.isotope_storage_maps);
 
         Box::new(Typed::<A> {
             simple_storages: self.simple_storages,
@@ -86,7 +87,8 @@ impl<A: Archetype> AnyBuilder for Builder<A> {
 type Populator<A> = Box<dyn Fn(&mut comp::Map<A>) + Send + Sync>;
 
 fn toposort_populators<A: Archetype>(
-    storages: &mut HashMap<DbgTypeId, storage::Simple<A>>,
+    simple_storages: &mut HashMap<DbgTypeId, storage::Simple<A>>,
+    isotope_maps: &mut HashMap<DbgTypeId, Arc<dyn storage::AnyIsotopeMap<A>>>,
 ) -> Vec<Populator<A>> {
     let mut populators = Vec::new();
 
@@ -95,11 +97,22 @@ fn toposort_populators<A: Archetype>(
         populator: Populator<A>,
     }
 
-    let mut unprocessed = Vec::new();
-    for (&ty, storage) in storages {
+    let mut unprocessed: Vec<(DbgTypeId, comp::DepList<A>, Populator<A>)> = Vec::new();
+
+    for (&ty, storage) in simple_storages {
         match &storage.init_strategy {
             comp::SimpleInitStrategy::None => continue, /* direct requirement, does not affect population */
-            comp::SimpleInitStrategy::Auto(initer) => unprocessed.push((ty, initer.f)),
+            comp::SimpleInitStrategy::Auto(initer) => {
+                unprocessed.push((ty, initer.f.deps(), Box::new(|map| initer.f.populate(map))))
+            }
+        };
+    }
+    for (&ty, storage) in isotope_maps {
+        match &storage.init_strategy() {
+            comp::IsotopeInitStrategy::None => continue, /* direct requirement, does not affect population */
+            comp::IsotopeInitStrategy::Auto(initer) => {
+                unprocessed.push((ty, initer.f.deps(), Box::new(|map| initer.f.populate(map))))
+            }
         };
     }
 
@@ -107,11 +120,9 @@ fn toposort_populators<A: Archetype>(
     let mut dependents_map = HashMap::<DbgTypeId, Vec<DbgTypeId>>::new(); // all values here must also have an entry in requests before popping
     let mut heads = Vec::<DbgTypeId>::new(); // all entries here must also have an entry in requests
 
-    while let Some((ty, desc)) = unprocessed.pop() {
-        let deps = desc.deps();
-
+    while let Some((ty, deps, populator)) = unprocessed.pop() {
         let request = if let hash_map::Entry::Vacant(entry) = requests.entry(ty) {
-            entry.insert(Request { dep_count: 0, populator: Box::new(|map| desc.populate(map)) })
+            entry.insert(Request { dep_count: 0, populator })
         } else {
             continue;
         };
@@ -124,7 +135,11 @@ fn toposort_populators<A: Archetype>(
                 // push to unprocessed again to recurse
                 comp::SimpleInitStrategy::Auto(initer) => {
                     request.dep_count += 1;
-                    unprocessed.push((dep_ty, initer.f));
+                    unprocessed.push((
+                        dep_ty,
+                        initer.f.deps(),
+                        Box::new(|map| initer.f.populate(map)),
+                    ));
                 }
             }
         }

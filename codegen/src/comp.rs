@@ -18,6 +18,9 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
         quote!(::dynec)
     };
 
+    let debug_print =
+        args.find_one(|opt| option_match!(opt, ItemOpt::DebugPrint => &()))?.is_some();
+
     let archetypes: Vec<_> = args
         .items
         .iter()
@@ -73,12 +76,17 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
         if let Some((_, discrim)) = isotope {
             let init = match init {
                 Some((_, func)) => {
-                    output.extend(
-                        generics.impl_trait(quote!(#crate_name::comp::Must<#archetype>), quote! {}),
-                    );
+                    // do not implement comp::Must, because presence is value-dependent.
 
-                    let func = func.as_fn_ptr(&generics)?;
-                    quote!(#crate_name::comp::IsotopeInitStrategy::Default(#func))
+                    let func = func.as_fn_ptr(
+                        &generics,
+                        |ty| quote!(impl ::std::iter::IntoIterator<Item = (#discrim, #ty)>),
+                    )?;
+                    quote! {
+                        #crate_name::comp::IsotopeInitStrategy::Auto(
+                            #crate_name::comp::IsotopeIniter { f: &#func },
+                        )
+                    }
                 }
                 None => quote!(#crate_name::comp::IsotopeInitStrategy::None),
             };
@@ -88,7 +96,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 quote! {
                     type Discrim = #discrim;
 
-                    const INIT_STRATEGY: #crate_name::comp::IsotopeInitStrategy<Self> = #init;
+                    const INIT_STRATEGY: #crate_name::comp::IsotopeInitStrategy<#archetype> = #init;
 
                     type Storage = #storage;
                 },
@@ -96,9 +104,9 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
         } else {
             let init_strategy = match init {
                 Some((_, func)) => {
-                    let func = func.as_fn_ptr(&generics)?;
+                    let func = func.as_fn_ptr(&generics, |ty| ty)?;
                     quote!(#crate_name::comp::SimpleInitStrategy::Auto(
-                        #crate_name::comp::AutoIniter { f: &#func }
+                        #crate_name::comp::SimpleIniter { f: &#func }
                     ))
                 }
                 None => quote!(#crate_name::comp::SimpleInitStrategy::None),
@@ -132,15 +140,20 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
         },
     )?;
 
-    Ok(quote! {
+    let output = quote! {
         #mut_input
         #output
         #entity_ref
-    })
+    };
+    if debug_print {
+        println!("#[comp] output: {output}");
+    }
+    Ok(output)
 }
 
 enum ItemOpt {
     DynecAs(syn::token::Paren, TokenStream),
+    DebugPrint,
     Of(syn::Token![=], syn::Type),
     Isotope(syn::Token![=], syn::Type),
     Storage(syn::Token![=], syn::Path),
@@ -160,6 +173,7 @@ impl Parse for Named<ItemOpt> {
                 let args = inner.parse()?;
                 ItemOpt::DynecAs(paren, args)
             }
+            "__debug_print" => ItemOpt::DebugPrint,
             "of" => {
                 let eq: syn::Token![=] = input.parse()?;
                 let ty = input.parse::<syn::Type>()?;
@@ -220,7 +234,11 @@ impl Parse for FunctionRefWithArity {
 }
 
 impl FunctionRefWithArity {
-    fn as_fn_ptr(&self, expect_ty: &util::ParsedGenerics) -> Result<TokenStream> {
+    fn as_fn_ptr(
+        &self,
+        expect_ty: &util::ParsedGenerics,
+        ret_ty_wrapper: impl Fn(TokenStream) -> TokenStream,
+    ) -> Result<TokenStream> {
         let (expr, arity) = match self {
             FunctionRefWithArity::Closure(closure) => (
                 {
@@ -230,8 +248,10 @@ impl FunctionRefWithArity {
                     let &util::ParsedGenerics { ref ident, ref decl, ref usage, ref where_ } =
                         expect_ty;
 
+                    let ret_ty = ret_ty_wrapper(quote!(#ident #usage));
+
                     quote! {{
-                        fn __dynec_closure_fn #decl (#args) -> #ident #usage #where_ {
+                        fn __dynec_closure_fn #decl (#args) -> #ret_ty #where_ {
                             #body
                         }
 

@@ -110,30 +110,35 @@ impl<A: Archetype> Map<A> {
     pub fn is_empty(&self) -> bool { self.map.is_empty() }
 }
 
+/// Dependency list.
+///
+/// Items are tuples of (DbgTypeIdOf::<C>(), C::INIT_STRATEGY).
+pub type DepList<A> = Vec<(DbgTypeId, comp::SimpleInitStrategy<A>)>;
+
 /// Describes how to instantiate a component based on other component types.
-pub struct AutoIniter<A: Archetype> {
+pub struct SimpleIniter<A: Archetype> {
     /// The component function.
-    pub f: &'static dyn AutoInitFn<A>,
+    pub f: &'static dyn SimpleInitFn<A>,
 }
 
 /// A function used for [`comp::SimpleInitStrategy::Auto`].
 ///
 /// This trait is blanket-implemented for all functions that take up to 32 simple component
-/// parameters.
-pub trait AutoInitFn<A: Archetype>: Send + Sync + 'static {
+/// parameters and output the component value.
+pub trait SimpleInitFn<A: Archetype>: Send + Sync + 'static {
     /// Calls the underlying function, extracting the arguments.
     fn populate(&self, map: &mut Map<A>);
 
     /// Returns the component types required by this function.
-    fn deps(&self) -> Vec<(DbgTypeId, comp::SimpleInitStrategy<A>)>;
+    fn deps(&self) -> DepList<A>;
 }
 
-macro_rules! impl_auto_init_fn {
+macro_rules! impl_simple_init_fn {
     ($($deps:ident),* $(,)?) => {
         impl<
             A: Archetype, C: comp::Simple<A>,
             $($deps: comp::Simple<A>,)*
-        > AutoInitFn<A> for fn(
+        > SimpleInitFn<A> for fn(
             $(&$deps,)*
         ) -> C {
             fn populate(&self, map: &mut Map<A>) {
@@ -162,18 +167,89 @@ macro_rules! impl_auto_init_fn {
     }
 }
 
-macro_rules! impl_auto_init_fn_accumulate {
+macro_rules! impl_simple_init_fn_accumulate {
     () => {
-        impl_auto_init_fn!();
+        impl_simple_init_fn!();
     };
     ($first:ident $(, $rest:ident)* $(,)?) => {
-        impl_auto_init_fn_accumulate!($($rest),*);
-        impl_auto_init_fn!($first $(, $rest)*);
+        impl_simple_init_fn_accumulate!($($rest),*);
+        impl_simple_init_fn!($first $(, $rest)*);
     }
 }
-impl_auto_init_fn_accumulate!(
+impl_simple_init_fn_accumulate!(
     P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20, P21,
     P22, P23, P24, P25, P26, P27, P28, P29, P30, P31, P32,
+);
+
+/// Describes how to instantiate a component based on other component types.
+pub struct IsotopeIniter<A: Archetype> {
+    /// The component function.
+    pub f: &'static dyn IsotopeInitFn<A>,
+}
+
+/// A function used for [`comp::IsotopeInitStrategy::Auto`].
+///
+/// This trait is blanket-implemented for all functions that take up to 32 isotope component
+/// parameters and output an iterator of (discriminant, component) tuples.
+pub trait IsotopeInitFn<A: Archetype>: Send + Sync + 'static {
+    /// Calls the underlying function, extracting the arguments.
+    fn populate(&self, map: &mut Map<A>);
+
+    /// Returns the component types required by this function.
+    fn deps(&self) -> DepList<A>;
+}
+
+macro_rules! impl_isotope_init_fn {
+    ($($deps:ident),* $(,)?) => {
+        impl<
+            A: Archetype, C: comp::Isotope<A>,
+            I: IntoIterator<Item = (C::Discrim, C)> + 'static,
+            $($deps: comp::Simple<A>,)*
+        > IsotopeInitFn<A> for fn(
+            $(&$deps,)*
+        ) -> I {
+            fn populate(&self, map: &mut Map<A>) {
+                let iter = (self)(
+                    $(
+                        match map.get_simple::<$deps>() {
+                            Some(comp) => comp,
+                            None => panic!(
+                                "Cannot create an entity of type `{}` without explicitly passing a component of type `{}`, which is required for `{}`",
+                                any::type_name::<A>(),
+                                any::type_name::<$deps>(),
+                                any::type_name::<C>(),
+                            ),
+                        },
+                    )*
+                );
+                for (discrim, value) in iter {
+                    map.insert_isotope(discrim, value);
+                }
+            }
+
+            fn deps(&self) -> Vec<(DbgTypeId, comp::SimpleInitStrategy<A>)> {
+                vec![
+                    $((DbgTypeId::of::<$deps>(), <$deps as comp::Simple<A>>::INIT_STRATEGY),)*
+                ]
+            }
+        }
+    }
+}
+
+macro_rules! impl_isotope_init_fn_accumulate {
+    () => {
+        impl_isotope_init_fn!();
+    };
+    ($first:ident $(, $rest:ident)* $(,)?) => {
+        impl_isotope_init_fn_accumulate!($($rest),*);
+        impl_isotope_init_fn!($first $(, $rest)*);
+    }
+}
+impl_isotope_init_fn_accumulate!(
+    P1, P2, P3,
+    P4,
+    // P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20, P21,
+    // P22, P23, P24, P25, P26, P27, P28, P29, P30, P31, P32,
 );
 
 #[cfg(test)]

@@ -54,7 +54,7 @@ struct CompFinal;
 #[derive(Debug, Clone, PartialEq)]
 struct Iso1(i32);
 /// Has auto init
-#[comp(dynec_as(crate), of = TestArch, isotope = TestDiscrim2, init = || Iso2(-1))]
+#[comp(dynec_as(crate), of = TestArch, isotope = TestDiscrim2, init = || [(TestDiscrim2(71), Self(73))])]
 #[derive(Debug, Clone, PartialEq)]
 struct Iso2(i32);
 
@@ -210,8 +210,8 @@ fn test_full_isotope_discrim_read() {
 
         // should return default value for autoinit isotopes
         {
-            let iso = iso2.try_get(ent, TestDiscrim2(31));
-            assert_eq!(iso.as_deref(), Some(&Iso2(-1)));
+            let iso = iso2.try_get(ent, TestDiscrim2(71));
+            assert_eq!(iso.as_deref(), Some(&Iso2(73)));
         }
 
         let map = iso1.get_all(ent);
@@ -320,18 +320,18 @@ fn test_full_isotope_discrim_write() {
 
         // should return default value
         {
-            let iso = iso2.try_get(ent, TestDiscrim2(31));
-            assert_eq!(iso.as_deref(), Some(&Iso2(-1)));
+            let iso = iso2.try_get(ent, TestDiscrim2(71));
+            assert_eq!(iso.as_deref(), Some(&Iso2(73)));
         }
 
-        // should reset to default value
+        // should not reset to default value
         {
-            let iso = iso2.set(ent, TestDiscrim2(37), None);
-            assert_eq!(iso, Some(Iso2(41)));
+            let iso = iso2.set(ent, TestDiscrim2(71), None);
+            assert_eq!(iso, Some(Iso2(73)));
         }
         {
-            let iso = iso2.try_get(ent, TestDiscrim2(37));
-            assert_eq!(iso.as_deref(), Some(&Iso2(-1)));
+            let iso = iso2.try_get(ent, TestDiscrim2(71));
+            assert_eq!(iso.as_deref(), None);
         }
 
         // should include new discriminants

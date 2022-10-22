@@ -25,6 +25,8 @@ pub(crate) trait AnyMap<A: Archetype>: Send + Sync {
     fn as_any(&self) -> &(dyn Any + Send + Sync);
     fn as_any_mut(&mut self) -> &mut (dyn Any + Send + Sync);
 
+    fn init_strategy(&self) -> &'static comp::IsotopeInitStrategy<A>;
+
     /// Fills an entry. Called during entity initialization.
     fn fill_init(
         &mut self,
@@ -39,6 +41,8 @@ pub(crate) trait AnyMap<A: Archetype>: Send + Sync {
 impl<A: Archetype, C: comp::Isotope<A>> AnyMap<A> for Map<A, C> {
     fn as_any(&self) -> &(dyn Any + Send + Sync) { self }
     fn as_any_mut(&mut self) -> &mut (dyn Any + Send + Sync) { self }
+
+    fn init_strategy(&self) -> &'static comp::IsotopeInitStrategy<A> { &C::INIT_STRATEGY }
 
     fn fill_init(
         &mut self,

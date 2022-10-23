@@ -82,6 +82,13 @@ impl world::Bundle for Bundle {
 
 The program panics if `Bundle::register` does not initialize all global states.
 
+Note that `&T` and `&mut T` are semantically different for global states.
+Multiple systems requesting `&T` for the same `T` may run in parallel
+in a multi-threaded runtime,
+but when a system requesting `&mut T` is running,
+all other `&T` and `&mut T`-requesting systems are unschedulable
+(but other unrelated systems can still be scheduled).
+
 [trait.global]: https://sof3.github.io/dynec/master/dynec/trait.Global.html
 [attr.global]: https://sof3.github.io/dynec/master/dynec/attr.global.html
 [bundle.register]: https://sof3.github.io/dynec/master/dynec/world/trait.Bundle.html#method.register

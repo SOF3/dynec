@@ -7,9 +7,9 @@ use std::{fmt, ops};
 use parking_lot::lock_api::ArcRwLockWriteGuard;
 use parking_lot::{RawRwLock, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
-use super::storage::Storage;
 use super::typed;
 use crate::comp::{discrim, Discrim};
+use crate::storage::{Chunked as _, Storage};
 use crate::util::DbgTypeId;
 use crate::{comp, entity, storage, system, Archetype};
 
@@ -366,9 +366,18 @@ where
     C: comp::Simple<A>,
     S: ops::Deref<Target = C::Storage>,
 {
-    type Get<'t> = &'t C where S: 't;
     fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Option<&C> {
         self.storage.get(entity.id())
+    }
+
+    fn get_chunk(&self, chunk: entity::TempRefChunk<'_, A>) -> &[C]
+    where
+        Self: comp::Must<A>,
+        C::Storage: storage::Chunked,
+    {
+        self.storage
+            .get_chunk(chunk.start, chunk.end)
+            .expect("TempRefChunk should only be valid while entities are known to exist")
     }
 
     type Iter<'t> = impl Iterator<Item = (entity::TempRef<'t, A>, &'t C)> where Self: 't;
@@ -498,12 +507,7 @@ where
     M: discrim::Mapped<Discrim = C::Discrim>,
     P: StorageMapProcessorRef<Input = M::Value, Output = S>,
 {
-    type Get<'t> = &'t C where Self: 't;
-    fn try_get<E: entity::Ref<Archetype = A>>(
-        &self,
-        entity: E,
-        key: M::Key,
-    ) -> Option<Self::Get<'_>> {
+    fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E, key: M::Key) -> Option<&C> {
         let storage: Option<&M::Value> = self.storages.get_by(key);
         let storage: Option<&S> = self.processor.process(storage, || key);
         storage.and_then(|storage| storage.get(entity.id()))

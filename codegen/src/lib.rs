@@ -2,6 +2,7 @@
 
 use proc_macro::TokenStream;
 
+mod accessors;
 mod archetype;
 mod comp;
 mod comps;
@@ -10,6 +11,11 @@ mod entity_ref;
 mod global;
 mod system;
 mod util;
+
+#[proc_macro]
+pub fn accessors(input: TokenStream) -> TokenStream {
+    accessors::imp(input.into()).unwrap_or_else(|err| err.to_compile_error()).into()
+}
 
 #[proc_macro]
 pub fn archetype(input: TokenStream) -> TokenStream {

@@ -62,8 +62,7 @@ pub use any::{DepList, IsotopeInitFn, IsotopeIniter, Map, SimpleInitFn, SimpleIn
 /// Marks that a component type is always present.
 ///
 /// This trait must only be implemented by components that
-/// either implement [`Simple`] with [`Simple::PRESENCE`] set to [`SimplePresence::Required`]
-/// or implement [`Isotope`] with [`Isotope::INIT_STRATEGY`] set to [`IsotopeInitStrategy::Default`].
+/// implement [`Simple`] with [`Simple::PRESENCE`] set to [`SimplePresence::Required`].
 ///
 /// Not implementing this trait does not result in any issues
 /// except for ergonomic inconvenience when using getters on storages.

@@ -64,6 +64,23 @@ pub trait Storage: Default + Send + Sync + 'static {
     fn iter_chunks_mut(&mut self) -> Self::IterChunksMut<'_>;
 }
 
+/// Provides chunked access capabilities, i.e. the storage can always return a slice for contiguous present components.
+pub trait Chunked: Storage {
+    /// Gets a shared reference to a slice of components.
+    ///
+    /// Returns `None` if any of the components in the range is missing.
+    fn get_chunk(&self, start: Self::RawEntity, end: Self::RawEntity) -> Option<&[Self::Comp]>;
+
+    /// Gets a mutable reference to a slice of components.
+    ///
+    /// Returns `None` if any of the components in the range is missing.
+    fn get_chunk_mut(
+        &mut self,
+        start: Self::RawEntity,
+        end: Self::RawEntity,
+    ) -> Option<&mut [Self::Comp]>;
+}
+
 /// The iterator item of [`Storage::iter_chunks`].
 pub struct ChunkRef<'t, S: Storage> {
     /// The slice of components in the chunk.

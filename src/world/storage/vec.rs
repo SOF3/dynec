@@ -5,7 +5,7 @@ use std::mem::{self, MaybeUninit};
 use bitvec::prelude::BitVec;
 use itertools::Itertools;
 
-use super::{ChunkMut, ChunkRef, Storage};
+use super::{ChunkMut, ChunkRef, Chunked, Storage};
 use crate::entity;
 
 /// The basic storage indexed by entity IDs directly.
@@ -184,6 +184,44 @@ impl<E: entity::Raw, C: Send + Sync + 'static> Storage for VecStorage<E, C> {
                 start: E::from_primitive(range.start),
             })
             .filter(|chunk| !chunk.slice.is_empty())
+    }
+}
+
+impl<E: entity::Raw, C: Send + Sync + 'static> Chunked for VecStorage<E, C> {
+    fn get_chunk(&self, start: Self::RawEntity, end: Self::RawEntity) -> Option<&[Self::Comp]> {
+        let range = start.to_primitive()..end.to_primitive();
+        let bits = match self.bits.get(range.clone()) {
+            Some(bits) => bits,
+            None => return None,
+        };
+        if !bits.all() {
+            return None;
+        }
+
+        let data =
+            self.data.get(range).expect("range exists in self.bits implies existence in self.data");
+        Some(unsafe { slice_assume_init_ref(data) })
+    }
+
+    fn get_chunk_mut(
+        &mut self,
+        start: Self::RawEntity,
+        end: Self::RawEntity,
+    ) -> Option<&mut [Self::Comp]> {
+        let range = start.to_primitive()..end.to_primitive();
+        let bits = match self.bits.get(range.clone()) {
+            Some(bits) => bits,
+            None => return None,
+        };
+        if !bits.all() {
+            return None;
+        }
+
+        let data = self
+            .data
+            .get_mut(range)
+            .expect("range exists in self.bits implies existence in self.data");
+        Some(unsafe { slice_assume_init_mut(data) })
     }
 }
 

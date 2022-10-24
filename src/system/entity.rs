@@ -2,6 +2,7 @@ use std::cell::RefCell;
 use std::marker::PhantomData;
 use std::ops;
 
+use super::accessor;
 use crate::entity::{self, ealloc};
 use crate::world::offline;
 use crate::{comp, Archetype};
@@ -69,4 +70,29 @@ impl<'t, A: Archetype> EntityDeleter<A> for EntityDeleterImpl<'t, A> {
         let mut buffer = self.buffer.borrow_mut();
         buffer.delete_entity::<A, E>(entity);
     }
+}
+
+/// Allows iterating all entities of an archetype.
+pub trait EntityIterator<A: Archetype> {
+    type Entities<'t>: Iterator<Item = entity::TempRef<'t, A>>
+    where
+        Self: 't;
+    fn entities(&self) -> Self::Entities<'_>;
+
+    type Chunks<'t>: Iterator<Item = entity::TempRefChunk<'t, A>>
+    where
+        Self: 't;
+    fn chunks(&self) -> Self::Chunks<'_>;
+
+    type EntitiesWith<'t, T: accessor::Set<A>>: Iterator<Item = T::Entity<'t>>
+    where
+        Self: 't,
+        T: 't;
+    fn entities_with<T: accessor::Set<A>>(&self, accessors: T) -> Self::EntitiesWith<'_, T>;
+
+    type ChunksWith<'t, T: accessor::Set<A>>: Iterator<Item = T::Chunk<'t>>
+    where
+        Self: 't,
+        T: 't;
+    fn chunks_with<T: accessor::Set<A>>(&self, accessors: T) -> Self::ChunksWith<'_, T>;
 }

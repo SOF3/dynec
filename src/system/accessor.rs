@@ -1,26 +1,33 @@
-use core::fmt;
-use std::marker::PhantomData;
-use std::{any, ops};
+//! Component accessor APIs to be used from systems.
 
-use crate::{comp, entity, Archetype};
+use std::marker::PhantomData;
+use std::{any, fmt, ops};
+
+use crate::{comp, entity, storage, Archetype};
 
 /// Generalizes [`ReadSimple`] and specific-discriminant [`ReadIsotope`] (through [`with`]).
 pub trait Read<A: Archetype, C: 'static> {
-    /// Return value of [`try_get`](Self::try_get) and [`get`](Self::get).
-    type Get<'t>: ops::Deref<Target = C> + 't
-    where
-        Self: 't;
-
     /// Returns an immutable reference to the component for the specified entity,
     /// or `None` if the component is not present in the entity.
-    fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Option<Self::Get<'_>>;
+    fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Option<&C>;
+
+    /// Returns a slice of contiguously located components as a slice.
+    ///
+    /// Since the internal representation does not use `[Option<C>]`,
+    /// it is not meaningful to use this function on components that may be missing.
+    /// Hence, this function only works on simple components that must exist in the chunk.
+    fn get_chunk(&self, chunk: entity::TempRefChunk<'_, A>) -> &[C]
+    where
+        Self: comp::Must<A>,
+        C: comp::Simple<A>,
+        <C as comp::Simple<A>>::Storage: storage::Chunked;
 
     /// Returns an immutable reference to the component for the specified entity.
     ///
     /// # Panics
     /// This method panics if the entity is not fully initialized yet.
     /// This happens when an entity is newly created and the cycle hasn't joined yet.
-    fn get<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Self::Get<'_>
+    fn get<E: entity::Ref<Archetype = A>>(&self, entity: E) -> &C
     where
         C: comp::Must<A>,
     {
@@ -98,15 +105,11 @@ pub trait ReadIsotope<A: Archetype, C: comp::Isotope<A>, K = <C as comp::Isotope
 where
     K: fmt::Debug + Copy + 'static,
 {
-    /// Return value of [`try_get`](Self::try_get) and [`get`](Self::get).
-    type Get<'t>: ops::Deref<Target = C> + 't
-    where
-        Self: 't;
     /// Retrieves the component for the given entity and discriminant.
     ///
     /// This method is infallible for correctly implemented `comp::Must`,
     /// which returns the auto-initialized value for missing components.
-    fn get<E: entity::Ref<Archetype = A>>(&self, entity: E, discrim: K) -> Self::Get<'_>
+    fn get<E: entity::Ref<Archetype = A>>(&self, entity: E, discrim: K) -> &C
     where
         C: comp::Must<A>,
     {
@@ -123,11 +126,7 @@ where
     /// Returns an immutable reference to the component for the specified entity and discriminant,
     /// or the default value for isotopes with a default initializer or `None`
     /// if the component is not present in the entity.
-    fn try_get<E: entity::Ref<Archetype = A>>(
-        &self,
-        entity: E,
-        discrim: K,
-    ) -> Option<Self::Get<'_>>;
+    fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E, discrim: K) -> Option<&C>;
 
     /// Return value of [`get_all`](Self::get_all).
     type GetAll<'t>: Iterator<Item = (<C as comp::Isotope<A>>::Discrim, &'t C)> + 't
@@ -168,29 +167,9 @@ where
         discrim: K,
     ) -> Option<&mut C>;
 
-    /// Returns a mutable reference to the component for the specified entity and discriminant.
-    ///
-    /// This method is infallible, assuming [`comp::Must`] is only implemented
-    /// for components with [`Default`](comp::IsotopeInitStrategy::Default) init strategy.
-    fn get_mut<E: entity::Ref<Archetype = A>>(&mut self, entity: E, discrim: K) -> &mut C
-    where
-        C: comp::Must<A>,
-    {
-        match self.try_get_mut(entity, discrim) {
-            Some(comp) => comp,
-            None => panic!(
-                "Component {}/{} implements comp::Must but does not have a default initializer",
-                any::type_name::<A>(),
-                any::type_name::<C>(),
-            ),
-        }
-    }
-
     /// Overwrites the component for the specified entity and discriminant.
     ///
     /// Passing `None` to this method removes the component from the entity.
-    /// A subsequent call to `try_get_mut` would still return `Some`
-    /// if the component uses [`Default`](comp::IsotopeInitStrategy::Default) init strategy.
     fn set<E: entity::Ref<Archetype = A>>(
         &mut self,
         entity: E,
@@ -241,10 +220,15 @@ where
     K: fmt::Debug + Copy + 'static,
     <R as ops::Deref>::Target: ReadIsotope<A, C, K>,
 {
-    type Get<'t> = <<R as ops::Deref>::Target as ReadIsotope<A, C, K>>::Get<'t> where Self: 't;
-
-    fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Option<Self::Get<'_>> {
+    fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Option<&C> {
         self.accessor.try_get(entity, self.discrim)
+    }
+
+    fn get_chunk(&self, _chunk: entity::TempRefChunk<'_, A>) -> &[C]
+    where
+        Self: comp::Must<A>,
+    {
+        unreachable!("Isotope components should not implement comp::Must")
     }
 
     type Iter<'t> = impl Iterator<Item = (entity::TempRef<'t, A>, &'t C)>
@@ -273,3 +257,44 @@ where
         Self: 't;
     fn iter_mut(&mut self) -> Self::IterMut<'_> { self.accessor.iter_mut(self.discrim) }
 }
+
+/// An accessor that can be used in an entity iteration.
+pub trait Accessor<A: Archetype> {
+    /// Return value of [`entity`](Self::entity).
+    type Entity<'t>
+    where
+        Self: 't;
+    /// Accesses this storage for a specific entity.
+    fn entity<'e>(&mut self, entity: entity::TempRef<'e, A>) -> Self::Entity<'_>;
+
+    /// Return value of [`chunk`](Self::chunk).
+    type Chunk<'t>
+    where
+        Self: 't;
+    /// Accesses this storage for a specific chunk of entities.
+    fn chunk<'e>(&mut self, chunk: entity::TempRefChunk<'e, A>) -> Self::Chunk<'_>;
+}
+
+/// A set of accessors joined together in a specific shape.
+///
+/// This trait is implemented for tuples of accessors,
+/// but new implementors can be derived through the [`accessors`](crate::accessors) macro.
+pub trait Set<A: Archetype> {
+    /// The type after projecting to an entity.
+    type Entity<'t>
+    where
+        Self: 't;
+    /// Projects the set to a specific entity,
+    /// i.e. map each accessor to the getter for the given entity and retain the shape.
+    fn project_entity<'e>(&mut self, entity: entity::TempRef<'e, A>) -> Self::Entity<'_>;
+
+    /// The type after projecting to an entity chunk.
+    type Chunk<'t>
+    where
+        Self: 't;
+    /// Projects the set to a specific entity chunk,
+    /// i.e. map each accessor to the getter for the given entity chunk and retain the shape.
+    fn project_chunk<'e>(&mut self, chunk: entity::TempRefChunk<'e, A>) -> Self::Chunk<'_>;
+}
+
+mod tuple_impl;

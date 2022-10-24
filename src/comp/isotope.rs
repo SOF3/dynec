@@ -19,7 +19,7 @@ pub trait Isotope<A: Archetype>: entity::Referrer + Send + Sync + Sized + 'stati
 pub enum IsotopeInitStrategy<A: Archetype> {
     /// The component is not auto-initialized.
     None,
-    /// The component should be auto-initialized using the [`any::AutoIniter`]
+    /// The component should be auto-initialized using the [`IsotopeIniter`]
     /// if it is not given in the creation args.
     Auto(IsotopeIniter<A>),
 }

@@ -8,6 +8,7 @@
 //!
 //! All strong references to an entity must be dropped before it gets deleted.
 
+use std::iter;
 use std::marker::PhantomData;
 
 use crate::Archetype;
@@ -71,6 +72,31 @@ impl<'t, A: Archetype> Clone for TempRef<'t, A> {
 }
 
 impl<'t, A: Archetype> Copy for TempRef<'t, A> {}
+
+/// A chunk of continuous [`TempRef`]s.
+// Instantiations of this struct must guarantee that all entities in `start..end`
+// satisfy the presence invariants for the duration of the lifetime `'t`.
+pub struct TempRefChunk<'t, A: Archetype> {
+    pub(crate) start: A::RawEntity,
+    pub(crate) end:   A::RawEntity,
+    _ph:              PhantomData<&'t ()>,
+}
+
+impl<'t, A: Archetype> TempRefChunk<'t, A> {
+    /// Iterates over all entities in the chunk.
+    pub fn iter(&self) -> impl Iterator<Item = TempRef<'t, A>> + '_ {
+        iter::successors(Some(self.start), |prev| {
+            Some(prev.add(1)).filter(|&value| value < self.end)
+        })
+        .map(|value| TempRef::new(value))
+    }
+}
+
+impl<'t, A: Archetype> Clone for TempRefChunk<'t, A> {
+    fn clone(&self) -> Self { Self { start: self.start, end: self.end, _ph: PhantomData } }
+}
+
+impl<'t, A: Archetype> Copy for TempRefChunk<'t, A> {}
 
 #[cfg(any(
     all(debug_assertions, feature = "debug-entity-rc"),

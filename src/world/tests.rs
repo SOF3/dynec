@@ -199,19 +199,19 @@ fn test_full_isotope_discrim_read() {
 
         {
             let iso = iso1.try_get(ent, TestDiscrim1(11));
-            assert_eq!(iso.as_deref(), Some(&Iso1(3)));
+            assert_eq!(iso, Some(&Iso1(3)));
         }
 
         // should not panic on nonexistent storages
         {
             let iso = iso1.try_get(ent, TestDiscrim1(17));
-            assert_eq!(iso.as_deref(), None);
+            assert_eq!(iso, None);
         }
 
         // should return default value for autoinit isotopes
         {
             let iso = iso2.try_get(ent, TestDiscrim2(71));
-            assert_eq!(iso.as_deref(), Some(&Iso2(73)));
+            assert_eq!(iso, Some(&Iso2(73)));
         }
 
         let map = iso1.get_all(ent);
@@ -264,7 +264,7 @@ fn partial_isotope_discrim_read(
 
         for (discrim, expect) in single_expects {
             let iso = iso1.try_get(ent, *discrim);
-            assert_eq!(iso.as_deref(), expect.as_ref());
+            assert_eq!(iso, expect.as_ref());
         }
 
         // should only include requested discriminants
@@ -321,7 +321,7 @@ fn test_full_isotope_discrim_write() {
         // should return default value
         {
             let iso = iso2.try_get(ent, TestDiscrim2(71));
-            assert_eq!(iso.as_deref(), Some(&Iso2(73)));
+            assert_eq!(iso, Some(&Iso2(73)));
         }
 
         // should not reset to default value
@@ -331,7 +331,7 @@ fn test_full_isotope_discrim_write() {
         }
         {
             let iso = iso2.try_get(ent, TestDiscrim2(71));
-            assert_eq!(iso.as_deref(), None);
+            assert_eq!(iso, None);
         }
 
         // should include new discriminants

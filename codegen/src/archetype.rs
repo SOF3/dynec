@@ -7,11 +7,11 @@ use syn::Error;
 use crate::util::{Attr, Named, Result};
 
 pub(crate) fn imp(input: TokenStream) -> Result<TokenStream> {
-    let inputs: Inputs = syn::parse2(input)?;
+    let Inputs(inputs) = syn::parse2(input)?;
 
     let mut output = TokenStream::new();
 
-    for Input { crate_name, meta, vis, ident, opts, .. } in inputs.0 {
+    for Input { crate_name, meta, vis, ident, opts, .. } in inputs {
         let crate_name = match crate_name {
             Some((_, crate_name)) => crate_name,
             None => quote!(::dynec),

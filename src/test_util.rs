@@ -192,7 +192,7 @@ pub(crate) enum TestArch {}
 impl Archetype for TestArch {
     type RawEntity = NonZeroU32;
     type Ealloc =
-        ealloc::Recycling<NonZeroU32, BTreeSet<NonZeroU32>, ealloc::ThreadRngShardAssigner, 2>;
+        ealloc::Recycling<NonZeroU32, BTreeSet<NonZeroU32>, ealloc::ThreadRngShardAssigner>;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, dynec_codegen::Discrim)]

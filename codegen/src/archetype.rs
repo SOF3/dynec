@@ -34,19 +34,13 @@ pub(crate) fn imp(input: TokenStream) -> Result<TokenStream> {
                 None => quote!(#crate_name::entity::ealloc::ThreadRngShardAssigner),
             };
 
-        let block_size =
-            match opts.find_one(|opt| option_match!(opt, Opt::BlockSize(_, expr) => expr))? {
-                Some((_, ty)) => ty.into_token_stream(),
-                None => quote!(16), // 16 * 32bits = 64 bytes
-            };
-
         let item = quote! {
             #(#meta)*
             #vis enum #ident {}
 
             impl #crate_name::Archetype for #ident {
                 type RawEntity = #raw_entity;
-                type Ealloc = #crate_name::entity::ealloc::Recycling<#raw_entity, #recycler, #shard_assigner, #block_size>;
+                type Ealloc = #crate_name::entity::ealloc::Recycling<#raw_entity, #recycler, #shard_assigner>;
             }
         };
         output.extend(item);
@@ -106,7 +100,6 @@ enum Opt {
     RawEntity(syn::Token![=], syn::Type),
     Recycler(syn::Token![=], syn::Type),
     ShardAssigner(syn::Token![=], syn::Type),
-    BlockSize(syn::Token![=], syn::Expr),
 }
 
 impl Parse for Named<Opt> {
@@ -128,11 +121,6 @@ impl Parse for Named<Opt> {
                 let eq: syn::Token![=] = input.parse()?;
                 let ty = input.parse::<syn::Type>()?;
                 Opt::ShardAssigner(eq, ty)
-            }
-            "block_size" => {
-                let eq: syn::Token![=] = input.parse()?;
-                let expr = input.parse::<syn::Expr>()?;
-                Opt::BlockSize(eq, expr)
             }
             _ => return Err(Error::new_spanned(&name, format!("Unknown argument `{}`", name))),
         };

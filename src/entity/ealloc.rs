@@ -3,6 +3,7 @@
 use std::any::{Any, TypeId};
 use std::cell::{self, RefCell};
 use std::collections::{BTreeSet, HashMap};
+use std::marker::PhantomData;
 use std::ops;
 use std::sync::Arc;
 
@@ -33,6 +34,8 @@ pub trait Ealloc: 'static {
     type Shard: Shard<Raw = Self::Raw, Hint = Self::AllocHint>;
 
     /// Initialize a new allocator with `num_shards` shards.
+    ///
+    /// `num_shards` is always nonzero.
     fn new(num_shards: usize) -> Self;
 
     /// Returns a vector of shards where each shard references internal states in the allocator.
@@ -97,10 +100,9 @@ impl<T: Shard> AnyShard for T {
 
 // Default allocator
 
-/// The default allocator supporting sharded atomically-allocated new blocks and arbitrary
-/// recycler.
-pub struct Recycling<R: Raw, T: Recycler<R>, S: ShardAssigner, const BLOCK_SIZE: usize> {
-    /// The next block to allocate into shards.
+/// The default allocator supporting atomically-allocated new IDs and arbitrary recycler.
+pub struct Recycling<R: Raw, T: Recycler<R>, S: ShardAssigner> {
+    /// The next ID to allocate into shards.
     global_gauge:   Arc<R::Atomic>,
     /// The set of freed entity IDs.
     shards:         Vec<Arc<Mutex<RecyclingShardState<R, T>>>>,
@@ -110,9 +112,7 @@ pub struct Recycling<R: Raw, T: Recycler<R>, S: ShardAssigner, const BLOCK_SIZE:
     dealloc_queue:  Vec<R>,
 }
 
-impl<R: Raw, T: Recycler<R>, S: ShardAssigner, const BLOCK_SIZE: usize>
-    Recycling<R, T, S, BLOCK_SIZE>
-{
+impl<R: Raw, T: Recycler<R>, S: ShardAssigner> Recycling<R, T, S> {
     /// Creates a new recycling allocator with a custom shard assigner.
     /// This can only be used for unit testing since the Archetype API does not support dynamic
     /// shard assigners.
@@ -120,12 +120,9 @@ impl<R: Raw, T: Recycler<R>, S: ShardAssigner, const BLOCK_SIZE: usize>
         let global_gauge = R::new();
         let shards = (0..num_shards)
             .map(|_| {
-                let block = global_gauge.fetch_add(BLOCK_SIZE);
-                let block_end = block.add(BLOCK_SIZE);
                 Arc::new(Mutex::new(RecyclingShardState {
-                    block,
-                    block_end,
                     recycler: T::default(),
+                    _ph:      PhantomData,
                 }))
             })
             .collect();
@@ -146,12 +143,10 @@ impl<R: Raw, T: Recycler<R>, S: ShardAssigner, const BLOCK_SIZE: usize>
     }
 }
 
-impl<R: Raw, T: Recycler<R>, S: ShardAssigner, const BLOCK_SIZE: usize> Ealloc
-    for Recycling<R, T, S, BLOCK_SIZE>
-{
+impl<R: Raw, T: Recycler<R>, S: ShardAssigner> Ealloc for Recycling<R, T, S> {
     type Raw = R;
     type AllocHint = T::Hint;
-    type Shard = RecyclingShard<R, T, BLOCK_SIZE>;
+    type Shard = RecyclingShard<R, T>;
 
     fn new(num_shards: usize) -> Self { Self::new_with_shard_assigner(num_shards, S::default()) }
 
@@ -177,7 +172,7 @@ impl<R: Raw, T: Recycler<R>, S: ShardAssigner, const BLOCK_SIZE: usize> Ealloc
         let shard_id = self.shard_assigner.select_for_offline_allocation(self.shards.len());
         let shard =
             self.shards.get_mut(shard_id).expect("shard_id was selected from 0..self.shards.len()");
-        let mut shard = RecyclingShard::<R, T, BLOCK_SIZE> {
+        let mut shard = RecyclingShard::<R, T> {
             global_gauge: Arc::clone(&self.global_gauge),
             state:        Arc::clone(shard),
         };
@@ -247,47 +242,6 @@ fn distribute_sorted(sizes: &mut [usize], total: usize) {
     right.fill(target + 1);
 }
 
-#[cfg(test)]
-#[test]
-fn test_distribute_sorted_113367() {
-    test_distribute_sorted(
-        [1, 1, 3, 3, 6, 7],
-        [
-            (1, [1, 2, 3, 3, 6, 7]),
-            (2, [2, 2, 3, 3, 6, 7]),
-            (3, [2, 3, 3, 3, 6, 7]),
-            (4, [3, 3, 3, 3, 6, 7]),
-            (5, [3, 3, 3, 4, 6, 7]),
-            (7, [3, 4, 4, 4, 6, 7]),
-            (8, [4, 4, 4, 4, 6, 7]),
-            (10, [4, 4, 5, 5, 6, 7]),
-            (15, [5, 6, 6, 6, 6, 7]),
-            (16, [6, 6, 6, 6, 6, 7]),
-            (17, [6, 6, 6, 6, 7, 7]),
-            (22, [7, 7, 7, 7, 7, 8]),
-        ],
-    );
-}
-
-#[cfg(test)]
-#[test]
-fn test_distribute_sorted_000() { test_distribute_sorted([0, 0, 0], [(5, [1, 2, 2])]); }
-
-#[cfg(test)]
-fn test_distribute_sorted<const N: usize>(
-    sample: [usize; N],
-    cases: impl IntoIterator<Item = (usize, [usize; N])>,
-) {
-    for (total, simulation) in cases {
-        assert_eq!(sample.into_iter().sum::<usize>() + total, simulation.into_iter().sum()); // assert correctness of the test case
-
-        let mut copy = sample;
-        distribute_sorted(&mut copy, total);
-
-        assert_eq!(copy, simulation);
-    }
-}
-
 struct MutTakeIter<'t, T, I: Iterator<Item = T>>(&'t mut I, usize);
 
 impl<'t, T, I: Iterator<Item = T>> Iterator for MutTakeIter<'t, T, I> {
@@ -303,18 +257,21 @@ impl<'t, T, I: Iterator<Item = T>> Iterator for MutTakeIter<'t, T, I> {
 }
 
 struct RecyclingShardState<R: Raw, T: Recycler<R>> {
-    block:     R,
-    block_end: R,
-    recycler:  T,
+    recycler: T,
+    _ph:      PhantomData<R>,
+}
+
+struct JoinState<R: Raw> {
+    recycle_list: Vec<R>,
 }
 
 /// [`Shard`] implementation for [`Recycling`].
-pub struct RecyclingShard<R: Raw, T: Recycler<R>, const BLOCK_SIZE: usize> {
+pub struct RecyclingShard<R: Raw, T: Recycler<R>> {
     global_gauge: Arc<R::Atomic>,
     state:        Arc<Mutex<RecyclingShardState<R, T>>>,
 }
 
-impl<R: Raw, T: Recycler<R>, const BLOCK_SIZE: usize> Shard for RecyclingShard<R, T, BLOCK_SIZE> {
+impl<R: Raw, T: Recycler<R>> Shard for RecyclingShard<R, T> {
     type Raw = R;
     type Hint = T::Hint;
 
@@ -324,14 +281,7 @@ impl<R: Raw, T: Recycler<R>, const BLOCK_SIZE: usize> Shard for RecyclingShard<R
         if let Some(id) = state.recycler.poll(hint) {
             id
         } else {
-            if state.block == state.block_end {
-                state.block = self.global_gauge.fetch_add(BLOCK_SIZE);
-                state.block_end = state.block.add(BLOCK_SIZE);
-            }
-
-            let ret = state.block;
-            state.block = state.block.add(1);
-            ret
+            self.global_gauge.fetch_add(1)
         }
     }
 }

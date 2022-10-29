@@ -65,37 +65,70 @@ fn test_realloc_freed() {
     for &id in &alloc1 {
         ealloc.queue_deallocate(id);
     }
-    ealloc.flush_deallocate();
-    log::trace!("deallocated all");
+
+    ealloc.flush();
+    log::trace!("deallocated all, ealloc state = {ealloc:?}");
 
     // this distribution is the same as test_distribute_sorted_000.
     assert_eq!(
-        ealloc.offline_shard(0).recycler.iter().copied().collect::<Vec<_>>(),
+        BTree::get_recycler_offline(&mut ealloc.recycler_shards, 0)
+            .iter()
+            .copied()
+            .collect::<Vec<_>>(),
         vec![alloc1[0]],
     );
     assert_eq!(
-        ealloc.offline_shard(1).recycler.iter().copied().collect::<Vec<_>>(),
+        BTree::get_recycler_offline(&mut ealloc.recycler_shards, 1)
+            .iter()
+            .copied()
+            .collect::<Vec<_>>(),
         vec![alloc1[1], alloc1[2]],
     );
     assert_eq!(
-        ealloc.offline_shard(2).recycler.iter().copied().collect::<Vec<_>>(),
+        BTree::get_recycler_offline(&mut ealloc.recycler_shards, 2)
+            .iter()
+            .copied()
+            .collect::<Vec<_>>(),
         vec![alloc1[3], alloc1[4]],
     );
+
+    assert_eq!(ealloc.recyclable.len(), 5, "recyclable should be refilled by queue_deallocate");
 
     // now we switch to shard 1 by default for offline allocation
     ealloc.shard_assigner.allocating_shard = 1;
 
     let alloc2: Vec<_> = (0..5).map(|_| ealloc.allocate(BTreeHint::default())).collect();
-    log::trace!("allocated {alloc2:?} offline");
+    log::trace!("allocated {alloc2:?} offline, ealloc state = {ealloc:?}");
 
     assert!(
-        ealloc.offline_shard(1).recycler.is_empty(),
+        BTree::get_recycler_offline(&mut ealloc.recycler_shards, 1).is_empty(),
         "alloc2[0..2] should be allocated from recycler",
     );
     assert_eq!(alloc2[0], alloc1[1], "alloc2[0..2] should be allocated from recycler");
     assert_eq!(alloc2[1], alloc1[2], "alloc2[0..2] should be allocated from recycler");
 
-    assert_eq!(alloc2[2].get(), 6, "alloc2[2..4] should be allocated from global gauge",);
-    assert_eq!(alloc2[3].get(), 7, "alloc2[2..4] should be allocated from global gauge",);
-    assert_eq!(alloc2[4].get(), 8, "alloc2[3..5] should be allocated from global gauge",);
+    assert_eq!(alloc2[2].get(), 6, "alloc2[2..4] should be allocated from global gauge");
+    assert_eq!(alloc2[3].get(), 7, "alloc2[2..4] should be allocated from global gauge");
+    assert_eq!(alloc2[4].get(), 8, "alloc2[3..5] should be allocated from global gauge");
+
+    assert_eq!(
+        &BTree::get_reuse_queue_offline(&mut ealloc.reuse_queue_shards, 1)[..],
+        &alloc2[0..2],
+        "the first two allocations should be pushed to reuse queue"
+    );
+    assert_eq!(ealloc.recyclable.len(), 5, "recyclable is not refilled until flush");
+
+    ealloc.flush();
+    log::trace!("flushed after reallocation, ealloc state = {ealloc:?}");
+    assert!(BTree::get_reuse_queue_offline(&mut ealloc.reuse_queue_shards, 1).is_empty());
+    assert_eq!(ealloc.recyclable.len(), 3, "recyclable is drained after flush");
+
+    let allocated_chunks: Vec<_> = ealloc.iter_allocated_chunks_offline().collect();
+    assert_eq!(
+        allocated_chunks,
+        vec![
+            NonZeroU32::new(2).expect("2 != 0")..NonZeroU32::new(4).expect("4 != 0"),
+            NonZeroU32::new(6).expect("6 != 0")..NonZeroU32::new(9).expect("9 != 0"),
+        ]
+    );
 }

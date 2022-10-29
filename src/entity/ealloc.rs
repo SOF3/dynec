@@ -4,8 +4,8 @@ use std::any::{Any, TypeId};
 use std::cell::{self, RefCell};
 use std::collections::{BTreeSet, HashMap};
 use std::marker::PhantomData;
-use std::ops;
 use std::sync::Arc;
+use std::{iter, ops};
 
 use parking_lot::Mutex;
 use rand::prelude::SliceRandom;
@@ -38,21 +38,21 @@ pub trait Ealloc: 'static {
     /// `num_shards` is always nonzero.
     fn new(num_shards: usize) -> Self;
 
-    /// Returns a vector of shards where each shard references internal states in the allocator.
+    /// Populates `vec` with the transformed shards.
     ///
-    /// The length of the result must be `num_shards` in [`Ealloc::new`].
-    /// The caller shall shuffle the results returned by this method.
-    fn shards<U, F: Fn(Self::Shard) -> U>(&mut self, vec: &mut Vec<U>, f: F);
+    /// The length of the `vec` must be `num_shards` in [`Ealloc::new`].
+    /// The implementation shall shuffle the results returned by this method
+    /// to avoid centralizing on a single shard.
+    fn shards<U, F: Fn(Self::Shard) -> U>(&mut self, vec: &mut Vec<U>, transform: F);
 
-    /// Allocate an ID.
-    /// Can only be used between out-of-cycle.
+    /// Allocate an ID in offline mode.
     fn allocate(&mut self, hint: Self::AllocHint) -> Self::Raw;
 
     /// Queues the deallocation of an ID.
     fn queue_deallocate(&mut self, id: Self::Raw);
 
-    /// Flushes the ID deallocation queue.
-    fn flush_deallocate(&mut self);
+    /// Flushes the queued operations after joining.
+    fn flush(&mut self);
 }
 
 pub(crate) trait AnyEalloc {
@@ -60,7 +60,7 @@ pub(crate) trait AnyEalloc {
 
     fn shards(&mut self, vec: &mut Vec<Box<dyn AnyShard>>);
 
-    fn flush_deallocate(&mut self);
+    fn flush(&mut self);
 }
 
 impl<T: Ealloc> AnyEalloc for T {
@@ -70,7 +70,7 @@ impl<T: Ealloc> AnyEalloc for T {
         Ealloc::shards(self, vec, |shard| Box::new(shard) as Box<dyn AnyShard>)
     }
 
-    fn flush_deallocate(&mut self) { Ealloc::flush_deallocate(self); }
+    fn flush(&mut self) { Ealloc::flush(self); }
 }
 
 /// A sharded entity ID allocator.
@@ -86,6 +86,14 @@ pub trait Shard: Send + 'static {
 
     /// Allocates an ID from the shard.
     fn allocate(&mut self, hint: Self::Hint) -> Self::Raw;
+
+    /// Return value of [`iter_allocated_chunks`](Self::iter_allocated_chunks).
+    type IterAllocatedChunks<'t>: Iterator<Item = ops::Range<Self::Raw>>;
+    /// Returns an iterator over all allocated ranges during the previous join.
+    ///
+    /// Allocations in the current or other shards after the last flush
+    /// have no effect on the result of this iterator.
+    fn iter_allocated_chunks(&self) -> Self::IterAllocatedChunks<'_>;
 }
 
 pub(crate) trait AnyShard: Send + 'static {
@@ -100,16 +108,23 @@ impl<T: Shard> AnyShard for T {
 
 // Default allocator
 
+type MutableShards<T> = Vec<Arc<Mutex<T>>>;
+
 /// The default allocator supporting atomically-allocated new IDs and arbitrary recycler.
+#[derive(Debug)]
 pub struct Recycling<R: Raw, T: Recycler<R>, S: ShardAssigner> {
     /// The next ID to allocate into shards.
-    global_gauge:   Arc<R::Atomic>,
-    /// The set of freed entity IDs.
-    shards:         Vec<Arc<Mutex<RecyclingShardState<R, T>>>>,
+    global_gauge:       Arc<R::Atomic>,
+    /// A sorted list of recycled IDs during the last join.
+    recyclable:         Arc<BTreeSet<R>>,
+    /// The actual IDs assigned to different shards.
+    recycler_shards:    MutableShards<T>,
     /// The assigned shard.
-    shard_assigner: S,
+    shard_assigner:     S,
     /// The queue of deallocated IDs to distribute.
-    dealloc_queue:  Vec<R>,
+    dealloc_queue:      Vec<R>,
+    /// The queue of allocated IDs during online, to be synced to recyclable after join.
+    reuse_queue_shards: MutableShards<Vec<R>>,
 }
 
 impl<R: Raw, T: Recycler<R>, S: ShardAssigner> Recycling<R, T, S> {
@@ -118,48 +133,57 @@ impl<R: Raw, T: Recycler<R>, S: ShardAssigner> Recycling<R, T, S> {
     /// shard assigners.
     pub(crate) fn new_with_shard_assigner(num_shards: usize, shard_assigner: S) -> Self {
         let global_gauge = R::new();
-        let shards = (0..num_shards)
-            .map(|_| {
-                Arc::new(Mutex::new(RecyclingShardState {
-                    recycler: T::default(),
-                    _ph:      PhantomData,
-                }))
-            })
-            .collect();
         Self {
             global_gauge: Arc::new(global_gauge),
+            recyclable: Arc::default(),
+            recycler_shards: (0..num_shards).map(|_| Arc::default()).collect(),
             shard_assigner,
-            shards,
             dealloc_queue: Vec::new(),
+            reuse_queue_shards: (0..num_shards).map(|_| Arc::default()).collect(),
         }
     }
 
-    /// Gets a shard state in offline mode.
-    #[cfg(test)]
-    fn offline_shard(&mut self, i: usize) -> &mut RecyclingShardState<R, T> {
-        Arc::get_mut(self.shards.get_mut(i).expect("Undefined shard index"))
-            .expect("Offline Arc leak")
-            .get_mut()
+    fn get_recycler_offline(sharded_recyclers: &mut MutableShards<T>, index: usize) -> &mut T {
+        let arc = sharded_recyclers.get_mut(index).expect("index out of bounds");
+        Arc::get_mut(arc).expect("shards are dropped in offline mode").get_mut()
+    }
+
+    fn get_reuse_queue_offline(
+        reuse_queues: &mut MutableShards<Vec<R>>,
+        index: usize,
+    ) -> &mut Vec<R> {
+        let arc = reuse_queues.get_mut(index).expect("index out of bounds");
+        Arc::get_mut(arc).expect("shards are dropped in offline mode").get_mut()
+    }
+
+    fn iter_allocated_chunks_offline(
+        &mut self,
+    ) -> impl Iterator<Item = ops::Range<R>> + iter::FusedIterator + '_ {
+        iter_gaps(self.global_gauge.load(), self.recyclable.iter().copied())
     }
 }
 
 impl<R: Raw, T: Recycler<R>, S: ShardAssigner> Ealloc for Recycling<R, T, S> {
     type Raw = R;
     type AllocHint = T::Hint;
-    type Shard = RecyclingShard<R, T>;
+    type Shard = impl Shard<Raw = R, Hint = T::Hint>;
 
     fn new(num_shards: usize) -> Self { Self::new_with_shard_assigner(num_shards, S::default()) }
 
     fn shards<U, F: Fn(Self::Shard) -> U>(&mut self, vec: &mut Vec<U>, f: F) {
-        // TODO optimization: see if we can optimize away the arc cloning cost
-        // by reusing the same shard instances in every loop
         let slice_start = vec.len();
+
         vec.extend(
-            self.shards
-                .iter_mut()
-                .map(|state| RecyclingShard {
-                    global_gauge: Arc::clone(&self.global_gauge),
-                    state:        Arc::clone(state),
+            iter::zip(self.recycler_shards.iter(), self.reuse_queue_shards.iter())
+                .map(|(recycler, reuse_queue)| -> Self::Shard {
+                    // The return type hint here is used to constrain the TAIT, don't delete it.
+                    RecyclingShard {
+                        global_gauge:   Arc::clone(&self.global_gauge),
+                        recycler:       Arc::clone(recycler).lock_arc(),
+                        snapshot_gauge: self.global_gauge.load(),
+                        snapshot:       Arc::clone(&self.recyclable),
+                        reuse_queue:    Arc::clone(reuse_queue).lock_arc(),
+                    }
                 })
                 .map(f),
         );
@@ -168,45 +192,66 @@ impl<R: Raw, T: Recycler<R>, S: ShardAssigner> Ealloc for Recycling<R, T, S> {
     }
 
     fn allocate(&mut self, hint: Self::AllocHint) -> Self::Raw {
-        // TODO optimization: get rid of the useless Arc clone
-        let shard_id = self.shard_assigner.select_for_offline_allocation(self.shards.len());
-        let shard =
-            self.shards.get_mut(shard_id).expect("shard_id was selected from 0..self.shards.len()");
-        let mut shard = RecyclingShard::<R, T> {
-            global_gauge: Arc::clone(&self.global_gauge),
-            state:        Arc::clone(shard),
+        let shard_id =
+            self.shard_assigner.select_for_offline_allocation(self.recycler_shards.len());
+        let recycler = Self::get_recycler_offline(&mut self.recycler_shards, shard_id);
+        let reuse_queue = Self::get_reuse_queue_offline(&mut self.reuse_queue_shards, shard_id);
+
+        let mut shard = RecyclingShard {
+            global_gauge: &*self.global_gauge,
+            recycler,
+            snapshot_gauge: self.global_gauge.load(),
+            snapshot: &*self.recyclable,
+            reuse_queue,
         };
         shard.allocate(hint)
     }
 
     fn queue_deallocate(&mut self, id: R) { self.dealloc_queue.push(id); }
 
-    fn flush_deallocate(&mut self) {
-        let mut shards: Vec<&mut RecyclingShardState<R, T>> = self
-            .shards
-            .iter_mut()
-            .map(|shard| Arc::get_mut(shard).expect("Leaked Arc").get_mut())
-            .collect();
-
+    fn flush(&mut self) {
         let mut ids = &self.dealloc_queue[..];
+        {
+            let recyclable = Arc::get_mut(&mut self.recyclable)
+                .expect("all exposed shards should be dropped before flush");
+            recyclable.extend(ids);
+            for shard in &mut self.reuse_queue_shards {
+                let queue = Arc::get_mut(shard)
+                    .expect("all exposed shards should be dropped before flush")
+                    .get_mut();
+
+                for item in queue.drain(..) {
+                    recyclable.remove(&item);
+                }
+            }
+        }
 
         // try to distribute `ids` to all shards evenly.
+        let mut shards: Vec<_> = self
+            .recycler_shards
+            .iter_mut()
+            .map(|recycler| {
+                Arc::get_mut(recycler)
+                    .expect("all exposed shards should be dropped before flush")
+                    .get_mut()
+            })
+            .collect();
 
         // the shards with the smallest recycle count come first because we assign IDs to them
         // first.
-        shards.sort_by_key(|state| state.recycler.len());
+        shards.sort_by_key(|recycler| recycler.len());
 
-        let mut target_sizes: Vec<_> = shards.iter().map(|shard| shard.recycler.len()).collect();
+        let mut target_sizes: Vec<_> = shards.iter().map(|recycler| recycler.len()).collect();
         distribute_sorted(&mut target_sizes, ids.len());
 
-        for (i, shard) in shards.iter_mut().enumerate() {
+        for (i, recycler) in shards.iter_mut().enumerate() {
             let take: usize =
                 *target_sizes.get(i).expect("target_sizes collected from shards.iter()")
-                    - shard.recycler.len();
+                    - recycler.len();
             // take >= 0 assuming correctness of distribute_sorted
 
             let (left, right) = ids.split_at(take);
-            shard.recycler.extend(left.iter().copied());
+            recycler.extend(left.iter().copied());
             ids = right;
         }
 
@@ -266,23 +311,92 @@ struct JoinState<R: Raw> {
 }
 
 /// [`Shard`] implementation for [`Recycling`].
-pub struct RecyclingShard<R: Raw, T: Recycler<R>> {
-    global_gauge: Arc<R::Atomic>,
-    state:        Arc<Mutex<RecyclingShardState<R, T>>>,
+pub struct RecyclingShard<R, GaugeRef, RecyclerRef, SnapshotRef, ReuseQueueRef> {
+    global_gauge:   GaugeRef,
+    recycler:       RecyclerRef,
+    snapshot_gauge: R,
+    snapshot:       SnapshotRef,
+    reuse_queue:    ReuseQueueRef,
 }
 
-impl<R: Raw, T: Recycler<R>> Shard for RecyclingShard<R, T> {
-    type Raw = R;
-    type Hint = T::Hint;
-
+impl<R: Raw, T: Recycler<R>, GaugeRef, RecyclerRef, SnapshotRef, ReuseQueueRef>
+    RecyclingShard<R, GaugeRef, RecyclerRef, SnapshotRef, ReuseQueueRef>
+where
+    GaugeRef: ops::Deref<Target = R::Atomic>,
+    RecyclerRef: ops::DerefMut<Target = T>,
+    SnapshotRef: ops::Deref<Target = BTreeSet<R>>,
+    ReuseQueueRef: ops::DerefMut<Target = Vec<R>>,
+{
     fn allocate(&mut self, hint: T::Hint) -> R {
-        let mut state = self.state.try_lock().expect("Lock contention"); // TODO optimize this, don't request lock every time
-
-        if let Some(id) = state.recycler.poll(hint) {
+        if let Some(id) = self.recycler.poll(hint) {
+            self.reuse_queue.push(id);
             id
         } else {
             self.global_gauge.fetch_add(1)
         }
+    }
+}
+
+fn iter_gaps<R: Raw>(
+    gauge: R,
+    breakpoints: impl Iterator<Item = R>,
+) -> impl Iterator<Item = ops::Range<R>> + iter::FusedIterator {
+    enum Previous<R: Raw> {
+        Initial,
+        Breakpoint(R),
+        Finalized,
+    }
+    struct IterGaps<R: Raw, I: Iterator> {
+        gauge:       R,
+        breakpoints: I,
+        previous:    Previous<R>,
+    }
+    impl<R: Raw, I: Iterator<Item = R>> Iterator for IterGaps<R, I> {
+        type Item = ops::Range<R>;
+
+        fn next(&mut self) -> Option<ops::Range<R>> {
+            let start = match self.previous {
+                Previous::Initial => R::new().load_mut(),
+                Previous::Breakpoint(previous) => previous.add(1),
+                Previous::Finalized => return None,
+            };
+            let (previous, end) = match self.breakpoints.next() {
+                None => (Previous::Finalized, self.gauge),
+                Some(breakpoint) => (Previous::Breakpoint(breakpoint), breakpoint),
+            };
+            self.previous = previous;
+            Some(start..end)
+        }
+    }
+    impl<R: Raw, I: Iterator<Item = R>> iter::FusedIterator for IterGaps<R, I> {}
+
+    IterGaps { gauge, breakpoints, previous: Previous::Initial }
+        .filter(|range| range.start != range.end)
+}
+
+impl<R: Raw, GaugeRef, RecyclerRef, SnapshotRef, ReuseQueueRef> Shard
+    for RecyclingShard<R, GaugeRef, RecyclerRef, SnapshotRef, ReuseQueueRef>
+where
+    GaugeRef: ops::Deref<Target = R::Atomic> + Send + 'static,
+    RecyclerRef: ops::DerefMut + Send + 'static,
+    <RecyclerRef as ops::Deref>::Target: Recycler<R>,
+    SnapshotRef: ops::Deref<Target = BTreeSet<R>> + Send + 'static,
+    ReuseQueueRef: ops::DerefMut<Target = Vec<R>> + Send + 'static,
+{
+    type Raw = R;
+    type Hint = <RecyclerRef::Target as Recycler<R>>::Hint;
+
+    fn allocate(&mut self, hint: Self::Hint) -> R {
+        if let Some(id) = self.recycler.poll(hint) {
+            id
+        } else {
+            self.global_gauge.fetch_add(1)
+        }
+    }
+
+    type IterAllocatedChunks<'t> = impl Iterator<Item = ops::Range<R>> + iter::FusedIterator;
+    fn iter_allocated_chunks(&self) -> Self::IterAllocatedChunks<'_> {
+        iter_gaps(self.snapshot_gauge, self.snapshot.iter().copied())
     }
 }
 
@@ -379,7 +493,7 @@ impl ShardAssigner for ThreadRngShardAssigner {
 
 /// A shard assigner that never shuffles and always allocates from the same shard.
 /// Used for testing only.
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct StaticShardAssigner {
     /// The shard always returned for [`ShardAssigner::select_for_offline_allocation`]
     pub allocating_shard: usize,
@@ -423,6 +537,7 @@ impl Map {
 /// A map of shards assigned to a single worker thread.
 #[derive(Default)]
 pub struct ShardMap {
+    // RefCell is `Send`, we just want interior mutability within the worker thread.
     map: HashMap<DbgTypeId, RefCell<Box<dyn AnyShard>>>,
 }
 

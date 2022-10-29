@@ -701,7 +701,7 @@ mod discrim_tests {}
 /// Derives a [`Referrer`](crate::entity::Referrer) implementation for the type.
 ///
 /// The generated implementation does not visit any fields by default.
-/// Add the `#[entity]` attribute to fields that implement `[crate::entity::Referrer]`,
+/// Add the `#[entity]` attribute to fields that implement [`crate::entity::Referrer`],
 /// then the generated implementation will delegate to these fields.
 ///
 /// This derive macro is automatically called in [`comp`] and [`global`].

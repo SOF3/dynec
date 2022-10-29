@@ -57,6 +57,12 @@ pub trait Atomic<R: Raw>: Send + Sync + 'static {
 
     /// Equivalent to `AtomicUsize::load(self, Ordering::SeqCst)`
     fn load(&self) -> R;
+
+    /// Equivalent to `AtomicUsize::get_mut(self)`.
+    ///
+    /// This is semantically identical to `load`, but should be slightly faster
+    /// because it does not require atomic loading.
+    fn load_mut(&mut self) -> R;
 }
 
 impl Atomic<NonZeroU32> for AtomicU32 {
@@ -71,6 +77,11 @@ impl Atomic<NonZeroU32> for AtomicU32 {
 
     fn load(&self) -> NonZeroU32 {
         let original = AtomicU32::load(self, Ordering::SeqCst);
+        NonZeroU32::new(original).expect("invalid state")
+    }
+
+    fn load_mut(&mut self) -> NonZeroU32 {
+        let original = *AtomicU32::get_mut(self);
         NonZeroU32::new(original).expect("invalid state")
     }
 }

@@ -1,11 +1,19 @@
-use std::fmt;
 use std::num::NonZeroU32;
 use std::sync::atomic::{AtomicU32, Ordering};
+use std::{fmt, ops};
 
 /// A raw entity ID.
 ///
 /// Types implementing this trait are only used in storage internals.
-pub trait Raw: Sized + Send + Sync + Copy + fmt::Debug + Eq + Ord + 'static {
+///
+/// # Safety
+/// Violating the [`Eq`] and [`Ord`] invariants leads to undefined behavior.
+/// Furthermore, `from_primitive` and `to_primitive` should preserve the equivalence and ordering.
+// Such violations normally only lead to *unexpected* but not *undefined* behavior in std,
+// but non-transitive implementors of `Raw` could lead to incorrect soundness validation
+// in code that iterates over a storage mutably by strictly increasing index.
+// The safety constraint here is necessary for the safety constraint in `Storage` to hold.
+pub unsafe trait Raw: Sized + Send + Sync + Copy + fmt::Debug + Eq + Ord + 'static {
     /// The atomic variant of this data type.
     type Atomic: Atomic<Self>;
 
@@ -19,17 +27,25 @@ pub trait Raw: Sized + Send + Sync + Copy + fmt::Debug + Eq + Ord + 'static {
     fn sub(self, other: Self) -> Primitive;
 
     /// Converts the primitive scalar to the ID.
-    /// The scalar is guaranteed to be valid, returned from a previous `to_scalar()` call.
+    /// The primitive scalar is guaranteed to be valid,
+    /// returned from a previous [`to_primitive`](Self::to_primitive) call.
     fn from_primitive(i: Primitive) -> Self;
 
-    /// Converts the ID to a scalar.
+    /// Converts the ID to a primitive scalar.
     ///
-    /// The returned scalar is used for indexing in Vec-based storages, so it should start from a
-    /// small number.
+    /// The returned primitive scalar is used for indexing in Vec-based storages,
+    /// so it should start from a small number.
     fn to_primitive(self) -> Primitive;
+
+    /// Return value of [`range`](Self::range).
+    type Range: Iterator<Item = Self>;
+    /// Iterates over a range.
+    fn range(range: ops::Range<Self>) -> Self::Range;
 }
 
-impl Raw for NonZeroU32 {
+// Safety: NonZeroU32 is semantically identical to `u32`,
+// which is a regular primitive satisfying all equivalence and ordering invariants.
+unsafe impl Raw for NonZeroU32 {
     type Atomic = AtomicU32;
 
     fn new() -> Self::Atomic { AtomicU32::new(1) }
@@ -48,21 +64,28 @@ impl Raw for NonZeroU32 {
     }
 
     fn to_primitive(self) -> Primitive { self.get().try_into().expect("Too many entities") }
+
+    type Range = impl Iterator<Item = Self>;
+    fn range(range: ops::Range<Self>) -> Self::Range {
+        (range.start.get()..range.end.get()).map(|v| {
+            NonZeroU32::new(v).expect("zero does not appear between two non-zero unsigned integers")
+        })
+    }
 }
 
 /// An atomic variant of [`Raw`].
-pub trait Atomic<R: Raw>: Send + Sync + 'static {
+pub trait Atomic<E: Raw>: Send + Sync + 'static {
     /// Equivalent to `AtomicUsize::fetch_add(self, count, Ordering::SeqCst)`
-    fn fetch_add(&self, count: usize) -> R;
+    fn fetch_add(&self, count: usize) -> E;
 
     /// Equivalent to `AtomicUsize::load(self, Ordering::SeqCst)`
-    fn load(&self) -> R;
+    fn load(&self) -> E;
 
     /// Equivalent to `AtomicUsize::get_mut(self)`.
     ///
     /// This is semantically identical to `load`, but should be slightly faster
     /// because it does not require atomic loading.
-    fn load_mut(&mut self) -> R;
+    fn load_mut(&mut self) -> E;
 }
 
 impl Atomic<NonZeroU32> for AtomicU32 {

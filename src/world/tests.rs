@@ -810,3 +810,16 @@ fn test_offline_finalizer_delete() {
         assert_eq!(comp1, None);
     }
 }
+
+#[test]
+fn test_entity_iter() {
+    #[system(dynec_as(crate))]
+    fn test_system(
+        iter: impl system::EntityIterator<TestArch>,
+        comp1: impl system::ReadSimple<TestArch, Comp1>,
+        iso1: impl system::ReadIsotope<TestArch, Iso1>,
+    ) {
+    }
+
+    let mut world = system_test!(test_system.build(););
+}

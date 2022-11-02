@@ -36,6 +36,9 @@ pub(super) enum ArgType {
     EntityDeleter {
         arch: Box<syn::Type>,
     },
+    EntityIterator {
+        arch: Box<syn::Type>,
+    },
 }
 type PartialArgTypeBuilder = Box<dyn FnOnce(&str, &[&syn::Type], Span) -> Result<ArgType>>;
 
@@ -122,6 +125,20 @@ fn entity_deleter_partial_builder() -> PartialArgTypeBuilder {
     })
 }
 
+fn entity_iterator_partial_builder() -> PartialArgTypeBuilder {
+    Box::new(move |_, args, args_span| {
+        let [arch]: [&syn::Type; 1] = args.try_into().map_err(|_| {
+            Error::new(
+                args_span,
+                "Cannot infer archetype for entity iteration. Specify explicitly with \
+                 `#[dynec(entity_iterator(arch = X))]`, or use `impl EntityIterator<X>`.",
+            )
+        })?;
+
+        Ok(ArgType::EntityIterator { arch: Box::new(arch.clone()) })
+    })
+}
+
 const USAGE_INFERENCE_ERROR: &str =
     "Cannot infer parameter usage. Specify explicitly with `#[dynec(...)]`, or use the form `impl \
      system::(Read|Write)(Simple|Isotope)<Arch, Comp>` or `impl system::Entity(Creator|Deleter)`.";
@@ -174,6 +191,7 @@ pub(super) fn infer_arg_type(param: &mut syn::PatType) -> Result<ArgType> {
                     }
                     "EntityCreator" => entity_creator_partial_builder(false),
                     "EntityDeleter" => entity_deleter_partial_builder(),
+                    "EntityIterator" => entity_iterator_partial_builder(),
                     _ => return Err(Error::new_spanned(trait_name, USAGE_INFERENCE_ERROR)),
                 },
                 _ => unreachable!(),
@@ -332,6 +350,17 @@ fn try_attr_to_arg_type(arg: opt::Arg, attr_span: Span, param_span: Span) -> Res
                     MaybePartial::Full(ArgType::EntityDeleter { arch: arch.clone() })
                 }
                 None => MaybePartial::Partial(entity_deleter_partial_builder()),
+            }
+        }
+        opt::Arg::EntityIterator(_, opts) => {
+            let arch =
+                opts.find_one(|opt| option_match!(opt, opt::EntityIteratorArg::Arch(_, ty) => ty))?;
+
+            match arch {
+                Some((_, arch)) => {
+                    MaybePartial::Full(ArgType::EntityIterator { arch: arch.clone() })
+                }
+                None => MaybePartial::Partial(entity_iterator_partial_builder()),
             }
         }
     };

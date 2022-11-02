@@ -13,6 +13,7 @@ pub(super) enum Arg {
     Isotope(Option<syn::token::Paren>, Attr<IsotopeArg>),
     EntityCreator(Option<syn::token::Paren>, Attr<EntityCreatorArg>),
     EntityDeleter(Option<syn::token::Paren>, Attr<EntityDeleterArg>),
+    EntityIterator(Option<syn::token::Paren>, Attr<EntityIteratorArg>),
 }
 
 impl Parse for Named<Arg> {
@@ -28,6 +29,7 @@ impl Parse for Named<Arg> {
             "isotope" => parse_opt_list(input, Arg::Isotope)?,
             "entity_creator" => parse_opt_list(input, Arg::EntityCreator)?,
             "entity_deleter" => parse_opt_list(input, Arg::EntityDeleter)?,
+            "entity_iterator" => parse_opt_list(input, Arg::EntityIterator)?,
             _ => return Err(Error::new_spanned(&name, "Unknown attribute")),
         };
         Ok(Named { name, value })
@@ -237,6 +239,32 @@ impl Parse for Named<EntityDeleterArg> {
                 return Err(Error::new_spanned(
                     &name,
                     "Unknown option for #[dynec(entity_deleter)]",
+                ))
+            }
+        };
+        Ok(Named { name, value })
+    }
+}
+
+pub(super) enum EntityIteratorArg {
+    Arch(syn::Token![=], Box<syn::Type>),
+}
+
+impl Parse for Named<EntityIteratorArg> {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let name = input.parse::<syn::Ident>()?;
+        let name_string = name.to_string();
+
+        let value = match name_string.as_str() {
+            "arch" => {
+                let eq = input.parse::<syn::Token![=]>()?;
+                let ty = input.parse::<syn::Type>()?;
+                EntityIteratorArg::Arch(eq, Box::new(ty))
+            }
+            _ => {
+                return Err(Error::new_spanned(
+                    &name,
+                    "Unknown option for #[dynec(entity_iterator)]",
                 ))
             }
         };

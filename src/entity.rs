@@ -79,7 +79,7 @@ impl<'t, A: Archetype> Copy for TempRef<'t, A> {}
 pub struct TempRefChunk<'t, A: Archetype> {
     pub(crate) start: A::RawEntity,
     pub(crate) end:   A::RawEntity,
-    _ph:              PhantomData<&'t ()>,
+    pub(crate) _ph:   PhantomData<&'t ()>,
 }
 
 impl<'t, A: Archetype> TempRefChunk<'t, A> {

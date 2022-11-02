@@ -34,8 +34,8 @@ pub(crate) fn imp(input: TokenStream) -> Result<TokenStream> {
                 #(#field_meta #field_vis #field_ident: #field_ty,)*
             }
 
-            impl<__Arch: #crate_name::Archetype, #(#field_ty),*>
-                #crate_name::system::accessor::Set<__Arch>
+            unsafe impl<__Arch: #crate_name::Archetype, #(#field_ty),*>
+                #crate_name::system::accessor::Accessor<__Arch>
                 for #ident<#(#field_ty,)*>
             where
                 #(#field_ty: #crate_name::system::accessor::Accessor<__Arch>,)*
@@ -43,22 +43,29 @@ pub(crate) fn imp(input: TokenStream) -> Result<TokenStream> {
                 type Entity<'t> = #ident<
                     #(<#field_ty as #crate_name::system::accessor::Accessor<__Arch>>::Entity<'t>,)*
                 > where Self: 't;
-                fn project_entity<'e>(&mut self, entity: #crate_name::entity::TempRef<'e, __Arch>) -> Self::Entity<'_> {
+                unsafe fn entity<'this, 'e, 'ret>(this: &'this mut Self, entity: #crate_name::entity::TempRef<'e, __Arch>) -> Self::Entity<'ret> {
                     #ident {
                         #(#field_ident: <#field_ty as #crate_name::system::Accessor<__Arch>>::entity(
-                            &mut self.#field_ident,
+                            &mut this.#field_ident,
                             entity,
                         ),)*
                     }
                 }
+            }
 
+            unsafe impl<__Arch: #crate_name::Archetype, #(#field_ty),*>
+                #crate_name::system::accessor::Chunked<__Arch>
+                for #ident<#(#field_ty,)*>
+            where
+                #(#field_ty: #crate_name::system::accessor::Chunked<__Arch>,)*
+            {
                 type Chunk<'t> = #ident<
-                    #(<#field_ty as #crate_name::system::accessor::Accessor<__Arch>>::Chunk<'t>,)*
+                    #(<#field_ty as #crate_name::system::accessor::Chunked<__Arch>>::Chunk<'t>,)*
                 > where Self: 't;
-                fn project_chunk<'e>(&mut self, chunk: #crate_name::entity::TempRefChunk<'e, __Arch>) -> Self::Chunk<'_> {
+                unsafe fn chunk<'this, 'e, 'ret>(this: &'this mut Self, chunk: #crate_name::entity::TempRefChunk<'e, __Arch>) -> Self::Chunk<'ret> {
                     #ident {
-                        #(#field_ident: <#field_ty as #crate_name::system::Accessor<__Arch>>::chunk(
-                            &mut self.#field_ident,
+                        #(#field_ident: <#field_ty as #crate_name::system::accessor::Chunked<__Arch>>::chunk(
+                            &mut this.#field_ident,
                             chunk,
                         ),)*
                     }

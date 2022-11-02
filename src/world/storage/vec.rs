@@ -56,7 +56,10 @@ impl<E: entity::Raw, T> Default for VecStorage<E, T> {
     }
 }
 
-impl<E: entity::Raw, C: Send + Sync + 'static> Storage for VecStorage<E, C> {
+// Safety: the backend of `get`/`get_mut` is a slice.
+// Assuming `E` implements Eq + Ord correctly,
+// slices are injective because they are simply memory mapping.
+unsafe impl<E: entity::Raw, C: Send + Sync + 'static> Storage for VecStorage<E, C> {
     type RawEntity = E;
     type Comp = C;
 
@@ -187,7 +190,7 @@ impl<E: entity::Raw, C: Send + Sync + 'static> Storage for VecStorage<E, C> {
     }
 }
 
-impl<E: entity::Raw, C: Send + Sync + 'static> Chunked for VecStorage<E, C> {
+unsafe impl<E: entity::Raw, C: Send + Sync + 'static> Chunked for VecStorage<E, C> {
     fn get_chunk(&self, start: Self::RawEntity, end: Self::RawEntity) -> Option<&[Self::Comp]> {
         let range = start.to_primitive()..end.to_primitive();
         let bits = match self.bits.get(range.clone()) {

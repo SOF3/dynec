@@ -259,42 +259,67 @@ where
 }
 
 /// An accessor that can be used in an entity iteration.
-pub trait Accessor<A: Archetype> {
+///
+/// # Safety
+/// Implementors must ensure that [`entity`](Self::entity) is deterministic and [one-to-one][injective].
+///
+/// Multiplexing implementors (such as tuples or composite accessors)
+/// preserve this invariant automatically since they are just destructuring to independent storages.
+/// Storage delegations preserve this invariant automatically
+/// since [`Storage::get_mut`](crate::storage::Storage::get_mut)
+/// has the same safety invariants
+/// (see [`Storage` &sect; Safety](storage::Storage#safety)).
+///
+/// [injective]: https://en.wikipedia.org/wiki/Injective_function
+pub unsafe trait Accessor<A: Archetype> {
     /// Return value of [`entity`](Self::entity).
-    type Entity<'t>
+    type Entity<'t>: 't
     where
         Self: 't;
     /// Accesses this storage for a specific entity.
-    fn entity<'e>(&mut self, entity: entity::TempRef<'e, A>) -> Self::Entity<'_>;
+    ///
+    /// # Safety
+    /// The lifetime of the return value is arbitrarily defined by the caller.
+    /// This effectively disables the borrow checker for return values.
+    /// The caller must ensure that return values do not outlive `self`,
+    /// and the function result is dropped before it is called again with the same `id`.
+    unsafe fn entity<'this, 'e, 'ret>(
+        this: &'this mut Self,
+        id: entity::TempRef<'e, A>,
+    ) -> Self::Entity<'ret>;
+}
 
+/// An accessor that can be used in chunked entity iteration.
+///
+/// # Safety
+/// Implementors must ensure that [`chunk`](Self::chunk) is deterministic,
+/// and non-overlapping entity chunks return non-overlapping values.
+/// This is equivalent to (and should delegate to)
+/// [`storage::Chunked::get_chunk`]/[`storage::Chunked::get_chunk_mut`].
+///
+/// Multiplexing implementors (such as tuples or composite accessors)
+/// preserve this invariant automatically since they are just destructuring to independent storages.
+/// Storage delegations preserve this invariant automatically
+/// since [`storage::Chunked::get_chunk_mut`] has the same safety invariants
+/// (see [`Chunked` &sect; Safety](storage::Chunked#safety)).
+///
+/// [injective]: https://en.wikipedia.org/wiki/Injective_function
+pub unsafe trait Chunked<A: Archetype> {
     /// Return value of [`chunk`](Self::chunk).
-    type Chunk<'t>
+    type Chunk<'t>: 't
     where
         Self: 't;
     /// Accesses this storage for a specific chunk of entities.
-    fn chunk<'e>(&mut self, chunk: entity::TempRefChunk<'e, A>) -> Self::Chunk<'_>;
-}
-
-/// A set of accessors joined together in a specific shape.
-///
-/// This trait is implemented for tuples of accessors,
-/// but new implementors can be derived through the [`accessors`](crate::accessors) macro.
-pub trait Set<A: Archetype> {
-    /// The type after projecting to an entity.
-    type Entity<'t>
-    where
-        Self: 't;
-    /// Projects the set to a specific entity,
-    /// i.e. map each accessor to the getter for the given entity and retain the shape.
-    fn project_entity<'e>(&mut self, entity: entity::TempRef<'e, A>) -> Self::Entity<'_>;
-
-    /// The type after projecting to an entity chunk.
-    type Chunk<'t>
-    where
-        Self: 't;
-    /// Projects the set to a specific entity chunk,
-    /// i.e. map each accessor to the getter for the given entity chunk and retain the shape.
-    fn project_chunk<'e>(&mut self, chunk: entity::TempRefChunk<'e, A>) -> Self::Chunk<'_>;
+    ///
+    /// # Safety
+    /// The lifetime of the return value is arbitrarily defined by the caller.
+    /// This effectively disables the borrow checker for return values.
+    /// The caller must ensure that return values do not outlive `self`,
+    /// and the function result is dropped before it is called again with an overlapping `chunk`.
+    unsafe fn chunk<'this, 'e, 'ret>(
+        this: &'this mut Self,
+        chunk: entity::TempRefChunk<'e, A>,
+    ) -> Self::Chunk<'ret>;
 }
 
 mod tuple_impl;

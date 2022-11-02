@@ -14,7 +14,23 @@ mod isotope;
 pub(crate) use isotope::{AnyMap as AnyIsotopeMap, Map as IsotopeMap, MapInner as IsotopeMapInner};
 
 /// A storage for storing component data.
-pub trait Storage: Default + Send + Sync + 'static {
+///
+/// # Safety
+/// Implementors of this trait must ensure that
+/// [`get`](Self::get) and [`get_mut`](Self::get_mut) are consistent and [injective][injective].
+/// In other words, for any `a: Self::RawEntity`,
+/// `get(a)` and `get_mut(a)` return the same value (only differing by mutability),
+/// and for any `b: Self::RawEntity` where `a != b`, `get(a)` must not alias `get(b)`.
+///
+/// This implies the implementation is not safe if
+/// [`Eq`] and [`Ord`] are incorrectly implemented for `Self::RawEntity`,
+/// which is why [`entity::Raw`] is an unsafe trait
+/// that strictly requires complete equivalence and ordering.
+/// (Imagine if `RawEntity` is [`f64`], and `a` and `b` are both [`f64::NAN`];
+/// then `a != b` but `get_mut(a)` would still alias `get_mut(b)`)
+///
+/// [injective]: https://en.wikipedia.org/wiki/Injective_function
+pub unsafe trait Storage: Default + Send + Sync + 'static {
     /// The type of entity ID used for identification.
     type RawEntity: entity::Raw;
     /// The component type stored.
@@ -64,16 +80,33 @@ pub trait Storage: Default + Send + Sync + 'static {
     fn iter_chunks_mut(&mut self) -> Self::IterChunksMut<'_>;
 }
 
-/// Provides chunked access capabilities, i.e. the storage can always return a slice for contiguous present components.
-pub trait Chunked: Storage {
+/// Provides chunked access capabilities,
+/// i.e. the storage can always return a slice for contiguous present components.
+///
+/// # Safety
+/// Implementors of this trait must ensure that
+/// [`get_chunk`](Self::get_chunk) and [`get_chunk_mut`](Self::get_chunk_mut) are consistent,
+/// and non-overlapping ranges map to non-overlapping slices.
+/// In other words, for any `a, b: Self::RawEntity` where `a < b`,
+/// `get_chunk(a, b)` and `get_chunk_mut(a, b)` return the same slice
+/// (only differing by mutability),
+/// and for any `c, d: Self::RawEntity` where `b <= c` `c < d`,
+/// `get_chunk(a, b)` must not alias `get_chunk(c, d)`.
+///
+/// [injective]: https://en.wikipedia.org/wiki/Injective_function
+pub unsafe trait Chunked: Storage {
     /// Gets a shared reference to a slice of components.
     ///
     /// Returns `None` if any of the components in the range is missing.
+    ///
+    /// Panics if `start > end`.
     fn get_chunk(&self, start: Self::RawEntity, end: Self::RawEntity) -> Option<&[Self::Comp]>;
 
     /// Gets a mutable reference to a slice of components.
     ///
     /// Returns `None` if any of the components in the range is missing.
+    ///
+    /// Panics if `start > end`.
     fn get_chunk_mut(
         &mut self,
         start: Self::RawEntity,

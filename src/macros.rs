@@ -1,4 +1,4 @@
-/// Declares an [accessor set struct](crate::system::accessor::Set).
+/// Declares a composite [`Accessor`](crate::system::Accessor) struct.
 ///
 /// # Example
 /// ```

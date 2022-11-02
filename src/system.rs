@@ -23,9 +23,9 @@ pub mod partition;
 pub use partition::{EntityCreationPartition, Partition};
 
 mod entity;
-pub use entity::{EntityCreator, EntityDeleter};
 #[doc(hidden)]
-pub use entity::{EntityCreatorImpl, EntityDeleterImpl};
+pub use entity::{entity_iterator, EntityCreatorImpl, EntityDeleterImpl};
+pub use entity::{EntityCreator, EntityDeleter, EntityIterator};
 
 pub mod spec;
 #[doc(inline)]

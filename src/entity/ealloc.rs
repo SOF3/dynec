@@ -93,6 +93,9 @@ pub trait Shard: Send + 'static {
     ///
     /// Allocations in the current or other shards after the last flush
     /// have no effect on the result of this iterator.
+    ///
+    /// The implementor must return disjoint nonempty chunks in strictly increasing order,
+    /// i.e. for any two consecutive chunks `(a..b), (c..d)`, `a < b <= c < d`.
     fn iter_allocated_chunks(&self) -> Self::IterAllocatedChunks<'_>;
 }
 
@@ -112,27 +115,27 @@ type MutableShards<T> = Vec<Arc<Mutex<T>>>;
 
 /// The default allocator supporting atomically-allocated new IDs and arbitrary recycler.
 #[derive(Debug)]
-pub struct Recycling<R: Raw, T: Recycler<R>, S: ShardAssigner> {
+pub struct Recycling<E: Raw, T: Recycler<E>, S: ShardAssigner> {
     /// The next ID to allocate into shards.
-    global_gauge:       Arc<R::Atomic>,
+    global_gauge:       Arc<E::Atomic>,
     /// A sorted list of recycled IDs during the last join.
-    recyclable:         Arc<BTreeSet<R>>,
+    recyclable:         Arc<BTreeSet<E>>,
     /// The actual IDs assigned to different shards.
     recycler_shards:    MutableShards<T>,
     /// The assigned shard.
     shard_assigner:     S,
     /// The queue of deallocated IDs to distribute.
-    dealloc_queue:      Vec<R>,
+    dealloc_queue:      Vec<E>,
     /// The queue of allocated IDs during online, to be synced to recyclable after join.
-    reuse_queue_shards: MutableShards<Vec<R>>,
+    reuse_queue_shards: MutableShards<Vec<E>>,
 }
 
-impl<R: Raw, T: Recycler<R>, S: ShardAssigner> Recycling<R, T, S> {
+impl<E: Raw, T: Recycler<E>, S: ShardAssigner> Recycling<E, T, S> {
     /// Creates a new recycling allocator with a custom shard assigner.
     /// This can only be used for unit testing since the Archetype API does not support dynamic
     /// shard assigners.
     pub(crate) fn new_with_shard_assigner(num_shards: usize, shard_assigner: S) -> Self {
-        let global_gauge = R::new();
+        let global_gauge = E::new();
         Self {
             global_gauge: Arc::new(global_gauge),
             recyclable: Arc::default(),
@@ -149,24 +152,24 @@ impl<R: Raw, T: Recycler<R>, S: ShardAssigner> Recycling<R, T, S> {
     }
 
     fn get_reuse_queue_offline(
-        reuse_queues: &mut MutableShards<Vec<R>>,
+        reuse_queues: &mut MutableShards<Vec<E>>,
         index: usize,
-    ) -> &mut Vec<R> {
+    ) -> &mut Vec<E> {
         let arc = reuse_queues.get_mut(index).expect("index out of bounds");
         Arc::get_mut(arc).expect("shards are dropped in offline mode").get_mut()
     }
 
     fn iter_allocated_chunks_offline(
         &mut self,
-    ) -> impl Iterator<Item = ops::Range<R>> + iter::FusedIterator + '_ {
+    ) -> impl Iterator<Item = ops::Range<E>> + iter::FusedIterator + '_ {
         iter_gaps(self.global_gauge.load(), self.recyclable.iter().copied())
     }
 }
 
-impl<R: Raw, T: Recycler<R>, S: ShardAssigner> Ealloc for Recycling<R, T, S> {
-    type Raw = R;
+impl<E: Raw, T: Recycler<E>, S: ShardAssigner> Ealloc for Recycling<E, T, S> {
+    type Raw = E;
     type AllocHint = T::Hint;
-    type Shard = impl Shard<Raw = R, Hint = T::Hint>;
+    type Shard = impl Shard<Raw = E, Hint = T::Hint>;
 
     fn new(num_shards: usize) -> Self { Self::new_with_shard_assigner(num_shards, S::default()) }
 
@@ -207,7 +210,7 @@ impl<R: Raw, T: Recycler<R>, S: ShardAssigner> Ealloc for Recycling<R, T, S> {
         shard.allocate(hint)
     }
 
-    fn queue_deallocate(&mut self, id: R) { self.dealloc_queue.push(id); }
+    fn queue_deallocate(&mut self, id: E) { self.dealloc_queue.push(id); }
 
     fn flush(&mut self) {
         let mut ids = &self.dealloc_queue[..];
@@ -301,13 +304,13 @@ impl<'t, T, I: Iterator<Item = T>> Iterator for MutTakeIter<'t, T, I> {
     }
 }
 
-struct RecyclingShardState<R: Raw, T: Recycler<R>> {
+struct RecyclingShardState<E: Raw, T: Recycler<E>> {
     recycler: T,
-    _ph:      PhantomData<R>,
+    _ph:      PhantomData<E>,
 }
 
-struct JoinState<R: Raw> {
-    recycle_list: Vec<R>,
+struct JoinState<E: Raw> {
+    recycle_list: Vec<E>,
 }
 
 /// [`Shard`] implementation for [`Recycling`].
@@ -319,15 +322,15 @@ pub struct RecyclingShard<R, GaugeRef, RecyclerRef, SnapshotRef, ReuseQueueRef> 
     reuse_queue:    ReuseQueueRef,
 }
 
-impl<R: Raw, T: Recycler<R>, GaugeRef, RecyclerRef, SnapshotRef, ReuseQueueRef>
-    RecyclingShard<R, GaugeRef, RecyclerRef, SnapshotRef, ReuseQueueRef>
+impl<E: Raw, T: Recycler<E>, GaugeRef, RecyclerRef, SnapshotRef, ReuseQueueRef>
+    RecyclingShard<E, GaugeRef, RecyclerRef, SnapshotRef, ReuseQueueRef>
 where
-    GaugeRef: ops::Deref<Target = R::Atomic>,
+    GaugeRef: ops::Deref<Target = E::Atomic>,
     RecyclerRef: ops::DerefMut<Target = T>,
-    SnapshotRef: ops::Deref<Target = BTreeSet<R>>,
-    ReuseQueueRef: ops::DerefMut<Target = Vec<R>>,
+    SnapshotRef: ops::Deref<Target = BTreeSet<E>>,
+    ReuseQueueRef: ops::DerefMut<Target = Vec<E>>,
 {
-    fn allocate(&mut self, hint: T::Hint) -> R {
+    fn allocate(&mut self, hint: T::Hint) -> E {
         if let Some(id) = self.recycler.poll(hint) {
             self.reuse_queue.push(id);
             id
@@ -337,26 +340,26 @@ where
     }
 }
 
-fn iter_gaps<R: Raw>(
-    gauge: R,
-    breakpoints: impl Iterator<Item = R>,
-) -> impl Iterator<Item = ops::Range<R>> + iter::FusedIterator {
-    enum Previous<R: Raw> {
+fn iter_gaps<E: Raw>(
+    gauge: E,
+    breakpoints: impl Iterator<Item = E>,
+) -> impl Iterator<Item = ops::Range<E>> + iter::FusedIterator {
+    enum Previous<E: Raw> {
         Initial,
-        Breakpoint(R),
+        Breakpoint(E),
         Finalized,
     }
-    struct IterGaps<R: Raw, I: Iterator> {
-        gauge:       R,
+    struct IterGaps<E: Raw, I: Iterator> {
+        gauge:       E,
         breakpoints: I,
-        previous:    Previous<R>,
+        previous:    Previous<E>,
     }
-    impl<R: Raw, I: Iterator<Item = R>> Iterator for IterGaps<R, I> {
-        type Item = ops::Range<R>;
+    impl<E: Raw, I: Iterator<Item = E>> Iterator for IterGaps<E, I> {
+        type Item = ops::Range<E>;
 
-        fn next(&mut self) -> Option<ops::Range<R>> {
+        fn next(&mut self) -> Option<ops::Range<E>> {
             let start = match self.previous {
-                Previous::Initial => R::new().load_mut(),
+                Previous::Initial => E::new().load_mut(),
                 Previous::Breakpoint(previous) => previous.add(1),
                 Previous::Finalized => return None,
             };
@@ -368,25 +371,25 @@ fn iter_gaps<R: Raw>(
             Some(start..end)
         }
     }
-    impl<R: Raw, I: Iterator<Item = R>> iter::FusedIterator for IterGaps<R, I> {}
+    impl<E: Raw, I: Iterator<Item = E>> iter::FusedIterator for IterGaps<E, I> {}
 
     IterGaps { gauge, breakpoints, previous: Previous::Initial }
         .filter(|range| range.start != range.end)
 }
 
-impl<R: Raw, GaugeRef, RecyclerRef, SnapshotRef, ReuseQueueRef> Shard
-    for RecyclingShard<R, GaugeRef, RecyclerRef, SnapshotRef, ReuseQueueRef>
+impl<E: Raw, GaugeRef, RecyclerRef, SnapshotRef, ReuseQueueRef> Shard
+    for RecyclingShard<E, GaugeRef, RecyclerRef, SnapshotRef, ReuseQueueRef>
 where
-    GaugeRef: ops::Deref<Target = R::Atomic> + Send + 'static,
+    GaugeRef: ops::Deref<Target = E::Atomic> + Send + 'static,
     RecyclerRef: ops::DerefMut + Send + 'static,
-    <RecyclerRef as ops::Deref>::Target: Recycler<R>,
-    SnapshotRef: ops::Deref<Target = BTreeSet<R>> + Send + 'static,
-    ReuseQueueRef: ops::DerefMut<Target = Vec<R>> + Send + 'static,
+    <RecyclerRef as ops::Deref>::Target: Recycler<E>,
+    SnapshotRef: ops::Deref<Target = BTreeSet<E>> + Send + 'static,
+    ReuseQueueRef: ops::DerefMut<Target = Vec<E>> + Send + 'static,
 {
-    type Raw = R;
-    type Hint = <RecyclerRef::Target as Recycler<R>>::Hint;
+    type Raw = E;
+    type Hint = <RecyclerRef::Target as Recycler<E>>::Hint;
 
-    fn allocate(&mut self, hint: Self::Hint) -> R {
+    fn allocate(&mut self, hint: Self::Hint) -> E {
         if let Some(id) = self.recycler.poll(hint) {
             id
         } else {
@@ -394,14 +397,14 @@ where
         }
     }
 
-    type IterAllocatedChunks<'t> = impl Iterator<Item = ops::Range<R>> + iter::FusedIterator;
+    type IterAllocatedChunks<'t> = impl Iterator<Item = ops::Range<E>> + iter::FusedIterator;
     fn iter_allocated_chunks(&self) -> Self::IterAllocatedChunks<'_> {
         iter_gaps(self.snapshot_gauge, self.snapshot.iter().copied())
     }
 }
 
 /// A data structure that provides the ability to recycle entity IDs.
-pub trait Recycler<R: Raw>: Default + Extend<R> + Send + 'static {
+pub trait Recycler<E: Raw>: Default + Extend<E> + Send + 'static {
     /// Additional configuration for polling.
     type Hint: Default;
 
@@ -412,16 +415,16 @@ pub trait Recycler<R: Raw>: Default + Extend<R> + Send + 'static {
     fn is_empty(&self) -> bool { self.len() == 0 }
 
     /// Polls an ID from the recycler based on the given hint.
-    fn poll(&mut self, hint: Self::Hint) -> Option<R>;
+    fn poll(&mut self, hint: Self::Hint) -> Option<E>;
 }
 
 /// A minimal allocator implemented through a FILO stack.
-impl<R: Raw> Recycler<R> for Vec<R> {
+impl<E: Raw> Recycler<E> for Vec<E> {
     type Hint = ();
 
     fn len(&self) -> usize { Vec::len(self) }
 
-    fn poll(&mut self, (): ()) -> Option<R> { self.pop() }
+    fn poll(&mut self, (): ()) -> Option<E> { self.pop() }
 }
 
 /// Additional configuration for allocating entities from a BTreeSet recycler.
@@ -430,16 +433,16 @@ pub struct BTreeHint<R> {
     pub near: Option<R>,
 }
 
-impl<R: Raw> Default for BTreeHint<R> {
+impl<E: Raw> Default for BTreeHint<E> {
     fn default() -> Self { Self { near: None } }
 }
 
-impl<R: Raw> Recycler<R> for BTreeSet<R> {
-    type Hint = BTreeHint<R>;
+impl<E: Raw> Recycler<E> for BTreeSet<E> {
+    type Hint = BTreeHint<E>;
 
     fn len(&self) -> usize { BTreeSet::len(self) }
 
-    fn poll(&mut self, hint: Self::Hint) -> Option<R> {
+    fn poll(&mut self, hint: Self::Hint) -> Option<E> {
         if let Some(near) = hint.near {
             let mut left = self.range(..near).rev();
             let mut right = self.range(near..);

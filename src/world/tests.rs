@@ -1,7 +1,8 @@
 #![allow(clippy::ptr_arg)]
 
 use super::tracer;
-use crate::entity::{self, deletion, generation};
+use crate::entity::{self, deletion, generation, Raw, Ref};
+use crate::system::Write;
 use crate::{
     comp, global, system, system_test, world, Entity, TestArch, TestDiscrim1, TestDiscrim2,
 };
@@ -816,10 +817,47 @@ fn test_entity_iter() {
     #[system(dynec_as(crate))]
     fn test_system(
         iter: impl system::EntityIterator<TestArch>,
-        comp1: impl system::ReadSimple<TestArch, Comp1>,
-        iso1: impl system::ReadIsotope<TestArch, Iso1>,
+        comp1_acc: impl system::ReadSimple<TestArch, Comp1>,
+        #[dynec(isotope(discrim = [TestDiscrim1(7), TestDiscrim1(13)]))]
+        mut iso1_acc: impl system::WriteIsotope<TestArch, Iso1, usize>,
     ) {
+        for (entity, (comp1, iso10)) in iter.entities_with((
+            comp1_acc.try_access(),
+            system::with_mut(&mut iso1_acc, 0).try_access_mut(),
+            // system::with_mut(&mut iso1_acc, 1).try_access_mut(),
+        )) {
+            match entity.id().to_primitive() {
+                1 => {
+                    assert_eq!(comp1, Some(&Comp1(5)));
+                    assert_eq!(iso10, Some(&mut Iso1(11)));
+                }
+                2 => {
+                    assert_eq!(comp1, None);
+                    assert_eq!(iso10, None);
+                }
+                3 => {
+                    assert_eq!(comp1, None);
+                    assert_eq!(iso10, Some(&mut Iso1(19)));
+                }
+                _ => unreachable!(),
+            }
+        }
     }
 
-    let mut world = system_test!(test_system.build(););
+    let mut world = system_test! {
+        test_system.build();
+        _: TestArch = (
+            Comp1(5),
+            @(TestDiscrim1(7), Iso1(11)),
+        );
+        _: TestArch = (
+            @(TestDiscrim1(13), Iso1(17)),
+        );
+        _: TestArch = (
+            @(TestDiscrim1(7), Iso1(19)),
+            @(TestDiscrim1(13), Iso1(23)),
+        );
+    };
+
+    world.execute(&tracer::Log(log::Level::Trace));
 }

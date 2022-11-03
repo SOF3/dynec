@@ -785,7 +785,7 @@ macro_rules! system_test {
 
         $(
             let $var = world.create::<$arch>(
-                $crate::comps![ $arch => $($components)*]
+                $crate::comps![@($crate) $arch => $($components)*]
             );
         )*
 

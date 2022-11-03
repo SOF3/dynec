@@ -47,6 +47,17 @@ pub trait Read<A: Archetype, C: 'static> {
         Self: 't;
     /// Iterates over all initialized components in this storage.
     fn iter(&self) -> Self::Iter<'_>;
+
+    /// Returns an [`Accessor`] implementor that yields `&C` for each entity.
+    fn access(&self) -> MustReadAccessor<A, C, &Self>
+    where
+        C: comp::Must<A>,
+    {
+        MustReadAccessor(self, PhantomData)
+    }
+
+    /// Returns an [`Accessor`] implementor that yields `Option<&C>` for each entity.
+    fn try_access(&self) -> TryReadAccessor<A, C, &Self> { TryReadAccessor(self, PhantomData) }
 }
 
 /// Generalizes [`WriteSimple`] and specific-discriminant [`WriteIsotope`] (through [`with_mut`]).
@@ -89,6 +100,19 @@ pub trait Write<A: Archetype, C: 'static>: Read<A, C> {
         Self: 't;
     /// Iterates over mutable references to all initialized components in this storage.
     fn iter_mut(&mut self) -> Self::IterMut<'_>;
+
+    /// Returns an [`Accessor`] implementor that yields `&C` for each entity.
+    fn access_mut(&mut self) -> MustWriteAccessor<A, C, &mut Self>
+    where
+        C: comp::Must<A>,
+    {
+        MustWriteAccessor(self, PhantomData)
+    }
+
+    /// Returns an [`Accessor`] implementor that yields `Option<&C>` for each entity.
+    fn try_access_mut(&mut self) -> TryWriteAccessor<A, C, &mut Self> {
+        TryWriteAccessor(self, PhantomData)
+    }
 }
 
 /// Provides access to a simple component in a specific archetype.
@@ -286,7 +310,9 @@ pub unsafe trait Accessor<A: Archetype> {
     unsafe fn entity<'this, 'e, 'ret>(
         this: &'this mut Self,
         id: entity::TempRef<'e, A>,
-    ) -> Self::Entity<'ret>;
+    ) -> Self::Entity<'ret>
+    where
+        Self: 'ret;
 }
 
 /// An accessor that can be used in chunked entity iteration.
@@ -320,6 +346,82 @@ pub unsafe trait Chunked<A: Archetype> {
         this: &'this mut Self,
         chunk: entity::TempRefChunk<'e, A>,
     ) -> Self::Chunk<'ret>;
+}
+
+/// Return value of [`Read::try_access`].
+pub struct TryReadAccessor<A, C, T>(T, PhantomData<(A, C)>);
+
+unsafe impl<'t, A: Archetype, C: 'static, T: Read<A, C>> Accessor<A>
+    for TryReadAccessor<A, C, &'t T>
+{
+    type Entity<'ret> = Option<&'ret C> where Self: 'ret;
+
+    unsafe fn entity<'this, 'e, 'ret>(
+        this: &'this mut Self,
+        id: entity::TempRef<'e, A>,
+    ) -> Self::Entity<'ret>
+    where
+        Self: 'ret,
+    {
+        Some(&*(this.0.try_get(id)? as *const C))
+    }
+}
+
+/// Return value of [`Read::access`].
+pub struct MustReadAccessor<A, C, T>(T, PhantomData<(A, C)>);
+
+unsafe impl<'t, A: Archetype, C: comp::Must<A> + 'static, T: Read<A, C>> Accessor<A>
+    for MustReadAccessor<A, C, &'t T>
+{
+    type Entity<'ret> = &'ret C where Self: 'ret;
+
+    unsafe fn entity<'this, 'e, 'ret>(
+        this: &'this mut Self,
+        id: entity::TempRef<'e, A>,
+    ) -> Self::Entity<'ret>
+    where
+        Self: 'ret,
+    {
+        &*(this.0.get(id) as *const C)
+    }
+}
+
+/// Return value of [`Write::try_access_mut`].
+pub struct TryWriteAccessor<A, C, T>(T, PhantomData<(A, C)>);
+
+unsafe impl<'t, A: Archetype, C: 'static, T: Write<A, C>> Accessor<A>
+    for TryWriteAccessor<A, C, &'t mut T>
+{
+    type Entity<'ret> = Option<&'ret mut C> where Self: 'ret;
+
+    unsafe fn entity<'this, 'e, 'ret>(
+        this: &'this mut Self,
+        id: entity::TempRef<'e, A>,
+    ) -> Self::Entity<'ret>
+    where
+        Self: 'ret,
+    {
+        Some(&mut *(this.0.try_get_mut(id)? as *mut C))
+    }
+}
+
+/// Return value of [`Write::access_mut`].
+pub struct MustWriteAccessor<A, C, T>(T, PhantomData<(A, C)>);
+
+unsafe impl<'t, A: Archetype, C: comp::Must<A> + 'static, T: Write<A, C>> Accessor<A>
+    for MustWriteAccessor<A, C, &'t mut T>
+{
+    type Entity<'ret> = &'ret C where Self: 'ret;
+
+    unsafe fn entity<'this, 'e, 'ret>(
+        this: &'this mut Self,
+        id: entity::TempRef<'e, A>,
+    ) -> Self::Entity<'ret>
+    where
+        Self: 'ret,
+    {
+        &mut *(this.0.get_mut(id) as *mut C)
+    }
 }
 
 mod tuple_impl;

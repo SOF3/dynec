@@ -1,4 +1,6 @@
-/// Declares a composite [`Accessor`](crate::system::Accessor) struct.
+/// Declares a composite struct that implements
+/// [`Accessor`](crate::system::Accessor) and [`Chunked`](crate::system::ChunkedAccessor)
+/// by delegation to all fields and reconstructing the same struct with different types.
 ///
 /// # Example
 /// ```

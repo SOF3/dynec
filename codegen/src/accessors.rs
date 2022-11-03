@@ -35,13 +35,13 @@ pub(crate) fn imp(input: TokenStream) -> Result<TokenStream> {
             }
 
             unsafe impl<__Arch: #crate_name::Archetype, #(#field_ty),*>
-                #crate_name::system::accessor::Accessor<__Arch>
+                #crate_name::system::Accessor<__Arch>
                 for #ident<#(#field_ty,)*>
             where
-                #(#field_ty: #crate_name::system::accessor::Accessor<__Arch>,)*
+                #(#field_ty: #crate_name::system::Accessor<__Arch>,)*
             {
                 type Entity<'t> = #ident<
-                    #(<#field_ty as #crate_name::system::accessor::Accessor<__Arch>>::Entity<'t>,)*
+                    #(<#field_ty as #crate_name::system::Accessor<__Arch>>::Entity<'t>,)*
                 > where Self: 't;
                 unsafe fn entity<'this, 'e, 'ret>(this: &'this mut Self, entity: #crate_name::entity::TempRef<'e, __Arch>) -> Self::Entity<'ret> {
                     #ident {
@@ -54,17 +54,17 @@ pub(crate) fn imp(input: TokenStream) -> Result<TokenStream> {
             }
 
             unsafe impl<__Arch: #crate_name::Archetype, #(#field_ty),*>
-                #crate_name::system::accessor::Chunked<__Arch>
+                #crate_name::system::ChunkedAccessor<__Arch>
                 for #ident<#(#field_ty,)*>
             where
-                #(#field_ty: #crate_name::system::accessor::Chunked<__Arch>,)*
+                #(#field_ty: #crate_name::system::ChunkedAccessor<__Arch>,)*
             {
                 type Chunk<'t> = #ident<
-                    #(<#field_ty as #crate_name::system::accessor::Chunked<__Arch>>::Chunk<'t>,)*
+                    #(<#field_ty as #crate_name::system::ChunkedAccessor<__Arch>>::Chunk<'t>,)*
                 > where Self: 't;
                 unsafe fn chunk<'this, 'e, 'ret>(this: &'this mut Self, chunk: #crate_name::entity::TempRefChunk<'e, __Arch>) -> Self::Chunk<'ret> {
                     #ident {
-                        #(#field_ident: <#field_ty as #crate_name::system::accessor::Chunked<__Arch>>::chunk(
+                        #(#field_ident: <#field_ty as #crate_name::system::ChunkedAccessor<__Arch>>::chunk(
                             &mut this.#field_ident,
                             chunk,
                         ),)*

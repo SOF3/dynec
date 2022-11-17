@@ -94,8 +94,13 @@ pub trait Mapped {
     /// Gets a shared reference to an element.
     fn get_by(&self, key: Self::Key) -> Option<&Self::Value>;
 
-    /// Executes functions with mutable reference to an entry.
+    /// Gets a mutable reference to an element.
     fn get_mut_by(&mut self, key: Self::Key) -> Option<&mut Self::Value>;
+
+    /// Return value of [`get_mut_multi`](Self::get_mut_multi).
+    // type GetMutMulti<'t>: Iterator<Item = &'t mut Self::Value> + 't where Self: 't;
+    /// Gets mutable references to multiple distinct elements.
+    // fn get_mut_multi<'t, I: Iterator<Item = Self::Key> + 't>(&'t mut self, keys: I) -> Self::GetMutMulti<'t>;
 
     /// Return value of [`iter_values`](Self::iter_values).
     type Iter<'t>: Iterator<Item = (Self::Discrim, &'t Self::Value)> + 't

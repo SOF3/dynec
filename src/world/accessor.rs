@@ -261,13 +261,13 @@ impl Components {
                 Value = LockedIsotopeStorage<A, C>,
             >,
         {
-            fn get_storage<'u>(
+            fn get_storage<'storage>(
                 &mut self,
                 discrim: C::Discrim,
-                storages: &'u mut M,
-            ) -> &'u mut C::Storage
+                storages: &'storage mut M,
+            ) -> &'storage mut C::Storage
             where
-                LockedIsotopeStorage<A, C>: 'u,
+                LockedIsotopeStorage<A, C>: 'storage,
             {
                 storages.get_by_or_insert(discrim, || {
                     let arc = Arc::default();
@@ -349,6 +349,22 @@ impl Components {
                          of requested discriminants",
                     ),
                 }
+            }
+
+            type GetStorages<'this, 'storage: 'this> = impl Iterator<Item = &'storage mut C::Storage> + 'this
+            where
+                Self: 'this,
+                M: 'storage;
+            fn get_storages<'this, 'storage: 'this, I>(
+                &'this mut self,
+                keys: I,
+                storages: &'storage mut M,
+            ) -> Self::GetStorages<'this, 'storage>
+            where
+                I: Iterator<Item = M::Key>,
+                M: 'storage,
+            {
+                std::iter::empty() // TODO
             }
         }
 
@@ -529,6 +545,64 @@ where
             storage.iter().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
         })
     }
+
+    type With<'t> = impl system::Read<A, C> + 't where Self: 't;
+    fn with(&self, discrim: M::Key) -> Self::With<'_> {
+        With { accessor: self, discrim, _ph: PhantomData }
+    }
+}
+
+struct With<A, C, K, R> {
+    accessor: R,
+    discrim:  K,
+    _ph:      PhantomData<(A, C)>,
+}
+
+impl<A, C, K, R: ops::Deref> system::Read<A, C> for With<A, C, K, R>
+where
+    A: Archetype,
+    C: comp::Isotope<A>,
+    K: fmt::Debug + Copy + 'static,
+    <R as ops::Deref>::Target: system::ReadIsotope<A, C, K>,
+{
+    fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Option<&C> {
+        system::ReadIsotope::try_get(&*self.accessor, entity, self.discrim)
+    }
+
+    fn get_chunk(&self, _chunk: entity::TempRefChunk<'_, A>) -> &[C]
+    where
+        Self: comp::Must<A>,
+    {
+        unreachable!("Isotope components should not implement comp::Must")
+    }
+
+    type Iter<'t> = impl Iterator<Item = (entity::TempRef<'t, A>, &'t C)>
+    where
+        Self: 't;
+    fn iter(&self) -> Self::Iter<'_> { system::ReadIsotope::iter(&*self.accessor, self.discrim) }
+}
+
+impl<A, C, K, R: ops::DerefMut> system::Write<A, C> for With<A, C, K, R>
+where
+    A: Archetype,
+    C: comp::Isotope<A>,
+    K: fmt::Debug + Copy + 'static,
+    <R as ops::Deref>::Target: system::WriteIsotope<A, C, K>,
+{
+    fn try_get_mut<E: entity::Ref<Archetype = A>>(&mut self, entity: E) -> Option<&mut C> {
+        system::WriteIsotope::try_get_mut(&mut *self.accessor, entity, self.discrim)
+    }
+
+    fn set<E: entity::Ref<Archetype = A>>(&mut self, entity: E, value: Option<C>) -> Option<C> {
+        system::WriteIsotope::set(&mut *self.accessor, entity, self.discrim, value)
+    }
+
+    type IterMut<'t> = impl Iterator<Item = (entity::TempRef<'t, A>, &'t mut C)>
+    where
+        Self: 't;
+    fn iter_mut(&mut self) -> Self::IterMut<'_> {
+        system::WriteIsotope::iter_mut(&mut *self.accessor, self.discrim)
+    }
 }
 
 trait MutStorageAccessor<A, C, S, M>
@@ -541,6 +615,19 @@ where
     fn get_storage<'t>(&mut self, key: M::Key, storages: &'t mut M) -> &'t mut C::Storage
     where
         S: 't;
+
+    type GetStorages<'this, 'storage: 'this>: Iterator<Item = &'storage mut C::Storage> + 'this
+    where
+        Self: 'this,
+        M: 'storage;
+    fn get_storages<'this, 'storage: 'this, I>(
+        &'this mut self,
+        keys: I,
+        storages: &'storage mut M,
+    ) -> Self::GetStorages<'this, 'storage>
+    where
+        I: Iterator<Item = M::Key>,
+        M: 'storage;
 }
 
 impl<A, C, S, M, P> system::WriteIsotope<A, C, M::Key> for IsotopeAccessor<A, C, S, M, P>
@@ -578,6 +665,41 @@ where
     fn iter_mut(&mut self, key: M::Key) -> Self::IterMut<'_> {
         let storage = self.processor.get_storage(key, &mut self.storages);
         storage.iter_mut().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
+    }
+
+    type WithMut<'t> = impl for<'ret> system::Accessor<A, Entity<'ret> = Option<&'ret mut &'t mut C>> + 't where Self: 't;
+    fn with_mut(&mut self, key: M::Key) -> Self::WithMut<'_> {
+        let storage = self.processor.get_storage(key, &mut self.storages);
+        SingleWrite(storage)
+    }
+
+    type WithMutMulti<'t> = impl for<'ret> system::Accessor<A, Entity<'ret> = Option<&'ret mut &'t mut C>> + 't where Self: 't;
+    fn with_mut_multi<'t, I, T>(&'t mut self, keys: I) -> T
+    where
+        I: IntoIterator<Item = M::Key>,
+        T: FromIterator<Self::WithMutMulti<'t>>,
+    {
+        self.processor
+            .get_storages(keys.into_iter(), &mut self.storages)
+            // do not delete the return type annotation; it is to constrain the TAIT.
+            .map(|storage| -> Self::WithMutMulti<'t> { SingleWrite(storage) })
+            .collect()
+    }
+}
+
+struct SingleWrite<'t, A: Archetype, C: comp::Isotope<A>>(&'t mut C::Storage);
+unsafe impl<'t, A: Archetype, C: comp::Isotope<A>> system::Accessor<A> for SingleWrite<'t, A, C> {
+    type Entity<'ret> = Option<&'ret mut &'t mut C> where Self: 'ret;
+
+    unsafe fn entity<'this, 'e, 'ret>(
+        this: &'this mut Self,
+        entity: entity::TempRef<'e, A>,
+    ) -> Self::Entity<'ret>
+    where
+        Self: 'ret,
+    {
+        use entity::Ref;
+        Some(&mut &mut *(this.0.get_mut(entity.id())? as *mut C))
     }
 }
 

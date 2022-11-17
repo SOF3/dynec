@@ -68,6 +68,7 @@
 #![cfg_attr(doc, warn(missing_docs))]
 #![feature(map_first_last)]
 #![feature(type_alias_impl_trait)]
+#![feature(array_methods)]
 
 /// Internal re-exports used in macros.
 #[doc(hidden)]

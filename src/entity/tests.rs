@@ -5,6 +5,7 @@ use super::{Ref, TempRef};
 use crate::TestArch;
 
 // ensure that Ref<Archetype = A> for a fixed `A` must be object-safe.
+#[test]
 fn test_object_safety() {
     let _: &dyn Ref<Archetype = TestArch> = &TempRef::new(NonZeroU32::new(1).expect("1 != 0"));
 }

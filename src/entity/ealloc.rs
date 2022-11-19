@@ -3,7 +3,6 @@
 use std::any::{Any, TypeId};
 use std::cell::{self, RefCell};
 use std::collections::{BTreeSet, HashMap};
-use std::marker::PhantomData;
 use std::sync::Arc;
 use std::{iter, ops};
 
@@ -302,15 +301,6 @@ impl<'t, T, I: Iterator<Item = T>> Iterator for MutTakeIter<'t, T, I> {
         self.1 -= 1;
         self.0.next()
     }
-}
-
-struct RecyclingShardState<E: Raw, T: Recycler<E>> {
-    recycler: T,
-    _ph:      PhantomData<E>,
-}
-
-struct JoinState<E: Raw> {
-    recycle_list: Vec<E>,
 }
 
 /// [`Shard`] implementation for [`Recycling`].

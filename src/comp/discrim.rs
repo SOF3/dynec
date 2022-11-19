@@ -95,9 +95,16 @@ pub trait Mapped {
     /// Gets a shared reference to an element.
     fn get_by(&self, key: Self::Key) -> Option<&Self::Value>;
 
-    /// Executes functions with mutable reference to an entry.
+    /// Gets a mutable reference to an element.
     fn get_mut_by(&mut self, key: Self::Key) -> Option<&mut Self::Value>;
 
+    /// Gets mutable references to `N` different elements,
+    /// transforms them and stores them in an array.
+    ///
+    /// # Panics
+    /// This method panics if `keys` contains duplicate discriminants,
+    /// or if any keys do not exist in the map.
+    /// For the latter case, `on_missing` is invoked, which should panic.
     fn get_mut_array_by<U, TransformFn, OnMissing, const N: usize>(
         &mut self,
         keys: [Self::Key; N],

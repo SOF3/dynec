@@ -5,7 +5,8 @@ use std::{any, fmt};
 
 use crate::{comp, entity, Archetype};
 
-/// Generalizes [`ReadSimple`] and specific-discriminant [`ReadIsotope`] (through [`with`]).
+/// Generalizes [`ReadSimple`] and [`ReadIsotope`] for a specific discriminant
+/// (through [`ReadIsotope::split`]).
 pub trait Read<A: Archetype, C: 'static> {
     /// Returns an immutable reference to the component for the specified entity,
     /// or `None` if the component is not present in the entity.
@@ -49,7 +50,8 @@ pub trait Read<A: Archetype, C: 'static> {
     fn try_access(&self) -> TryReadAccessor<A, C, &Self> { TryReadAccessor(self, PhantomData) }
 }
 
-/// Generalizes [`WriteSimple`] and specific-discriminant [`WriteIsotope`] (through [`with_mut`]).
+/// Generalizes [`WriteSimple`] and [`WriteIsotope`] for a specific discriminant
+/// (through [`WriteIsotope::split_mut`]).
 pub trait Write<A: Archetype, C: 'static>: Read<A, C> {
     /// Returns a mutable reference to the component for the specified entity,
     /// or `None` if the component is not present in the entity.
@@ -113,7 +115,8 @@ pub trait WriteSimple<A: Archetype, C: comp::Simple<A>>: ReadSimple<A, C> + Writ
 /// Provides access to an isotope component in a specific archetype.
 ///
 /// `K` is the type used to index the discriminant.
-/// For partial
+/// For partial isotope access, `K` is usually `usize`.
+/// For full isotope access, `K` is the discriminant type.
 pub trait ReadIsotope<A: Archetype, C: comp::Isotope<A>, K = <C as comp::Isotope<A>>::Discrim>
 where
     K: fmt::Debug + Copy + 'static,
@@ -205,12 +208,12 @@ where
     /// Iterates over mutable references to all components of a specific discriminant.
     fn iter_mut(&mut self, discrim: K) -> Self::IterMut<'_>;
 
-    /// Return value of [`split`](Self::split).
+    /// Return value of [`split_mut`](Self::split_mut).
     type SplitMut<'t>: Write<A, C> + 't
     where
         Self: 't;
     /// Splits the accessor into multiple [`Write`] implementors
-    /// so that they can be used with [`with_mut`] independently.
+    /// so that they can be used in entity iteration independently.
     fn split_mut<const N: usize>(&mut self, keys: [K; N]) -> [Self::SplitMut<'_>; N];
 }
 
@@ -224,7 +227,7 @@ where
 /// Storage delegations preserve this invariant automatically
 /// since [`Storage::get_mut`](crate::storage::Storage::get_mut)
 /// has the same safety invariants
-/// (see [`Storage` &sect; Safety](storage::Storage#safety)).
+/// (see [`Storage` &sect; Safety](crate::storage::Storage#safety)).
 ///
 /// [injective]: https://en.wikipedia.org/wiki/Injective_function
 pub unsafe trait Accessor<A: Archetype> {
@@ -253,13 +256,13 @@ pub unsafe trait Accessor<A: Archetype> {
 /// Implementors must ensure that [`chunk`](Self::chunk) is deterministic,
 /// and non-overlapping entity chunks return non-overlapping values.
 /// This is equivalent to (and should delegate to)
-/// [`storage::Chunked::get_chunk`]/[`storage::Chunked::get_chunk_mut`].
+/// [`crate::storage::Chunked::get_chunk`]/[`crate::storage::Chunked::get_chunk_mut`].
 ///
 /// Multiplexing implementors (such as tuples or composite accessors)
 /// preserve this invariant automatically since they are just destructuring to independent storages.
 /// Storage delegations preserve this invariant automatically
-/// since [`storage::Chunked::get_chunk_mut`] has the same safety invariants
-/// (see [`Chunked` &sect; Safety](storage::Chunked#safety)).
+/// since [`crate::storage::Chunked::get_chunk_mut`] has the same safety invariants
+/// (see [`Chunked` &sect; Safety](crate::storage::Chunked#safety)).
 ///
 /// [injective]: https://en.wikipedia.org/wiki/Injective_function
 pub unsafe trait Chunked<A: Archetype> {

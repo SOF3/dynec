@@ -1,3 +1,26 @@
+/// Declares a composite struct that implements
+/// [`Accessor`](crate::system::Accessor) and [`Chunked`](crate::system::ChunkedAccessor)
+/// by delegation to all fields and reconstructing the same struct with different types.
+///
+/// # Example
+/// ```
+/// dynec::accessors! {
+///     /// This is an example accessor set struct.
+///     /// We can document it and apply attributes on it.
+///     #[allow(dead_code)]
+///     pub Foo {
+///         /// This documents the field.
+///         pub(crate) bar,
+///         qux,
+///     }
+/// }
+/// ```
+#[doc(inline)]
+pub use dynec_codegen::accessors;
+
+#[cfg(test)]
+mod accessors_tests {}
+
 /// Declares archetypes.
 ///
 /// # Example
@@ -673,10 +696,14 @@ mod system_tests {
 /// ```
 #[doc(inline)]
 pub use dynec_codegen::Discrim;
+
+#[cfg(test)]
+mod discrim_tests {}
+
 /// Derives a [`Referrer`](crate::entity::Referrer) implementation for the type.
 ///
 /// The generated implementation does not visit any fields by default.
-/// Add the `#[entity]` attribute to fields that implement `[crate::entity::Referrer]`,
+/// Add the `#[entity]` attribute to fields that implement [`crate::entity::Referrer`],
 /// then the generated implementation will delegate to these fields.
 ///
 /// This derive macro is automatically called in [`comp`] and [`global`].
@@ -732,6 +759,9 @@ pub use dynec_codegen::Discrim;
 #[doc(inline)]
 pub use dynec_codegen::EntityRef;
 
+#[cfg(test)]
+mod entity_ref_tests {}
+
 // The rest are macros for testing.
 
 /// Convenience macro that constructs a new world for testing a small number of systems.
@@ -755,7 +785,7 @@ macro_rules! system_test {
 
         $(
             let $var = world.create::<$arch>(
-                $crate::comps![ $arch => $($components)*]
+                $crate::comps![@($crate) $arch => $($components)*]
             );
         )*
 

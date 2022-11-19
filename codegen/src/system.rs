@@ -236,6 +236,9 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                     _ph: ::std::marker::PhantomData,
                 })
             }
+            ArgType::EntityIterator { arch } => {
+                quote!(#crate_name::system::entity_iterator::<#arch, _>(ealloc_shard_map.borrow::<#arch>()))
+            }
         };
         system_run_args.push(run_arg);
     }

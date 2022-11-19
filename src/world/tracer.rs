@@ -2,6 +2,7 @@
 
 use std::fmt;
 
+use crate::util::DbgTypeId;
 use crate::{system, world};
 
 /// Defines the [`Tracer`] trait and implements the [`Log`] and [`Aggregate`] types.
@@ -143,6 +144,18 @@ define_tracer! {
 
     /// A cycle ends.
     fn end_cycle(&self);
+
+    /// The executor starts preparing ealloc shards for each worker thread.
+    fn start_prepare_ealloc_shards(&self);
+
+    /// The executor has partitioned ealloc into different worker threads.
+    fn end_prepare_ealloc_shards(&self);
+
+    /// The executor starts preparing ealloc shards for each worker thread.
+    fn start_flush_ealloc(&self, archetype: DbgTypeId);
+
+    /// The executor has partitioned ealloc into different worker threads.
+    fn end_flush_ealloc(&self, archetype: DbgTypeId);
 
     /// A thread tries to steal a task, but all tasks have started.
     fn steal_return_complete(&self, thread: Thread);

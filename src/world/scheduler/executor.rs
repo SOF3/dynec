@@ -66,7 +66,9 @@ impl Executor {
 
         let context = Context { topology, planner, condvar: &condvar };
 
+        tracer.start_prepare_ealloc_shards();
         let mut ealloc_shards = ealloc_map.shards(self.concurrency + 1);
+        tracer.end_prepare_ealloc_shards();
 
         let send = SendArgs { state: sync_state, components, globals };
 
@@ -159,8 +161,11 @@ impl Executor {
             operation.run(components, globals, unsend.globals, &mut all_system_refs[..], ealloc_map)
         });
 
-        for ealloc in ealloc_map.map.values_mut() {
-            ealloc.flush_deallocate();
+        // TODO parallelize this loop
+        for (&arch, ealloc) in &mut ealloc_map.map {
+            tracer.start_flush_ealloc(arch);
+            ealloc.flush();
+            tracer.end_flush_ealloc(arch);
         }
 
         tracer.end_cycle();

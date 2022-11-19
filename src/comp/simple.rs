@@ -40,7 +40,7 @@ pub enum SimplePresence {
 pub enum SimpleInitStrategy<A: Archetype> {
     /// The component is not auto-initialized.
     None,
-    /// The component should be auto-initialized using the [`any::AutoIniter`]
+    /// The component should be auto-initialized using the [`SimpleIniter`]
     /// if it is not given in the creation args.
     Auto(SimpleIniter<A>),
 }

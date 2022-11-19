@@ -1,7 +1,8 @@
 #![allow(clippy::ptr_arg)]
 
 use super::tracer;
-use crate::entity::{self, deletion, generation};
+use crate::entity::{self, deletion, generation, Raw, Ref};
+use crate::system::{Read as _, Write as _};
 use crate::{
     comp, global, system, system_test, world, Entity, TestArch, TestDiscrim1, TestDiscrim2,
 };
@@ -199,19 +200,19 @@ fn test_full_isotope_discrim_read() {
 
         {
             let iso = iso1.try_get(ent, TestDiscrim1(11));
-            assert_eq!(iso.as_deref(), Some(&Iso1(3)));
+            assert_eq!(iso, Some(&Iso1(3)));
         }
 
         // should not panic on nonexistent storages
         {
             let iso = iso1.try_get(ent, TestDiscrim1(17));
-            assert_eq!(iso.as_deref(), None);
+            assert_eq!(iso, None);
         }
 
         // should return default value for autoinit isotopes
         {
             let iso = iso2.try_get(ent, TestDiscrim2(71));
-            assert_eq!(iso.as_deref(), Some(&Iso2(73)));
+            assert_eq!(iso, Some(&Iso2(73)));
         }
 
         let map = iso1.get_all(ent);
@@ -264,7 +265,7 @@ fn partial_isotope_discrim_read(
 
         for (discrim, expect) in single_expects {
             let iso = iso1.try_get(ent, *discrim);
-            assert_eq!(iso.as_deref(), expect.as_ref());
+            assert_eq!(iso, expect.as_ref());
         }
 
         // should only include requested discriminants
@@ -321,7 +322,7 @@ fn test_full_isotope_discrim_write() {
         // should return default value
         {
             let iso = iso2.try_get(ent, TestDiscrim2(71));
-            assert_eq!(iso.as_deref(), Some(&Iso2(73)));
+            assert_eq!(iso, Some(&Iso2(73)));
         }
 
         // should not reset to default value
@@ -331,7 +332,7 @@ fn test_full_isotope_discrim_write() {
         }
         {
             let iso = iso2.try_get(ent, TestDiscrim2(71));
-            assert_eq!(iso.as_deref(), None);
+            assert_eq!(iso, None);
         }
 
         // should include new discriminants
@@ -809,4 +810,126 @@ fn test_offline_finalizer_delete() {
         let comp1 = world.get_simple::<TestArch, Comp1, _>(&weak);
         assert_eq!(comp1, None);
     }
+}
+
+#[test]
+fn test_entity_iter_partial_mut() {
+    #[system(dynec_as(crate))]
+    fn test_system(
+        iter: impl system::EntityIterator<TestArch>,
+        comp1_acc: impl system::ReadSimple<TestArch, Comp1>,
+        #[dynec(isotope(discrim = [TestDiscrim1(7), TestDiscrim1(13)]))]
+        mut iso1_acc: impl system::WriteIsotope<TestArch, Iso1, usize>,
+        #[dynec(isotope(discrim = [TestDiscrim1(31)]))] iso1_acc_31: impl system::ReadIsotope<
+            TestArch,
+            Iso1,
+            usize,
+        >,
+    ) {
+        let [mut iso1_acc_0, mut iso1_acc_1] = iso1_acc.split_mut([0, 1]);
+        let [iso1_acc_31] = iso1_acc_31.split([0]);
+
+        for (entity, (comp1, iso10, iso11, iso131)) in iter.entities_with((
+            comp1_acc.try_access(),
+            iso1_acc_0.try_access_mut(),
+            iso1_acc_1.try_access_mut(),
+            iso1_acc_31.try_access(),
+        )) {
+            match entity.id().to_primitive() {
+                1 => {
+                    assert_eq!(comp1, Some(&Comp1(5)));
+                    assert_eq!(iso10, Some(&mut Iso1(11)));
+                    assert_eq!(iso11, None);
+                    assert_eq!(iso131, Some(&Iso1(41)));
+                }
+                2 => {
+                    assert_eq!(comp1, None);
+                    assert_eq!(iso10, None);
+                    assert_eq!(iso11, Some(&mut Iso1(17)));
+                    assert_eq!(iso131, Some(&Iso1(43)));
+                }
+                3 => {
+                    assert_eq!(comp1, None);
+                    assert_eq!(iso10, Some(&mut Iso1(19)));
+                    assert_eq!(iso11, Some(&mut Iso1(23)));
+                    assert_eq!(iso131, None);
+                }
+                _ => unreachable!(),
+            }
+        }
+    }
+
+    let mut world = system_test! {
+        test_system.build();
+        _: TestArch = (
+            Comp1(5),
+            @(TestDiscrim1(7), Iso1(11)),
+            @(TestDiscrim1(31), Iso1(41)),
+        );
+        _: TestArch = (
+            @(TestDiscrim1(13), Iso1(17)),
+            @(TestDiscrim1(31), Iso1(43)),
+        );
+        _: TestArch = (
+            @(TestDiscrim1(7), Iso1(19)),
+            @(TestDiscrim1(13), Iso1(23)),
+        );
+    };
+
+    world.execute(&tracer::Log(log::Level::Trace));
+}
+
+#[test]
+fn test_entity_iter_full_mut() {
+    #[system(dynec_as(crate))]
+    fn test_system(
+        iter: impl system::EntityIterator<TestArch>,
+        comp1_acc: impl system::ReadSimple<TestArch, Comp1>,
+        mut iso1_acc: impl system::WriteIsotope<TestArch, Iso1>,
+    ) {
+        let [mut iso1_acc_0, mut iso1_acc_1] =
+            iso1_acc.split_mut([TestDiscrim1(7), TestDiscrim1(13)]);
+
+        for (entity, (comp1, iso10, iso11)) in iter.entities_with((
+            comp1_acc.try_access(),
+            iso1_acc_0.try_access_mut(),
+            iso1_acc_1.try_access_mut(),
+        )) {
+            match entity.id().to_primitive() {
+                1 => {
+                    assert_eq!(comp1, Some(&Comp1(5)));
+                    assert_eq!(iso10, Some(&mut Iso1(11)));
+                    assert_eq!(iso11, None);
+                }
+                2 => {
+                    assert_eq!(comp1, None);
+                    assert_eq!(iso10, None);
+                    assert_eq!(iso11, Some(&mut Iso1(17)));
+                }
+                3 => {
+                    assert_eq!(comp1, None);
+                    assert_eq!(iso10, Some(&mut Iso1(19)));
+                    assert_eq!(iso11, Some(&mut Iso1(23)));
+                }
+                _ => unreachable!(),
+            }
+        }
+    }
+
+    let mut world = system_test! {
+        test_system.build();
+        _: TestArch = (
+            Comp1(5),
+            @(TestDiscrim1(7), Iso1(11)),
+        );
+        _: TestArch = (
+            @(TestDiscrim1(13), Iso1(17)),
+        );
+        _: TestArch = (
+            @(TestDiscrim1(7), Iso1(19)),
+            @(TestDiscrim1(13), Iso1(23)),
+        );
+    };
+
+    world.execute(&tracer::Log(log::Level::Trace));
 }

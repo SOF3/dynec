@@ -13,7 +13,10 @@ impl<E: entity::Raw, C> Default for Tree<E, C> {
     fn default() -> Self { Self { data: BTreeMap::new() } }
 }
 
-impl<E: entity::Raw, C: Send + Sync + 'static> Storage for Tree<E, C> {
+// Safety: the backend of `get`/`get_mut` is a BTreeSet,
+// which is defined to be injective
+// assuming correct implementation of Eq + Ord.
+unsafe impl<E: entity::Raw, C: Send + Sync + 'static> Storage for Tree<E, C> {
     type RawEntity = E;
     type Comp = C;
 

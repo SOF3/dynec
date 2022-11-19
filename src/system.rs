@@ -14,18 +14,19 @@ use crate::entity::{ealloc, referrer};
 use crate::world;
 use crate::world::offline;
 
-mod accessor;
+pub(crate) mod accessor;
 pub use accessor::{
-    with, with_mut, Read, ReadIsotope, ReadSimple, Write, WriteIsotope, WriteSimple,
+    Accessor, Chunked as ChunkedAccessor, Read, ReadIsotope, ReadSimple, Write, WriteIsotope,
+    WriteSimple,
 };
 
 pub mod partition;
 pub use partition::{EntityCreationPartition, Partition};
 
 mod entity;
-pub use entity::{EntityCreator, EntityDeleter};
 #[doc(hidden)]
-pub use entity::{EntityCreatorImpl, EntityDeleterImpl};
+pub use entity::{entity_iterator, EntityCreatorImpl, EntityDeleterImpl};
+pub use entity::{EntityCreator, EntityDeleter, EntityIterator};
 
 pub mod spec;
 #[doc(inline)]

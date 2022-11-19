@@ -4,7 +4,7 @@ members = ["codegen", "."]
 [package]
 name = "dynec"
 authors = ["SOFe <sofe2038@gmail.com>"]
-version = "0.2.0"
+version = "0.1.0"
 edition = "2021"
 documentation = "https://sof3.github.io/dynec/master/dynec"
 repository = "https://github.com/SOF3/dynec"
@@ -15,7 +15,7 @@ license = "Apache-2.0"
 [dependencies]
 bitvec = "1.0.0"
 crossbeam = "0.8.1"
-dynec-codegen = {version = "0.2.0", path = "codegen"}
+dynec-codegen = {version = "0.1.0", path = "codegen"}
 indexmap = "1.8.1"
 itertools = "0.10.3"
 log = "0.4.16"

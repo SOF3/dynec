@@ -1,26 +1,15 @@
 //! Component accessor APIs to be used from systems.
 
 use std::marker::PhantomData;
-use std::{any, fmt, ops};
+use std::{any, fmt};
 
-use crate::{comp, entity, storage, Archetype};
+use crate::{comp, entity, Archetype};
 
 /// Generalizes [`ReadSimple`] and specific-discriminant [`ReadIsotope`] (through [`with`]).
 pub trait Read<A: Archetype, C: 'static> {
     /// Returns an immutable reference to the component for the specified entity,
     /// or `None` if the component is not present in the entity.
     fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Option<&C>;
-
-    /// Returns a slice of contiguously located components as a slice.
-    ///
-    /// Since the internal representation does not use `[Option<C>]`,
-    /// it is not meaningful to use this function on components that may be missing.
-    /// Hence, this function only works on simple components that must exist in the chunk.
-    fn get_chunk(&self, chunk: entity::TempRefChunk<'_, A>) -> &[C]
-    where
-        Self: comp::Must<A>,
-        C: comp::Simple<A>,
-        <C as comp::Simple<A>>::Storage: storage::Chunked;
 
     /// Returns an immutable reference to the component for the specified entity.
     ///
@@ -170,6 +159,14 @@ where
     /// Note that the initializer is not called for lazy-initialized isotope components.
     /// To avoid confusing behavior, do not use this function if [`C: comp::Must<A>`](comp::Must).
     fn iter(&self, discrim: K) -> Self::Iter<'_>;
+
+    /// Return value of [`split`](Self::split).
+    type Split<'t>: Read<A, C> + 't
+    where
+        Self: 't;
+    /// Splits the accessor into multiple [`Read`] implementors
+    /// so that they can be used independently.
+    fn split<const N: usize>(&self, keys: [K; N]) -> [Self::Split<'_>; N];
 }
 
 /// Provides access to an isotope component in a specific archetype.
@@ -207,79 +204,14 @@ where
         Self: 't;
     /// Iterates over mutable references to all components of a specific discriminant.
     fn iter_mut(&mut self, discrim: K) -> Self::IterMut<'_>;
-}
 
-/// Create a single [`Read`] accessor from an isotope accessor for a fixed discriminant.
-pub fn with<A, C, K, T>(accessor: &T, discrim: K) -> impl Read<A, C> + '_
-where
-    A: Archetype,
-    C: comp::Isotope<A>,
-    K: fmt::Debug + Copy + 'static,
-    T: ReadIsotope<A, C, K>,
-{
-    With { accessor, discrim, _ph: PhantomData }
-}
-
-/// Create a single [`Write`] accessor from an isotope accessor for a fixed discriminant.
-pub fn with_mut<A, C, K, T>(accessor: &mut T, discrim: K) -> impl Write<A, C> + '_
-where
-    A: Archetype,
-    C: comp::Isotope<A>,
-    K: fmt::Debug + Copy + 'static,
-    T: WriteIsotope<A, C, K>,
-{
-    With { accessor, discrim, _ph: PhantomData }
-}
-
-struct With<A, C, K, R: ops::Deref> {
-    accessor: R,
-    discrim:  K,
-    _ph:      PhantomData<(A, C)>,
-}
-
-impl<A, C, K, R: ops::Deref> Read<A, C> for With<A, C, K, R>
-where
-    A: Archetype,
-    C: comp::Isotope<A>,
-    K: fmt::Debug + Copy + 'static,
-    <R as ops::Deref>::Target: ReadIsotope<A, C, K>,
-{
-    fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Option<&C> {
-        self.accessor.try_get(entity, self.discrim)
-    }
-
-    fn get_chunk(&self, _chunk: entity::TempRefChunk<'_, A>) -> &[C]
-    where
-        Self: comp::Must<A>,
-    {
-        unreachable!("Isotope components should not implement comp::Must")
-    }
-
-    type Iter<'t> = impl Iterator<Item = (entity::TempRef<'t, A>, &'t C)>
+    /// Return value of [`split`](Self::split).
+    type SplitMut<'t>: Write<A, C> + 't
     where
         Self: 't;
-    fn iter(&self) -> Self::Iter<'_> { self.accessor.iter(self.discrim) }
-}
-
-impl<A, C, K, R: ops::DerefMut> Write<A, C> for With<A, C, K, R>
-where
-    A: Archetype,
-    C: comp::Isotope<A>,
-    K: fmt::Debug + Copy + 'static,
-    <R as ops::Deref>::Target: WriteIsotope<A, C, K>,
-{
-    fn try_get_mut<E: entity::Ref<Archetype = A>>(&mut self, entity: E) -> Option<&mut C> {
-        self.accessor.try_get_mut(entity, self.discrim)
-    }
-
-    fn set<E: entity::Ref<Archetype = A>>(&mut self, entity: E, value: Option<C>) -> Option<C> {
-        self.accessor.set(entity, self.discrim, value)
-    }
-
-    type IterMut<'t> = impl Iterator<Item = (entity::TempRef<'t, A>, &'t mut C)>
-    where
-        Self: 't;
-    fn iter_mut(&mut self) -> Self::IterMut<'_> { self.accessor.iter_mut(self.discrim) }
+    /// Splits the accessor into multiple [`Write`] implementors
+    /// so that they can be used with [`with_mut`] independently.
+    fn split_mut<const N: usize>(&mut self, keys: [K; N]) -> [Self::SplitMut<'_>; N];
 }
 
 /// An accessor that can be used in an entity iteration.

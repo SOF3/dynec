@@ -3,6 +3,7 @@
 use std::fmt;
 use std::hash::Hash;
 use std::marker::PhantomData;
+use std::mem::MaybeUninit;
 
 /// A discriminant value that distinguishes different isotopes of the same component type.
 ///
@@ -97,6 +98,16 @@ pub trait Mapped {
     /// Executes functions with mutable reference to an entry.
     fn get_mut_by(&mut self, key: Self::Key) -> Option<&mut Self::Value>;
 
+    fn get_mut_array_by<U, TransformFn, OnMissing, const N: usize>(
+        &mut self,
+        keys: [Self::Key; N],
+        transform: TransformFn,
+        on_missing: OnMissing,
+    ) -> [&mut U; N]
+    where
+        TransformFn: FnMut(&mut Self::Value) -> &mut U,
+        OnMissing: FnMut(Self::Key) -> !;
+
     /// Return value of [`iter_values`](Self::iter_values).
     type Iter<'t>: Iterator<Item = (Self::Discrim, &'t Self::Value)> + 't
     where
@@ -116,7 +127,7 @@ pub trait Mapped {
 ///
 /// This is only used when storages of all isotopes are read/written in the same accessor
 /// (through [`Components::read_full_isotope_storage`][read_full_isotope_storage],
-/// or `system::ReadIsotope` without `#[dynec(isotope(discrim = xxx))]`).
+/// or `impl system::ReadIsotope` without `#[dynec(isotope(discrim = xxx))]`).
 ///
 /// [read_full_isotope_storage]: crate::world::Components::read_full_isotope_storage
 pub trait FullMap:
@@ -128,6 +139,57 @@ pub trait FullMap:
         discrim: Self::Discrim,
         inserter: F,
     ) -> &mut Self::Value;
+
+    /// Lazily initializes the entry and returns a mutable reference
+    fn get_by_or_insert_array<T, Inserter, Transform, const N: usize>(
+        &mut self,
+        discrims: [Self::Discrim; N],
+        inserter: Inserter,
+        transform: Transform,
+    ) -> [&mut T; N]
+    where
+        Inserter: FnMut(Self::Discrim) -> Self::Value,
+        Transform: FnMut(&mut Self::Value) -> &mut T;
+}
+
+/// Splits an object to multiple mutable references and returns them in an array.
+///
+/// # Safety
+/// `getter` must be an injection, i.e. for `a, b : usize`,
+/// `getter(a)` aliases `getter(b)` if and only if `a == b`.
+unsafe fn split_mut_array<'t, C, Getter, T: 't, U, TransformFn, OnMissingFn, const N: usize>(
+    getter_context: &'t mut C,
+    mut getter: Getter,
+    keys: [usize; N],
+    mut transform: TransformFn,
+    mut on_missing: OnMissingFn,
+) -> [&'t mut U; N]
+where
+    Getter: FnMut(&mut C, usize) -> Option<&mut T>,
+    TransformFn: FnMut(&'t mut T) -> &'t mut U,
+    OnMissingFn: FnMut(usize) -> !,
+{
+    let mut array: [MaybeUninit<&'t mut U>; N] = MaybeUninit::uninit_array();
+    for (i, key) in keys.into_iter().enumerate() {
+        assert!(
+            keys[..i].iter().all(|&item| item != key),
+            "Cannot split isotopes with duplicate key {key:?}"
+        );
+
+        // Safety: we assume that `getter` is injective, so `getter_context` can be aliased.
+        let value = match getter(&mut *(getter_context as *mut C), key) {
+            Some(value) => transform(value),
+            None => on_missing(i),
+        };
+        array[i] = MaybeUninit::new(value);
+    }
+
+    // Safety:
+    // 1. All keys are checked to be unique from previous keys before calling `get_mut`.
+    // 2. All keys in `0..M` have been filled to `array` before `array_assume_init` is
+    //    called.
+
+    MaybeUninit::array_assume_init(array)
 }
 
 impl<D: Discrim, V, const N: usize> Mapped for [(D, V); N] {
@@ -145,6 +207,28 @@ impl<D: Discrim, V, const N: usize> Mapped for [(D, V); N] {
     fn get_mut_by(&mut self, key: usize) -> Option<&mut V> {
         let (_, value) = self.get_mut(key)?;
         Some(value)
+    }
+
+    fn get_mut_array_by<U, TransformFn, OnMissing, const M: usize>(
+        &mut self,
+        keys: [usize; M],
+        mut transform: TransformFn,
+        mut on_missing: OnMissing,
+    ) -> [&mut U; M]
+    where
+        TransformFn: FnMut(&mut Self::Value) -> &mut U,
+        OnMissing: FnMut(Self::Key) -> !,
+    {
+        // Safety: `slice.get_mut` is an injection.
+        unsafe {
+            split_mut_array(
+                self,
+                |slice, index| slice.get_mut(index),
+                keys,
+                |(_d, v)| transform(v),
+                |i| on_missing(keys[i]),
+            )
+        }
     }
 
     type Iter<'t> = impl Iterator<Item = (D, &'t V)> + 't where Self: 't;
@@ -173,6 +257,28 @@ impl<D: Discrim, V> Mapped for Vec<(D, V)> {
     fn get_mut_by(&mut self, key: usize) -> Option<&mut V> {
         let (_, value) = self.get_mut(key)?;
         Some(value)
+    }
+
+    fn get_mut_array_by<U, TransformFn, OnMissing, const M: usize>(
+        &mut self,
+        keys: [usize; M],
+        mut transform: TransformFn,
+        mut on_missing: OnMissing,
+    ) -> [&mut U; M]
+    where
+        TransformFn: FnMut(&mut Self::Value) -> &mut U,
+        OnMissing: FnMut(Self::Key) -> !,
+    {
+        // Safety: `slice.get_mut` is an injection.
+        unsafe {
+            split_mut_array(
+                self,
+                |slice, index| slice.get_mut(index),
+                keys,
+                |(_d, v)| transform(v),
+                |i| on_missing(keys[i]),
+            )
+        }
     }
 
     type Iter<'t> = impl Iterator<Item = (D, &'t V)> + 't where Self: 't;
@@ -212,6 +318,38 @@ impl<D: Discrim, T> Mapped for LinearVecMap<D, T> {
         self.vec[..].iter_mut().find(|&&mut (d, _)| d == key).map(|(_, s)| s)
     }
 
+    fn get_mut_array_by<U, TransformFn, OnMissing, const M: usize>(
+        &mut self,
+        keys: [D; M],
+        mut transform: TransformFn,
+        mut on_missing: OnMissing,
+    ) -> [&mut U; M]
+    where
+        TransformFn: FnMut(&mut Self::Value) -> &mut U,
+        OnMissing: FnMut(Self::Key) -> !,
+    {
+        // We first collect the matching indices to an array.
+        // This operation is safe because duplicate indices would not immediately lead to UB
+        // as long as no `&mut` is created.
+        let indices = keys.map(|key| match self.vec[..].iter_mut().position(|(d, _)| *d == key) {
+            Some(position) => position,
+            None => on_missing(key),
+        });
+
+        // Safety: `self.vec.get_mut` is injective.
+        // The implementation of `split_mut_array` will check for duplicates in `indices`,
+        // so we don't need to check it here.
+        unsafe {
+            split_mut_array(
+                &mut self.vec,
+                |slice, index| slice.get_mut(index),
+                indices,
+                |(_d, t)| transform(t),
+                |_| unreachable!("result from iter_mut().position()"),
+            )
+        }
+    }
+
     type Iter<'t> = impl Iterator<Item = (D, &'t T)> + 't where Self: 't;
     fn iter_values(&self) -> Self::Iter<'_> {
         self.vec[..].iter().map(|(discrim, value)| (*discrim, value))
@@ -237,6 +375,37 @@ impl<D: Discrim, T> FullMap for LinearVecMap<D, T> {
 
         self.vec.push((discrim, inserter()));
         &mut self.vec.last_mut().expect("vec should be nonempty after push").1
+    }
+
+    fn get_by_or_insert_array<U, Inserter, Transform, const N: usize>(
+        &mut self,
+        discrims: [Self::Discrim; N],
+        mut inserter: Inserter,
+        mut transform: Transform,
+    ) -> [&mut U; N]
+    where
+        Inserter: FnMut(Self::Discrim) -> Self::Value,
+        Transform: FnMut(&mut Self::Value) -> &mut U,
+    {
+        let indices =
+            discrims.map(|discrim| match self.vec.iter().position(|&(d, _)| d == discrim) {
+                Some(index) => index,
+                None => {
+                    self.vec.push((discrim, inserter(discrim)));
+                    self.vec.len() - 1
+                }
+            });
+
+        // Safety: self.vec.get_mut() is an injective function.
+        unsafe {
+            split_mut_array(
+                &mut self.vec,
+                |slice, index| slice.get_mut(index),
+                indices,
+                |(_, t)| transform(t),
+                |_| unreachable!("returned by position() or below len()"),
+            )
+        }
     }
 }
 
@@ -280,6 +449,40 @@ impl<D: Discrim, T> Mapped for SortedVecMap<D, T> {
         }
     }
 
+    fn get_mut_array_by<U, TransformFn, OnMissing, const M: usize>(
+        &mut self,
+        keys: [D; M],
+        mut transform: TransformFn,
+        mut on_missing: OnMissing,
+    ) -> [&mut U; M]
+    where
+        TransformFn: FnMut(&mut Self::Value) -> &mut U,
+        OnMissing: FnMut(Self::Key) -> !,
+    {
+        // We first collect the matching indices to an array.
+        // This operation is safe because duplicate indices would not immediately lead to UB
+        // as long as no `&mut` is created.
+        let indices = keys.map(|key| {
+            match self.vec[..].binary_search_by_key(&key.into_usize(), |(d, _)| d.into_usize()) {
+                Ok(position) => position,
+                Err(_) => on_missing(key),
+            }
+        });
+
+        // Safety: `self.vec.get_mut` is injective.
+        // The implementation of `split_mut_array` will check for duplicates in `indices`,
+        // so we don't need to check it here.
+        unsafe {
+            split_mut_array(
+                &mut self.vec,
+                |slice, index| slice.get_mut(index),
+                indices,
+                |(_d, t)| transform(t),
+                |_| unreachable!("result from binary_search_by_key"),
+            )
+        }
+    }
+
     type Iter<'t> = impl Iterator<Item = (D, &'t T)> + 't where Self: 't;
     fn iter_values(&self) -> Self::Iter<'_> {
         self.vec[..].iter().map(|(discrim, value)| (*discrim, value))
@@ -302,6 +505,39 @@ impl<D: Discrim, T> FullMap for SortedVecMap<D, T> {
                 self.vec.insert(index, (discrim, inserter()));
                 &mut self.vec.get_mut(index).expect("vec.insert(index) called above").1
             }
+        }
+    }
+
+    fn get_by_or_insert_array<U, Inserter, Transform, const N: usize>(
+        &mut self,
+        discrims: [Self::Discrim; N],
+        mut inserter: Inserter,
+        mut transform: Transform,
+    ) -> [&mut U; N]
+    where
+        Inserter: FnMut(Self::Discrim) -> Self::Value,
+        Transform: FnMut(&mut Self::Value) -> &mut U,
+    {
+        let indices = discrims.map(|discrim| {
+            match self.vec[..].binary_search_by_key(&discrim.into_usize(), |(d, _)| d.into_usize())
+            {
+                Ok(index) => index,
+                Err(index) => {
+                    self.vec.insert(index, (discrim, inserter(discrim)));
+                    index
+                }
+            }
+        });
+
+        // Safety: self.vec.get_mut() is an injective function.
+        unsafe {
+            split_mut_array(
+                &mut self.vec,
+                |slice, index| slice.get_mut(index),
+                indices,
+                |(_, t)| transform(t),
+                |_| unreachable!("returned by binary_search_by_key() or below len()"),
+            )
         }
     }
 }
@@ -355,6 +591,35 @@ impl<D: Discrim, T> Mapped for BoundedVecMap<D, T> {
         self.vec.get_mut(key.into_usize()).and_then(Option::as_mut)
     }
 
+    fn get_mut_array_by<U, TransformFn, OnMissing, const M: usize>(
+        &mut self,
+        keys: [D; M],
+        transform: TransformFn,
+        mut on_missing: OnMissing,
+    ) -> [&mut U; M]
+    where
+        TransformFn: FnMut(&mut Self::Value) -> &mut U,
+        OnMissing: FnMut(Self::Key) -> !,
+    {
+        // We collect the keys into [usize] first,
+        // because we cannot ensure that `self.vec.get_mut(d.into_usize())` is injective.
+        let indices = keys.map(D::into_usize);
+
+        // Safety: `self.vec.get_mut` is injective for discrete usize.
+        unsafe {
+            split_mut_array(
+                &mut self.vec,
+                |slice, index| match slice.get_mut(index) {
+                    Some(Some(value)) => Some(value),
+                    _ => None,
+                },
+                indices,
+                transform,
+                |i| on_missing(keys[i]),
+            )
+        }
+    }
+
     type Iter<'t> = impl Iterator<Item = (D, &'t T)> + 't where Self: 't;
     fn iter_values(&self) -> Self::Iter<'_> {
         self.vec[..]
@@ -384,6 +649,39 @@ impl<D: Discrim, T> FullMap for BoundedVecMap<D, T> {
 
         let entry = self.vec.get_mut(index).expect("just resized");
         entry.get_or_insert_with(inserter)
+    }
+
+    fn get_by_or_insert_array<U, Inserter, Transform, const N: usize>(
+        &mut self,
+        discrims: [Self::Discrim; N],
+        mut inserter: Inserter,
+        transform: Transform,
+    ) -> [&mut U; N]
+    where
+        Inserter: FnMut(Self::Discrim) -> Self::Value,
+        Transform: FnMut(&mut Self::Value) -> &mut U,
+    {
+        let indices = discrims.map(|discrim| {
+            let index = discrim.into_usize();
+            if self.vec.len() <= index {
+                self.vec.resize_with(index + 1, || None);
+            }
+
+            let entry = self.vec.get_mut(index).expect("just resized");
+            _ = entry.get_or_insert_with(|| inserter(discrim));
+            index
+        });
+
+        // Safety: self.vec.get_mut() is an injective function.
+        unsafe {
+            split_mut_array(
+                &mut self.vec,
+                |slice, index| slice.get_mut(index).expect("resize_with was called above").as_mut(),
+                indices,
+                transform,
+                |_| unreachable!("get_or_insert_with was called above"),
+            )
+        }
     }
 }
 
@@ -423,8 +721,38 @@ impl<D: Discrim, T, const N: usize> Mapped for ArrayMap<D, T, N> {
     fn get_by(&self, key: D) -> Option<&T> {
         self.array.get(key.into_usize()).and_then(Option::as_ref)
     }
+
     fn get_mut_by(&mut self, key: D) -> Option<&mut T> {
         self.array.get_mut(key.into_usize()).and_then(Option::as_mut)
+    }
+
+    fn get_mut_array_by<U, TransformFn, OnMissing, const M: usize>(
+        &mut self,
+        keys: [D; M],
+        transform: TransformFn,
+        mut on_missing: OnMissing,
+    ) -> [&mut U; M]
+    where
+        TransformFn: FnMut(&mut Self::Value) -> &mut U,
+        OnMissing: FnMut(Self::Key) -> !,
+    {
+        // We collect the keys into [usize] first,
+        // because we cannot ensure that `self.vec.get_mut(d.into_usize())` is injective.
+        let indices = keys.map(D::into_usize);
+
+        // Safety: `self.array.get_mut` is injective for discrete usize.
+        unsafe {
+            split_mut_array(
+                &mut self.array,
+                |slice, index| match slice.get_mut(index) {
+                    Some(Some(value)) => Some(value),
+                    _ => None,
+                },
+                indices,
+                transform,
+                |i| on_missing(keys[i]),
+            )
+        }
     }
 
     type Iter<'t> = impl Iterator<Item = (D, &'t T)> + 't where Self: 't;
@@ -458,6 +786,44 @@ impl<D: Discrim, T, const N: usize> FullMap for ArrayMap<D, T, N> {
                      into_usize()",
                 )
             }
+        }
+    }
+
+    fn get_by_or_insert_array<U, Inserter, Transform, const M: usize>(
+        &mut self,
+        discrims: [Self::Discrim; M],
+        mut inserter: Inserter,
+        mut transform: Transform,
+    ) -> [&mut U; M]
+    where
+        Inserter: FnMut(Self::Discrim) -> Self::Value,
+        Transform: FnMut(&mut Self::Value) -> &mut U,
+    {
+        let indices = discrims.map(|discrim| {
+            let index = discrim.into_usize();
+
+            let entry = match self.array.get_mut(index) {
+                Some(entry) => entry,
+                None => {
+                    panic!(
+                        "Discriminants using ArrayMap<N = {N}> must return integers less than {N} \
+                         in into_usize()",
+                    )
+                }
+            };
+            _ = entry.get_or_insert_with(|| inserter(discrim));
+            index
+        });
+
+        // Safety: self.array.get_mut() is an injective function.
+        unsafe {
+            split_mut_array(
+                &mut self.array,
+                |slice, index| slice.get_mut(index).expect("checked above").as_mut(),
+                indices,
+                |t| transform(t),
+                |_| unreachable!("get_or_insert_with was called above"),
+            )
         }
     }
 }

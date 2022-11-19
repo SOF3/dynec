@@ -9,7 +9,7 @@ use parking_lot::{RawRwLock, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use super::typed;
 use crate::comp::{discrim, Discrim};
-use crate::storage::{Chunked as _, Storage};
+use crate::storage::Storage;
 use crate::util::DbgTypeId;
 use crate::{comp, entity, storage, system, Archetype};
 
@@ -232,8 +232,9 @@ impl Components {
             A: Archetype,
             C: comp::Isotope<A>,
         {
-            full_map: RwLockWriteGuard<'t, storage::IsotopeMapInner<A, C>>,
-            _ph:      PhantomData<(A, C)>,
+            /// The actual map that persists isotope storages over multiple systems.
+            persistent_map: RwLockWriteGuard<'t, storage::IsotopeMapInner<A, C>>,
+            _ph:            PhantomData<(A, C)>,
         }
         impl<'t, A, C> StorageMapProcessorRef for Proc<'t, A, C>
         where
@@ -272,15 +273,35 @@ impl Components {
                 storages.get_by_or_insert(discrim, || {
                     let arc = Arc::default();
                     let ret = own_write_isotope_storage::<A, C>(discrim, &arc);
-                    self.full_map.insert(discrim, arc);
+                    self.persistent_map.insert(discrim, arc);
                     ret
                 })
+            }
+
+            fn get_storage_multi<'u, const N: usize>(
+                &mut self,
+                keys: [C::Discrim; N],
+                storages: &'u mut M,
+            ) -> [&'u mut C::Storage; N]
+            where
+                LockedIsotopeStorage<A, C>: 'u,
+            {
+                storages.get_by_or_insert_array(
+                    keys,
+                    |discrim| {
+                        let arc = Arc::default();
+                        let ret = own_write_isotope_storage::<A, C>(discrim, &arc);
+                        self.persistent_map.insert(discrim, arc);
+                        ret
+                    },
+                    |storage| &mut **storage,
+                )
             }
         }
 
         IsotopeAccessor::<A, C, LockedIsotopeStorage<A, C>, _, _> {
             storages:  accessor_storages,
-            processor: Proc::<'_, A, C> { full_map, _ph: PhantomData },
+            processor: Proc::<'_, A, C> { persistent_map: full_map, _ph: PhantomData },
             _ph:       PhantomData,
         }
     }
@@ -350,6 +371,26 @@ impl Components {
                     ),
                 }
             }
+
+            fn get_storage_multi<'u, const N: usize>(
+                &mut self,
+                keys: [M::Key; N],
+                storages: &'u mut M,
+            ) -> [&'u mut C::Storage; N]
+            where
+                S: 'u,
+            {
+                storages.get_mut_array_by(
+                    keys,
+                    |storage| -> &mut C::Storage { &mut *storage },
+                    |key| {
+                        panic!(
+                            "Cannot access isotope indexed by {key:?} because it is not in the \
+                             list of requested discriminants",
+                        )
+                    },
+                )
+            }
         }
 
         IsotopeAccessor { storages, processor: Proc(PhantomData), _ph: PhantomData }
@@ -368,16 +409,6 @@ where
 {
     fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Option<&C> {
         self.storage.get(entity.id())
-    }
-
-    fn get_chunk(&self, chunk: entity::TempRefChunk<'_, A>) -> &[C]
-    where
-        Self: comp::Must<A>,
-        C::Storage: storage::Chunked,
-    {
-        self.storage
-            .get_chunk(chunk.start, chunk.end)
-            .expect("TempRefChunk should only be valid while entities are known to exist")
     }
 
     type Iter<'t> = impl Iterator<Item = (entity::TempRef<'t, A>, &'t C)> where Self: 't;
@@ -487,6 +518,7 @@ where
     }
 }
 
+/// Generalizes different implementations of storage maps to handle the logic of optional storages.
 trait StorageMapProcessorRef {
     type Input;
     type Output;
@@ -529,8 +561,46 @@ where
             storage.iter().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
         })
     }
+
+    type Split<'t> = impl system::Read<A, C> + 't
+    where
+        Self: 't;
+    fn split<const N: usize>(&self, keys: [M::Key; N]) -> [Self::Split<'_>; N] {
+        struct With<A, C, K, R: ops::Deref> {
+            accessor: R,
+            discrim:  K,
+            _ph:      PhantomData<(A, C)>,
+        }
+
+        impl<A, C, K, R: ops::Deref> system::Read<A, C> for With<A, C, K, R>
+        where
+            A: Archetype,
+            C: comp::Isotope<A>,
+            K: fmt::Debug + Copy + 'static,
+            <R as ops::Deref>::Target: system::ReadIsotope<A, C, K>,
+        {
+            fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Option<&C> {
+                system::ReadIsotope::try_get(&*self.accessor, entity, self.discrim)
+            }
+
+            type Iter<'t> = impl Iterator<Item = (entity::TempRef<'t, A>, &'t C)>
+            where
+                Self: 't;
+            fn iter(&self) -> Self::Iter<'_> {
+                system::ReadIsotope::iter(&*self.accessor, self.discrim)
+            }
+        }
+
+        keys.map(|key| With { accessor: self, discrim: key, _ph: PhantomData })
+    }
 }
 
+/// Determines the strategy to fetch a storage from the storage map.
+/// The two implementors from `write_full_isotope_storage` and `write_partial_isotope_storage`
+/// would either lazily create or panic on missing storage.
+///
+/// This trait is not symmetric to `StorageMapProcessorRef` because
+/// the equivalent API may lead to Polonius compile errors.
 trait MutStorageAccessor<A, C, S, M>
 where
     A: Archetype,
@@ -539,6 +609,14 @@ where
     M: discrim::Mapped<Discrim = C::Discrim>,
 {
     fn get_storage<'t>(&mut self, key: M::Key, storages: &'t mut M) -> &'t mut C::Storage
+    where
+        S: 't;
+
+    fn get_storage_multi<'t, const N: usize>(
+        &mut self,
+        keys: [M::Key; N],
+        storages: &'t mut M,
+    ) -> [&'t mut C::Storage; N]
     where
         S: 't;
 }
@@ -578,6 +656,43 @@ where
     fn iter_mut(&mut self, key: M::Key) -> Self::IterMut<'_> {
         let storage = self.processor.get_storage(key, &mut self.storages);
         storage.iter_mut().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
+    }
+
+    type SplitMut<'t> = Split<'t, A, C> where Self: 't;
+    fn split_mut<const N: usize>(&mut self, keys: [M::Key; N]) -> [Split<'_, A, C>; N] {
+        self.processor.get_storage_multi(keys, &mut self.storages).map(Split)
+    }
+}
+
+struct Split<'t, A: Archetype, C: comp::Isotope<A>>(&'t mut C::Storage);
+
+impl<'t, A: Archetype, C: comp::Isotope<A>> system::Read<A, C> for Split<'t, A, C> {
+    fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Option<&C> {
+        self.0.get(entity.id())
+    }
+
+    type Iter<'u> = impl Iterator<Item = (entity::TempRef<'u, A>, &'u C)>
+    where
+        Self: 'u;
+    fn iter(&self) -> Self::Iter<'_> {
+        self.0.iter().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
+    }
+}
+
+impl<'t, A: Archetype, C: comp::Isotope<A>> system::Write<A, C> for Split<'t, A, C> {
+    fn try_get_mut<E: entity::Ref<Archetype = A>>(&mut self, entity: E) -> Option<&mut C> {
+        self.0.get_mut(entity.id())
+    }
+
+    fn set<E: entity::Ref<Archetype = A>>(&mut self, entity: E, value: Option<C>) -> Option<C> {
+        self.0.set(entity.id(), value)
+    }
+
+    type IterMut<'u> = impl Iterator<Item = (entity::TempRef<'u, A>, &'u mut C)>
+    where
+        Self: 'u;
+    fn iter_mut(&mut self) -> Self::IterMut<'_> {
+        self.0.iter_mut().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
     }
 }
 

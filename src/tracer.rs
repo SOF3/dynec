@@ -1,161 +1,53 @@
 //! Exposes testing, profiling and tracing capabilities.
 
-use std::fmt;
+use std::{fmt, time};
 
 use crate::util::DbgTypeId;
 use crate::{scheduler, system};
 
-/// Defines the [`Tracer`] trait and implements the [`Log`] and [`Aggregate`] types.
-///
-/// All tracer method parameters must be either [`Copy`] or a mutable reference
-/// (or immutable reference, which is [`Copy`]).
-///
-/// Use the `{@LOG_WITH = transformer}` syntax to transform an argument for log printing
-/// such that `transformer(argument)` returns a [`fmt::Debug`] type.
-macro_rules! define_tracer {
-    (
-        $(
-            $(#[$meta:meta])*
-            fn $name:ident(
-                &self
-                $(,$logged_ident:ident: $logged_ty:ty $({@LOG_WITH = $log_with:expr})?)*
-                $(; @NOLOG $($nolog_ident:ident: $nolog_ty:ty),*)?
-                $(,)?
-            );
-        )*
-    ) => {
-        /// A tracer used for recording the events throughout an execution cycle.
-        ///
-        /// Can be used for profiling and testing.
-        pub trait Tracer: Sync {
-            $(
-                $(#[$meta])*
-                #[allow(unused_variables)]
-                fn $name(&self, $($logged_ident: $logged_ty,)* $($($nolog_ident: $nolog_ty,)*)?) {}
-            )*
-        }
-
-        impl Tracer for Log {
-            $(
-                #[allow(unused_variables)]
-                fn $name(&self, $($logged_ident: $logged_ty,)* $($($nolog_ident: $nolog_ty,)*)?) {
-                    log::log!(self.0, concat!(stringify!($name), "(", $(
-                        stringify!($logged_ident),
-                        " = {",
-                        stringify!($logged_ident),
-                        ":?}, ",
-                    )* ")"), $(
-                        $logged_ident = define_tracer!(@LOG_EXPR $logged_ident $(@LOG_WITH = $log_with)?),
-                    )*);
-                }
-            )*
-        }
-
-        impl_tuple_accumulate! {
-            @TYPES (
-                T1, T2, T3, T4, T5, T6, T7, T8,
-                T9, T10, T11, T12, T13, T14, T15, T16,
-                T17, T18, T19, T20, T21, T22, T23, T24,
-                T25, T26, T27, T28, T29, T30, T31, T32,
-            );
-            $(
-                @VARS (
-                    t1, t2, t3, t4, t5, t6, t7, t8,
-                    t9, t10, t11, t12, t13, t14, t15, t16,
-                    t17, t18, t19, t20, t21, t22, t23, t24,
-                    t25, t26, t27, t28, t29, t30, t31, t32,
-                );
-                @METHOD {fn $name(&self, $($logged_ident: $logged_ty,)* $($($nolog_ident: $nolog_ty,)*)?);}
-            )*
-        }
-    };
-
-    (@LOG_EXPR $ident:ident) => { $ident };
-    (@LOG_EXPR $ident:ident @LOG_WITH = $closure:expr) => { ($closure)($ident) }
-}
-
-macro_rules! impl_tuple {
-    (
-        @TYPES ($($ty:ident),* $(,)?);
-        $(
-            @VARS ($($vars:ident),* $(,)?);
-            @METHOD {fn $name:ident(&self, $($arg_ident:ident: $arg_ty:ty,)*);}
-        )*
-    ) => {
-        impl<$($ty: Tracer),*> Tracer for Aggregate<($($ty,)*)> {
-            $(
-                fn $name(&self, $($arg_ident: $arg_ty),*) {
-                    #[allow(unused_mut, unused_variables)]
-                    let mut args = ($($arg_ident,)*);
-
-                    #[allow(dead_code)]
-                    fn call_with_args(tracer: &impl Tracer, ($($arg_ident,)*): &mut ($($arg_ty,)*)) {
-                        tracer.$name($(*$arg_ident,)*);
-                    }
-
-                    let Aggregate(($($vars,)*)) = self;
-                    $(
-                        call_with_args($vars, &mut args);
-                    )*
-                }
-            )*
-        }
-    };
-}
-
-macro_rules! impl_tuple_accumulate {
-    (@TYPES (); $(@VARS (); @METHOD {$($body:tt)*})*) => {
-        impl_tuple! {
-            @TYPES ();
-            $(
-                @VARS ();
-                @METHOD {$($body)*}
-            )*
-        }
-    };
-    (
-        @TYPES ($first_ty:ident $(, $rest_ty:ident)* $(,)?);
-        $(
-            @VARS ($first_var:ident $(, $rest_var:ident)* $(,)?);
-            @METHOD {$($body:tt)*}
-        )*
-    ) => {
-        impl_tuple! {
-            @TYPES ($first_ty $(, $rest_ty)* );
-            $(
-                @VARS ($first_var $(, $rest_var)*);
-                @METHOD {$($body)*}
-            )*
-        }
-
-        impl_tuple_accumulate! {
-            @TYPES ($($rest_ty),*);
-            $(
-                @VARS ($($rest_var),*);
-                @METHOD {$($body)*}
-            )*
-        }
-    };
-}
-
-define_tracer! {
+/// A handler that receives scheduling-related events in dynec.
+#[dynec_codegen::tracer_def(
+    max_tuple_len = 4,
+    import = crate::util::DbgTypeId,
+    import = crate::scheduler,
+    import = crate::system,
+)]
+pub trait Tracer: Sync {
+    /// Context from [`start_cycle`](Self::start_cycle) to [`end_cycle`](Self::end_cycle).
+    #[dynec(log_time)]
+    type CycleContext;
     /// A cycle starts.
-    fn start_cycle(&self);
-
+    #[dynec(log_return_now)]
+    fn start_cycle(&self) -> Self::CycleContext;
     /// A cycle ends.
-    fn end_cycle(&self);
+    fn end_cycle(&self, #[dynec(log_with = ElapsedFmt)] arg: Self::CycleContext);
 
+    /// Context from [`start_prepare_ealloc_shards`](Self::start_prepare_ealloc_shards)
+    /// to [`end_prepare_ealloc_shards`](Self::end_prepare_ealloc_shards).
+    #[dynec(log_time)]
+    type PrepareEallocShardsContext;
     /// The executor starts preparing ealloc shards for each worker thread.
-    fn start_prepare_ealloc_shards(&self);
-
+    #[dynec(log_return_now)]
+    fn start_prepare_ealloc_shards(&self) -> Self::PrepareEallocShardsContext;
     /// The executor has partitioned ealloc into different worker threads.
-    fn end_prepare_ealloc_shards(&self);
+    fn end_prepare_ealloc_shards(
+        &self,
+        #[dynec(log_with = ElapsedFmt)] arg: Self::PrepareEallocShardsContext,
+    );
 
+    /// Context from [`start_flush_ealloc`](Self::start_flush_ealloc)
+    /// to [`end_flush_ealloc`](Self::end_flush_ealloc).
+    #[dynec(log_time)]
+    type FlushEallocContext;
     /// The executor starts preparing ealloc shards for each worker thread.
-    fn start_flush_ealloc(&self, archetype: DbgTypeId);
-
+    #[dynec(log_return_now)]
+    fn start_flush_ealloc(&self, archetype: DbgTypeId) -> Self::FlushEallocContext;
     /// The executor has partitioned ealloc into different worker threads.
-    fn end_flush_ealloc(&self, archetype: DbgTypeId);
+    fn end_flush_ealloc(
+        &self,
+        #[dynec(log_with = ElapsedFmt)] arg: Self::FlushEallocContext,
+        archetype: DbgTypeId,
+    );
 
     /// A thread tries to steal a task, but all tasks have started.
     fn steal_return_complete(&self, thread: Thread);
@@ -172,60 +64,76 @@ define_tracer! {
     /// A system has completed. Also passes the number of remaining nodes.
     fn complete_system(&self, node: scheduler::Node, remaining: usize);
 
+    /// Context from [`start_run_sendable`](Self::start_run_sendable)
+    /// to [`end_run_sendable`](Self::end_run_sendable).
+    #[dynec(log_time)]
+    type RunSendableContext;
     /// A thread-safe system starts running.
+    #[dynec(log_return_now)]
     fn start_run_sendable(
         &self,
         thread: Thread,
         node: scheduler::Node,
-        debug_name: &str;
-        @NOLOG
-        system: &mut dyn system::Sendable,
-    );
+        debug_name: &str,
+        #[dynec(log_skip)] system: &mut dyn system::Sendable,
+    ) -> Self::RunSendableContext;
 
     /// A thread-safe system stops running.
     fn end_run_sendable(
         &self,
+        #[dynec(log_with = ElapsedFmt)] context: Self::RunSendableContext,
         thread: Thread,
         node: scheduler::Node,
-        debug_name: &str;
-        @NOLOG
-        system: &mut dyn system::Sendable,
+        debug_name: &str,
+        #[dynec(log_skip)] system: &mut dyn system::Sendable,
     );
 
+    /// Context from [`start_run_unsendable`](Self::start_run_unsendable)
+    /// to [`end_run_unsendable`](Self::end_run_unsendable).
+    #[dynec(log_time)]
+    type RunUnsendableContext;
     /// A thread-unsafe system starts running.
+    #[dynec(log_return_now)]
     fn start_run_unsendable(
         &self,
         thread: Thread,
         node: scheduler::Node,
-        debug_name: &str;
-        @NOLOG
-        system: &mut dyn system::Unsendable,
-    );
+        debug_name: &str,
+        #[dynec(log_skip)] system: &mut dyn system::Unsendable,
+    ) -> Self::RunUnsendableContext;
 
     /// A thread-unsafe system stops running.
     fn end_run_unsendable(
         &self,
+        #[dynec(log_with = ElapsedFmt)] context: Self::RunUnsendableContext,
         thread: Thread,
         node: scheduler::Node,
-        debug_name: &str;
-        @NOLOG
-        system: &mut dyn system::Unsendable,
+        debug_name: &str,
+        #[dynec(log_skip)] system: &mut dyn system::Unsendable,
     );
 
     /// A partition completes.
-    fn partition(&self, node: scheduler::Node, partition: &dyn system::Partition {@LOG_WITH = RefPartitionWrapper});
+    fn partition(
+        &self,
+        node: scheduler::Node,
+        #[dynec(log_with = PartitionFmt)] partition: &dyn system::Partition,
+    );
 }
 
-struct RefPartitionWrapper<'t>(&'t dyn system::Partition);
+struct PartitionFmt<'t>(&'t dyn system::Partition);
 
-impl<'t> fmt::Debug for RefPartitionWrapper<'t> {
+impl<'t> fmt::Display for PartitionFmt<'t> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { self.0.describe(f) }
+}
+
+struct ElapsedFmt(time::Instant);
+
+impl fmt::Display for ElapsedFmt {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { write!(f, "{:?}", self.0.elapsed()) }
 }
 
 /// An empty tracer.
 pub struct Noop;
-
-impl Tracer for Noop {}
 
 /// Groups multiple tracers into a tuple and dispatches each call to them in serial.
 pub struct Aggregate<T>(

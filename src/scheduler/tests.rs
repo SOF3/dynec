@@ -8,7 +8,7 @@ use super::*;
 use crate::entity::referrer;
 use crate::test_util::{self, AntiSemaphore};
 use crate::world::offline;
-use crate::{comp, scheduler, system, tracer, world, TestArch};
+use crate::{comp, system, tracer, world, TestArch};
 
 // Repeat concurrent tests to increase the chance of catching random bugs.
 // However, do not rely on test repetitions to assert for behavior;
@@ -93,6 +93,7 @@ struct TestPartition(u32);
 /// Counts the number of times some node is unmarked as runnable.
 #[derive(Default)]
 struct UnmarkCounterTracer(AtomicUsize);
+#[dynec_codegen::tracer(dynec_as())]
 impl Tracer for UnmarkCounterTracer {
     fn unmark_runnable(&self, _node: scheduler::Node) {
         self.0.fetch_add(1, atomic::Ordering::SeqCst);
@@ -105,6 +106,7 @@ struct MaxConcurrencyTracer {
     current: AtomicUsize,
     max:     AtomicUsize,
 }
+#[dynec_codegen::tracer(dynec_as())]
 impl Tracer for MaxConcurrencyTracer {
     fn start_run_sendable(
         &self,
@@ -119,6 +121,7 @@ impl Tracer for MaxConcurrencyTracer {
 
     fn end_run_sendable(
         &self,
+        (): (),
         _thread: tracer::Thread,
         _node: scheduler::Node,
         _debug_name: &str,
@@ -140,6 +143,7 @@ impl Tracer for MaxConcurrencyTracer {
 
     fn end_run_unsendable(
         &self,
+        (): (),
         _thread: tracer::Thread,
         _node: scheduler::Node,
         _debug_name: &str,
@@ -155,6 +159,7 @@ struct RunCounterTracer {
     send:   AtomicUsize,
     unsend: AtomicUsize,
 }
+#[dynec_codegen::tracer(dynec_as())]
 impl Tracer for RunCounterTracer {
     fn start_run_sendable(
         &self,
@@ -180,6 +185,7 @@ impl Tracer for RunCounterTracer {
 /// Tracks the start order of systems.
 #[derive(Default)]
 struct StartOrderTracer(Mutex<Vec<Node>>);
+#[dynec_codegen::tracer(dynec_as())]
 impl Tracer for StartOrderTracer {
     fn start_run_sendable(
         &self,

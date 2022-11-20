@@ -50,7 +50,7 @@ impl Executor {
 
         planner.get_mut().clone_from(topology.initial_planner());
 
-        tracer.start_cycle();
+        let cycle_context = tracer.start_cycle();
 
         for &index in &planner.get_mut().send_runnable {
             tracer.mark_runnable(Node::SendSystem(index));
@@ -67,9 +67,9 @@ impl Executor {
 
         let context = Context { topology, planner, condvar: &condvar };
 
-        tracer.start_prepare_ealloc_shards();
+        let prepare_ealloc_shards_context = tracer.start_prepare_ealloc_shards();
         let mut ealloc_shards = ealloc_map.shards(self.concurrency + 1);
-        tracer.end_prepare_ealloc_shards();
+        tracer.end_prepare_ealloc_shards(prepare_ealloc_shards_context);
 
         let send = SendArgs { state: sync_state, components, globals };
 
@@ -164,12 +164,12 @@ impl Executor {
 
         // TODO parallelize this loop
         for (&arch, ealloc) in &mut ealloc_map.map {
-            tracer.start_flush_ealloc(arch);
+            let flush_ealloc_context = tracer.start_flush_ealloc(arch);
             ealloc.flush();
-            tracer.end_flush_ealloc(arch);
+            tracer.end_flush_ealloc(flush_ealloc_context, arch);
         }
 
-        tracer.end_cycle();
+        tracer.end_cycle(cycle_context);
     }
 }
 
@@ -205,7 +205,7 @@ fn main_worker(
                                 let mut system = system
                                     .try_lock()
                                     .expect("system should only be scheduled to one worker");
-                                tracer.start_run_sendable(
+                                let run_context = tracer.start_run_sendable(
                                     tracer::Thread::Main,
                                     Node::SendSystem(index),
                                     debug_name,
@@ -218,6 +218,7 @@ fn main_worker(
                                     offline_buffer,
                                 );
                                 tracer.end_run_sendable(
+                                    run_context,
                                     tracer::Thread::Main,
                                     Node::SendSystem(index),
                                     debug_name,
@@ -244,7 +245,7 @@ fn main_worker(
                 MutexGuard::unlocked(&mut planner_guard, || {
                     let (debug_name, system) = unsend.state.get_unsend_system_mut(index);
 
-                    tracer.start_run_unsendable(
+                    let run_context = tracer.start_run_unsendable(
                         tracer::Thread::Main,
                         Node::UnsendSystem(index),
                         debug_name,
@@ -258,6 +259,7 @@ fn main_worker(
                         offline_buffer,
                     );
                     tracer.end_run_unsendable(
+                        run_context,
                         tracer::Thread::Main,
                         Node::UnsendSystem(index),
                         debug_name,
@@ -305,7 +307,7 @@ fn threaded_worker(
                         let mut system = system
                             .try_lock()
                             .expect("system should only be scheduled to one worker");
-                        tracer.start_run_sendable(
+                        let run_context = tracer.start_run_sendable(
                             thread,
                             Node::SendSystem(index),
                             debug_name,
@@ -313,6 +315,7 @@ fn threaded_worker(
                         );
                         system.run(send.globals, send.components, ealloc_shard_map, offline_buffer);
                         tracer.end_run_sendable(
+                            run_context,
                             thread,
                             Node::SendSystem(index),
                             debug_name,

@@ -12,6 +12,7 @@ license = "AGPL-3.0"
 proc-macro = true
 
 [dependencies]
+itertools = "0.10.3"
 matches2 = "1.2.1"
 proc-macro2 = "1.0.29"
 quote = "1.0.8"

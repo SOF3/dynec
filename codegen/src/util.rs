@@ -60,15 +60,15 @@ impl ParsedGenerics {
     }
 }
 
-pub(crate) struct Attr<T> {
-    pub(crate) items: Punctuated<Named<T>, syn::Token![,]>,
+pub(crate) struct Attr<T, P = syn::Token![,]> {
+    pub(crate) items: Punctuated<Named<T>, P>,
 }
 
-impl<T> Default for Attr<T> {
+impl<T, P> Default for Attr<T, P> {
     fn default() -> Self { Self { items: Punctuated::new() } }
 }
 
-impl<T> Attr<T> {
+impl<T, P> Attr<T, P> {
     pub(crate) fn find_one<U>(&self, matcher: fn(&T) -> Option<&U>) -> Result<Option<(Span, &U)>> {
         let mut span: Option<(Span, &U)> = None;
 
@@ -102,6 +102,16 @@ impl<T> Attr<T> {
     }
 }
 
+impl<T, P> FromIterator<Attr<T, P>> for Attr<T, ()> {
+    fn from_iter<I: IntoIterator<Item = Attr<T, P>>>(iter: I) -> Self {
+        let mut items = Punctuated::new();
+        for group in iter {
+            items.extend(group.items);
+        }
+        Attr { items }
+    }
+}
+
 impl<T> Parse for Attr<T>
 where
     Named<T>: Parse,
@@ -114,4 +124,14 @@ where
 pub(crate) struct Named<T> {
     pub(crate) name:  syn::Ident,
     pub(crate) value: T,
+}
+
+pub(crate) fn parse_attrs<T>(attrs: &mut Vec<syn::Attribute>) -> syn::Result<Attr<T, ()>>
+where
+    Named<T>: Parse,
+{
+    attrs
+        .drain_filter(|attr| attr.path.is_ident("dynec"))
+        .map(|attr| attr.parse_args::<Attr<T>>())
+        .collect()
 }

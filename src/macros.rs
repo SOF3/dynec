@@ -762,6 +762,10 @@ pub use dynec_codegen::EntityRef;
 #[cfg(test)]
 mod entity_ref_tests {}
 
+/// Only to be called from generated code in polyfill_tracer_decl.
+#[doc(hidden)]
+pub use dynec_codegen::polyfill_tracer_proc;
+
 // The rest are macros for testing.
 
 /// Convenience macro that constructs a new world for testing a small number of systems.

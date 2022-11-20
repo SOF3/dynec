@@ -177,6 +177,9 @@ mod macros;
 #[doc(inline)]
 pub use macros::*;
 
+#[macro_use]
+pub mod tracer;
+
 pub mod archetype;
 pub use archetype::Archetype;
 
@@ -192,8 +195,6 @@ pub mod scheduler;
 
 pub mod storage;
 pub use storage::Storage;
-
-pub mod tracer;
 
 pub mod system;
 

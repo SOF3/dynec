@@ -11,7 +11,7 @@ use crate::system;
 /// Stores the topology of the schedule,
 /// including the dependency and exclusion relationship.
 #[derive(Debug)]
-pub(in crate::world::scheduler) struct Topology {
+pub(crate) struct Topology {
     /// If `dependents[a].contains(b)`, `b` depends on `a`.
     /// This means `b` is a wakeup candidate when `a` completes.
     dependents: HashMap<Node, Vec<Node>>,
@@ -22,12 +22,12 @@ pub(in crate::world::scheduler) struct Topology {
     /// The list of partitions without dependencies.
     ///
     /// This field is persisted for tracing.
-    pub(in crate::world::scheduler) depless_pars: Vec<PartitionIndex>,
+    pub(crate) depless_pars: Vec<PartitionIndex>,
 
     /// The indexable list of partitions.
     ///
     /// This field is persisted for tracing.
-    pub(in crate::world::scheduler) partitions: Vec<system::partition::Wrapper>,
+    pub(crate) partitions: Vec<system::partition::Wrapper>,
 
     /// If `exclusions[a].contains(b)`, `a` and `b` must not execute concurrently.
     /// `exclusions[a].contains(b)` if and only if `exclusions[b].contains(a)`.
@@ -35,7 +35,7 @@ pub(in crate::world::scheduler) struct Topology {
 }
 
 impl Topology {
-    pub(in crate::world::scheduler) fn init(
+    pub(crate) fn init(
         send_systems_count: usize,
         unsend_systems_count: usize,
         partitions: &[&system::partition::Wrapper],
@@ -60,15 +60,15 @@ impl Topology {
         Self { dependents, initial_planner, depless_pars, partitions: Vec::new(), exclusions }
     }
 
-    pub(in crate::world::scheduler) fn dependents_of(&self, node: Node) -> &[Node] {
+    pub(crate) fn dependents_of(&self, node: Node) -> &[Node] {
         self.dependents.get(&node).expect("invalid node index")
     }
 
-    pub(in crate::world::scheduler) fn exclusions_of(&self, node: Node) -> &[Node] {
+    pub(crate) fn exclusions_of(&self, node: Node) -> &[Node] {
         self.exclusions.get(&node).expect("invalid node index")
     }
 
-    pub(in crate::world::scheduler) fn initial_planner(&self) -> &Planner { &self.initial_planner }
+    pub(crate) fn initial_planner(&self) -> &Planner { &self.initial_planner }
 }
 
 fn build_dependents_map(

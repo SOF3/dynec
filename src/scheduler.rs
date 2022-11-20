@@ -1,7 +1,11 @@
+//! The scheduler manages the execution of systems,
+//! including resource negotiation and dependency constraints.
+
 use std::fmt;
 use std::num::NonZeroUsize;
 
 use crate::entity::ealloc;
+use crate::tracer::Tracer;
 use crate::util::DbgTypeId;
 use crate::world;
 
@@ -33,9 +37,9 @@ pub(crate) struct Scheduler {
 }
 
 impl Scheduler {
-    pub(in crate::world) fn execute(
+    pub(crate) fn execute(
         &mut self,
-        tracer: &impl world::Tracer,
+        tracer: &impl Tracer,
         components: &mut world::Components,
         sync_globals: &mut world::SyncGlobals,
         unsync_globals: &mut world::UnsyncGlobals,
@@ -55,7 +59,7 @@ impl Scheduler {
 }
 
 #[derive(Debug, Clone, Copy)]
-enum WakeupState {
+pub(crate) enum WakeupState {
     /// The node is runnable after being awaken by `count` other nodes.
     Blocked { count: NonZeroUsize },
     /// The node is in the planner queue.
@@ -167,12 +171,12 @@ impl ResourceAccess {
 }
 
 #[derive(Debug, Clone, Copy)]
-struct Order {
+pub(crate) struct Order {
     before: Node,
     after:  Node,
 }
 
-struct UnsendArgs<'t> {
+pub(crate) struct UnsendArgs<'t> {
     state:   &'t mut UnsyncState,
     globals: &'t mut world::UnsyncGlobals,
 }

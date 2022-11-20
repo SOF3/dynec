@@ -1,5 +1,5 @@
 use super::{Discrim, IsotopeInitFn, IsotopeIniter};
-use crate::{entity, world, Archetype};
+use crate::{entity, Archetype, Storage};
 
 /// An isotope component may have multiple instances per entity.
 ///
@@ -12,7 +12,7 @@ pub trait Isotope<A: Archetype>: entity::Referrer + Send + Sync + Sized + 'stati
     type Discrim: Discrim;
 
     /// The storage type used for storing this simple component.
-    type Storage: world::Storage<RawEntity = A::RawEntity, Comp = Self>;
+    type Storage: Storage<RawEntity = A::RawEntity, Comp = Self>;
 }
 
 /// Describes how an isotope component is auto-initialized.

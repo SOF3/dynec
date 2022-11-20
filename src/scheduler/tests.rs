@@ -7,8 +7,8 @@ use std::sync::Arc;
 use super::*;
 use crate::entity::referrer;
 use crate::test_util::{self, AntiSemaphore};
-use crate::world::{offline, tracer};
-use crate::{comp, system, world, TestArch};
+use crate::world::offline;
+use crate::{comp, scheduler, system, tracer, world, TestArch};
 
 // Repeat concurrent tests to increase the chance of catching random bugs.
 // However, do not rely on test repetitions to assert for behavior;
@@ -93,8 +93,8 @@ struct TestPartition(u32);
 /// Counts the number of times some node is unmarked as runnable.
 #[derive(Default)]
 struct UnmarkCounterTracer(AtomicUsize);
-impl world::Tracer for UnmarkCounterTracer {
-    fn unmark_runnable(&self, _node: world::ScheduleNode) {
+impl Tracer for UnmarkCounterTracer {
+    fn unmark_runnable(&self, _node: scheduler::Node) {
         self.0.fetch_add(1, atomic::Ordering::SeqCst);
     }
 }
@@ -105,11 +105,11 @@ struct MaxConcurrencyTracer {
     current: AtomicUsize,
     max:     AtomicUsize,
 }
-impl world::Tracer for MaxConcurrencyTracer {
+impl Tracer for MaxConcurrencyTracer {
     fn start_run_sendable(
         &self,
         _thread: tracer::Thread,
-        _node: world::ScheduleNode,
+        _node: scheduler::Node,
         _debug_name: &str,
         _system: &mut dyn system::Sendable,
     ) {
@@ -120,7 +120,7 @@ impl world::Tracer for MaxConcurrencyTracer {
     fn end_run_sendable(
         &self,
         _thread: tracer::Thread,
-        _node: world::ScheduleNode,
+        _node: scheduler::Node,
         _debug_name: &str,
         _system: &mut dyn system::Sendable,
     ) {
@@ -130,7 +130,7 @@ impl world::Tracer for MaxConcurrencyTracer {
     fn start_run_unsendable(
         &self,
         _thread: tracer::Thread,
-        _node: world::ScheduleNode,
+        _node: scheduler::Node,
         _debug_name: &str,
         _system: &mut dyn system::Unsendable,
     ) {
@@ -141,7 +141,7 @@ impl world::Tracer for MaxConcurrencyTracer {
     fn end_run_unsendable(
         &self,
         _thread: tracer::Thread,
-        _node: world::ScheduleNode,
+        _node: scheduler::Node,
         _debug_name: &str,
         _system: &mut dyn system::Unsendable,
     ) {
@@ -155,11 +155,11 @@ struct RunCounterTracer {
     send:   AtomicUsize,
     unsend: AtomicUsize,
 }
-impl world::Tracer for RunCounterTracer {
+impl Tracer for RunCounterTracer {
     fn start_run_sendable(
         &self,
         _thread: tracer::Thread,
-        _node: world::ScheduleNode,
+        _node: scheduler::Node,
         _debug_name: &str,
         _system: &mut dyn system::Sendable,
     ) {
@@ -169,7 +169,7 @@ impl world::Tracer for RunCounterTracer {
     fn start_run_unsendable(
         &self,
         _thread: tracer::Thread,
-        _node: world::ScheduleNode,
+        _node: scheduler::Node,
         _debug_name: &str,
         _system: &mut dyn system::Unsendable,
     ) {
@@ -180,11 +180,11 @@ impl world::Tracer for RunCounterTracer {
 /// Tracks the start order of systems.
 #[derive(Default)]
 struct StartOrderTracer(Mutex<Vec<Node>>);
-impl world::Tracer for StartOrderTracer {
+impl Tracer for StartOrderTracer {
     fn start_run_sendable(
         &self,
         _thread: tracer::Thread,
-        node: world::ScheduleNode,
+        node: scheduler::Node,
         _debug_name: &str,
         _system: &mut dyn system::Sendable,
     ) {
@@ -194,7 +194,7 @@ impl world::Tracer for StartOrderTracer {
     fn start_run_unsendable(
         &self,
         _thread: tracer::Thread,
-        node: world::ScheduleNode,
+        node: scheduler::Node,
         _debug_name: &str,
         _system: &mut dyn system::Unsendable,
     ) {
@@ -762,7 +762,7 @@ fn bootstrap<const S: usize, const U: usize, T, C, R, V>(
     C: Fn(&mut Builder, [SendSystemIndex; S], [UnsendSystemIndex; U]),
     R: Fn(Node) + Send + Sync + 'static,
     V: Fn(T),
-    tracer::Aggregate<T>: world::Tracer,
+    tracer::Aggregate<T>: Tracer,
 {
     test_util::init();
 

@@ -11,7 +11,7 @@ use crate::Global;
 /// Stores the thread-safe global states in a world.
 pub struct SyncGlobals {
     /// Global states that can be concurrently accessed by systems on other threads.
-    pub(in crate::world) sync_globals:
+    pub(crate) sync_globals:
         HashMap<DbgTypeId, (referrer::SingleVtable, RwLock<Box<dyn Any + Send + Sync>>)>,
 }
 
@@ -82,7 +82,7 @@ impl SyncGlobals {
 /// Stores the thread-unsafe global states in a world.
 pub struct UnsyncGlobals {
     /// Global states that must be accessed on the main thread.
-    pub(in crate::world) unsync_globals: HashMap<DbgTypeId, (referrer::SingleVtable, Box<dyn Any>)>,
+    pub(crate) unsync_globals: HashMap<DbgTypeId, (referrer::SingleVtable, Box<dyn Any>)>,
 }
 
 impl UnsyncGlobals {

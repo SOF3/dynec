@@ -95,7 +95,7 @@ mod archetype_tests {}
 /// discriminant.
 ///
 /// ## `storage`
-/// Specify the [storage](crate::world::storage) type for the component.
+/// Specify the [storage](crate::storage) type for the component.
 /// The argument should be a path that specifies the target type.
 /// If the all segments of the path does not have type parameters,
 /// it is automatically filled with `<Arch::RawEntity, Self>`,

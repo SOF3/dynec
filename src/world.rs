@@ -4,7 +4,9 @@ use std::any::{self, TypeId};
 use std::sync::Arc;
 
 use crate::entity::{deletion, ealloc, generation, Ealloc, Raw};
-use crate::{comp, entity, system, Archetype, Entity, Global};
+use crate::scheduler::Scheduler;
+use crate::tracer::Tracer;
+use crate::{comp, entity, system, Archetype, Entity, Global, Storage};
 
 mod builder;
 pub use builder::Builder;
@@ -15,15 +17,7 @@ pub use global::{SyncGlobals, UnsyncGlobals};
 pub(crate) mod accessor;
 pub use accessor::Components;
 
-pub mod storage;
-pub use storage::Storage;
 pub(crate) mod typed;
-
-mod scheduler;
-pub use scheduler::{Node as ScheduleNode, PartitionIndex, SendSystemIndex, UnsendSystemIndex};
-
-pub mod tracer;
-pub use tracer::Tracer;
 
 pub mod offline;
 
@@ -88,7 +82,7 @@ pub struct World {
     /// Stores the component states in a world.
     pub components:     Components,
     /// Stores the system-local states and the scheduler topology.
-    scheduler:          scheduler::Scheduler,
+    scheduler:          Scheduler,
     /// Global states that can be concurrently accessed by systems on other threads.
     pub sync_globals:   SyncGlobals,
     /// Global states that must be accessed on the main thread.

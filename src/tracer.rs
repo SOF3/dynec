@@ -3,7 +3,7 @@
 use std::fmt;
 
 use crate::util::DbgTypeId;
-use crate::{system, world};
+use crate::{scheduler, system};
 
 /// Defines the [`Tracer`] trait and implements the [`Log`] and [`Aggregate`] types.
 ///
@@ -164,19 +164,19 @@ define_tracer! {
     fn steal_return_pending(&self, thread: Thread);
 
     /// A node is marked as runnable because all blockers have been removed.
-    fn mark_runnable(&self, node: world::ScheduleNode);
+    fn mark_runnable(&self, node: scheduler::Node);
 
     /// A node is unmarked as runnable because an exclusive node has been stolen.
-    fn unmark_runnable(&self, node: world::ScheduleNode);
+    fn unmark_runnable(&self, node: scheduler::Node);
 
     /// A system has completed. Also passes the number of remaining nodes.
-    fn complete_system(&self, node: world::ScheduleNode, remaining: usize);
+    fn complete_system(&self, node: scheduler::Node, remaining: usize);
 
     /// A thread-safe system starts running.
     fn start_run_sendable(
         &self,
         thread: Thread,
-        node: world::ScheduleNode,
+        node: scheduler::Node,
         debug_name: &str;
         @NOLOG
         system: &mut dyn system::Sendable,
@@ -186,7 +186,7 @@ define_tracer! {
     fn end_run_sendable(
         &self,
         thread: Thread,
-        node: world::ScheduleNode,
+        node: scheduler::Node,
         debug_name: &str;
         @NOLOG
         system: &mut dyn system::Sendable,
@@ -196,7 +196,7 @@ define_tracer! {
     fn start_run_unsendable(
         &self,
         thread: Thread,
-        node: world::ScheduleNode,
+        node: scheduler::Node,
         debug_name: &str;
         @NOLOG
         system: &mut dyn system::Unsendable,
@@ -206,14 +206,14 @@ define_tracer! {
     fn end_run_unsendable(
         &self,
         thread: Thread,
-        node: world::ScheduleNode,
+        node: scheduler::Node,
         debug_name: &str;
         @NOLOG
         system: &mut dyn system::Unsendable,
     );
 
     /// A partition completes.
-    fn partition(&self, node: world::ScheduleNode, partition: &dyn system::Partition {@LOG_WITH = RefPartitionWrapper});
+    fn partition(&self, node: scheduler::Node, partition: &dyn system::Partition {@LOG_WITH = RefPartitionWrapper});
 }
 
 struct RefPartitionWrapper<'t>(&'t dyn system::Partition);

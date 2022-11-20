@@ -2,10 +2,9 @@ use std::any::{self, Any};
 use std::collections::{hash_map, HashMap};
 use std::sync::Arc;
 
-use super::storage;
 use crate::entity::{self, referrer};
 use crate::util::DbgTypeId;
-use crate::{comp, Archetype};
+use crate::{comp, storage, Archetype};
 
 pub(crate) trait AnyBuilder {
     fn add_simple_storage_if_missing(

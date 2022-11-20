@@ -1,5 +1,5 @@
 use super::{SimpleInitFn, SimpleIniter};
-use crate::{entity, world, Archetype};
+use crate::{entity, Archetype, Storage};
 
 /// A simple component has only one instance per entity.
 ///
@@ -18,7 +18,7 @@ pub trait Simple<A: Archetype>: entity::Referrer + Send + Sync + Sized + 'static
     const IS_FINALIZER: bool = false;
 
     /// The storage type used for storing this simple component.
-    type Storage: world::Storage<RawEntity = A::RawEntity, Comp = Self>;
+    type Storage: Storage<RawEntity = A::RawEntity, Comp = Self>;
 }
 
 /// Describes whether a simple component must be present.

@@ -11,12 +11,12 @@ use super::{
 use crate::system::{self, spec};
 
 pub(crate) struct Builder {
-    pub(in crate::world) concurrency: usize,
-    send_systems:                     Vec<(String, Box<dyn system::Sendable>)>,
-    unsend_systems:                   Vec<(String, Box<dyn system::Unsendable>)>,
-    partitions:                       IndexSet<system::partition::Wrapper>,
-    resources:                        HashMap<ResourceType, HashMap<Node, Vec<ResourceAccess>>>,
-    orders:                           Vec<Order>,
+    pub(crate) concurrency: usize,
+    send_systems:           Vec<(String, Box<dyn system::Sendable>)>,
+    unsend_systems:         Vec<(String, Box<dyn system::Unsendable>)>,
+    partitions:             IndexSet<system::partition::Wrapper>,
+    resources:              HashMap<ResourceType, HashMap<Node, Vec<ResourceAccess>>>,
+    orders:                 Vec<Order>,
 }
 
 impl Builder {

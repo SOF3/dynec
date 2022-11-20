@@ -1,3 +1,5 @@
+#![allow(dead_code)] // TODO remove when tests are more comprehensive
+
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fmt;
 use std::hash::Hash;

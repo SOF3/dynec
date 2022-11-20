@@ -4,9 +4,10 @@ use super::planner::StealResult;
 use super::state::SyncState;
 use super::{Node, Planner, Topology, UnsendArgs};
 use crate::entity::ealloc;
+use crate::tracer::{self, Tracer};
 use crate::world::{self, offline};
 
-pub(in crate::world::scheduler) struct Executor {
+pub(crate) struct Executor {
     thread_pool:    Option<rayon::ThreadPool>,
     concurrency:    usize,
     offline_buffer: offline::Buffer,
@@ -19,7 +20,7 @@ impl Executor {
     /// The main thread is not considered a worker thread.
     /// Therefore, it is valid to set a concurrency of 0,
     /// especially in environments where threading is not supported.
-    pub(in crate::world::scheduler) fn new(concurrency: usize) -> Self {
+    pub(crate) fn new(concurrency: usize) -> Self {
         Self {
             thread_pool: (concurrency > 0).then(|| {
                 rayon::ThreadPoolBuilder::new()
@@ -34,9 +35,9 @@ impl Executor {
     }
 
     #[allow(clippy::too_many_arguments)] // FIXME
-    pub(in crate::world::scheduler) fn execute_full_cycle(
+    pub(crate) fn execute_full_cycle(
         &mut self,
-        tracer: &impl world::Tracer,
+        tracer: &impl Tracer,
         topology: &Topology,
         planner: &mut Mutex<Planner>,
         sync_state: &mut SyncState,
@@ -174,7 +175,7 @@ impl Executor {
 
 #[allow(clippy::too_many_arguments)] // FIXME
 fn main_worker(
-    tracer: &impl world::Tracer,
+    tracer: &impl Tracer,
     context: Context<'_>,
     send: SendArgs<'_>,
     unsend: &mut UnsendArgs<'_>,
@@ -186,58 +187,55 @@ fn main_worker(
     let mut planner_guard = context.planner.lock();
 
     loop {
-        let steal =
-            planner_guard.steal_unsend(tracer, world::tracer::Thread::Main, context.topology);
+        let steal = planner_guard.steal_unsend(tracer, tracer::Thread::Main, context.topology);
         match steal {
             StealResult::CycleComplete => return,
-            StealResult::Pending if poll_send => match planner_guard.steal_send(
-                tracer,
-                world::tracer::Thread::Main,
-                context.topology,
-            ) {
-                StealResult::CycleComplete => return,
-                StealResult::Pending => {
-                    deadlock_counter.start_wait();
-                    context.condvar.wait(&mut planner_guard);
-                }
-                StealResult::Ready(index) => {
-                    MutexGuard::unlocked(&mut planner_guard, || {
-                        let (debug_name, system) = send.state.get_send_system(index);
+            StealResult::Pending if poll_send => {
+                match planner_guard.steal_send(tracer, tracer::Thread::Main, context.topology) {
+                    StealResult::CycleComplete => return,
+                    StealResult::Pending => {
+                        deadlock_counter.start_wait();
+                        context.condvar.wait(&mut planner_guard);
+                    }
+                    StealResult::Ready(index) => {
+                        MutexGuard::unlocked(&mut planner_guard, || {
+                            let (debug_name, system) = send.state.get_send_system(index);
 
-                        {
-                            let mut system = system
-                                .try_lock()
-                                .expect("system should only be scheduled to one worker");
-                            tracer.start_run_sendable(
-                                world::tracer::Thread::Main,
-                                Node::SendSystem(index),
-                                debug_name,
-                                &mut **system,
-                            );
-                            system.run(
-                                send.globals,
-                                send.components,
-                                ealloc_shard_map,
-                                offline_buffer,
-                            );
-                            tracer.end_run_sendable(
-                                world::tracer::Thread::Main,
-                                Node::SendSystem(index),
-                                debug_name,
-                                &mut **system,
-                            );
-                        }
-                    });
+                            {
+                                let mut system = system
+                                    .try_lock()
+                                    .expect("system should only be scheduled to one worker");
+                                tracer.start_run_sendable(
+                                    tracer::Thread::Main,
+                                    Node::SendSystem(index),
+                                    debug_name,
+                                    &mut **system,
+                                );
+                                system.run(
+                                    send.globals,
+                                    send.components,
+                                    ealloc_shard_map,
+                                    offline_buffer,
+                                );
+                                tracer.end_run_sendable(
+                                    tracer::Thread::Main,
+                                    Node::SendSystem(index),
+                                    debug_name,
+                                    &mut **system,
+                                );
+                            }
+                        });
 
-                    planner_guard.complete(
-                        tracer,
-                        Node::SendSystem(index),
-                        context.topology,
-                        context.condvar,
-                        deadlock_counter,
-                    );
+                        planner_guard.complete(
+                            tracer,
+                            Node::SendSystem(index),
+                            context.topology,
+                            context.condvar,
+                            deadlock_counter,
+                        );
+                    }
                 }
-            },
+            }
             StealResult::Pending => {
                 deadlock_counter.start_wait();
                 context.condvar.wait(&mut planner_guard);
@@ -247,7 +245,7 @@ fn main_worker(
                     let (debug_name, system) = unsend.state.get_unsend_system_mut(index);
 
                     tracer.start_run_unsendable(
-                        world::tracer::Thread::Main,
+                        tracer::Thread::Main,
                         Node::UnsendSystem(index),
                         debug_name,
                         &mut *system,
@@ -260,7 +258,7 @@ fn main_worker(
                         offline_buffer,
                     );
                     tracer.end_run_unsendable(
-                        world::tracer::Thread::Main,
+                        tracer::Thread::Main,
                         Node::UnsendSystem(index),
                         debug_name,
                         &mut *system,
@@ -281,14 +279,14 @@ fn main_worker(
 
 fn threaded_worker(
     id: usize,
-    tracer: &impl world::Tracer,
+    tracer: &impl Tracer,
     context: Context<'_>,
     send: SendArgs<'_>,
     ealloc_shard_map: &mut ealloc::ShardMap,
     offline_buffer: &mut offline::BufferShard,
     deadlock_counter: &DeadlockCounter,
 ) {
-    let thread = world::tracer::Thread::Worker(id);
+    let thread = tracer::Thread::Worker(id);
 
     let mut planner_guard = context.planner.lock();
 
@@ -339,21 +337,19 @@ fn threaded_worker(
 mod deadlock_counter {
     use std::sync::atomic::{self, AtomicUsize};
 
-    pub(in crate::world::scheduler) struct DeadlockCounter(AtomicUsize);
+    pub(crate) struct DeadlockCounter(AtomicUsize);
 
     impl DeadlockCounter {
-        pub(in crate::world::scheduler) fn new(concurrency: usize) -> Self {
-            Self(AtomicUsize::new(concurrency))
-        }
+        pub(crate) fn new(concurrency: usize) -> Self { Self(AtomicUsize::new(concurrency)) }
 
-        pub(in crate::world::scheduler) fn start_wait(&self) {
+        pub(crate) fn start_wait(&self) {
             let cnt = self.0.fetch_sub(1, atomic::Ordering::SeqCst);
             if cnt == 1 {
                 panic!("Deadlock detected, all workers and main are waiting for tasks");
             }
         }
 
-        pub(in crate::world::scheduler) fn end_wait(&self, count: usize) {
+        pub(crate) fn end_wait(&self, count: usize) {
             self.0.fetch_add(count, atomic::Ordering::SeqCst);
         }
     }
@@ -361,16 +357,16 @@ mod deadlock_counter {
 
 #[cfg(not(debug_assertions))]
 mod deadlock_counter {
-    pub(in crate::world::scheduler) struct DeadlockCounter;
+    pub(crate) struct DeadlockCounter;
 
     impl DeadlockCounter {
-        pub(in crate::world::scheduler) fn new(_concurrency: usize) -> Self { Self }
-        pub(in crate::world::scheduler) fn start_wait(&self) {}
-        pub(in crate::world::scheduler) fn end_wait(&self, _count: usize) {}
+        pub(crate) fn new(_concurrency: usize) -> Self { Self }
+        pub(crate) fn start_wait(&self) {}
+        pub(crate) fn end_wait(&self, _count: usize) {}
     }
 }
 
-pub(in crate::world::scheduler) use deadlock_counter::DeadlockCounter;
+pub(crate) use deadlock_counter::DeadlockCounter;
 
 #[derive(Clone, Copy)]
 struct Context<'t> {

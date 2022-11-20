@@ -5,8 +5,7 @@ use std::collections::HashSet;
 
 use crate::entity::{ealloc, referrer};
 use crate::util::DbgTypeId;
-use crate::world::{self, storage};
-use crate::{comp, system, Archetype, Global};
+use crate::{comp, storage, system, world, Archetype, Global};
 
 /// Describes an instance of system.
 pub struct Spec {

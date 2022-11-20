@@ -17,7 +17,7 @@ type LockedIsotopeStorage<A, C> = ArcRwLockWriteGuard<RawRwLock, <C as comp::Iso
 
 /// Stores the component states in a world.
 pub struct Components {
-    pub(in crate::world) archetypes: HashMap<DbgTypeId, Box<dyn typed::AnyTyped>>,
+    pub(crate) archetypes: HashMap<DbgTypeId, Box<dyn typed::AnyTyped>>,
 }
 
 impl Components {

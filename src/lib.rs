@@ -154,6 +154,13 @@
 //! [k8s-finalizer]: https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/
 
 #![cfg_attr(debug_assertions, allow(dead_code, unused_variables))]
+#![cfg_attr(
+    not(any(
+        all(debug_assertions, feature = "debug-entity-rc"),
+        all(not(debug_assertions), feature = "release-entity-rc"),
+    )),
+    allow(dead_code)
+)]
 #![cfg_attr(doc, warn(missing_docs))]
 #![feature(map_first_last)]
 #![feature(type_alias_impl_trait)]
@@ -181,6 +188,13 @@ pub use entity::Entity;
 mod global;
 pub use global::Global;
 
+pub mod scheduler;
+
+pub mod storage;
+pub use storage::Storage;
+
+pub mod tracer;
+
 pub mod system;
 
 #[cfg(test)]
@@ -189,6 +203,6 @@ mod test_util;
 use test_util::{TestArch, TestDiscrim1, TestDiscrim2};
 
 pub mod world;
-pub use world::{new, storage, tracer, Bundle, World};
+pub use world::{new, Bundle, World};
 
 pub mod util;

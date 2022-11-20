@@ -3,11 +3,11 @@ use std::collections::HashMap;
 
 use parking_lot::RwLock;
 
-use super::{scheduler, typed};
+use super::typed;
 use crate::entity::{ealloc, generation, referrer};
 use crate::system::spec;
 use crate::util::DbgTypeId;
-use crate::{system, Global};
+use crate::{scheduler, system, Global};
 
 /// This type is used to build a world.
 /// No more systems can be scheduled after the builder is built.

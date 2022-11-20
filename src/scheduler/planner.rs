@@ -5,36 +5,36 @@ use parking_lot::Condvar;
 
 use super::executor::DeadlockCounter;
 use super::{Node, SendSystemIndex, Topology, UnsendSystemIndex, WakeupState};
-use crate::world;
+use crate::tracer::{self, Tracer};
 
 /// Stores the tick-local state for schedule availability.
 #[derive(Debug, Clone)]
-pub(in crate::world::scheduler) struct Planner {
+pub(crate) struct Planner {
     /// Stores the number of nodes blocking each node from getting scheduled.
     /// Started nodes are not removed from the map and remain as 0.
     /// Non-started nodes with count 0 may get incremented if an exclusion starts.
-    pub(in crate::world::scheduler) wakeup_state: HashMap<Node, WakeupState>,
+    pub(crate) wakeup_state: HashMap<Node, WakeupState>,
 
     /// The queue of [`Node::SendSystem`] nodes that may be runnable.
     /// Due to exclusion, nodes in the queue may no longer be runnable.
     /// `wakeup_count` must always be re-checked.
-    pub(in crate::world::scheduler) send_runnable: BTreeSet<SendSystemIndex>,
+    pub(crate) send_runnable: BTreeSet<SendSystemIndex>,
 
     /// The queue of [`Node::UnsendSystem`] nodes that may be runnable.
     /// Due to exclusion, nodes in the queue may no longer be runnable.
     /// `wakeup_count` must always be re-checked.
-    pub(in crate::world::scheduler) unsend_runnable: BTreeSet<UnsendSystemIndex>,
+    pub(crate) unsend_runnable: BTreeSet<UnsendSystemIndex>,
 
     /// Number of remaining systems to run.
-    pub(in crate::world::scheduler) remaining_systems: usize,
+    pub(crate) remaining_systems: usize,
 }
 
 impl Planner {
     /// Steal a task from the pending pool if any is available
     fn steal<I: Eq + Ord + Copy>(
         &mut self,
-        tracer: &impl world::Tracer,
-        thread: world::tracer::Thread,
+        tracer: &impl Tracer,
+        thread: tracer::Thread,
         topology: &Topology,
         pool: fn(&mut Self) -> &mut BTreeSet<I>,
         to_node: fn(I) -> Node,
@@ -102,19 +102,19 @@ impl Planner {
         StealResult::Ready(index)
     }
 
-    pub(in crate::world::scheduler) fn steal_send(
+    pub(crate) fn steal_send(
         &mut self,
-        tracer: &impl world::Tracer,
-        thread: world::tracer::Thread,
+        tracer: &impl Tracer,
+        thread: tracer::Thread,
         topology: &Topology,
     ) -> StealResult<SendSystemIndex> {
         self.steal(tracer, thread, topology, |this| &mut this.send_runnable, Node::SendSystem)
     }
 
-    pub(in crate::world::scheduler) fn steal_unsend(
+    pub(crate) fn steal_unsend(
         &mut self,
-        tracer: &impl world::Tracer,
-        thread: world::tracer::Thread,
+        tracer: &impl Tracer,
+        thread: tracer::Thread,
         topology: &Topology,
     ) -> StealResult<UnsendSystemIndex> {
         self.steal(tracer, thread, topology, |this| &mut this.unsend_runnable, Node::UnsendSystem)
@@ -124,9 +124,9 @@ impl Planner {
     ///
     /// This method is only called for system nodes.
     /// Partition nodes are completed in-place.
-    pub(in crate::world::scheduler) fn complete(
+    pub(crate) fn complete(
         &mut self,
-        tracer: &impl world::Tracer,
+        tracer: &impl Tracer,
         node: Node,
         topology: &Topology,
         condvar: &Condvar,
@@ -154,7 +154,7 @@ impl Planner {
     /// Removes one blocker from each node in the queue iterator.
     fn remove_one_block(
         &mut self,
-        tracer: &impl world::Tracer,
+        tracer: &impl Tracer,
         topology: &Topology,
         queue: impl Iterator<Item = Node>,
     ) {
@@ -167,7 +167,7 @@ impl Planner {
     /// Removes one blocker count from a node wakeup state
     fn remove_one_block_no_recursion(
         &mut self,
-        tracer: &impl world::Tracer,
+        tracer: &impl Tracer,
         node: Node,
         topology: &Topology,
         queue: &mut Vec<Node>,
@@ -211,7 +211,7 @@ impl Planner {
 }
 
 #[derive(Debug)]
-pub(in crate::world::scheduler) enum StealResult<I> {
+pub(crate) enum StealResult<I> {
     Ready(I),
     Pending,
     CycleComplete,

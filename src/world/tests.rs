@@ -1,10 +1,9 @@
 #![allow(clippy::ptr_arg)]
 
-use super::tracer;
 use crate::entity::{self, deletion, generation, Raw, Ref};
 use crate::system::{Read as _, Write as _};
 use crate::{
-    comp, global, system, system_test, world, Entity, TestArch, TestDiscrim1, TestDiscrim2,
+    comp, global, system, system_test, tracer, world, Entity, TestArch, TestDiscrim1, TestDiscrim2,
 };
 
 // Test component summary:

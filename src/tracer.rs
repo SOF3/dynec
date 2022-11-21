@@ -6,8 +6,11 @@ use crate::util::DbgTypeId;
 use crate::{scheduler, system};
 
 /// A handler that receives scheduling-related events in dynec.
+///
+/// New implementations should use [`#[tracer]`](crate::tracer)
+/// to auto implement required types and methods for future compatibility.
 #[dynec_codegen::tracer_def(
-    max_tuple_len = 4,
+    max_tuple_len = 32,
     import = crate::util::DbgTypeId,
     import = crate::scheduler,
     import = crate::system,

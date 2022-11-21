@@ -50,7 +50,7 @@ impl<A: Archetype> Operation for CreateEntity<A> {
 }
 
 pub(crate) struct DeleteEntity<A: Archetype> {
-    entity: A::RawEntity,
+    pub(crate) entity: A::RawEntity,
 }
 
 impl<A: Archetype> Operation for DeleteEntity<A> {
@@ -79,9 +79,9 @@ impl<A: Archetype> Operation for DeleteEntity<A> {
 /// A sharded store for offline operations.
 pub(crate) struct Buffer {
     /// Queue of operations to rerun in the next drain cycle.
-    rerun_queue:       Vec<Box<dyn Operation>>,
+    pub(crate) rerun_queue: Vec<Box<dyn Operation>>,
     /// Shards of queues for each worker thread.
-    pub(crate) shards: Vec<BufferShard>,
+    pub(crate) shards:      Vec<BufferShard>,
 }
 
 impl Buffer {

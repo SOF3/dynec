@@ -135,6 +135,39 @@ impl World {
         allocated
     }
 
+    /// Tries to delete an entity from the world.
+    ///
+    /// If the entity contains finalizer components,
+    /// a deletion operation is pushed to the offline buffer
+    /// so that deletion will be checked again in the next cycle.
+    ///
+    /// The return value indicates whether the entity can be deleted *immediately*.
+    pub fn delete<E: entity::Ref>(&mut self, entity: E) -> DeleteResult {
+        let id = entity.id();
+        drop(entity); // drop `entity` so that its refcount is removed
+
+        let mut system_refs = self.scheduler.get_system_refs();
+
+        let result = flag_delete_entity::<E::Archetype>(
+            id,
+            &mut self.components,
+            &mut self.sync_globals,
+            &mut self.unsync_globals,
+            &mut system_refs[..],
+            &mut self.ealloc_map,
+        );
+        if let DeleteResult::Terminating = result {
+            self.scheduler.offline_buffer().rerun_queue.push(Box::new(offline::DeleteEntity::<
+                E::Archetype,
+            > {
+                entity: id,
+            })
+                as Box<dyn offline::Operation>);
+        }
+
+        result
+    }
+
     /// Gets a reference to an entity component in offline mode.
     ///
     /// Requires a mutable reference to the world to ensure that the world is offline.
@@ -209,10 +242,13 @@ fn init_entity<A: Archetype>(
     typed.init_entity(id, comp_map);
 }
 
-enum DeleteResult {
-    /// Deleted
+/// Result of deleting an entity.
+#[derive(Debug, Clone, Copy)]
+pub enum DeleteResult {
+    /// The entity has been immediately deleted.
     Deleted,
-    /// Finalizers pending
+    /// There are pending finalizers for the entity.
+    /// The entity is queued to recheck finalizer state in the next cycle.
     Terminating,
 }
 

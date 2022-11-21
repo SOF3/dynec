@@ -154,6 +154,7 @@
 //! [k8s-finalizer]: https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/
 
 #![cfg_attr(debug_assertions, allow(dead_code, unused_variables))]
+#![cfg_attr(not(debug_assertions), deny(missing_docs))]
 #![cfg_attr(
     not(any(
         all(debug_assertions, feature = "debug-entity-rc"),

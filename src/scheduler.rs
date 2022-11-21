@@ -5,9 +5,10 @@ use std::fmt;
 use std::num::NonZeroUsize;
 
 use crate::entity::ealloc;
+use crate::system;
 use crate::tracer::Tracer;
 use crate::util::DbgTypeId;
-use crate::world;
+use crate::world::{self, offline};
 
 mod builder;
 pub(crate) use builder::Builder;
@@ -55,6 +56,24 @@ impl Scheduler {
             UnsendArgs { state: &mut self.unsync_state, globals: unsync_globals },
             ealloc_map,
         );
+    }
+
+    pub(crate) fn offline_buffer(&mut self) -> &mut offline::Buffer {
+        &mut self.executor.offline_buffer
+    }
+
+    pub(crate) fn get_system_refs(&mut self) -> Vec<(&str, &mut dyn system::Descriptor)> {
+        let sync_system_refs = self
+            .sync_state
+            .send_systems
+            .iter_mut()
+            .map(|(name, mutex)| (name.as_str(), mutex.get_mut().as_mut().as_descriptor_mut()));
+        let unsend_system_refs = self
+            .unsync_state
+            .unsend_systems
+            .iter_mut()
+            .map(|(name, boxed)| (name.as_str(), boxed.as_mut().as_descriptor_mut()));
+        sync_system_refs.chain(unsend_system_refs).collect()
     }
 }
 

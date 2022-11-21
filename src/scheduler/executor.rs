@@ -8,9 +8,9 @@ use crate::tracer::{self, Tracer};
 use crate::world::{self, offline};
 
 pub(crate) struct Executor {
-    thread_pool:    Option<rayon::ThreadPool>,
-    concurrency:    usize,
-    offline_buffer: offline::Buffer,
+    thread_pool:               Option<rayon::ThreadPool>,
+    concurrency:               usize,
+    pub(crate) offline_buffer: offline::Buffer,
 }
 
 impl Executor {

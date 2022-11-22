@@ -198,10 +198,8 @@ pub use storage::Storage;
 
 pub mod system;
 
-#[cfg(test)]
-mod test_util;
-#[cfg(test)]
-use test_util::{TestArch, TestDiscrim1, TestDiscrim2};
+#[cfg(any(test, feature = "internal-bench"))]
+pub mod test_util;
 
 pub mod world;
 pub use world::{new, Bundle, World};

@@ -1,84 +1,9 @@
 #![allow(clippy::ptr_arg)]
 
-use crate::entity::{self, deletion, generation, Raw, Ref};
+use crate::entity::{deletion, generation, Raw, Ref};
 use crate::system::{Read as _, Write as _};
-use crate::{
-    comp, global, system, system_test, tracer, world, Entity, TestArch, TestDiscrim1, TestDiscrim2,
-};
-
-// Test component summary:
-// Comp1: optional, depends []
-// Comp2: optional, depends on Comp2
-// Comp3: optional, depends on Comp1 and Comp2
-// Comp4: optional, depends on Comp1 and Comp2
-// Comp5: required, no init
-// Comp6: required, depends []
-
-#[comp(dynec_as(crate), of = TestArch)]
-#[derive(Debug, PartialEq)]
-struct Comp1(i32);
-
-#[comp(dynec_as(crate), of = TestArch, init = init_comp2/1)]
-#[derive(Debug)]
-struct Comp2(i32);
-fn init_comp2(c1: &Comp1) -> Comp2 { Comp2(c1.0 + 2) }
-
-#[comp(
-    dynec_as(crate),
-    of = TestArch,
-    init = |c1: &Comp1, c2: &Comp2| Comp3(c1.0 * 3, c2.0 * 5),
-)]
-#[derive(Debug)]
-struct Comp3(i32, i32);
-
-#[comp(
-    dynec_as(crate),
-    of = TestArch,
-    init = |c1: &Comp1, c2: &Comp2| Comp4(c1.0 * 7, c2.0 * 8),
-)]
-#[derive(Debug, PartialEq)]
-struct Comp4(i32, i32);
-
-#[comp(dynec_as(crate), of = TestArch, required)]
-#[derive(Debug, PartialEq)]
-struct Comp5(i32);
-#[comp(dynec_as(crate), of = TestArch, required, init = || Comp6(9))]
-#[derive(Debug)]
-struct Comp6(i32);
-
-#[comp(dynec_as(crate), of = TestArch, finalizer)]
-struct CompFinal;
-
-/// Does not have auto init
-#[comp(dynec_as(crate), of = TestArch, isotope = TestDiscrim1)]
-#[derive(Debug, Clone, PartialEq)]
-struct Iso1(i32);
-/// Has auto init
-#[comp(dynec_as(crate), of = TestArch, isotope = TestDiscrim2, init = || [(TestDiscrim2(71), Self(73))])]
-#[derive(Debug, Clone, PartialEq)]
-struct Iso2(i32);
-
-#[comp(dynec_as(crate), of = TestArch)]
-struct StrongRefSimple(#[entity] Entity<TestArch>);
-
-#[comp(dynec_as(crate), of = TestArch, isotope = TestDiscrim1)]
-struct StrongRefIsotope(#[entity] Entity<TestArch>);
-
-#[global(dynec_as(crate), initial)]
-#[derive(Default)]
-struct Aggregator {
-    comp30_sum:     i32,
-    comp41_product: i32,
-}
-
-#[global(dynec_as(crate), initial)]
-#[derive(Default)]
-struct InitialEntities {
-    #[entity]
-    strong: Option<Entity<TestArch>>,
-    #[entity]
-    weak:   Option<entity::Weak<TestArch>>,
-}
+use crate::test_util::*;
+use crate::{global, system, system_test, tracer, world, Entity};
 
 #[system(dynec_as(crate))]
 fn test_system(
@@ -97,8 +22,8 @@ fn test_system(
 }
 
 #[test]
-#[should_panic = "The component dynec::world::tests::Comp2 cannot be retrieved because it is not \
-                  used in any systems"]
+#[should_panic = "The component dynec::test_util::Comp2 cannot be retrieved because it is not used \
+                  in any systems"]
 fn test_dependencies_successful() {
     let mut world = system_test!(test_system.build(););
     let entity = world.create::<TestArch>(crate::comps![ @(crate) TestArch =>
@@ -121,7 +46,7 @@ fn test_dependencies_successful() {
 
 #[test]
 #[should_panic = "Cannot create an entity of type `dynec::test_util::TestArch` without explicitly \
-                  passing a component of type `dynec::world::tests::Comp5`"]
+                  passing a component of type `dynec::test_util::Comp5`"]
 fn test_dependencies_missing_required_simple() {
     let mut world = system_test!(test_system.build(););
     world.create::<TestArch>(crate::comps![@(crate) TestArch => Comp1(1)]);
@@ -129,8 +54,8 @@ fn test_dependencies_missing_required_simple() {
 
 #[test]
 #[should_panic = "Cannot create an entity of type `dynec::test_util::TestArch` without explicitly \
-                  passing a component of type `dynec::world::tests::Comp1`, which is required for \
-                  `dynec::world::tests::Comp2`"]
+                  passing a component of type `dynec::test_util::Comp1`, which is required for \
+                  `dynec::test_util::Comp2`"]
 fn test_dependencies_missing_required_dep() {
     let mut world = system_test!(test_system.build(););
     world.create::<TestArch>(crate::comps![@(crate) TestArch => Comp5(1)]);
@@ -242,7 +167,7 @@ fn test_partial_isotope_discrim_read() {
 
 #[test]
 #[should_panic = "The index 42 is not available in the isotope request for \
-                  dynec::test_util::TestArch/dynec::world::tests::Iso1"]
+                  dynec::test_util::TestArch/dynec::test_util::Iso1"]
 fn test_partial_isotope_discrim_read_panic() {
     partial_isotope_discrim_read(vec![TestDiscrim1(11)], vec![(42, None)], vec![]);
 }
@@ -646,8 +571,8 @@ fn test_offline_delete_unsend_system_leak() {
         all(not(debug_assertions), feature = "release-entity-rc"),
     ),
     should_panic = "Detected dangling strong reference to entity dynec::test_util::TestArch#1 in \
-                    global state dynec::world::tests::InitialEntities. All strong references to \
-                    an entity must be dropped before queuing for deletion and removing all \
+                    global state dynec::test_util::InitialEntities. All strong references to an \
+                    entity must be dropped before queuing for deletion and removing all \
                     finalizers."
 )]
 fn test_offline_delete_sync_global_leak() {
@@ -674,8 +599,8 @@ fn test_offline_delete_sync_global_leak() {
         all(not(debug_assertions), feature = "release-entity-rc"),
     ),
     should_panic = "Detected dangling strong reference to entity dynec::test_util::TestArch#1 in \
-                    global state dynec::world::tests::InitialEntities. All strong references to \
-                    an entity must be dropped before queuing for deletion and removing all \
+                    global state dynec::test_util::InitialEntities. All strong references to an \
+                    entity must be dropped before queuing for deletion and removing all \
                     finalizers."
 )]
 fn test_offline_delete_unsync_global_leak() {
@@ -706,7 +631,7 @@ fn test_offline_delete_unsync_global_leak() {
         all(not(debug_assertions), feature = "release-entity-rc"),
     ),
     should_panic = "Detected dangling strong reference to entity dynec::test_util::TestArch#1 in \
-                    dynec::test_util::TestArch / dynec::world::tests::StrongRefSimple. All strong \
+                    dynec::test_util::TestArch / dynec::test_util::StrongRefSimple. All strong \
                     references to an entity must be dropped before queuing for deletion and \
                     removing all finalizers."
 )]
@@ -742,7 +667,7 @@ fn test_offline_delete_simple_leak() {
         all(not(debug_assertions), feature = "release-entity-rc"),
     ),
     should_panic = "Detected dangling strong reference to entity dynec::test_util::TestArch#1 in \
-                    dynec::test_util::TestArch / dynec::world::tests::StrongRefIsotope # \
+                    dynec::test_util::TestArch / dynec::test_util::StrongRefIsotope # \
                     TestDiscrim1(29). All strong references to an entity must be dropped before \
                     queuing for deletion and removing all finalizers."
 )]

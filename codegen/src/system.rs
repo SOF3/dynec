@@ -394,7 +394,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
 
     let output = quote! {
         // A unit struct that serves as the API entry point.
-        #(#[#other_attrs])*
+        #(#other_attrs)*
         #[derive(Clone, Copy)]
         #[allow(non_camel_case_types)]
         #vis struct #ident;

@@ -31,8 +31,18 @@ pub(crate) fn imp(input: TokenStream) -> Result<TokenStream> {
         };
 
         let iter_expr = match component.iter {
-            None => quote_spanned!(expr.span() => [#expr]),
-            Some(iter) => quote_spanned!(iter.span() => #expr),
+            None => quote_spanned!(expr.span() => {
+                let __array = [#expr];
+                #[allow(deprecated)]
+                {
+                    // we cannot call `.into_iter()` here directly
+                    // because `[].into_iter()` dereferences to a slice before edition 2021.
+                    ::std::array::IntoIter::new(__array)
+                }
+            }),
+            Some(iter) => {
+                quote_spanned!(iter.span() => ::std::iter::IntoIterator::into_iter(#expr))
+            }
         };
 
         quote_spanned! { expr.span() =>

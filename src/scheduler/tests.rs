@@ -6,9 +6,9 @@ use std::sync::Arc;
 
 use super::*;
 use crate::entity::referrer;
-use crate::test_util::{self, AntiSemaphore};
+use crate::test_util::{self, AntiSemaphore, TestArch};
 use crate::world::offline;
-use crate::{comp, system, tracer, world, TestArch};
+use crate::{comp, system, tracer, world};
 
 // Repeat concurrent tests to increase the chance of catching random bugs.
 // However, do not rely on test repetitions to assert for behavior;

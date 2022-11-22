@@ -2,7 +2,7 @@ use std::hash;
 use std::num::NonZeroU32;
 
 use super::{Ref, TempRef};
-use crate::TestArch;
+use crate::test_util::TestArch;
 
 // ensure that Ref<Archetype = A> for a fixed `A` must be object-safe.
 #[test]

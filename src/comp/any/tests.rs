@@ -1,5 +1,5 @@
 use super::*;
-use crate::TestArch;
+use crate::test_util::TestArch;
 
 #[comp(dynec_as(crate), of = TestArch)]
 struct Comp1(i32);

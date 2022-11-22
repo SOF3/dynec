@@ -387,7 +387,7 @@ where
         }
     }
 
-    type IterAllocatedChunks<'t> = impl Iterator<Item = ops::Range<E>> + iter::FusedIterator;
+    type IterAllocatedChunks<'t> = impl Iterator<Item = ops::Range<E>> + iter::FusedIterator + 't;
     fn iter_allocated_chunks(&self) -> Self::IterAllocatedChunks<'_> {
         iter_gaps(self.snapshot_gauge, self.snapshot.iter().copied())
     }

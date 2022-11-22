@@ -65,7 +65,7 @@ impl<D: Discrim, const N: usize> Set<D> for [D; N] {
 }
 
 impl<D: Discrim> Set<D> for Vec<D> {
-    type Iter<'t> = impl Iterator<Item = D> where Self: 't;
+    type Iter<'t> = impl Iterator<Item = D> + 't where Self: 't;
     fn iter_discrims(&self) -> Self::Iter<'_> { self[..].iter().copied() }
 
     type Key = usize;

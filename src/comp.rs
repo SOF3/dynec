@@ -57,7 +57,7 @@ pub mod discrim;
 pub use discrim::Discrim;
 
 pub(crate) mod any;
-pub use any::{DepList, IsotopeInitFn, IsotopeIniter, Map, SimpleInitFn, SimpleIniter};
+pub use any::{DepList, IsotopeInitFn, IsotopeIniter, Iter, SimpleInitFn, SimpleIniter};
 
 /// Marks that a component type is always present.
 ///

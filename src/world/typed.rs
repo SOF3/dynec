@@ -83,8 +83,6 @@ impl<A: Archetype> AnyBuilder for Builder<A> {
     }
 }
 
-type Populator<A> = Box<dyn Fn(&mut comp::Map<A>) + Send + Sync>;
-
 fn toposort_populators<A: Archetype>(
     simple_storages: &mut HashMap<DbgTypeId, storage::Simple<A>>,
     isotope_maps: &mut HashMap<DbgTypeId, Arc<dyn storage::AnyIsotopeMap<A>>>,
@@ -187,16 +185,24 @@ pub(crate) struct Typed<A: Archetype> {
 
 impl<A: Archetype> Typed<A> {
     /// Initialize an entity. This function should only be called offline.
-    pub(crate) fn init_entity(&mut self, id: A::RawEntity, mut comp_map: comp::Map<A>) {
+    pub(crate) fn init_entity(&mut self, id: A::RawEntity, mut comp_map: impl comp::Iter<A>) {
         for populate in &self.populators {
             populate(&mut comp_map);
         }
 
-        for storage in self.simple_storages.values_mut() {
-            let any_storage = Arc::get_mut(&mut storage.storage).expect("storage arc was leaked");
-            any_storage.get_mut().fill_init_simple(id, &mut comp_map);
+        // We optimistically believe that most simple storages will be initialized,
+        // so it is faster to iterate over simple values
+        // since it avoids the O(log n) lookup.
+        for (&ty, storage) in &mut self.simple_storages {
+            let any_storage =
+                Arc::get_mut(&mut storage.storage).expect("storage arc was leaked").get_mut();
+            comp_map.fill_simple(id, ty, any_storage)
         }
 
+        // On the contrary, most isotope components are probably uninitialized
+        // due to their higher cardinality.
+        // Furthermore, some isotopes may not exist in the map yet,
+        // so we cannot loop through all storages anyway.
         for (ty, value) in comp_map.into_isotopes() {
             let discrim =
                 ty.discrim.expect("Map::into_isotopes() should filter away None discrims");

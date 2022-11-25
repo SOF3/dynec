@@ -7,7 +7,7 @@ use std::{cmp, hash};
 
 use super::Discrim;
 use crate::util::DbgTypeId;
-use crate::{comp, Archetype};
+use crate::{comp, storage, Archetype};
 
 /// Identifies a generic simple or discriminated isotope component type.
 #[derive(Debug, Clone, Copy)]
@@ -49,65 +49,30 @@ impl hash::Hash for Identifier {
     }
 }
 
-/// A generic TypeMap of owned simple and isotope components.
-///
-/// This type is only used in parameter passing, not in the actual storage.
-pub struct Map<A: Archetype> {
-    map: BTreeMap<Identifier, Box<dyn Any + Send + Sync>>,
+pub trait Iter<A: Archetype> {
+    fn get_simple<C: comp::Simple<A>>(&mut self) -> Option<&mut C>;
 
-    _ph: PhantomData<A>,
+    fn fill_simple(
+        &mut self,
+        entity: A::RawEntity,
+        ty: DbgTypeId,
+        storage: &mut dyn storage::AnySimple<A>,
+    );
+
+    type IterIsotopeType<'t>: Iterator<Item = DbgTypeId> + 't
+    where
+        Self: 't;
+    type IterIsotopeValue<'t>: SimpleIter<'t, A>
+    where
+        Self: 't;
+    fn iter_isotope(&mut self) -> (Self::IterIsotopeType<'_>, Self::IterIsotopeValue<'_>);
 }
 
-impl<A: Archetype> Default for Map<A> {
-    fn default() -> Self { Map { map: BTreeMap::default(), _ph: PhantomData } }
+pub trait SimpleIter<'t, A: Archetype>: 't {
+    fn next<C: comp::Simple<A>>(&mut self) -> Option<C>;
 }
-
-impl<A: Archetype> Map<A> {
-    /// Inserts a simple component into the map.
-    pub fn insert_simple<C: comp::Simple<A>>(&mut self, comp: C) {
-        let prev = self.map.insert(Identifier::simple::<A, C>(), Box::new(comp));
-        if prev.is_some() {
-            panic!("Cannot insert the same simple component into the same comp::Map twice");
-        }
-    }
-
-    /// Gets a simple component from the map.
-    pub(crate) fn get_simple<C: comp::Simple<A>>(&self) -> Option<&C> {
-        self.map.get(&Identifier::simple::<A, C>()).and_then(|c| c.downcast_ref())
-    }
-
-    /// Gets a simple component from the map.
-    pub(crate) fn remove_simple<C: comp::Simple<A>>(&mut self) -> Option<C> {
-        let comp = self.map.remove(&Identifier::simple::<A, C>())?;
-        let comp = comp.downcast::<C>().expect("TypeId mismatch");
-        Some(*comp)
-    }
-
-    /// Inserts an isotope component into the map.
-    pub fn insert_isotope<C: comp::Isotope<A>>(&mut self, discrim: C::Discrim, comp: C) {
-        let prev = self.map.insert(Identifier::isotope::<A, C>(discrim), Box::new(comp));
-        if prev.is_some() {
-            panic!(
-                "Cannot insert the same isotope component with the same discriminant into the \
-                 same comp::Map twice"
-            );
-        }
-    }
-
-    /// Drops this map, returning an iterator of all isotope components.
-    ///
-    /// This should be changed to `drain_filter` when it is stable.
-    pub(crate) fn into_isotopes(
-        self,
-    ) -> impl Iterator<Item = (Identifier, Box<dyn Any + Send + Sync>)> {
-        self.map.into_iter().filter(|(id, _)| id.discrim.is_some())
-    }
-
-    /// Returns the number of components in the map.
-    pub fn len(&self) -> usize { self.map.len() }
-
-    /// Returns true if the map contains no components.
-    pub fn is_empty(&self) -> bool { self.map.is_empty() }
+pub trait IsotopeIter<'t, A: Archetype>: 't {
+    fn next<C: comp::Isotope<A>>(&mut self) -> Option<C>;
 }
 
 /// Dependency list.

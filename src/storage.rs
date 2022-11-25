@@ -9,7 +9,7 @@ mod tree;
 pub use tree::Tree;
 
 mod simple;
-pub(crate) use simple::Simple;
+pub(crate) use simple::{AnySimpleStorage as AnySimple, Simple};
 mod isotope;
 pub(crate) use isotope::{AnyMap as AnyIsotopeMap, Map as IsotopeMap, MapInner as IsotopeMapInner};
 

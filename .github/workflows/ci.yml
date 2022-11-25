@@ -13,7 +13,6 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2022-10-08
           profile: default
           default: true
           components: rustfmt
@@ -32,7 +31,6 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: ${{matrix.toolchain}}
           profile: default
           default: true
           components: clippy
@@ -41,21 +39,21 @@ jobs:
           path: |
             /home/runner/.cargo
             **/target
-          key: ${{ matrix.toolchain }}-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ hashFiles('**/Cargo.lock') }}
         if: ${{ matrix.profile != '' }}
       - uses: actions/cache@v2
         with:
           path: |
             /home/runner/.cargo
             **/target
-          key: ${{ matrix.toolchain }}-${{ hashFiles('**/Cargo.lock') }}-cov
+          key: ${{ hashFiles('**/Cargo.lock') }}-cov
         if: ${{ matrix.profile == '' }}
       - name: cargo clippy
         uses: actions-rs/clippy-check@v1
         with:
           token: ${{secrets.GITHUB_TOKEN}}
           args: --tests --all ${{matrix.profile}}
-          name: ${{matrix.toolchain}}${{matrix.profile}}
+          name: ${{matrix.profile}}
       - name: cargo test
         if: ${{ matrix.profile != '' }}
         run: "cargo test --all ${{matrix.profile}}"

@@ -9,7 +9,7 @@ use parking_lot::{RawRwLock, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use super::typed;
 use crate::comp::{discrim, Discrim};
-use crate::storage::Storage;
+use crate::storage::{Chunked as _, Storage as _};
 use crate::util::DbgTypeId;
 use crate::{comp, entity, storage, system, Archetype};
 
@@ -416,12 +416,29 @@ where
         self.storage.iter().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
     }
 }
+impl<A, C, S> system::ReadChunk<A, C> for SimpleAccessor<S>
+where
+    A: Archetype,
+    C: comp::Simple<A>,
+    S: ops::Deref<Target = C::Storage>,
+    C::Storage: storage::Chunked,
+{
+    fn get_chunk(&self, chunk: entity::TempRefChunk<'_, A>) -> &[C]
+    where
+        C: comp::Must<A>,
+    {
+        self.storage.get_chunk(chunk.start, chunk.end).expect("chunk is not completely filled")
+    }
+}
 impl<A, C, S> system::ReadSimple<A, C> for SimpleAccessor<S>
 where
     A: Archetype,
     C: comp::Simple<A>,
     S: ops::Deref<Target = C::Storage>,
 {
+    fn access_chunk(&self) -> system::accessor::MustReadChunkSimpleAccessor<A, C> {
+        system::accessor::MustReadChunkSimpleAccessor { storage: &self.storage }
+    }
 }
 
 impl<A, C, S> system::Write<A, C> for SimpleAccessor<S>
@@ -443,12 +460,29 @@ where
         self.storage.iter_mut().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
     }
 }
+impl<A, C, S> system::WriteChunk<A, C> for SimpleAccessor<S>
+where
+    A: Archetype,
+    C: comp::Simple<A>,
+    S: ops::DerefMut<Target = C::Storage>,
+    C::Storage: storage::Chunked,
+{
+    fn get_chunk_mut(&mut self, chunk: entity::TempRefChunk<'_, A>) -> &mut [C]
+    where
+        C: comp::Must<A>,
+    {
+        self.storage.get_chunk_mut(chunk.start, chunk.end).expect("chunk is not completely filled")
+    }
+}
 impl<A, C, S> system::WriteSimple<A, C> for SimpleAccessor<S>
 where
     A: Archetype,
     C: comp::Simple<A>,
     S: ops::DerefMut<Target = C::Storage>,
 {
+    fn access_chunk_mut(&mut self) -> system::accessor::MustWriteChunkSimpleAccessor<'_, A, C> {
+        system::accessor::MustWriteChunkSimpleAccessor { storage: &mut self.storage }
+    }
 }
 
 fn own_read_isotope_storage<A: Archetype, C: comp::Isotope<A>>(
@@ -678,6 +712,19 @@ impl<'t, A: Archetype, C: comp::Isotope<A>> system::Read<A, C> for Split<'t, A, 
         self.0.iter().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
     }
 }
+impl<'t, A, C> system::ReadChunk<A, C> for Split<'t, A, C>
+where
+    A: Archetype,
+    C: comp::Isotope<A>,
+    C::Storage: storage::Chunked,
+{
+    fn get_chunk(&self, chunk: entity::TempRefChunk<'_, A>) -> &[C]
+    where
+        C: comp::Must<A>,
+    {
+        self.0.get_chunk(chunk.start, chunk.end).expect("chunk is not completely filled")
+    }
+}
 
 impl<'t, A: Archetype, C: comp::Isotope<A>> system::Write<A, C> for Split<'t, A, C> {
     fn try_get_mut<E: entity::Ref<Archetype = A>>(&mut self, entity: E) -> Option<&mut C> {
@@ -693,6 +740,19 @@ impl<'t, A: Archetype, C: comp::Isotope<A>> system::Write<A, C> for Split<'t, A,
         Self: 'u;
     fn iter_mut(&mut self) -> Self::IterMut<'_> {
         self.0.iter_mut().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
+    }
+}
+impl<'t, A, C> system::WriteChunk<A, C> for Split<'t, A, C>
+where
+    A: Archetype,
+    C: comp::Isotope<A>,
+    C::Storage: storage::Chunked,
+{
+    fn get_chunk_mut(&mut self, chunk: entity::TempRefChunk<'_, A>) -> &mut [C]
+    where
+        C: comp::Must<A>,
+    {
+        self.0.get_chunk_mut(chunk.start, chunk.end).expect("chunk is not completely filled")
     }
 }
 

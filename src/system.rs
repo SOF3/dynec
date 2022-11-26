@@ -16,8 +16,8 @@ use crate::world::offline;
 
 pub(crate) mod accessor;
 pub use accessor::{
-    Accessor, Chunked as ChunkedAccessor, Read, ReadIsotope, ReadSimple, Write, WriteIsotope,
-    WriteSimple,
+    Accessor, Chunked as ChunkedAccessor, Read, ReadChunk, ReadIsotope, ReadSimple, Write,
+    WriteChunk, WriteIsotope, WriteSimple,
 };
 
 pub mod partition;

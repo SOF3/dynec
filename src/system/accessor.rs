@@ -346,7 +346,7 @@ pub struct MustWriteAccessor<A, C, T>(T, PhantomData<(A, C)>);
 unsafe impl<'t, A: Archetype, C: comp::Must<A> + 'static, T: Write<A, C>> Accessor<A>
     for MustWriteAccessor<A, C, &'t mut T>
 {
-    type Entity<'ret> = &'ret C where Self: 'ret;
+    type Entity<'ret> = &'ret mut C where Self: 'ret;
 
     unsafe fn entity<'this, 'e, 'ret>(
         this: &'this mut Self,

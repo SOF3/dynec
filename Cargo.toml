@@ -41,3 +41,15 @@ strum = "0.24.0"
 [[bench]]
 name = "create_entity"
 harness = false
+
+[[bench]]
+name = "delete_entity"
+harness = false
+
+[[bench]]
+name = "iter_entity_add"
+harness = false
+
+[profile.bench]
+debug = true
+

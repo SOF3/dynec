@@ -18,6 +18,7 @@ fn create_entity(c: &mut Criterion) {
                                     $($comps),*
                                 ]);
                             }
+                            world
                         },
                         BatchSize::SmallInput,
                     );

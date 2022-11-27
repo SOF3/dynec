@@ -41,16 +41,14 @@ fn system_individual_add_system_non_chunked(
         pz.0 += vz.0;
     }
 }
-fn iter_entity_add_individual_non_chunked(c: &mut Criterion) {
-    let mut group =
-        c.benchmark_group("iter entity (p += v) with non-chunked individual components");
+fn iter_entity_add_individual_non_chunked(group: &mut BenchmarkGroup<'_, measurement::WallTime>) {
     group.measurement_time(Duration::from_secs(10));
 
     for log_entities in (4..=16).step_by(4) {
         let num_entities = 1 << log_entities;
         group.throughput(Throughput::Elements(num_entities));
         group.bench_with_input(
-            BenchmarkId::from_parameter(format!("{num_entities} entities")),
+            BenchmarkId::new("non-chunked (x, y, z)", format!("{num_entities} entities")),
             &num_entities,
             |b, &num_entities| {
                 let mut world =
@@ -101,15 +99,14 @@ fn system_individual_add_system_chunked(
         }
     }
 }
-fn iter_entity_add_individual_chunked(c: &mut Criterion) {
-    let mut group = c.benchmark_group("iter entity (p += v) with chunked individual components");
+fn iter_entity_add_individual_chunked(group: &mut BenchmarkGroup<'_, measurement::WallTime>) {
     group.measurement_time(Duration::from_secs(10));
 
     for log_entities in (4..=16).step_by(4) {
         let num_entities = 1 << log_entities;
         group.throughput(Throughput::Elements(num_entities));
         group.bench_with_input(
-            BenchmarkId::from_parameter(format!("{num_entities} entities")),
+            BenchmarkId::new("chunked (x,y,z)", format!("{num_entities} entities")),
             &num_entities,
             |b, &num_entities| {
                 let mut world = dynec::system_test!(system_individual_add_system_chunked.build(););
@@ -149,15 +146,14 @@ fn system_array_add_system_non_chunked(
         }
     }
 }
-fn iter_entity_add_array_non_chunked(c: &mut Criterion) {
-    let mut group = c.benchmark_group("iter entity (p += v) with non-chunked array components");
+fn iter_entity_add_array_non_chunked(group: &mut BenchmarkGroup<'_, measurement::WallTime>) {
     group.measurement_time(Duration::from_secs(10));
 
     for log_entities in (4..=16).step_by(4) {
         let num_entities = 1 << log_entities;
         group.throughput(Throughput::Elements(num_entities));
         group.bench_with_input(
-            BenchmarkId::from_parameter(format!("{num_entities} entities")),
+            BenchmarkId::new("non-chunked [f64; 3]", format!("{num_entities} entities")),
             &num_entities,
             |b, &num_entities| {
                 let mut world = dynec::system_test!(system_array_add_system_non_chunked.build(););
@@ -198,15 +194,14 @@ fn system_array_add_system_chunked(
         }
     }
 }
-fn iter_entity_add_array_chunked(c: &mut Criterion) {
-    let mut group = c.benchmark_group("iter entity (p += v) with chunked array components");
+fn iter_entity_add_array_chunked(group: &mut BenchmarkGroup<'_, measurement::WallTime>) {
     group.measurement_time(Duration::from_secs(10));
 
     for log_entities in (4..=16).step_by(4) {
         let num_entities = 1 << log_entities;
         group.throughput(Throughput::Elements(num_entities));
         group.bench_with_input(
-            BenchmarkId::from_parameter(format!("{num_entities} entities")),
+            BenchmarkId::new("chunked [f64; 3]", format!("{num_entities} entities")),
             &num_entities,
             |b, &num_entities| {
                 let mut world = dynec::system_test!(system_array_add_system_chunked.build(););
@@ -233,8 +228,13 @@ fn iter_entity_add_array_chunked(c: &mut Criterion) {
     }
 }
 
-criterion_group!(individual_non_chunked, iter_entity_add_individual_non_chunked);
-criterion_group!(array_non_chunked, iter_entity_add_array_non_chunked);
-criterion_group!(individual_chunked, iter_entity_add_individual_chunked);
-criterion_group!(array_chunked, iter_entity_add_array_chunked);
-criterion_main!(individual_non_chunked, array_non_chunked, individual_chunked, array_chunked);
+fn iter_entity_add(c: &mut Criterion) {
+    let mut group = c.benchmark_group("iter entity (p += v)");
+    iter_entity_add_individual_non_chunked(&mut group);
+    iter_entity_add_individual_chunked(&mut group);
+    iter_entity_add_array_non_chunked(&mut group);
+    iter_entity_add_array_chunked(&mut group);
+}
+
+criterion_group!(benches, iter_entity_add);
+criterion_main!(benches);

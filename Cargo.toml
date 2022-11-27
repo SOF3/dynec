@@ -38,6 +38,9 @@ env_logger = "0.9.0"
 lazy_static = "1.4.0"
 strum = "0.24.0"
 
+[lib]
+bench = false
+
 [[bench]]
 name = "create_entity"
 harness = false

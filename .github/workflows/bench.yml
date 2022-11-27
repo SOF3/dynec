@@ -11,3 +11,16 @@ jobs:
           features: "internal-bench"
           token: ${{ github.token }}
           branchName: ${{ github.base_ref }}
+          benchName: create_entity
+      - uses: boa-dev/criterion-compare-action@v3
+        with:
+          features: "internal-bench"
+          token: ${{ github.token }}
+          branchName: ${{ github.base_ref }}
+          benchName: delete_entity
+      - uses: boa-dev/criterion-compare-action@v3
+        with:
+          features: "internal-bench"
+          token: ${{ github.token }}
+          branchName: ${{ github.base_ref }}
+          benchName: iter_entity

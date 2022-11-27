@@ -44,7 +44,7 @@ fn system_individual_add_system_non_chunked(
 fn iter_entity_add_individual_non_chunked(group: &mut BenchmarkGroup<'_, measurement::WallTime>) {
     group.measurement_time(Duration::from_secs(10));
 
-    for log_entities in (4..=16).step_by(4) {
+    for log_entities in [12, 16] {
         let num_entities = 1 << log_entities;
         group.throughput(Throughput::Elements(num_entities));
         group.bench_with_input(
@@ -102,7 +102,7 @@ fn system_individual_add_system_chunked(
 fn iter_entity_add_individual_chunked(group: &mut BenchmarkGroup<'_, measurement::WallTime>) {
     group.measurement_time(Duration::from_secs(10));
 
-    for log_entities in (4..=16).step_by(4) {
+    for log_entities in [12, 16] {
         let num_entities = 1 << log_entities;
         group.throughput(Throughput::Elements(num_entities));
         group.bench_with_input(
@@ -149,7 +149,7 @@ fn system_array_add_system_non_chunked(
 fn iter_entity_add_array_non_chunked(group: &mut BenchmarkGroup<'_, measurement::WallTime>) {
     group.measurement_time(Duration::from_secs(10));
 
-    for log_entities in (4..=16).step_by(4) {
+    for log_entities in [12, 16] {
         let num_entities = 1 << log_entities;
         group.throughput(Throughput::Elements(num_entities));
         group.bench_with_input(
@@ -197,7 +197,7 @@ fn system_array_add_system_chunked(
 fn iter_entity_add_array_chunked(group: &mut BenchmarkGroup<'_, measurement::WallTime>) {
     group.measurement_time(Duration::from_secs(10));
 
-    for log_entities in (4..=16).step_by(4) {
+    for log_entities in [12, 16] {
         let num_entities = 1 << log_entities;
         group.throughput(Throughput::Elements(num_entities));
         group.bench_with_input(

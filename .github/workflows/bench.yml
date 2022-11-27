@@ -11,16 +11,25 @@ jobs:
           features: "internal-bench"
           token: ${{ github.token }}
           branchName: ${{ github.base_ref }}
-          benchName: create_entity
-      - uses: boa-dev/criterion-compare-action@v3
+
+      - name: Clone site repo
+        uses: actions/checkout@v2
         with:
-          features: "internal-bench"
-          token: ${{ github.token }}
-          branchName: ${{ github.base_ref }}
-          benchName: delete_entity
-      - uses: boa-dev/criterion-compare-action@v3
-        with:
-          features: "internal-bench"
-          token: ${{ github.token }}
-          branchName: ${{ github.base_ref }}
-          benchName: iter_entity
+          ssh-key: ${{secrets.API_KEY}}
+          path: ..site-repo
+          ref: gh-pages
+
+      - name: Delete previous output
+        run: test ! -d $(echo ${{github.ref}} | cut -d/ -f3)/bench-report || rm -r $(echo ${{github.ref}} | cut -d/ -f3)/bench-report
+        working-directory: ..site-repo
+      - name: Copy artifact to site repo
+        run: cp -r target/criterion ..site-repo/$(echo ${{github.ref}} | cut -d/ -f3)
+      - name: Set Git author
+        run: git config --global user.name "github-actions[bot]" && git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Git commit
+        run: git add $(echo ${{github.ref}} | cut -d/ -f3) && git commit --allow-empty -m "Docs build for SOF3/dynec@${{github.sha}}"
+        working-directory: ..site-repo
+
+      - name: Push pages
+        run: git push --force
+        working-directory: ..site-repo

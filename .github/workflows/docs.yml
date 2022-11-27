@@ -35,13 +35,12 @@ jobs:
           ssh-key: ${{secrets.API_KEY}}
           path: ..site-repo
           ref: gh-pages
+
       - name: Delete previous build
         run: test ! -d $(echo ${{github.ref}} | cut -d/ -f3) || rm -r $(echo ${{github.ref}} | cut -d/ -f3)
         working-directory: ..site-repo
-
       - name: Copy artifact to site repo
         run: cp -r ..staging ..site-repo/$(echo ${{github.ref}} | cut -d/ -f3)
-
       - name: Set Git author
         run: git config --global user.name "github-actions[bot]" && git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
       - name: Git commit
@@ -49,5 +48,5 @@ jobs:
         working-directory: ..site-repo
 
       - name: Push pages
-        run: git push
+        run: while ! git push; do git pull --rebase --no-edit || exit 1; done
         working-directory: ..site-repo

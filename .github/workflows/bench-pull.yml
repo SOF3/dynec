@@ -1,0 +1,37 @@
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+name: benchmark
+jobs:
+  runBenchmark:
+    name: run benchmark
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: boa-dev/criterion-compare-action@v3
+        with:
+          features: "internal-bench"
+          token: ${{ github.token }}
+          branchName: ${{ github.base_ref }}
+
+      - name: Clone site repo
+        uses: actions/checkout@v2
+        with:
+          ssh-key: ${{secrets.API_KEY}}
+          path: ..site-repo
+          ref: gh-pages
+
+      - name: Delete previous output
+        run: test ! -d bench-report/pulls/${{github.event.pull_request.number}} || rm -r bench-report/pulls/${{github.event.pull_request.number}}
+        working-directory: ..site-repo
+      - name: Copy artifact to site repo
+        run: mkdir -p ..site-repo/bench-report/pulls; cp -r target/criterion ..site-repo/bench-report/pulls
+      - name: Set Git author
+        run: git config --global user.name "github-actions[bot]" && git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Git commit
+        run: git add $(echo ${{github.ref}} | cut -d/ -f3) && git commit --allow-empty -m "Docs build for SOF3/dynec@${{github.sha}}"
+        working-directory: ..site-repo
+
+      - name: Push pages
+        run: git push --force
+        working-directory: ..site-repo

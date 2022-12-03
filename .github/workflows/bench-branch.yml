@@ -1,0 +1,44 @@
+on:
+  push:
+    branches-ignore:
+      - "dependabot/**"
+    tags:
+      - "*"
+name: benchmark
+jobs:
+  runBenchmark:
+    name: run benchmark
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ssh-key: ${{secrets.API_KEY}}
+      - uses: boa-dev/criterion-compare-action@v3
+        with:
+          features: "internal-bench"
+          token: ${{ github.token }}
+          branchName: last-benched-tag
+
+      - name: Clone site repo
+        uses: actions/checkout@v2
+        with:
+          ssh-key: ${{secrets.API_KEY}}
+          path: ..site-repo
+          ref: gh-pages
+
+      - name: Delete previous output
+        run: test ! -d bench-report/${{github.ref_type}}/${{github.ref_name}} || rm -r bench-report/${{github.ref_type}}/${{github.ref_name}}
+        working-directory: ..site-repo
+      - name: Copy artifact to site repo
+        run: mkdir -p ..site-repo/bench-report/${{github.ref_type}}; cp -r target/criterion ..site-repo/bench-report/${{github.ref_type}}/${{github.ref_name}}
+      - name: Set Git author
+        run: git config --global user.name "github-actions[bot]" && git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Git commit
+        run: git add bench-report/${{github.ref_type}}/${{github.ref_name}} && git commit --allow-empty -m "Docs build for SOF3/dynec@${{github.sha}}"
+        working-directory: ..site-repo
+
+      - name: Push pages
+        run: git push --force
+        working-directory: ..site-repo
+      - run: git push origin HEAD:last-benched-tag
+        if: ${{github.ref_type}} == tag

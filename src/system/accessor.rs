@@ -3,7 +3,8 @@
 use std::marker::PhantomData;
 use std::{any, fmt};
 
-use crate::{comp, entity, Archetype};
+use crate::storage::Chunked as _;
+use crate::{comp, entity, storage, Archetype};
 
 /// Generalizes [`ReadSimple`] and [`ReadIsotope`] for a specific discriminant
 /// (through [`ReadIsotope::split`]).
@@ -48,6 +49,21 @@ pub trait Read<A: Archetype, C: 'static> {
 
     /// Returns an [`Accessor`] implementor that yields `Option<&C>` for each entity.
     fn try_access(&self) -> TryReadAccessor<A, C, &Self> { TryReadAccessor(self, PhantomData) }
+}
+
+/// Extends [`Read`] with chunk reading ability
+/// for storages that support chunked access.
+pub trait ReadChunk<A: Archetype, C: 'static> {
+    /// Returns the chunk of components as a slice.
+    ///
+    /// # Panics
+    /// This method panics if any component in the chunk is missing.
+    /// In general, users should not get an [`entity::TempRefChunk`]
+    /// that includes an uninitialized entity,
+    /// so panic is basically impossible if [`comp::Must`] was implemented correctly.
+    fn get_chunk(&self, chunk: entity::TempRefChunk<'_, A>) -> &'_ [C]
+    where
+        C: comp::Must<A>;
 }
 
 /// Generalizes [`WriteSimple`] and [`WriteIsotope`] for a specific discriminant
@@ -106,11 +122,37 @@ pub trait Write<A: Archetype, C: 'static>: Read<A, C> {
     }
 }
 
-/// Provides access to a simple component in a specific archetype.
-pub trait ReadSimple<A: Archetype, C: comp::Simple<A>>: Read<A, C> {}
+/// Extends [`Write`] with chunk writing ability
+/// for storages that support chunked access.
+pub trait WriteChunk<A: Archetype, C: 'static> {
+    /// Returns the chunk of components as a mutable slice.
+    /// Typically called from an accessor.
+    ///
+    /// # Panics
+    /// This method panics if any component in the chunk is missing.
+    /// In general, users should not get an [`entity::TempRefChunk`]
+    /// that includes an uninitialized entity,
+    /// so panic is basically impossible if [`comp::Must`] was implemented correctly.
+    fn get_chunk_mut(&mut self, chunk: entity::TempRefChunk<'_, A>) -> &'_ mut [C]
+    where
+        C: comp::Must<A>;
+}
 
 /// Provides access to a simple component in a specific archetype.
-pub trait WriteSimple<A: Archetype, C: comp::Simple<A>>: ReadSimple<A, C> + Write<A, C> {}
+pub trait ReadSimple<A: Archetype, C: comp::Simple<A>>: Read<A, C> {
+    /// Returns a [`Chunked`] accessor that can be used in
+    /// [`EntityIterator`](super::EntityIterator)
+    /// to provide chunked iteration to an entity.
+    fn access_chunk(&self) -> MustReadChunkSimpleAccessor<'_, A, C>;
+}
+
+/// Provides access to a simple component in a specific archetype.
+pub trait WriteSimple<A: Archetype, C: comp::Simple<A>>: ReadSimple<A, C> + Write<A, C> {
+    /// Returns a [`Chunked`] accessor that can be used in
+    /// [`EntityIterator`](super::EntityIterator)
+    /// to provide chunked iteration to an entity.
+    fn access_chunk_mut(&mut self) -> MustWriteChunkSimpleAccessor<'_, A, C>;
+}
 
 /// Provides access to an isotope component in a specific archetype.
 ///
@@ -321,6 +363,56 @@ unsafe impl<'t, A: Archetype, C: comp::Must<A> + 'static, T: Read<A, C>> Accesso
     }
 }
 
+pub struct MustReadChunkSimpleAccessor<'t, A: Archetype, C: comp::Simple<A>> {
+    pub(crate) storage: &'t C::Storage,
+}
+
+unsafe impl<'t, A: Archetype, C: comp::Simple<A> + comp::Must<A> + 'static> Chunked<A>
+    for MustReadChunkSimpleAccessor<'t, A, C>
+where
+    C::Storage: storage::Chunked,
+{
+    type Chunk<'ret> = &'ret [C] where Self: 'ret;
+
+    unsafe fn chunk<'this, 'e, 'ret>(
+        this: &'this mut Self,
+        chunk: entity::TempRefChunk<'e, A>,
+    ) -> Self::Chunk<'ret>
+    where
+        Self: 'ret,
+    {
+        &*(this
+            .storage
+            .get_chunk(chunk.start, chunk.end)
+            .expect("TempRefChunk points to missing entities") as *const [C])
+    }
+}
+
+pub struct MustWriteChunkSimpleAccessor<'t, A: Archetype, C: comp::Simple<A>> {
+    pub(crate) storage: &'t mut C::Storage,
+}
+
+unsafe impl<'t, A: Archetype, C: comp::Simple<A> + comp::Must<A> + 'static> Chunked<A>
+    for MustWriteChunkSimpleAccessor<'t, A, C>
+where
+    C::Storage: storage::Chunked,
+{
+    type Chunk<'ret> = &'ret mut [C] where Self: 'ret;
+
+    unsafe fn chunk<'this, 'e, 'ret>(
+        this: &'this mut Self,
+        chunk: entity::TempRefChunk<'e, A>,
+    ) -> Self::Chunk<'ret>
+    where
+        Self: 'ret,
+    {
+        &mut *(this
+            .storage
+            .get_chunk_mut(chunk.start, chunk.end)
+            .expect("TempRefChunk points to missing entities") as *mut [C])
+    }
+}
+
 /// Return value of [`Write::try_access_mut`].
 pub struct TryWriteAccessor<A, C, T>(T, PhantomData<(A, C)>);
 
@@ -356,6 +448,22 @@ unsafe impl<'t, A: Archetype, C: comp::Must<A> + 'static, T: Write<A, C>> Access
         Self: 'ret,
     {
         &mut *(this.0.get_mut(id) as *mut C)
+    }
+}
+
+unsafe impl<'t, A: Archetype, C: comp::Must<A> + 'static, T: WriteChunk<A, C>> Chunked<A>
+    for MustWriteAccessor<A, C, &'t mut T>
+{
+    type Chunk<'ret> = &'ret mut [C] where Self: 'ret;
+
+    unsafe fn chunk<'this, 'e, 'ret>(
+        this: &'this mut Self,
+        chunk: entity::TempRefChunk<'e, A>,
+    ) -> Self::Chunk<'ret>
+    where
+        Self: 'ret,
+    {
+        &mut *(this.0.get_chunk_mut(chunk) as *mut [C])
     }
 }
 

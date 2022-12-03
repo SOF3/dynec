@@ -1,4 +1,6 @@
-on: [pull_request]
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
 name: benchmark
 jobs:
   runBenchmark:
@@ -20,10 +22,10 @@ jobs:
           ref: gh-pages
 
       - name: Delete previous output
-        run: test ! -d $(echo ${{github.ref}} | cut -d/ -f3)/bench-report || rm -r $(echo ${{github.ref}} | cut -d/ -f3)/bench-report
+        run: test ! -d bench-report/pulls/${{github.event.pull_request.number}} || rm -r bench-report/pulls/${{github.event.pull_request.number}}
         working-directory: ..site-repo
       - name: Copy artifact to site repo
-        run: cp -r target/criterion ..site-repo/$(echo ${{github.ref}} | cut -d/ -f3)
+        run: mkdir -p ..site-repo/bench-report/pulls; cp -r target/criterion ..site-repo/bench-report/pulls
       - name: Set Git author
         run: git config --global user.name "github-actions[bot]" && git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
       - name: Git commit

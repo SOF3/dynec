@@ -25,11 +25,11 @@ jobs:
         run: test ! -d bench-report/pulls/${{github.event.pull_request.number}} || rm -r bench-report/pulls/${{github.event.pull_request.number}}
         working-directory: ..site-repo
       - name: Copy artifact to site repo
-        run: mkdir -p ..site-repo/bench-report/pulls; cp -r target/criterion ..site-repo/bench-report/pulls
+        run: mkdir -p ..site-repo/bench-report/pulls; cp -r target/criterion ..site-repo/bench-report/pulls/${{github.event.pull_request.number}}
       - name: Set Git author
         run: git config --global user.name "github-actions[bot]" && git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
       - name: Git commit
-        run: git add $(echo ${{github.ref}} | cut -d/ -f3) && git commit --allow-empty -m "Docs build for SOF3/dynec@${{github.sha}}"
+        run: git add bench-report/pulls/${{github.event.pull_request.number}} && git commit --allow-empty -m "Docs build for SOF3/dynec@${{github.sha}}"
         working-directory: ..site-repo
 
       - name: Push pages

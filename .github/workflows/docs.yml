@@ -40,7 +40,7 @@ jobs:
         run: test ! -d ${{github.ref_name}} || rm -r ${{github.ref_name}}
         working-directory: ..site-repo
       - name: Copy artifact to site repo
-        run: cp -r ..staging ..site-repo/${{github.ref_name}}
+        run: (test -d $(dirname ..site-repo/${{github.ref_name}}) || mkdir -p $(dirname ..site-repo/${{github.ref_name}})) && cp -r ..staging ..site-repo/${{github.ref_name}}
       - name: Set Git author
         run: git config --global user.name "github-actions[bot]" && git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
       - name: Git commit

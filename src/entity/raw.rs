@@ -2,6 +2,8 @@ use std::num::NonZeroU32;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::{fmt, ops};
 
+use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+
 /// A raw entity ID.
 ///
 /// Types implementing this trait are only used in storage internals.
@@ -41,6 +43,11 @@ pub unsafe trait Raw: Sized + Send + Sync + Copy + fmt::Debug + Eq + Ord + 'stat
     type Range: Iterator<Item = Self>;
     /// Iterates over a range.
     fn range(range: ops::Range<Self>) -> Self::Range;
+
+    /// Return value of [`range`](Self::range).
+    type ParRange: ParallelIterator<Item = Self>;
+    /// Iterates over a range.
+    fn par_range(range: ops::Range<Self>) -> Self::ParRange;
 }
 
 // Safety: NonZeroU32 is semantically identical to `u32`,
@@ -68,6 +75,13 @@ unsafe impl Raw for NonZeroU32 {
     type Range = impl Iterator<Item = Self>;
     fn range(range: ops::Range<Self>) -> Self::Range {
         (range.start.get()..range.end.get()).map(|v| {
+            NonZeroU32::new(v).expect("zero does not appear between two non-zero unsigned integers")
+        })
+    }
+
+    type ParRange = impl ParallelIterator<Item = Self>;
+    fn par_range(range: ops::Range<Self>) -> Self::ParRange {
+        (range.start.get()..range.end.get()).into_par_iter().map(|v| {
             NonZeroU32::new(v).expect("zero does not appear between two non-zero unsigned integers")
         })
     }

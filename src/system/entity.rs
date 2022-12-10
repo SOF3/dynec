@@ -2,6 +2,8 @@ use std::cell::RefCell;
 use std::marker::PhantomData;
 use std::{mem, ops};
 
+use rayon::prelude::ParallelIterator;
+
 use super::{accessor, Accessor};
 use crate::entity::ealloc::Shard;
 use crate::entity::{self, ealloc, Ref as _};
@@ -82,6 +84,13 @@ pub trait EntityIterator<A: Archetype> {
     /// Iterates over all entity IDs in this archetype.
     fn entities(&self) -> Self::Entities<'_>;
 
+    /// Return value of [`par_entities`](Self::par_entities).
+    type ParEntities<'t>: ParallelIterator<Item = entity::TempRef<'t, A>>
+    where
+        Self: 't;
+    /// Iterates over all entity IDs in this archetype in parallel.
+    fn par_entities(&self) -> Self::ParEntities<'_>;
+
     /// Return value of [`chunks`](Self::chunks).
     type Chunks<'t>: Iterator<Item = entity::TempRefChunk<'t, A>>
     where
@@ -125,6 +134,16 @@ where
         self.ealloc
             .iter_allocated_chunks()
             .flat_map(<A::RawEntity as entity::Raw>::range)
+            .map(entity::TempRef::new)
+    }
+
+    type ParEntities<'t> = impl ParallelIterator<Item = entity::TempRef<'t, A>>
+    where
+        Self: 't;
+    fn par_entities(&self) -> Self::ParEntities<'_> {
+        self.ealloc
+            .par_iter_allocated_chunks()
+            .flat_map(<A::RawEntity as entity::Raw>::par_range)
             .map(entity::TempRef::new)
     }
 

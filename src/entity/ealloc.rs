@@ -9,11 +9,14 @@ use std::{iter, ops};
 use parking_lot::Mutex;
 use rand::prelude::SliceRandom;
 use rand::Rng;
+use rayon::prelude::ParallelIterator;
 
 use super::raw::Raw;
 use crate::entity::raw::Atomic;
 use crate::util::DbgTypeId;
 use crate::Archetype;
+
+mod iterator;
 
 pub(crate) type AnyBuilder = Box<dyn FnOnce(usize) -> Box<dyn AnyEalloc>>;
 
@@ -87,7 +90,9 @@ pub trait Shard: Send + 'static {
     fn allocate(&mut self, hint: Self::Hint) -> Self::Raw;
 
     /// Return value of [`iter_allocated_chunks`](Self::iter_allocated_chunks).
-    type IterAllocatedChunks<'t>: Iterator<Item = ops::Range<Self::Raw>>;
+    type IterAllocatedChunks<'t>: Iterator<Item = ops::Range<Self::Raw>> + 't
+    where
+        Self: 't;
     /// Returns an iterator over all allocated ranges during the previous join.
     ///
     /// Allocations in the current or other shards after the last flush
@@ -96,6 +101,19 @@ pub trait Shard: Send + 'static {
     /// The implementor must return disjoint nonempty chunks in strictly increasing order,
     /// i.e. for any two consecutive chunks `(a..b), (c..d)`, `a < b <= c < d`.
     fn iter_allocated_chunks(&self) -> Self::IterAllocatedChunks<'_>;
+
+    /// Return value of [`iter_allocated_chunks`](Self::iter_allocated_chunks).
+    type ParIterAllocatedChunks<'t>: ParallelIterator<Item = ops::Range<Self::Raw>> + 't
+    where
+        Self: 't;
+    /// Returns an iterator over all allocated ranges during the previous join.
+    ///
+    /// Allocations in the current or other shards after the last flush
+    /// have no effect on the result of this iterator.
+    ///
+    /// The implementor must return disjoint nonempty chunks in strictly increasing order,
+    /// i.e. for any two consecutive chunks `(a..b), (c..d)`, `a < b <= c < d`.
+    fn par_iter_allocated_chunks(&self) -> Self::ParIterAllocatedChunks<'_>;
 }
 
 pub(crate) trait AnyShard: Send + 'static {
@@ -161,7 +179,7 @@ impl<E: Raw, T: Recycler<E>, S: ShardAssigner> Recycling<E, T, S> {
     fn iter_allocated_chunks_offline(
         &mut self,
     ) -> impl Iterator<Item = ops::Range<E>> + iter::FusedIterator + '_ {
-        iter_gaps(self.global_gauge.load(), self.recyclable.iter().copied())
+        iterator::iter_gaps(self.global_gauge.load(), self.recyclable.iter().copied())
     }
 }
 
@@ -330,43 +348,6 @@ where
     }
 }
 
-fn iter_gaps<E: Raw>(
-    gauge: E,
-    breakpoints: impl Iterator<Item = E>,
-) -> impl Iterator<Item = ops::Range<E>> + iter::FusedIterator {
-    enum Previous<E: Raw> {
-        Initial,
-        Breakpoint(E),
-        Finalized,
-    }
-    struct IterGaps<E: Raw, I: Iterator> {
-        gauge:       E,
-        breakpoints: I,
-        previous:    Previous<E>,
-    }
-    impl<E: Raw, I: Iterator<Item = E>> Iterator for IterGaps<E, I> {
-        type Item = ops::Range<E>;
-
-        fn next(&mut self) -> Option<ops::Range<E>> {
-            let start = match self.previous {
-                Previous::Initial => E::new().load_mut(),
-                Previous::Breakpoint(previous) => previous.add(1),
-                Previous::Finalized => return None,
-            };
-            let (previous, end) = match self.breakpoints.next() {
-                None => (Previous::Finalized, self.gauge),
-                Some(breakpoint) => (Previous::Breakpoint(breakpoint), breakpoint),
-            };
-            self.previous = previous;
-            Some(start..end)
-        }
-    }
-    impl<E: Raw, I: Iterator<Item = E>> iter::FusedIterator for IterGaps<E, I> {}
-
-    IterGaps { gauge, breakpoints, previous: Previous::Initial }
-        .filter(|range| range.start != range.end)
-}
-
 impl<E: Raw, GaugeRef, RecyclerRef, SnapshotRef, ReuseQueueRef> Shard
     for RecyclingShard<E, GaugeRef, RecyclerRef, SnapshotRef, ReuseQueueRef>
 where
@@ -387,9 +368,14 @@ where
         }
     }
 
-    type IterAllocatedChunks<'t> = impl Iterator<Item = ops::Range<E>> + iter::FusedIterator + 't;
+    type IterAllocatedChunks<'t> = impl Iterator<Item = ops::Range<E>> + iter::FusedIterator + 't where Self: 't;
     fn iter_allocated_chunks(&self) -> Self::IterAllocatedChunks<'_> {
-        iter_gaps(self.snapshot_gauge, self.snapshot.iter().copied())
+        iterator::iter_gaps(self.snapshot_gauge, self.snapshot.iter().copied())
+    }
+
+    type ParIterAllocatedChunks<'t> = impl ParallelIterator<Item = ops::Range<Self::Raw>> + 't where Self: 't;
+    fn par_iter_allocated_chunks(&self) -> Self::ParIterAllocatedChunks<'_> {
+        iterator::par_iter_gaps(self.snapshot_gauge, self.snapshot.iter().copied())
     }
 }
 

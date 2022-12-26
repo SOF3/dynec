@@ -3,7 +3,7 @@
 use std::any::{self, TypeId};
 use std::sync::Arc;
 
-use crate::entity::{deletion, ealloc, generation, Ealloc, Raw};
+use crate::entity::{deletion, ealloc, generation, rctrack, Ealloc, Raw};
 use crate::scheduler::Scheduler;
 use crate::tracer::Tracer;
 use crate::{comp, entity, system, Archetype, Entity, Global, Storage};
@@ -87,6 +87,8 @@ pub struct World {
     pub sync_globals:   SyncGlobals,
     /// Global states that must be accessed on the main thread.
     pub unsync_globals: UnsyncGlobals,
+    /// Tracks the refcounts of entities.
+    pub rctrack:        rctrack::MaybeStoreMap,
 }
 
 impl World {
@@ -97,6 +99,7 @@ impl World {
             &mut self.components,
             &mut self.sync_globals,
             &mut self.unsync_globals,
+            &mut self.rctrack,
             &mut self.ealloc_map,
         );
     }
@@ -128,11 +131,27 @@ impl World {
             &mut self.sync_globals,
             id,
             allocated.rc.clone(),
+            &mut self.rctrack,
             &mut self.components,
             comp_map,
         );
 
         allocated
+    }
+
+    pub(crate) fn as_mut(&mut self) -> (WorldMut<'_>, Vec<(&str, &mut dyn system::Descriptor)>) {
+        let system_refs = self.scheduler.get_system_refs();
+
+        (
+            WorldMut {
+                ealloc_map:     &mut self.ealloc_map,
+                components:     &mut self.components,
+                sync_globals:   &mut self.sync_globals,
+                unsync_globals: &mut self.unsync_globals,
+                rctrack:        &mut self.rctrack,
+            },
+            system_refs,
+        )
     }
 
     /// Tries to delete an entity from the world.
@@ -146,16 +165,8 @@ impl World {
         let id = entity.id();
         drop(entity); // drop `entity` so that its refcount is removed
 
-        let mut system_refs = self.scheduler.get_system_refs();
-
-        let result = flag_delete_entity::<E::Archetype>(
-            id,
-            &mut self.components,
-            &mut self.sync_globals,
-            &mut self.unsync_globals,
-            &mut system_refs[..],
-            &mut self.ealloc_map,
-        );
+        let (world, mut systems) = self.as_mut();
+        let result = flag_delete_entity::<E::Archetype>(id, world, &mut systems[..]);
         if let DeleteResult::Terminating = result {
             self.scheduler.offline_buffer().rerun_queue.push(Box::new(offline::DeleteEntity::<
                 E::Archetype,
@@ -166,26 +177,6 @@ impl World {
         }
 
         result
-    }
-
-    /// Gets a reference to an entity component in offline mode.
-    ///
-    /// Requires a mutable reference to the world to ensure that the world is offline.
-    pub fn get_simple<A: Archetype, C: comp::Simple<A>, E: entity::Ref<Archetype = A>>(
-        &mut self,
-        entity: E,
-    ) -> Option<&mut C> {
-        let typed = self.components.archetype_mut::<A>();
-        log::debug!("{:?}", typed.simple_storages.keys().collect::<Vec<_>>());
-        let storage = match typed.simple_storages.get_mut(&TypeId::of::<C>()) {
-            Some(storage) => storage,
-            None => panic!(
-                "The component {} cannot be retrieved because it is not used in any systems",
-                any::type_name::<C>()
-            ),
-        };
-        let storage = storage.get_storage::<C>();
-        storage.get_mut(entity.id())
     }
 
     /// Gets a thread-safe global state in offline mode.
@@ -218,11 +209,33 @@ impl World {
     }
 }
 
+/// Borrows a world mutably.
+pub(crate) struct WorldMut<'t> {
+    pub(crate) ealloc_map:     &'t mut ealloc::Map,
+    pub(crate) components:     &'t mut Components,
+    pub(crate) sync_globals:   &'t mut SyncGlobals,
+    pub(crate) unsync_globals: &'t mut UnsyncGlobals,
+    pub(crate) rctrack:        &'t mut rctrack::MaybeStoreMap,
+}
+
+impl<'t> WorldMut<'t> {
+    pub(crate) fn as_mut(&mut self) -> WorldMut<'_> {
+        WorldMut {
+            ealloc_map:     &mut *self.ealloc_map,
+            components:     &mut *self.components,
+            sync_globals:   &mut *self.sync_globals,
+            unsync_globals: &mut *self.unsync_globals,
+            rctrack:        &mut *self.rctrack,
+        }
+    }
+}
+
 /// Initializes an entity after allocation.
 fn init_entity<A: Archetype>(
     sync_globals: &mut SyncGlobals,
     id: A::RawEntity,
     _rc: entity::MaybeArc,
+    _rctrack: &mut rctrack::MaybeStoreMap,
     components: &mut Components,
     comp_map: comp::Map<A>,
 ) {
@@ -233,9 +246,7 @@ fn init_entity<A: Archetype>(
         all(not(debug_assertions), feature = "release-entity-rc"),
     ))]
     {
-        use entity::rctrack;
-
-        sync_globals.get_mut::<rctrack::StoreMap>().set::<A>(id.to_primitive(), _rc);
+        _rctrack.0.set::<A>(id.to_primitive(), _rc);
     }
 
     let typed = components.archetype_mut::<A>();
@@ -253,34 +264,30 @@ pub enum DeleteResult {
 }
 
 /// Flags an entity for deletion, and deletes it immediately if there are no finalizers.
-fn flag_delete_entity<A: Archetype>(
+fn flag_delete_entity<'t, A: Archetype>(
     id: A::RawEntity,
-    components: &mut Components,
-    sync_globals: &mut SyncGlobals,
-    unsync_globals: &mut UnsyncGlobals,
+    world: WorldMut<'t>,
     systems: &mut [(&str, &mut dyn system::Descriptor)],
-    ealloc_map: &mut ealloc::Map,
 ) -> DeleteResult {
-    let storage = components
+    let storage = world
+        .components
         .archetype_mut::<A>()
         .simple_storages
         .get_mut(&TypeId::of::<deletion::Flag>())
         .expect("deletion::Flags storage is always available");
     storage.get_storage::<deletion::Flag>().set(id, Some(deletion::Flag(())));
 
-    try_real_delete_entity::<A>(components, id, sync_globals, unsync_globals, systems, ealloc_map)
+    try_real_delete_entity::<A>(id, world, systems)
 }
 
 /// Deletes an entity immediately if there are no finalizers.
-fn try_real_delete_entity<A: Archetype>(
-    components: &mut Components,
+#[allow(unused_variables)]
+fn try_real_delete_entity<'t, A: Archetype>(
     entity: <A as Archetype>::RawEntity,
-    _sync_globals: &mut SyncGlobals,
-    _unsync_globals: &mut UnsyncGlobals,
-    _systems: &mut [(&str, &mut dyn system::Descriptor)],
-    ealloc_map: &mut ealloc::Map,
+    world: WorldMut<'t>,
+    systems: &mut [(&str, &mut dyn system::Descriptor)],
 ) -> DeleteResult {
-    let storages = &mut components.archetype_mut::<A>().simple_storages;
+    let storages = &mut world.components.archetype_mut::<A>().simple_storages;
     let has_finalizer = storages.values_mut().any(|storage| {
         Arc::get_mut(&mut storage.storage)
             .expect("storage arc was leaked")
@@ -303,17 +310,15 @@ fn try_real_delete_entity<A: Archetype>(
         all(not(debug_assertions), feature = "release-entity-rc"),
     ))]
     {
-        use entity::rctrack;
-
         use crate::util::DbgTypeId;
 
-        let rc = _sync_globals.get_mut::<rctrack::StoreMap>().remove::<A>(entity.to_primitive());
+        let rc = world.rctrack.0.remove::<A>(entity.to_primitive());
         if Arc::try_unwrap(rc).is_err() {
             let found = search_references(
-                components,
-                _sync_globals,
-                _unsync_globals,
-                _systems,
+                world.components,
+                world.sync_globals,
+                world.unsync_globals,
+                systems,
                 DbgTypeId::of::<A>(),
                 entity.to_primitive(),
             );
@@ -327,7 +332,8 @@ fn try_real_delete_entity<A: Archetype>(
         }
     }
 
-    let ealloc = ealloc_map
+    let ealloc = world
+        .ealloc_map
         .map
         .get_mut(&TypeId::of::<A>())
         .expect("Attempted to delete entity of unknown archetype");

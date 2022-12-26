@@ -274,6 +274,7 @@ impl Builder {
             sync_globals,
             unsync_globals,
             scheduler: self.scheduler.build(),
+            rctrack: Default::default(),
         }
     }
 }
@@ -290,16 +291,6 @@ fn populate_default_globals(map: &mut GlobalBuilderMap<dyn Any + Send + Sync>) {
     }
 
     put_global(map, generation::StoreMap::default());
-
-    #[cfg(any(
-        all(debug_assertions, feature = "debug-entity-rc"),
-        all(not(debug_assertions), feature = "release-entity-rc"),
-    ))]
-    {
-        use crate::entity::rctrack;
-
-        put_global(map, rctrack::StoreMap::default());
-    }
 }
 
 type GlobalBuilderMap<T> = HashMap<DbgTypeId, (referrer::SingleVtable, GlobalBuilder<T>)>;

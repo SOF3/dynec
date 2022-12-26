@@ -847,6 +847,7 @@ fn bootstrap<const S: usize, const U: usize, T, C, R, V>(
             &mut world::Components::empty(),
             &mut world::SyncGlobals::empty(),
             &mut world::UnsyncGlobals::empty(),
+            &mut rctrack::MaybeStoreMap::default(),
             &mut ealloc::Map::default(),
         );
 

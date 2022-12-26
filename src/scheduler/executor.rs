@@ -3,9 +3,9 @@ use parking_lot::{Condvar, Mutex, MutexGuard};
 use super::planner::StealResult;
 use super::state::SyncState;
 use super::{Node, Planner, Topology, UnsendArgs};
-use crate::entity::ealloc;
+use crate::entity::{ealloc, rctrack};
 use crate::tracer::{self, Tracer};
-use crate::world::{self, offline};
+use crate::world::{self, offline, WorldMut};
 
 pub(crate) struct Executor {
     thread_pool:               Option<rayon::ThreadPool>,
@@ -42,7 +42,8 @@ impl Executor {
         planner: &mut Mutex<Planner>,
         sync_state: &mut SyncState,
         components: &mut world::Components,
-        globals: &mut world::SyncGlobals,
+        sync_globals: &mut world::SyncGlobals,
+        rctrack: &mut rctrack::MaybeStoreMap,
         mut unsend: UnsendArgs<'_>,
         ealloc_map: &mut ealloc::Map,
     ) {
@@ -71,7 +72,7 @@ impl Executor {
         let mut ealloc_shards = ealloc_map.shards(self.concurrency + 1);
         tracer.end_prepare_ealloc_shards(prepare_ealloc_shards_context);
 
-        let send = SendArgs { state: sync_state, components, globals };
+        let send = SendArgs { state: sync_state, components, globals: sync_globals };
 
         let deadlock_counter = DeadlockCounter::new(self.concurrency + 1);
 
@@ -156,11 +157,18 @@ impl Executor {
             .unsend_systems
             .iter_mut()
             .map(|(name, boxed)| (name.as_str(), boxed.as_mut().as_descriptor_mut()));
-        let mut all_system_refs: Vec<_> = sync_system_refs.chain(unsend_system_refs).collect();
+        let all_system_refs: Vec<_> = sync_system_refs.chain(unsend_system_refs).collect();
 
-        self.offline_buffer.drain_cycle(|operation| {
-            operation.run(components, globals, unsend.globals, &mut all_system_refs[..], ealloc_map)
-        });
+        self.offline_buffer.drain_cycle(
+            WorldMut {
+                ealloc_map,
+                components,
+                sync_globals,
+                unsync_globals: unsend.globals,
+                rctrack,
+            },
+            all_system_refs,
+        );
 
         // TODO parallelize this loop
         for (&arch, ealloc) in &mut ealloc_map.map {

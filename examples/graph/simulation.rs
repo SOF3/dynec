@@ -19,6 +19,9 @@ impl dynec::world::Bundle for Bundle {
             // The `Node` archetype has a single-component of type `Position`.
             Position([0.0, 0.0]),
 
+            // This is only used for testing.
+            WhichNode::Farm,
+
             // The `Node` archetype has a multi-component of type `Capacity`.
             // This means each `Node` entity can have multiple `Capacity` components,
             // indexed by a small integer of type `Capacity::Discrim` (`ItemType`).
@@ -36,11 +39,13 @@ impl dynec::world::Bundle for Bundle {
         // so entities are always allocated in the same order they are created.
         let factory = world.create::<Node>(dynec::comps![ Node =>
             Position([0.0, 1.0]),
+            WhichNode::Factory,
             @?[(CROPS, Capacity(100)), (FOOD, Capacity(100))],
             @(FOOD, Volume(100)),
         ]);
         let market = world.create::<Node>(dynec::comps![ Node =>
             Position([1.0, 2.0]),
+            WhichNode::Market,
             @(FOOD, Capacity(200)),
         ]);
 
@@ -63,6 +68,17 @@ dynec::archetype! {
     pub Node
 }
 
+/// This component is just used for identifying which node is which
+/// so that we can test for expected result during the assertions below.
+/// This shoulud not be used in normal cases.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[dynec::comp(of = Node, required)]
+pub enum WhichNode {
+    Farm,
+    Factory,
+    Market,
+}
+
 /// We can define that the component `Position` can be used in the `Node` archetype
 /// by implementing `Node: dynec::archetype::Contains<Position>`.
 /// The `#[dynec::archetype]` attribute does this to save the boilerplate.
@@ -79,7 +95,7 @@ pub struct Position(pub [f32; 2]);
 /// because they are all `[]` by default.
 /// To put it another way, they are all `optional` on each discriminant.
 #[dynec::comp(of = Node, isotope = ItemType)]
-#[derive(Default)]
+#[derive(Debug, Default, PartialEq)]
 pub struct Capacity(pub u32);
 
 #[dynec::comp(of = Node, isotope = ItemType, init = || [(ItemType(0), Volume(0))])]
@@ -124,8 +140,8 @@ pub struct ItemType(usize);
 // Here are a few constants for the different item types.
 // Note that they do not need to be constants and can be runtime-defined,
 // provided that they have reasonably small indices.
-const CROPS: ItemType = ItemType(0);
-const FOOD: ItemType = ItemType(1);
+pub const CROPS: ItemType = ItemType(0);
+pub const FOOD: ItemType = ItemType(1);
 
 /*
 #[dynec::system]

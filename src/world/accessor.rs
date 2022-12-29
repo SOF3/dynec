@@ -395,6 +395,92 @@ impl Components {
 
         IsotopeAccessor { storages, processor: Proc(PhantomData), _ph: PhantomData }
     }
+
+    /// Iterates over all simple entity components in offline mode.
+    ///
+    /// Requires a mutable reference to the world to ensure that the world is offline.
+    pub fn iter_simple<A: Archetype, C: comp::Simple<A>>(
+        &mut self,
+    ) -> impl Iterator<Item = (entity::TempRef<'_, A>, &mut C)> {
+        let typed = self.archetype_mut::<A>();
+        let storage = match typed.simple_storages.get_mut(&TypeId::of::<C>()) {
+            Some(storage) => storage,
+            None => panic!(
+                "The component {} cannot be retrieved because it is not used in any systems",
+                any::type_name::<C>()
+            ),
+        };
+        let storage = storage.get_storage::<C>();
+        storage.iter_mut().map(|(entity, value)| (entity::TempRef::new(entity), value))
+    }
+
+    /// Gets a reference to a simple entity component in offline mode.
+    ///
+    /// Requires a mutable reference to the world to ensure that the world is offline.
+    pub fn get_simple<A: Archetype, C: comp::Simple<A>, E: entity::Ref<Archetype = A>>(
+        &mut self,
+        entity: E,
+    ) -> Option<&mut C> {
+        let typed = self.archetype_mut::<A>();
+        let storage = match typed.simple_storages.get_mut(&TypeId::of::<C>()) {
+            Some(storage) => storage,
+            None => panic!(
+                "The component {} cannot be retrieved because it is not used in any systems",
+                any::type_name::<C>()
+            ),
+        };
+        let storage = storage.get_storage::<C>();
+        storage.get_mut(entity.id())
+    }
+
+    /// Iterate over all isotope entity components in offline mode.
+    ///
+    /// Requires a mutable reference to the world to ensure that the world is offline.
+    pub fn iter_isotope<A: Archetype, C: comp::Isotope<A>>(
+        &mut self,
+    ) -> impl Iterator<Item = (C::Discrim, impl Iterator<Item = (entity::TempRef<'_, A>, &mut C)>)>
+    {
+        let typed = self.archetype_mut::<A>();
+        let storage_map = match typed.isotope_storage_maps.get_mut(&TypeId::of::<C>()) {
+            Some(map) => {
+                Arc::get_mut(map).expect("map arc was leaked").downcast_mut::<C>().map.get_mut()
+            }
+            None => panic!(
+                "The component {} cannot be retrieved because it is not used in any systems",
+                any::type_name::<C>()
+            ),
+        };
+        storage_map.iter_mut().map(|(discrim, storage)| {
+            (*discrim, {
+                let storage: &mut C::Storage =
+                    Arc::get_mut(storage).expect("storage arc was leaked").get_mut();
+                storage.iter_mut().map(|(entity, value)| (entity::TempRef::new(entity), value))
+            })
+        })
+    }
+
+    /// Gets a reference to an isotope entity component in offline mode.
+    ///
+    /// Requires a mutable reference to the world to ensure that the world is offline.
+    pub fn get_isotope<A: Archetype, C: comp::Isotope<A>, E: entity::Ref<Archetype = A>>(
+        &mut self,
+        entity: E,
+        discrim: C::Discrim,
+    ) -> Option<&mut C> {
+        let typed = self.archetype_mut::<A>();
+        let storage_map = match typed.isotope_storage_maps.get_mut(&TypeId::of::<C>()) {
+            Some(map) => {
+                Arc::get_mut(map).expect("map arc was leaked").downcast_mut::<C>().map.get_mut()
+            }
+            None => panic!(
+                "The component {} cannot be retrieved because it is not used in any systems",
+                any::type_name::<C>(),
+            ),
+        };
+        let storage = storage_map.get_mut(&discrim)?;
+        let storage = Arc::get_mut(storage).expect("storage arc was leaked").get_mut();
+        storage.get_mut(entity.id())
+    }
 }
 
 struct SimpleAccessor<S> {

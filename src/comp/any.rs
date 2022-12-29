@@ -112,7 +112,7 @@ impl<A: Archetype> Map<A> {
 
 /// Dependency list.
 ///
-/// Items are tuples of (DbgTypeIdOf::<C>(), C::INIT_STRATEGY).
+/// Items are tuples of `(DbgTypeIdOf::<C>(), C::INIT_STRATEGY)`.
 pub type DepList<A> = Vec<(DbgTypeId, comp::SimpleInitStrategy<A>)>;
 
 /// Describes how to instantiate a component based on other component types.

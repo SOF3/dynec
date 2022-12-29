@@ -1,5 +1,6 @@
 //! Operations queued to be executed after the cycle joins.
 
+use super::WorldMut;
 use crate::entity::{self, ealloc};
 use crate::{comp, system, world, Archetype};
 
@@ -8,11 +9,8 @@ pub(crate) trait Operation: Send {
     /// Performs the operation during offline.
     fn run(
         self: Box<Self>,
-        components: &mut world::Components,
-        sync_globals: &mut world::SyncGlobals,
-        unsync_globals: &mut world::UnsyncGlobals,
+        world: WorldMut<'_>,
         systems: &mut [(&str, &mut dyn system::Descriptor)],
-        ealloc_map: &mut ealloc::Map,
     ) -> OperationResult;
 }
 
@@ -38,13 +36,17 @@ pub(crate) struct CreateEntity<A: Archetype> {
 impl<A: Archetype> Operation for CreateEntity<A> {
     fn run(
         self: Box<Self>,
-        components: &mut world::Components,
-        sync_globals: &mut world::SyncGlobals,
-        _unsync_globals: &mut world::UnsyncGlobals,
+        world: WorldMut<'_>,
         _systems: &mut [(&str, &mut dyn system::Descriptor)],
-        _ealloc_map: &mut ealloc::Map,
     ) -> OperationResult {
-        world::init_entity(sync_globals, self.entity, self.rc, components, self.comp_map);
+        world::init_entity(
+            world.sync_globals,
+            self.entity,
+            self.rc,
+            world.rctrack,
+            world.components,
+            self.comp_map,
+        );
         OperationResult::Ok
     }
 }
@@ -56,20 +58,10 @@ pub(crate) struct DeleteEntity<A: Archetype> {
 impl<A: Archetype> Operation for DeleteEntity<A> {
     fn run(
         self: Box<Self>,
-        components: &mut world::Components,
-        sync_globals: &mut world::SyncGlobals,
-        unsync_globals: &mut world::UnsyncGlobals,
+        world: WorldMut<'_>,
         systems: &mut [(&str, &mut dyn system::Descriptor)],
-        ealloc_map: &mut ealloc::Map,
     ) -> OperationResult {
-        match world::flag_delete_entity::<A>(
-            self.entity,
-            components,
-            sync_globals,
-            unsync_globals,
-            systems,
-            ealloc_map,
-        ) {
+        match world::flag_delete_entity::<A>(self.entity, world, systems) {
             world::DeleteResult::Deleted => OperationResult::Ok,
             world::DeleteResult::Terminating => OperationResult::QueueForRerun(self),
         }
@@ -90,19 +82,24 @@ impl Buffer {
         Self { rerun_queue: Vec::new(), shards }
     }
 
-    pub(crate) fn drain_cycle(
+    pub(crate) fn drain_cycle<'t>(
         &mut self,
-        mut run: impl FnMut(Box<dyn Operation>) -> OperationResult,
+        mut world: WorldMut<'t>,
+        mut systems: Vec<(&str, &mut dyn system::Descriptor)>,
     ) {
-        self.rerun_queue = self
+        let mut new_queue = Vec::new();
+        for op in self
             .rerun_queue
             .drain(..)
             .chain(self.shards.iter_mut().flat_map(|shard| shard.items.drain(..)))
-            .filter_map(|op| match run(op) {
-                OperationResult::Ok => None,
-                OperationResult::QueueForRerun(op) => Some(op),
-            })
-            .collect();
+        {
+            let result = op.run(world.as_mut(), &mut systems[..]);
+            match result {
+                OperationResult::Ok => {}
+                OperationResult::QueueForRerun(op) => new_queue.push(op),
+            }
+        }
+        self.rerun_queue = new_queue;
     }
 }
 

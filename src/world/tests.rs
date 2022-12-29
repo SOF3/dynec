@@ -33,7 +33,7 @@ fn test_dependencies_successful() {
         @(TestDiscrim1(17), Iso1(3)),
     ]);
 
-    match world.get_simple::<TestArch, Comp4, _>(&entity) {
+    match world.components.get_simple::<TestArch, Comp4, _>(&entity) {
         Some(&mut Comp4(c40, c41)) => {
             assert_eq!(c40, 7);
             assert_eq!(c41, (1 + 2) * 8);
@@ -41,7 +41,7 @@ fn test_dependencies_successful() {
         None => panic!("Comp4 is used in system_with_comp3_comp4_comp5"),
     }
 
-    world.get_simple::<TestArch, Comp2, _>(&entity); // panic here
+    world.components.get_simple::<TestArch, Comp2, _>(&entity); // panic here
 }
 
 #[test]
@@ -108,7 +108,7 @@ fn test_simple_fetch() {
 
     world.execute(&tracer::Log(log::Level::Trace));
 
-    let comp = world.get_simple::<TestArch, Comp5, _>(ent);
+    let comp = world.components.get_simple::<TestArch, Comp5, _>(ent);
     assert_eq!(comp, Some(&mut Comp5(20)));
 }
 
@@ -429,7 +429,7 @@ fn test_offline_create() {
         let ent = initials.strong.as_ref().expect("initials.strong missing");
         ent.clone()
     };
-    let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent);
+    let comp1 = world.components.get_simple::<TestArch, Comp1, _>(&ent);
     assert_eq!(comp1, Some(&mut Comp1(5)));
 }
 
@@ -454,7 +454,7 @@ fn test_offline_create_conflict() {
         let ent = initials.strong.as_ref().expect("initials.strong missing");
         ent.clone()
     };
-    let comp1 = world.get_simple::<TestArch, Comp1, _>(&ent);
+    let comp1 = world.components.get_simple::<TestArch, Comp1, _>(&ent);
     assert_eq!(comp1, Some(&mut Comp1(5)));
 }
 
@@ -476,7 +476,7 @@ fn test_offline_delete() {
 
     world.execute(&tracer::Log(log::Level::Trace));
 
-    let comp1 = world.get_simple::<TestArch, Comp1, _>(&weak);
+    let comp1 = world.components.get_simple::<TestArch, Comp1, _>(&weak);
     assert_eq!(comp1, None);
 }
 
@@ -518,7 +518,7 @@ fn test_offline_delete_send_system_leak() {
 
     world.execute(&tracer::Log(log::Level::Trace));
 
-    let comp1 = world.get_simple::<TestArch, Comp1, _>(&weak);
+    let comp1 = world.components.get_simple::<TestArch, Comp1, _>(&weak);
     assert_eq!(comp1, None);
 }
 
@@ -560,7 +560,7 @@ fn test_offline_delete_unsend_system_leak() {
 
     world.execute(&tracer::Log(log::Level::Trace));
 
-    let comp1 = world.get_simple::<TestArch, Comp1, _>(&weak);
+    let comp1 = world.components.get_simple::<TestArch, Comp1, _>(&weak);
     assert_eq!(comp1, None);
 }
 
@@ -725,13 +725,13 @@ fn test_offline_finalizer_delete() {
         // first iteration
         world.execute(&tracer::Log(log::Level::Trace));
 
-        let comp1 = world.get_simple::<TestArch, Comp1, _>(&weak);
+        let comp1 = world.components.get_simple::<TestArch, Comp1, _>(&weak);
         assert_eq!(comp1, Some(&mut Comp1(13)));
 
         // second iteration
         world.execute(&tracer::Log(log::Level::Trace));
 
-        let comp1 = world.get_simple::<TestArch, Comp1, _>(&weak);
+        let comp1 = world.components.get_simple::<TestArch, Comp1, _>(&weak);
         assert_eq!(comp1, None);
     }
 }

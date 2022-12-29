@@ -16,13 +16,13 @@ pub struct SyncGlobals {
 }
 
 impl SyncGlobals {
-    /// Creates a dummy, empty global store used for testing.
+    /// Creates a dummy, empty global store.
     pub fn empty() -> Self { Self { sync_globals: HashMap::new() } }
 
     /// Retrieves a read-only, shared reference to the given global state.
     ///
     /// # Panics
-    /// - if the global state is not used in any systems
+    /// - if the global state is not used in any systems.
     /// - if another thread is exclusively accessing the same archetyped component.
     pub fn read<G: Global + Send + Sync>(&self) -> impl ops::Deref<Target = G> + '_ {
         let (_, lock) = match self.sync_globals.get(&TypeId::of::<G>()) {
@@ -46,7 +46,7 @@ impl SyncGlobals {
     /// Retrieves a writable, exclusive reference to the given global state.
     ///
     /// # Panics
-    /// - if the global state is not used in any systems
+    /// - if the global state is not used in any systems.
     /// - if another thread is accessing the same archetyped component.
     pub fn write<G: Global + Send + Sync>(&self) -> impl ops::DerefMut<Target = G> + '_ {
         let (_, lock) = match self.sync_globals.get(&TypeId::of::<G>()) {
@@ -67,7 +67,11 @@ impl SyncGlobals {
         RwLockWriteGuard::map(guard, |guard| guard.downcast_mut::<G>().expect("TypeId mismatch"))
     }
 
-    pub(crate) fn get_mut<G: Global + Send + Sync>(&mut self) -> &mut G {
+    /// Returns a reference to the given global state in offline mode.
+    ///
+    /// # Panics
+    /// Panics if the global state is not used in any systems.
+    pub fn get_mut<G: Global + Send + Sync>(&mut self) -> &mut G {
         let (_, lock) = match self.sync_globals.get_mut(&TypeId::of::<G>()) {
             Some(lock) => lock,
             None => panic!(

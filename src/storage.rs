@@ -78,6 +78,34 @@ pub unsafe trait Storage: Default + Send + Sync + 'static {
     /// and `index` is the entity index of `slice[0]`.
     /// `slice` is always nonempty.
     fn iter_chunks_mut(&mut self) -> Self::IterChunksMut<'_>;
+
+    /// Return value of [`partition_at`](Self::partition_at).
+    type StoragePartition<'t>: StoragePartition<Self::RawEntity, Self::Comp>
+    where
+        Self: 't;
+    /// Splits the storage into two partitions for parallel iterable access.
+    fn partition_at(
+        &mut self,
+        offset: Self::RawEntity,
+    ) -> (Self::StoragePartition<'_>, Self::StoragePartition<'_>);
+}
+
+/// Return value of [`Storage::partition_at`].
+///
+/// This trait does not provide `set` because
+/// the partition point would drift as the cardinality of the storage changes.
+pub trait StoragePartition<E: entity::Raw, C>: Sized {
+    /// Gets a mutable reference to the component for a specific entity if it is present.
+    fn get_mut(&mut self, entity: E) -> Option<&mut C>;
+
+    type PartitionAt<'u>: StoragePartition<E, C> + 'u
+    where
+        Self: 'u;
+    /// Splits the partition further into two subpartitions.
+    /// `entity` must be `> 0` and `< partition_length`,
+    /// i.e. the expected key ranges of both partitions must be nonempty.
+    /// (It is allowed to have a nonempty range which does not contain any existing keys)
+    fn partition_at(&mut self, entity: E) -> (Self::PartitionAt<'_>, Self::PartitionAt<'_>);
 }
 
 /// Provides chunked access capabilities,

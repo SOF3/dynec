@@ -166,6 +166,7 @@
 #![feature(type_alias_impl_trait)]
 #![feature(maybe_uninit_uninit_array, maybe_uninit_array_assume_init)]
 #![feature(never_type)]
+#![feature(sync_unsafe_cell)]
 
 /// Internal re-exports used in macros.
 #[doc(hidden)]

@@ -4,6 +4,7 @@
 use std::any;
 use std::any::TypeId;
 use std::borrow::Borrow;
+use std::num::NonZeroU32;
 use std::{cmp, fmt, hash};
 
 /// A generic mutable/immutable reference type.
@@ -95,3 +96,16 @@ impl hash::Hash for DbgTypeId {
 impl Borrow<TypeId> for DbgTypeId {
     fn borrow(&self) -> &TypeId { &self.id }
 }
+
+/// Same as [`Eq`] and [`Ord`], but with a stronger guarantee.
+///
+/// # Safety
+/// Undefined behavior may occur if the invariants of `Eq` and `Ord` are not fully satisfied.
+pub unsafe trait UnsafeEqOrd: Eq + Ord {}
+
+// Safety: NonZeroU32 is semantically identical to `u32`,
+// which is a regular primitive satisfying all equivalence and ordering invariants.
+unsafe impl UnsafeEqOrd for NonZeroU32 {}
+
+// Safety: `usize` is a regular primitive satisfying all equivalence and ordering invariants.
+unsafe impl UnsafeEqOrd for usize {}

@@ -3,6 +3,7 @@ use std::marker::PhantomData;
 use std::mem::{self, MaybeUninit};
 
 use bitvec::prelude::BitVec;
+use bitvec::slice::BitSlice;
 use itertools::Itertools;
 
 use super::{ChunkMut, ChunkRef, Chunked, Storage};
@@ -187,6 +188,65 @@ unsafe impl<E: entity::Raw, C: Send + Sync + 'static> Storage for VecStorage<E, 
                 start: E::from_primitive(range.start),
             })
             .filter(|chunk| !chunk.slice.is_empty())
+    }
+
+    type StoragePartition<'t> = StoragePartition<'t, E, C>;
+    fn partition_at(
+        &mut self,
+        offset: Self::RawEntity,
+    ) -> (StoragePartition<'_, E, C>, StoragePartition<'_, E, C>) {
+        let offset = offset.to_primitive();
+        let bits = self.bits.split_at(offset);
+        let data = self.data.split_at_mut(offset);
+        (
+            StoragePartition { bits: bits.0, data: data.0, offset: 0, _ph: PhantomData },
+            StoragePartition { bits: bits.1, data: data.1, offset, _ph: PhantomData },
+        )
+    }
+}
+
+/// Return value of [`VecStorage::partition_at`].
+pub struct StoragePartition<'t, E: entity::Raw, C> {
+    bits:   &'t BitSlice,
+    data:   &'t mut [MaybeUninit<C>],
+    offset: usize,
+    _ph:    PhantomData<E>,
+}
+
+impl<'t, E: entity::Raw, C: 'static> super::StoragePartition<E, C> for StoragePartition<'t, E, C> {
+    fn get_mut(&mut self, entity: E) -> Option<&mut C> {
+        let index =
+            entity.to_primitive().checked_sub(self.offset).expect("parameter out of bounds");
+        match self.bits.get(index) {
+            Some(bit) if *bit => {
+                let value = self.data.get_mut(index).expect("bits mismatch");
+                Some(unsafe { value.assume_init_mut() })
+            }
+            _ => None,
+        }
+    }
+
+    type PartitionAt<'u> = StoragePartition<'u, E, C> where Self: 'u;
+    fn partition_at(&mut self, entity: E) -> (Self::PartitionAt<'_>, Self::PartitionAt<'_>) {
+        let index =
+            entity.to_primitive().checked_sub(self.offset).expect("parameter out of bounds");
+        assert!(index < self.bits.len());
+        let bits = self.bits.split_at(index);
+        let data = self.data.split_at_mut(index);
+        (
+            StoragePartition {
+                bits:   bits.0,
+                data:   data.0,
+                offset: self.offset,
+                _ph:    PhantomData,
+            },
+            StoragePartition {
+                bits:   bits.1,
+                data:   data.1,
+                offset: self.offset + index,
+                _ph:    PhantomData,
+            },
+        )
     }
 }
 

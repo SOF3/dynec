@@ -13,6 +13,9 @@ pub(crate) use simple::Simple;
 mod isotope;
 pub(crate) use isotope::{AnyMap as AnyIsotopeMap, Map as IsotopeMap, MapInner as IsotopeMapInner};
 
+#[cfg(test)]
+mod tests;
+
 /// A storage for storing component data.
 ///
 /// # Safety

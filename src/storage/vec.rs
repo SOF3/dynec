@@ -103,7 +103,9 @@ unsafe impl<E: entity::Raw, C: Send + Sync + 'static> Storage for VecStorage<E, 
         match new {
             Some(new) => {
                 self.set_bit(index, true);
-                self.data.resize_with(index + 1, MaybeUninit::uninit);
+                if self.data.len() <= index {
+                    self.data.resize_with(index + 1, MaybeUninit::uninit);
+                }
                 let bytes = self.data.get_mut(index).expect("just resized");
                 *bytes = MaybeUninit::new(new);
             }
@@ -234,3 +236,6 @@ unsafe fn slice_assume_init_ref<T>(slice: &[MaybeUninit<T>]) -> &[T] {
 unsafe fn slice_assume_init_mut<T>(slice: &mut [MaybeUninit<T>]) -> &mut [T] {
     &mut *(slice as *mut [MaybeUninit<T>] as *mut [T])
 }
+
+#[cfg(test)]
+super::tests::test_storage!(CHUNKED VecStorage<std::num::NonZeroU32, i64>);

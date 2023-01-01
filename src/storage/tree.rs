@@ -52,3 +52,6 @@ unsafe impl<E: entity::Raw, C: Send + Sync + 'static> Storage for Tree<E, C> {
             .map(|(entity, item)| ChunkMut { slice: slice::from_mut(item), start: entity })
     }
 }
+
+#[cfg(test)]
+super::tests::test_storage!(NON_CHUNKED Tree<std::num::NonZeroU32, i64>);

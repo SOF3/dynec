@@ -73,3 +73,22 @@ jobs:
         uses: codecov/codecov-action@v2.1.0
         with:
           files: ${{ steps.coverage.outputs.report }}
+  miri:
+    name: miri tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        profile:
+          - ""
+          - "--release"
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          default: true
+          components: miri
+      - name: cargo miri test
+        run: "cargo miri test --all ${{matrix.profile}}"
+        env:
+          CONCURRENT_TEST_REPETITIONS: "1"

@@ -1,263 +1,10 @@
-//! Component accessor APIs to be used from systems.
+//! Abstraction of entity storages for iteration.
 
 use std::marker::PhantomData;
-use std::{any, fmt};
 
+use super::rw;
 use crate::storage::Chunked as _;
 use crate::{comp, entity, storage, Archetype};
-
-/// Generalizes [`ReadSimple`] and [`ReadIsotope`] for a specific discriminant
-/// (through [`ReadIsotope::split`]).
-pub trait Read<A: Archetype, C: 'static> {
-    /// Returns an immutable reference to the component for the specified entity,
-    /// or `None` if the component is not present in the entity.
-    fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Option<&C>;
-
-    /// Returns an immutable reference to the component for the specified entity.
-    ///
-    /// # Panics
-    /// This method panics if the entity is not fully initialized yet.
-    /// This happens when an entity is newly created and the cycle hasn't joined yet.
-    fn get<E: entity::Ref<Archetype = A>>(&self, entity: E) -> &C
-    where
-        C: comp::Must<A>,
-    {
-        match self.try_get(entity) {
-            Some(comp) => comp,
-            None => panic!(
-                "Component {}/{} implements comp::Must but is not present",
-                any::type_name::<A>(),
-                any::type_name::<C>()
-            ),
-        }
-    }
-
-    /// Return value of [`iter`](Self::iter).
-    type Iter<'t>: Iterator<Item = (entity::TempRef<'t, A>, &'t C)>
-    where
-        Self: 't;
-    /// Iterates over all initialized components in this storage.
-    fn iter(&self) -> Self::Iter<'_>;
-
-    /// Returns an [`Accessor`] implementor that yields `&C` for each entity.
-    fn access(&self) -> MustReadAccessor<A, C, &Self>
-    where
-        C: comp::Must<A>,
-    {
-        MustReadAccessor(self, PhantomData)
-    }
-
-    /// Returns an [`Accessor`] implementor that yields `Option<&C>` for each entity.
-    fn try_access(&self) -> TryReadAccessor<A, C, &Self> { TryReadAccessor(self, PhantomData) }
-}
-
-/// Extends [`Read`] with chunk reading ability
-/// for storages that support chunked access.
-pub trait ReadChunk<A: Archetype, C: 'static> {
-    /// Returns the chunk of components as a slice.
-    ///
-    /// # Panics
-    /// This method panics if any component in the chunk is missing.
-    /// In general, users should not get an [`entity::TempRefChunk`]
-    /// that includes an uninitialized entity,
-    /// so panic is basically impossible if [`comp::Must`] was implemented correctly.
-    fn get_chunk(&self, chunk: entity::TempRefChunk<'_, A>) -> &'_ [C]
-    where
-        C: comp::Must<A>;
-}
-
-/// Generalizes [`WriteSimple`] and [`WriteIsotope`] for a specific discriminant
-/// (through [`WriteIsotope::split_mut`]).
-pub trait Write<A: Archetype, C: 'static>: Read<A, C> {
-    /// Returns a mutable reference to the component for the specified entity,
-    /// or `None` if the component is not present in the entity.
-    ///
-    /// Note that this method returns `Option<&mut C>`, not `&mut Option<C>`.
-    /// This means setting the Option itself to `Some`/`None` will not modify any stored value.
-    /// Use [`set`](Self::set) to add/remove a component.
-    fn try_get_mut<E: entity::Ref<Archetype = A>>(&mut self, entity: E) -> Option<&mut C>;
-
-    /// Returns a mutable reference to the component for the specified entity.
-    ///
-    /// This method is infallible, assuming [`comp::Must`] is only implemented
-    /// for components with [`Required`](comp::SimplePresence::Required) presence.
-    fn get_mut<E: entity::Ref<Archetype = A>>(&mut self, entity: E) -> &mut C
-    where
-        C: comp::Must<A>,
-    {
-        match self.try_get_mut(entity) {
-            Some(comp) => comp,
-            None => panic!(
-                "Component {}/{} implements comp::Must but is not present",
-                any::type_name::<A>(),
-                any::type_name::<C>(),
-            ),
-        }
-    }
-
-    /// Overwrites the component for the specified entity.
-    ///
-    /// Passing `None` to this method removes the component from the entity.
-    /// This leads to a panic for components with [`comp::SimplePresence::Required`] presence.
-    fn set<E: entity::Ref<Archetype = A>>(&mut self, entity: E, value: Option<C>) -> Option<C>;
-
-    /// Return value of [`iter_mut`](Self::iter_mut).
-    type IterMut<'t>: Iterator<Item = (entity::TempRef<'t, A>, &'t mut C)>
-    where
-        Self: 't;
-    /// Iterates over mutable references to all initialized components in this storage.
-    fn iter_mut(&mut self) -> Self::IterMut<'_>;
-
-    /// Returns an [`Accessor`] implementor that yields `&C` for each entity.
-    fn access_mut(&mut self) -> MustWriteAccessor<A, C, &mut Self>
-    where
-        C: comp::Must<A>,
-    {
-        MustWriteAccessor(self, PhantomData)
-    }
-
-    /// Returns an [`Accessor`] implementor that yields `Option<&C>` for each entity.
-    fn try_access_mut(&mut self) -> TryWriteAccessor<A, C, &mut Self> {
-        TryWriteAccessor(self, PhantomData)
-    }
-}
-
-/// Extends [`Write`] with chunk writing ability
-/// for storages that support chunked access.
-pub trait WriteChunk<A: Archetype, C: 'static> {
-    /// Returns the chunk of components as a mutable slice.
-    /// Typically called from an accessor.
-    ///
-    /// # Panics
-    /// This method panics if any component in the chunk is missing.
-    /// In general, users should not get an [`entity::TempRefChunk`]
-    /// that includes an uninitialized entity,
-    /// so panic is basically impossible if [`comp::Must`] was implemented correctly.
-    fn get_chunk_mut(&mut self, chunk: entity::TempRefChunk<'_, A>) -> &'_ mut [C]
-    where
-        C: comp::Must<A>;
-}
-
-/// Provides access to a simple component in a specific archetype.
-pub trait ReadSimple<A: Archetype, C: comp::Simple<A>>: Read<A, C> {
-    /// Returns a [`Chunked`] accessor that can be used in
-    /// [`EntityIterator`](super::EntityIterator)
-    /// to provide chunked iteration to an entity.
-    fn access_chunk(&self) -> MustReadChunkSimpleAccessor<'_, A, C>;
-}
-
-/// Provides access to a simple component in a specific archetype.
-pub trait WriteSimple<A: Archetype, C: comp::Simple<A>>: ReadSimple<A, C> + Write<A, C> {
-    /// Returns a [`Chunked`] accessor that can be used in
-    /// [`EntityIterator`](super::EntityIterator)
-    /// to provide chunked iteration to an entity.
-    fn access_chunk_mut(&mut self) -> MustWriteChunkSimpleAccessor<'_, A, C>;
-}
-
-/// Provides access to an isotope component in a specific archetype.
-///
-/// `K` is the type used to index the discriminant.
-/// For partial isotope access, `K` is usually `usize`.
-/// For full isotope access, `K` is the discriminant type.
-pub trait ReadIsotope<A: Archetype, C: comp::Isotope<A>, K = <C as comp::Isotope<A>>::Discrim>
-where
-    K: fmt::Debug + Copy + 'static,
-{
-    /// Retrieves the component for the given entity and discriminant.
-    ///
-    /// This method is infallible for correctly implemented `comp::Must`,
-    /// which returns the auto-initialized value for missing components.
-    fn get<E: entity::Ref<Archetype = A>>(&self, entity: E, discrim: K) -> &C
-    where
-        C: comp::Must<A>,
-    {
-        match self.try_get(entity, discrim) {
-            Some(value) => value,
-            None => panic!(
-                "{}: comp::Must<{}> but has no default initializer",
-                any::type_name::<C>(),
-                any::type_name::<A>()
-            ),
-        }
-    }
-
-    /// Returns an immutable reference to the component for the specified entity and discriminant,
-    /// or the default value for isotopes with a default initializer or `None`
-    /// if the component is not present in the entity.
-    fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E, discrim: K) -> Option<&C>;
-
-    /// Return value of [`get_all`](Self::get_all).
-    type GetAll<'t>: Iterator<Item = (<C as comp::Isotope<A>>::Discrim, &'t C)> + 't
-    where
-        Self: 't;
-    /// Iterates over all isotopes of the component type for the given entity.
-    ///
-    /// The yielded discriminants are not in any guaranteed order.
-    fn get_all<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Self::GetAll<'_>;
-
-    /// Return value of [`iter`](Self::iter).
-    type Iter<'t>: Iterator<Item = (entity::TempRef<'t, A>, &'t C)>
-    where
-        Self: 't;
-    /// Iterates over all components of a specific discriminant.
-    ///
-    /// Note that the initializer is not called for lazy-initialized isotope components.
-    /// To avoid confusing behavior, do not use this function if [`C: comp::Must<A>`](comp::Must).
-    fn iter(&self, discrim: K) -> Self::Iter<'_>;
-
-    /// Return value of [`split`](Self::split).
-    type Split<'t>: Read<A, C> + 't
-    where
-        Self: 't;
-    /// Splits the accessor into multiple [`Read`] implementors
-    /// so that they can be used independently.
-    fn split<const N: usize>(&self, keys: [K; N]) -> [Self::Split<'_>; N];
-}
-
-/// Provides access to an isotope component in a specific archetype.
-pub trait WriteIsotope<A: Archetype, C: comp::Isotope<A>, K = <C as comp::Isotope<A>>::Discrim>:
-    ReadIsotope<A, C, K>
-where
-    K: fmt::Debug + Copy + 'static,
-{
-    /// Returns a mutable reference to the component for the specified entity and discriminant,
-    /// automatically initialized with the default initializer if present,
-    /// or `None` if the component is unset and has no default initializer.
-    ///
-    /// Note that this method returns `Option<&mut C>`, not `&mut Option<C>`.
-    /// This means setting the Option itself to `Some`/`None` will not modify any stored value.
-    /// Use [`WriteIsotope::set`] to add/remove a component.
-    fn try_get_mut<E: entity::Ref<Archetype = A>>(
-        &mut self,
-        entity: E,
-        discrim: K,
-    ) -> Option<&mut C>;
-
-    /// Overwrites the component for the specified entity and discriminant.
-    ///
-    /// Passing `None` to this method removes the component from the entity.
-    fn set<E: entity::Ref<Archetype = A>>(
-        &mut self,
-        entity: E,
-        discrim: K,
-        value: Option<C>,
-    ) -> Option<C>;
-
-    /// Return value of [`iter_mut`](Self::iter_mut).
-    type IterMut<'t>: Iterator<Item = (entity::TempRef<'t, A>, &'t mut C)>
-    where
-        Self: 't;
-    /// Iterates over mutable references to all components of a specific discriminant.
-    fn iter_mut(&mut self, discrim: K) -> Self::IterMut<'_>;
-
-    /// Return value of [`split_mut`](Self::split_mut).
-    type SplitMut<'t>: Write<A, C> + 't
-    where
-        Self: 't;
-    /// Splits the accessor into multiple [`Write`] implementors
-    /// so that they can be used in entity iteration independently.
-    fn split_mut<const N: usize>(&mut self, keys: [K; N]) -> [Self::SplitMut<'_>; N];
-}
 
 /// An accessor that can be used in an entity iteration.
 ///
@@ -326,11 +73,9 @@ pub unsafe trait Chunked<A: Archetype> {
 }
 
 /// Return value of [`Read::try_access`].
-pub struct TryReadAccessor<A, C, T>(T, PhantomData<(A, C)>);
+pub struct TryRead<A, C, T>(pub(super) T, pub(super) PhantomData<(A, C)>);
 
-unsafe impl<'t, A: Archetype, C: 'static, T: Read<A, C>> Accessor<A>
-    for TryReadAccessor<A, C, &'t T>
-{
+unsafe impl<'t, A: Archetype, C: 'static, T: rw::Read<A, C>> Accessor<A> for TryRead<A, C, &'t T> {
     type Entity<'ret> = Option<&'ret C> where Self: 'ret;
 
     unsafe fn entity<'this, 'e, 'ret>(
@@ -345,10 +90,10 @@ unsafe impl<'t, A: Archetype, C: 'static, T: Read<A, C>> Accessor<A>
 }
 
 /// Return value of [`Read::access`].
-pub struct MustReadAccessor<A, C, T>(T, PhantomData<(A, C)>);
+pub struct MustRead<A, C, T>(pub(super) T, pub(super) PhantomData<(A, C)>);
 
-unsafe impl<'t, A: Archetype, C: comp::Must<A> + 'static, T: Read<A, C>> Accessor<A>
-    for MustReadAccessor<A, C, &'t T>
+unsafe impl<'t, A: Archetype, C: comp::Must<A> + 'static, T: rw::Read<A, C>> Accessor<A>
+    for MustRead<A, C, &'t T>
 {
     type Entity<'ret> = &'ret C where Self: 'ret;
 
@@ -363,12 +108,12 @@ unsafe impl<'t, A: Archetype, C: comp::Must<A> + 'static, T: Read<A, C>> Accesso
     }
 }
 
-pub struct MustReadChunkSimpleAccessor<'t, A: Archetype, C: comp::Simple<A>> {
+pub struct MustReadChunkSimple<'t, A: Archetype, C: comp::Simple<A>> {
     pub(crate) storage: &'t C::Storage,
 }
 
 unsafe impl<'t, A: Archetype, C: comp::Simple<A> + comp::Must<A> + 'static> Chunked<A>
-    for MustReadChunkSimpleAccessor<'t, A, C>
+    for MustReadChunkSimple<'t, A, C>
 where
     C::Storage: storage::Chunked,
 {
@@ -388,12 +133,12 @@ where
     }
 }
 
-pub struct MustWriteChunkSimpleAccessor<'t, A: Archetype, C: comp::Simple<A>> {
+pub struct MustWriteChunkSimple<'t, A: Archetype, C: comp::Simple<A>> {
     pub(crate) storage: &'t mut C::Storage,
 }
 
 unsafe impl<'t, A: Archetype, C: comp::Simple<A> + comp::Must<A> + 'static> Chunked<A>
-    for MustWriteChunkSimpleAccessor<'t, A, C>
+    for MustWriteChunkSimple<'t, A, C>
 where
     C::Storage: storage::Chunked,
 {
@@ -414,10 +159,10 @@ where
 }
 
 /// Return value of [`Write::try_access_mut`].
-pub struct TryWriteAccessor<A, C, T>(T, PhantomData<(A, C)>);
+pub struct TryWrite<A, C, T>(pub(super) T, pub(super) PhantomData<(A, C)>);
 
-unsafe impl<'t, A: Archetype, C: 'static, T: Write<A, C>> Accessor<A>
-    for TryWriteAccessor<A, C, &'t mut T>
+unsafe impl<'t, A: Archetype, C: 'static, T: rw::Write<A, C>> Accessor<A>
+    for TryWrite<A, C, &'t mut T>
 {
     type Entity<'ret> = Option<&'ret mut C> where Self: 'ret;
 
@@ -433,10 +178,10 @@ unsafe impl<'t, A: Archetype, C: 'static, T: Write<A, C>> Accessor<A>
 }
 
 /// Return value of [`Write::access_mut`].
-pub struct MustWriteAccessor<A, C, T>(T, PhantomData<(A, C)>);
+pub struct MustWrite<A, C, T>(pub(super) T, pub(super) PhantomData<(A, C)>);
 
-unsafe impl<'t, A: Archetype, C: comp::Must<A> + 'static, T: Write<A, C>> Accessor<A>
-    for MustWriteAccessor<A, C, &'t mut T>
+unsafe impl<'t, A: Archetype, C: comp::Must<A> + 'static, T: rw::Write<A, C>> Accessor<A>
+    for MustWrite<A, C, &'t mut T>
 {
     type Entity<'ret> = &'ret mut C where Self: 'ret;
 
@@ -451,8 +196,8 @@ unsafe impl<'t, A: Archetype, C: comp::Must<A> + 'static, T: Write<A, C>> Access
     }
 }
 
-unsafe impl<'t, A: Archetype, C: comp::Must<A> + 'static, T: WriteChunk<A, C>> Chunked<A>
-    for MustWriteAccessor<A, C, &'t mut T>
+unsafe impl<'t, A: Archetype, C: comp::Must<A> + 'static, T: rw::WriteChunk<A, C>> Chunked<A>
+    for MustWrite<A, C, &'t mut T>
 {
     type Chunk<'ret> = &'ret mut [C] where Self: 'ret;
 

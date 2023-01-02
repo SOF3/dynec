@@ -140,3 +140,6 @@ impl<'t, E: entity::Raw, C: 'static> super::StoragePartition<E, C> for StoragePa
         )
     }
 }
+
+#[cfg(test)]
+super::tests::test_storage!(NON_CHUNKED Tree<std::num::NonZeroU32, i64>);

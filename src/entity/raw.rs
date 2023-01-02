@@ -2,6 +2,8 @@ use std::num::NonZeroU32;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::{fmt, ops};
 
+use crate::util::UnsafeEqOrd;
+
 /// A raw entity ID.
 ///
 /// Types implementing this trait are only used in storage internals.
@@ -13,7 +15,7 @@ use std::{fmt, ops};
 // but non-transitive implementors of `Raw` could lead to incorrect soundness validation
 // in code that iterates over a storage mutably by strictly increasing index.
 // The safety constraint here is necessary for the safety constraint in `Storage` to hold.
-pub unsafe trait Raw: Sized + Send + Sync + Copy + fmt::Debug + Eq + Ord + 'static {
+pub trait Raw: Sized + Send + Sync + Copy + fmt::Debug + UnsafeEqOrd + 'static {
     /// The atomic variant of this data type.
     type Atomic: Atomic<Self>;
 
@@ -43,9 +45,7 @@ pub unsafe trait Raw: Sized + Send + Sync + Copy + fmt::Debug + Eq + Ord + 'stat
     fn range(range: ops::Range<Self>) -> Self::Range;
 }
 
-// Safety: NonZeroU32 is semantically identical to `u32`,
-// which is a regular primitive satisfying all equivalence and ordering invariants.
-unsafe impl Raw for NonZeroU32 {
+impl Raw for NonZeroU32 {
     type Atomic = AtomicU32;
 
     fn new() -> Self::Atomic { AtomicU32::new(1) }

@@ -164,6 +164,9 @@ pub trait FullMap:
 /// # Safety
 /// `getter` must be an injection, i.e. for `a, b : usize`,
 /// `getter(a)` aliases `getter(b)` if and only if `a == b`.
+///
+/// # Panics
+/// Panics if `keys` is not disjoint.
 unsafe fn split_mut_array<'t, C, Getter, T: 't, U, TransformFn, OnMissingFn, const N: usize>(
     getter_context: &'t mut C,
     mut getter: Getter,

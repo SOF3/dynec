@@ -522,8 +522,8 @@ where
     C: comp::Simple<A>,
     S: ops::Deref<Target = C::Storage>,
 {
-    fn access_chunk(&self) -> system::accessor::MustReadChunkSimpleAccessor<A, C> {
-        system::accessor::MustReadChunkSimpleAccessor { storage: &self.storage }
+    fn access_chunk(&self) -> system::accessor::MustReadChunkSimple<A, C> {
+        system::accessor::MustReadChunkSimple { storage: &self.storage }
     }
 }
 
@@ -566,8 +566,8 @@ where
     C: comp::Simple<A>,
     S: ops::DerefMut<Target = C::Storage>,
 {
-    fn access_chunk_mut(&mut self) -> system::accessor::MustWriteChunkSimpleAccessor<'_, A, C> {
-        system::accessor::MustWriteChunkSimpleAccessor { storage: &mut self.storage }
+    fn access_chunk_mut(&mut self) -> system::accessor::MustWriteChunkSimple<'_, A, C> {
+        system::accessor::MustWriteChunkSimple { storage: &mut self.storage }
     }
 }
 

@@ -14,11 +14,13 @@ use crate::entity::{ealloc, referrer};
 use crate::world;
 use crate::world::offline;
 
-pub(crate) mod accessor;
-pub use accessor::{
-    Accessor, Chunked as ChunkedAccessor, Read, ReadChunk, ReadIsotope, ReadSimple, Write,
-    WriteChunk, WriteIsotope, WriteSimple,
+mod rw;
+pub use rw::{
+    Read, ReadChunk, ReadIsotope, ReadSimple, Write, WriteChunk, WriteIsotope, WriteSimple,
 };
+
+pub(crate) mod accessor;
+pub use accessor::{Accessor, Chunked as ChunkedAccessor};
 
 pub mod partition;
 pub use partition::{EntityCreationPartition, Partition};

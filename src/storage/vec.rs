@@ -215,16 +215,22 @@ pub struct StoragePartition<'t, E: entity::Raw, C> {
     _ph:    PhantomData<E>,
 }
 
-impl<'t, E: entity::Raw, C: 'static> super::StoragePartition<E, C> for StoragePartition<'t, E, C> {
+impl<'t, E: entity::Raw, C: 'static> super::Partition<E, C> for StoragePartition<'t, E, C> {
     fn get_mut(&mut self, entity: E) -> Option<&mut C> {
-        let index =
-            entity.to_primitive().checked_sub(self.offset).expect("parameter out of bounds");
+        let index = match entity.to_primitive().checked_sub(self.offset) {
+            Some(index) => index,
+            None => panic!("Entity {entity:?} is not in the partition {:?}..", self.offset),
+        };
         match self.bits.get(index) {
             Some(bit) if *bit => {
                 let value = self.data.get_mut(index).expect("bits mismatch");
                 Some(unsafe { value.assume_init_mut() })
             }
-            _ => None,
+            Some(_) => None,
+            None => panic!(
+                "Entity {entity:?} is not in the partition ..{:?}",
+                self.offset + self.bits.len()
+            ),
         }
     }
 

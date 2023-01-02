@@ -97,15 +97,15 @@ pub struct StoragePartition<'t, E: entity::Raw, C> {
 impl<'t, E: entity::Raw, C> StoragePartition<'t, E, C> {
     fn assert_bounds(&self, entity: E) {
         if let Some(bound) = self.lower_bound {
-            assert!(entity >= bound);
+            assert!(entity >= bound, "Entity {entity:?} is not in the partition {bound:?}..");
         }
         if let Some(bound) = self.upper_bound {
-            assert!(entity < bound);
+            assert!(entity < bound, "Entity {entity:?} is not in the partition ..{bound:?}");
         }
     }
 }
 
-impl<'t, E: entity::Raw, C: 'static> super::StoragePartition<E, C> for StoragePartition<'t, E, C> {
+impl<'t, E: entity::Raw, C: 'static> super::Partition<E, C> for StoragePartition<'t, E, C> {
     fn get_mut(&mut self, entity: E) -> Option<&mut C> {
         self.assert_bounds(entity);
 

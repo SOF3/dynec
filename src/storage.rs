@@ -83,7 +83,7 @@ pub unsafe trait Storage: Default + Send + Sync + 'static {
     fn iter_chunks_mut(&mut self) -> Self::IterChunksMut<'_>;
 
     /// Return value of [`partition_at`](Self::partition_at).
-    type StoragePartition<'t>: StoragePartition<Self::RawEntity, Self::Comp>
+    type StoragePartition<'t>: Partition<Self::RawEntity, Self::Comp>
     where
         Self: 't;
     /// Splits the storage into two partitions for parallel iterable access.
@@ -97,11 +97,12 @@ pub unsafe trait Storage: Default + Send + Sync + 'static {
 ///
 /// This trait does not provide `set` because
 /// the partition point would drift as the cardinality of the storage changes.
-pub trait StoragePartition<E: entity::Raw, C>: Sized {
+pub trait Partition<E: entity::Raw, C>: Sized {
     /// Gets a mutable reference to the component for a specific entity if it is present.
     fn get_mut(&mut self, entity: E) -> Option<&mut C>;
 
-    type PartitionAt<'u>: StoragePartition<E, C> + 'u
+    /// Return value of [`partition_at`](Self::partition_at).
+    type PartitionAt<'u>: Partition<E, C> + 'u
     where
         Self: 'u;
     /// Splits the partition further into two subpartitions.

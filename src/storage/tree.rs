@@ -118,6 +118,25 @@ impl<'t, E: entity::Raw, C: 'static> super::Partition<E, C> for StoragePartition
         }
     }
 
+    type IterMut<'u> = impl Iterator<Item = (E, &'u mut C)> + 'u where Self: 'u, C: 'u;
+    fn iter_mut(&mut self) -> Self::IterMut<'_> {
+        let iter = match (self.lower_bound, self.upper_bound) {
+            (Some(lower), Some(upper)) => Box::new(self.data.range(lower..upper))
+                as Box<dyn Iterator<Item = (&E, &SyncUnsafeCell<C>)>>,
+            (Some(lower), None) => Box::new(self.data.range(lower..)),
+            (None, Some(upper)) => Box::new(self.data.range(..upper)),
+            (None, None) => Box::new(self.data.iter()),
+        };
+
+        iter.map(|(entity, cell)| unsafe {
+            // Safety: StoragePartition locks all keys under `self.cmp` exclusively,
+            // and the key is within the valid range due to .range().
+            // We already have `&mut self`, so no other threads are accessing this range.
+
+            (*entity, &mut *cell.get())
+        })
+    }
+
     type PartitionAt<'u> = StoragePartition<'u, E, C> where Self: 'u;
     fn partition_at(&mut self, entity: E) -> (Self::PartitionAt<'_>, Self::PartitionAt<'_>) {
         self.assert_bounds(entity);

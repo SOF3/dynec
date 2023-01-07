@@ -37,6 +37,8 @@ pub unsafe trait Accessor<A: Archetype> {
     ) -> Self::Entity<'ret>
     where
         Self: 'ret;
+
+    // fn partition_at(&mut self, entity: Self::Entity<>)
 }
 
 /// An accessor that can be used in chunked entity iteration.

@@ -156,18 +156,7 @@ unsafe impl<E: entity::Raw, C: Send + Sync + 'static> Storage for VecStorage<E, 
     }
 
     type IterMut<'t> = impl Iterator<Item = (Self::RawEntity, &'t mut Self::Comp)> + 't;
-    fn iter_mut(&mut self) -> Self::IterMut<'_> {
-        let indices = self.bits.iter_ones();
-        let data = &mut self.data;
-
-        Box::new(indices.map(move |index| {
-            let entity = E::from_primitive(index);
-            let value = data.get_mut(index).expect("bits mismatch");
-            let value = unsafe { value.assume_init_mut() };
-            let value = unsafe { mem::transmute::<&mut C, &mut C>(value) };
-            (entity, value)
-        }))
-    }
+    fn iter_mut(&mut self) -> Self::IterMut<'_> { iter_mut(0, &self.bits, &mut self.data) }
 
     type IterChunksMut<'t> = impl Iterator<Item = ChunkMut<'t, Self>> + 't;
     fn iter_chunks_mut(&mut self) -> Self::IterChunksMut<'_> {
@@ -207,6 +196,22 @@ unsafe impl<E: entity::Raw, C: Send + Sync + 'static> Storage for VecStorage<E, 
     }
 }
 
+fn iter_mut<'storage, E: entity::Raw, C: 'static>(
+    start_offset: usize,
+    bits: &'storage bitvec::slice::BitSlice,
+    data: &'storage mut [MaybeUninit<C>],
+) -> impl Iterator<Item = (E, &'storage mut C)> + 'storage {
+    let indices = bits.iter_ones();
+
+    indices.map(move |index| {
+        let entity = E::from_primitive(start_offset + index);
+        let value = data.get_mut(index).expect("bits mismatch");
+        let value = unsafe { value.assume_init_mut() };
+        let value = unsafe { mem::transmute::<&mut C, &mut C>(value) };
+        (entity, value)
+    })
+}
+
 /// Return value of [`VecStorage::partition_at`].
 pub struct StoragePartition<'t, E: entity::Raw, C> {
     bits:   &'t BitSlice,
@@ -233,6 +238,9 @@ impl<'t, E: entity::Raw, C: 'static> super::Partition<E, C> for StoragePartition
             ),
         }
     }
+
+    type IterMut<'u> = impl Iterator<Item = (E, &'u mut C)> + 'u where Self: 'u, C: 'u;
+    fn iter_mut(&mut self) -> Self::IterMut<'_> { iter_mut(self.offset, self.bits, self.data) }
 
     type PartitionAt<'u> = StoragePartition<'u, E, C> where Self: 'u;
     fn partition_at(&mut self, entity: E) -> (Self::PartitionAt<'_>, Self::PartitionAt<'_>) {

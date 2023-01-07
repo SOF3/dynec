@@ -64,9 +64,12 @@ pub trait ReadChunk<A: Archetype, C: 'static> {
         C: comp::Must<A>;
 }
 
-/// Generalizes [`WriteSimple`] and [`WriteIsotope`] for a specific discriminant
-/// (through [`WriteIsotope::split_mut`]).
-pub trait Write<A: Archetype, C: 'static>: Read<A, C> {
+/// Generalizes [`WriteSimple`], [`WriteIsotope`] and their split storages.
+///
+/// Only supports mutable access to an existing component,
+/// but does not support adding or removing components
+/// since only the storage values but not the storage structure can be borrowed mutably.
+pub trait Mut<A: Archetype, C: 'static> {
     /// Returns a mutable reference to the component for the specified entity,
     /// or `None` if the component is not present in the entity.
     ///
@@ -75,6 +78,30 @@ pub trait Write<A: Archetype, C: 'static>: Read<A, C> {
     /// Use [`set`](Self::set) to add/remove a component.
     fn try_get_mut<E: entity::Ref<Archetype = A>>(&mut self, entity: E) -> Option<&mut C>;
 
+    /// Return value of [`iter_mut`](Self::iter_mut).
+    type IterMut<'t>: Iterator<Item = (entity::TempRef<'t, A>, &'t mut C)>
+    where
+        Self: 't;
+    /// Iterates over mutable references to all initialized components in this storage.
+    fn iter_mut(&mut self) -> Self::IterMut<'_>;
+
+    /// Return value of [`partition_at`](Self::partition_at).
+    type SplitEntitiesAt<'u>: Mut<A, C> + 'u
+    where
+        Self: 'u;
+    /// Partitions the accessor into two disjoint halves of entities.
+    ///
+    /// This method is not required for [`Read`]
+    /// because shared references can be reused directly.
+    fn split_entities_at<E: entity::Ref<Archetype = A>>(
+        &mut self,
+        entity: E,
+    ) -> (Self::SplitEntitiesAt<'_>, Self::SplitEntitiesAt<'_>);
+}
+
+/// Generalizes [`WriteSimple`] and [`WriteIsotope`] for a specific discriminant
+/// (through [`WriteIsotope::split_isotopes`]).
+pub trait Write<A: Archetype, C: 'static>: Read<A, C> + Mut<A, C> {
     /// Returns a mutable reference to the component for the specified entity.
     ///
     /// This method is infallible, assuming [`comp::Must`] is only implemented
@@ -98,13 +125,6 @@ pub trait Write<A: Archetype, C: 'static>: Read<A, C> {
     /// Passing `None` to this method removes the component from the entity.
     /// This leads to a panic for components with [`comp::SimplePresence::Required`] presence.
     fn set<E: entity::Ref<Archetype = A>>(&mut self, entity: E, value: Option<C>) -> Option<C>;
-
-    /// Return value of [`iter_mut`](Self::iter_mut).
-    type IterMut<'t>: Iterator<Item = (entity::TempRef<'t, A>, &'t mut C)>
-    where
-        Self: 't;
-    /// Iterates over mutable references to all initialized components in this storage.
-    fn iter_mut(&mut self) -> Self::IterMut<'_>;
 
     /// Returns an [`Accessor`] implementor that yields `&C` for each entity.
     fn access_mut(&mut self) -> accessor::MustWrite<A, C, &mut Self>
@@ -249,10 +269,10 @@ where
     fn iter_mut(&mut self, discrim: K) -> Self::IterMut<'_>;
 
     /// Return value of [`split_mut`](Self::split_mut).
-    type SplitMut<'t>: Write<A, C> + 't
+    type SplitDiscrim<'t>: Write<A, C> + 't
     where
         Self: 't;
     /// Splits the accessor into multiple [`Write`] implementors
     /// so that they can be used in entity iteration independently.
-    fn split_mut<const N: usize>(&mut self, keys: [K; N]) -> [Self::SplitMut<'_>; N];
+    fn split_isotopes<const N: usize>(&mut self, keys: [K; N]) -> [Self::SplitDiscrim<'_>; N];
 }

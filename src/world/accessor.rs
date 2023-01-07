@@ -527,7 +527,7 @@ where
     }
 }
 
-impl<A, C, S> system::Write<A, C> for SimpleAccessor<S>
+impl<A, C, S> system::Mut<A, C> for SimpleAccessor<S>
 where
     A: Archetype,
     C: comp::Simple<A>,
@@ -537,13 +537,32 @@ where
         self.storage.get_mut(entity.id())
     }
 
-    fn set<E: entity::Ref<Archetype = A>>(&mut self, entity: E, value: Option<C>) -> Option<C> {
-        self.storage.set(entity.id(), value)
-    }
-
     type IterMut<'t> = impl Iterator<Item = (entity::TempRef<'t, A>, &'t mut C)> where Self: 't;
     fn iter_mut(&mut self) -> Self::IterMut<'_> {
         self.storage.iter_mut().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
+    }
+
+    type SplitEntitiesAt<'u> = impl system::Mut<A, C> + 'u where Self: 'u;
+    fn split_entities_at<E: entity::Ref<Archetype = A>>(
+        &mut self,
+        entity: E,
+    ) -> (Self::SplitEntitiesAt<'_>, Self::SplitEntitiesAt<'_>) {
+        let (left, right) = self.storage.partition_at(entity.id());
+        (
+            PartitionAccessor { storage: left, _ph: PhantomData },
+            PartitionAccessor { storage: right, _ph: PhantomData },
+        )
+    }
+}
+
+impl<A, C, S> system::Write<A, C> for SimpleAccessor<S>
+where
+    A: Archetype,
+    C: comp::Simple<A>,
+    S: ops::DerefMut<Target = C::Storage>,
+{
+    fn set<E: entity::Ref<Archetype = A>>(&mut self, entity: E, value: Option<C>) -> Option<C> {
+        self.storage.set(entity.id(), value)
     }
 }
 impl<A, C, S> system::WriteChunk<A, C> for SimpleAccessor<S>
@@ -600,6 +619,38 @@ fn own_write_isotope_storage<A: Archetype, C: comp::Isotope<A>>(
             any::type_name::<C>(),
             discrim,
         ),
+    }
+}
+
+struct PartitionAccessor<A: Archetype, C, S: storage::Partition<A::RawEntity, C>> {
+    storage: S,
+    _ph:     PhantomData<(A, C)>,
+}
+impl<A, C, S> system::Mut<A, C> for PartitionAccessor<A, C, S>
+where
+    A: Archetype,
+    C: 'static,
+    S: storage::Partition<A::RawEntity, C>,
+{
+    fn try_get_mut<E: entity::Ref<Archetype = A>>(&mut self, entity: E) -> Option<&mut C> {
+        self.storage.get_mut(entity.id())
+    }
+
+    type IterMut<'u> = impl Iterator<Item = (entity::TempRef<'u, A>, &'u mut C)> + 'u where Self: 'u;
+    fn iter_mut(&mut self) -> Self::IterMut<'_> {
+        self.storage.iter_mut().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
+    }
+
+    type SplitEntitiesAt<'u> = impl system::Mut<A, C> + 'u where Self: 'u;
+    fn split_entities_at<E: entity::Ref<Archetype = A>>(
+        &mut self,
+        entity: E,
+    ) -> (Self::SplitEntitiesAt<'_>, Self::SplitEntitiesAt<'_>) {
+        let (left, right) = self.storage.partition_at(entity.id());
+        (
+            PartitionAccessor { storage: left, _ph: PhantomData },
+            PartitionAccessor { storage: right, _ph: PhantomData },
+        )
     }
 }
 
@@ -778,15 +829,15 @@ where
         storage.iter_mut().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
     }
 
-    type SplitMut<'t> = Split<'t, A, C> where Self: 't;
-    fn split_mut<const N: usize>(&mut self, keys: [M::Key; N]) -> [Split<'_, A, C>; N] {
-        self.processor.get_storage_multi(keys, &mut self.storages).map(Split)
+    type SplitDiscrim<'t> = SplitDiscrim<'t, A, C> where Self: 't;
+    fn split_isotopes<const N: usize>(&mut self, keys: [M::Key; N]) -> [SplitDiscrim<'_, A, C>; N] {
+        self.processor.get_storage_multi(keys, &mut self.storages).map(SplitDiscrim)
     }
 }
 
-struct Split<'t, A: Archetype, C: comp::Isotope<A>>(&'t mut C::Storage);
+struct SplitDiscrim<'t, A: Archetype, C: comp::Isotope<A>>(&'t mut C::Storage);
 
-impl<'t, A: Archetype, C: comp::Isotope<A>> system::Read<A, C> for Split<'t, A, C> {
+impl<'t, A: Archetype, C: comp::Isotope<A>> system::Read<A, C> for SplitDiscrim<'t, A, C> {
     fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Option<&C> {
         self.0.get(entity.id())
     }
@@ -798,7 +849,7 @@ impl<'t, A: Archetype, C: comp::Isotope<A>> system::Read<A, C> for Split<'t, A, 
         self.0.iter().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
     }
 }
-impl<'t, A, C> system::ReadChunk<A, C> for Split<'t, A, C>
+impl<'t, A, C> system::ReadChunk<A, C> for SplitDiscrim<'t, A, C>
 where
     A: Archetype,
     C: comp::Isotope<A>,
@@ -812,23 +863,34 @@ where
     }
 }
 
-impl<'t, A: Archetype, C: comp::Isotope<A>> system::Write<A, C> for Split<'t, A, C> {
+impl<'t, A: Archetype, C: comp::Isotope<A>> system::Mut<A, C> for SplitDiscrim<'t, A, C> {
     fn try_get_mut<E: entity::Ref<Archetype = A>>(&mut self, entity: E) -> Option<&mut C> {
         self.0.get_mut(entity.id())
     }
 
-    fn set<E: entity::Ref<Archetype = A>>(&mut self, entity: E, value: Option<C>) -> Option<C> {
-        self.0.set(entity.id(), value)
-    }
-
-    type IterMut<'u> = impl Iterator<Item = (entity::TempRef<'u, A>, &'u mut C)>
-    where
-        Self: 'u;
+    type IterMut<'u> = impl Iterator<Item = (entity::TempRef<'u, A>, &'u mut C)> + 'u where Self: 'u;
     fn iter_mut(&mut self) -> Self::IterMut<'_> {
         self.0.iter_mut().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
     }
+
+    type SplitEntitiesAt<'u> = impl system::Mut<A, C> + 'u where Self: 'u;
+    fn split_entities_at<E: entity::Ref<Archetype = A>>(
+        &mut self,
+        entity: E,
+    ) -> (Self::SplitEntitiesAt<'_>, Self::SplitEntitiesAt<'_>) {
+        let (left, right) = self.0.partition_at(entity.id());
+        (
+            PartitionAccessor { storage: left, _ph: PhantomData },
+            PartitionAccessor { storage: right, _ph: PhantomData },
+        )
+    }
 }
-impl<'t, A, C> system::WriteChunk<A, C> for Split<'t, A, C>
+impl<'t, A: Archetype, C: comp::Isotope<A>> system::Write<A, C> for SplitDiscrim<'t, A, C> {
+    fn set<E: entity::Ref<Archetype = A>>(&mut self, entity: E, value: Option<C>) -> Option<C> {
+        self.0.set(entity.id(), value)
+    }
+}
+impl<'t, A, C> system::WriteChunk<A, C> for SplitDiscrim<'t, A, C>
 where
     A: Archetype,
     C: comp::Isotope<A>,

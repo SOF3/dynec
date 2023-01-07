@@ -37,7 +37,7 @@ pub trait Read<A: Archetype, C: 'static> {
     /// Iterates over all initialized components in this storage.
     fn iter(&self) -> Self::Iter<'_>;
 
-    /// Returns an [`Accessor`] implementor that yields `&C` for each entity.
+    /// Returns an [`Accessor`](accessor::Accessor) implementor that yields `&C` for each entity.
     fn access(&self) -> accessor::MustRead<A, C, &Self>
     where
         C: comp::Must<A>,
@@ -45,8 +45,16 @@ pub trait Read<A: Archetype, C: 'static> {
         accessor::MustRead(self, PhantomData)
     }
 
-    /// Returns an [`Accessor`] implementor that yields `Option<&C>` for each entity.
+    /// Returns an [`Accessor`](accessor::Accessor) implementor that yields `Option<&C>` for each entity.
     fn try_access(&self) -> accessor::TryRead<A, C, &Self> { accessor::TryRead(self, PhantomData) }
+
+    /// Return value of [`duplicate_immut`](Self::duplicate_immut).
+    type DuplicateImmut<'t>: Read<A, C> + 't
+    where
+        Self: 't;
+    /// Duplicates the current reader,
+    /// producing two new values that can only access the storage immutably.
+    fn duplicate_immut(&self) -> (Self::DuplicateImmut<'_>, Self::DuplicateImmut<'_>);
 }
 
 /// Extends [`Read`] with chunk reading ability
@@ -75,7 +83,7 @@ pub trait Mut<A: Archetype, C: 'static> {
     ///
     /// Note that this method returns `Option<&mut C>`, not `&mut Option<C>`.
     /// This means setting the Option itself to `Some`/`None` will not modify any stored value.
-    /// Use [`set`](Self::set) to add/remove a component.
+    /// Use [`Write::set`] to add/remove a component.
     fn try_get_mut<E: entity::Ref<Archetype = A>>(&mut self, entity: E) -> Option<&mut C>;
 
     /// Return value of [`iter_mut`](Self::iter_mut).
@@ -85,7 +93,7 @@ pub trait Mut<A: Archetype, C: 'static> {
     /// Iterates over mutable references to all initialized components in this storage.
     fn iter_mut(&mut self) -> Self::IterMut<'_>;
 
-    /// Return value of [`partition_at`](Self::partition_at).
+    /// Return value of [`split_entities_at`](Self::split_entities_at).
     type SplitEntitiesAt<'u>: Mut<A, C> + 'u
     where
         Self: 'u;
@@ -126,7 +134,7 @@ pub trait Write<A: Archetype, C: 'static>: Read<A, C> + Mut<A, C> {
     /// This leads to a panic for components with [`comp::SimplePresence::Required`] presence.
     fn set<E: entity::Ref<Archetype = A>>(&mut self, entity: E, value: Option<C>) -> Option<C>;
 
-    /// Returns an [`Accessor`] implementor that yields `&C` for each entity.
+    /// Returns an [`Accessor`](accessor::Accessor) implementor that yields `&C` for each entity.
     fn access_mut(&mut self) -> accessor::MustWrite<A, C, &mut Self>
     where
         C: comp::Must<A>,
@@ -134,7 +142,7 @@ pub trait Write<A: Archetype, C: 'static>: Read<A, C> + Mut<A, C> {
         accessor::MustWrite(self, PhantomData)
     }
 
-    /// Returns an [`Accessor`] implementor that yields `Option<&C>` for each entity.
+    /// Returns an [`Accessor`](accessor::Accessor) implementor that yields `Option<&C>` for each entity.
     fn try_access_mut(&mut self) -> accessor::TryWrite<A, C, &mut Self> {
         accessor::TryWrite(self, PhantomData)
     }
@@ -158,7 +166,7 @@ pub trait WriteChunk<A: Archetype, C: 'static> {
 
 /// Provides access to a simple component in a specific archetype.
 pub trait ReadSimple<A: Archetype, C: comp::Simple<A>>: Read<A, C> {
-    /// Returns a [`Chunked`] accessor that can be used in
+    /// Returns a [`Chunked`](accessor::Chunked) accessor that can be used in
     /// [`EntityIterator`](super::EntityIterator)
     /// to provide chunked iteration to an entity.
     fn access_chunk(&self) -> accessor::MustReadChunkSimple<'_, A, C>;
@@ -166,7 +174,7 @@ pub trait ReadSimple<A: Archetype, C: comp::Simple<A>>: Read<A, C> {
 
 /// Provides access to a simple component in a specific archetype.
 pub trait WriteSimple<A: Archetype, C: comp::Simple<A>>: ReadSimple<A, C> + Write<A, C> {
-    /// Returns a [`Chunked`] accessor that can be used in
+    /// Returns a [`Chunked`](accessor::Chunked) accessor that can be used in
     /// [`EntityIterator`](super::EntityIterator)
     /// to provide chunked iteration to an entity.
     fn access_chunk_mut(&mut self) -> accessor::MustWriteChunkSimple<'_, A, C>;
@@ -268,7 +276,7 @@ where
     /// Iterates over mutable references to all components of a specific discriminant.
     fn iter_mut(&mut self, discrim: K) -> Self::IterMut<'_>;
 
-    /// Return value of [`split_mut`](Self::split_mut).
+    /// Return value of [`split_isotopes`](Self::split_isotopes).
     type SplitDiscrim<'t>: Write<A, C> + 't
     where
         Self: 't;

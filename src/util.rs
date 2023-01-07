@@ -5,7 +5,7 @@ use std::any;
 use std::any::TypeId;
 use std::borrow::Borrow;
 use std::num::NonZeroU32;
-use std::{cmp, fmt, hash};
+use std::{cmp, fmt, hash, ops};
 
 /// A generic mutable/immutable reference type.
 pub trait Ref {
@@ -33,6 +33,19 @@ impl<T: ?Sized> Ref for &mut T {
     const MUTABLE: bool = true;
 
     fn as_ref(&self) -> &T { self }
+}
+
+/// Wraps a double-deref type so that `*self` is equivalent to `**self.0`
+#[derive(Clone, Copy)]
+pub struct DoubleDeref<T>(pub T);
+
+impl<T> ops::Deref for DoubleDeref<T>
+where
+    T: ops::Deref,
+    T::Target: ops::Deref,
+{
+    type Target = <T::Target as ops::Deref>::Target;
+    fn deref(&self) -> &Self::Target { &self.0 }
 }
 
 /// A TypeId that may include type name for debugging.

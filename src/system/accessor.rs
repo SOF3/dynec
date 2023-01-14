@@ -1,8 +1,9 @@
 //! Abstraction of entity storages for iteration.
 
 use std::marker::PhantomData;
+use std::ops;
 
-use super::rw;
+use super::{rw, Read};
 use crate::storage::Chunked as _;
 use crate::{comp, entity, storage, Archetype};
 
@@ -75,7 +76,13 @@ pub unsafe trait Chunked<A: Archetype> {
 /// Return value of [`Read::try_access`].
 pub struct TryRead<A, C, T>(pub(super) T, pub(super) PhantomData<(A, C)>);
 
-unsafe impl<'t, A: Archetype, C: 'static, T: rw::Read<A, C>> Accessor<A> for TryRead<A, C, &'t T> {
+unsafe impl<A, C, T> Accessor<A> for TryRead<A, C, T>
+where
+    A: Archetype,
+    C: 'static,
+    T: ops::Deref,
+    T::Target: rw::Read<A, C>,
+{
     type Entity<'ret> = Option<&'ret C> where Self: 'ret;
 
     unsafe fn entity<'this, 'e, 'ret>(

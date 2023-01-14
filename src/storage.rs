@@ -101,6 +101,14 @@ pub trait Partition<E: entity::Raw, C>: Sized {
     /// Gets a mutable reference to the component for a specific entity if it is present.
     fn get_mut(&mut self, entity: E) -> Option<&mut C>;
 
+    /// Return value of [`iter_mut`](Self::iter_mut).
+    type IterMut<'t>: Iterator<Item = (E, &'t mut C)> + 't
+    where
+        Self: 't,
+        C: 't;
+    /// Returns a mutable iterator over the storage, ordered by entity index order.
+    fn iter_mut(&mut self) -> Self::IterMut<'_>;
+
     /// Return value of [`partition_at`](Self::partition_at).
     type PartitionAt<'u>: Partition<E, C> + 'u
     where

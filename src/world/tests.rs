@@ -750,7 +750,7 @@ fn test_entity_iter_partial_mut() {
             usize,
         >,
     ) {
-        let [mut iso1_acc_0, mut iso1_acc_1] = iso1_acc.split_mut([0, 1]);
+        let [mut iso1_acc_0, mut iso1_acc_1] = iso1_acc.split_isotopes([0, 1]);
         let [iso1_acc_31] = iso1_acc_31.split([0]);
 
         for (entity, (comp1, iso10, iso11, iso131)) in iter.entities_with((
@@ -812,7 +812,7 @@ fn test_entity_iter_full_mut() {
         mut iso1_acc: impl system::WriteIsotope<TestArch, Iso1>,
     ) {
         let [mut iso1_acc_0, mut iso1_acc_1] =
-            iso1_acc.split_mut([TestDiscrim1(7), TestDiscrim1(13)]);
+            iso1_acc.split_isotopes([TestDiscrim1(7), TestDiscrim1(13)]);
 
         for (entity, (comp1, iso10, iso11)) in iter.entities_with((
             comp1_acc.try_access(),

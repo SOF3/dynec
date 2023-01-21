@@ -113,19 +113,19 @@ impl<A: Archetype> Map<A> {
 /// Dependency list.
 ///
 /// Items are tuples of `(DbgTypeIdOf::<C>(), C::INIT_STRATEGY)`.
-pub type DepList<A> = Vec<(DbgTypeId, comp::SimpleInitStrategy<A>)>;
+pub type DepList<A> = Vec<(DbgTypeId, comp::InitStrategy<A>)>;
 
 /// Describes how to instantiate a component based on other component types.
-pub struct SimpleIniter<A: Archetype> {
+pub struct Initer<A: Archetype> {
     /// The component function.
-    pub f: &'static dyn SimpleInitFn<A>,
+    pub f: &'static dyn InitFn<A>,
 }
 
-/// A function used for [`comp::SimpleInitStrategy::Auto`].
+/// A function used for [`comp::InitStrategy::Auto`].
 ///
 /// This trait is blanket-implemented for all functions that take up to 32 simple component
 /// parameters and output the component value.
-pub trait SimpleInitFn<A: Archetype>: Send + Sync + 'static {
+pub trait InitFn<A: Archetype>: Send + Sync + 'static {
     /// Calls the underlying function, extracting the arguments.
     fn populate(&self, map: &mut Map<A>);
 
@@ -138,7 +138,7 @@ macro_rules! impl_simple_init_fn {
         impl<
             A: Archetype, C: comp::Simple<A>,
             $($deps: comp::Simple<A>,)*
-        > SimpleInitFn<A> for fn(
+        > InitFn<A> for fn(
             $(&$deps,)*
         ) -> C {
             fn populate(&self, map: &mut Map<A>) {
@@ -158,7 +158,7 @@ macro_rules! impl_simple_init_fn {
                 map.insert_simple(populate);
             }
 
-            fn deps(&self) -> Vec<(DbgTypeId, comp::SimpleInitStrategy<A>)> {
+            fn deps(&self) -> Vec<(DbgTypeId, comp::InitStrategy<A>)> {
                 vec![
                     $((DbgTypeId::of::<$deps>(), <$deps as comp::Simple<A>>::INIT_STRATEGY),)*
                 ]
@@ -227,7 +227,7 @@ macro_rules! impl_isotope_init_fn {
                 }
             }
 
-            fn deps(&self) -> Vec<(DbgTypeId, comp::SimpleInitStrategy<A>)> {
+            fn deps(&self) -> Vec<(DbgTypeId, comp::InitStrategy<A>)> {
                 vec![
                     $((DbgTypeId::of::<$deps>(), <$deps as comp::Simple<A>>::INIT_STRATEGY),)*
                 ]

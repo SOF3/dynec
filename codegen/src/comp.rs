@@ -47,8 +47,8 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
         ));
     }
     let presence_enum = match presence {
-        Some(_) => quote!(#crate_name::comp::SimplePresence::Required),
-        None => quote!(#crate_name::comp::SimplePresence::Optional),
+        Some(_) => quote!(#crate_name::comp::Presence::Required),
+        None => quote!(#crate_name::comp::Presence::Optional),
     };
 
     let finalizer = args.find_one(|arg| option_match!(arg, ItemOpt::Finalizer => &()))?;
@@ -83,12 +83,12 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                         |ty| quote!(impl ::std::iter::IntoIterator<Item = (#discrim, #ty)>),
                     )?;
                     quote! {
-                        #crate_name::comp::IsotopeInitStrategy::Auto(
-                            #crate_name::comp::IsotopeIniter { f: &#func },
+                        #crate_name::comp::InitStrategy::Auto(
+                            #crate_name::comp::Initer { f: &#func },
                         )
                     }
                 }
-                None => quote!(#crate_name::comp::IsotopeInitStrategy::None),
+                None => quote!(#crate_name::comp::InitStrategy::None),
             };
 
             output.extend(generics.impl_trait(
@@ -96,7 +96,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 quote! {
                     type Discrim = #discrim;
 
-                    const INIT_STRATEGY: #crate_name::comp::IsotopeInitStrategy<#archetype> = #init;
+                    const INIT_STRATEGY: #crate_name::comp::InitStrategy<#archetype> = #init;
 
                     type Storage = #storage;
                 },
@@ -105,18 +105,18 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             let init_strategy = match init {
                 Some((_, func)) => {
                     let func = func.as_fn_ptr(&generics, |ty| ty)?;
-                    quote!(#crate_name::comp::SimpleInitStrategy::Auto(
-                        #crate_name::comp::SimpleIniter { f: &#func }
+                    quote!(#crate_name::comp::InitStrategy::Auto(
+                        #crate_name::comp::Initer { f: &#func }
                     ))
                 }
-                None => quote!(#crate_name::comp::SimpleInitStrategy::None),
+                None => quote!(#crate_name::comp::InitStrategy::None),
             };
 
             output.extend(generics.impl_trait(
                 quote!(#crate_name::comp::Simple<#archetype>),
                 quote! {
-                    const PRESENCE: #crate_name::comp::SimplePresence = #presence_enum;
-                    const INIT_STRATEGY: #crate_name::comp::SimpleInitStrategy<#archetype> = #init_strategy;
+                    const PRESENCE: #crate_name::comp::Presence = #presence_enum;
+                    const INIT_STRATEGY: #crate_name::comp::InitStrategy<#archetype> = #init_strategy;
                     const IS_FINALIZER: bool = #finalizer;
 
                     type Storage = #storage;

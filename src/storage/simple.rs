@@ -12,7 +12,7 @@ use crate::{comp, Archetype};
 /// Storage and metadata for a simple component.
 pub(crate) struct Simple<A: Archetype> {
     /// The init strategy of the component.
-    pub(crate) init_strategy: comp::SimpleInitStrategy<A>,
+    pub(crate) init_strategy: comp::InitStrategy<A>,
     /// The actual storage object. Downcasts to `C::Storage`.
     pub(crate) storage:       Arc<RwLock<dyn AnySimpleStorage<A>>>,
 }
@@ -107,7 +107,7 @@ impl<A: Archetype, C: comp::Simple<A>> AnySimpleStorage<A> for SimpleStorage<A, 
     fn fill_init_simple(&mut self, entity: A::RawEntity, comp_map: &mut comp::Map<A>) {
         if let Some(comp) = comp_map.remove_simple::<C>() {
             self.0.set(entity, Some(comp));
-        } else if let comp::SimplePresence::Required = C::PRESENCE {
+        } else if let comp::Presence::Required = C::PRESENCE {
             panic!(
                 "Cannot create an entity of type `{}` without explicitly passing a component of \
                  type `{}`",

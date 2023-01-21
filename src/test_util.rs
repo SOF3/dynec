@@ -294,8 +294,8 @@ impl<const N: usize> entity::Referrer for CompN<N> {
 }
 
 impl<const N: usize> comp::Simple<TestArch> for CompN<N> {
-    const PRESENCE: comp::SimplePresence = comp::SimplePresence::Optional;
-    const INIT_STRATEGY: comp::SimpleInitStrategy<TestArch> = comp::SimpleInitStrategy::None;
+    const PRESENCE: comp::Presence = comp::Presence::Optional;
+    const INIT_STRATEGY: comp::InitStrategy<TestArch> = comp::InitStrategy::None;
     const IS_FINALIZER: bool = false;
 
     type Storage = storage::Vec<NonZeroU32, Self>;
@@ -307,7 +307,7 @@ impl<const N: usize> comp::Simple<TestArch> for CompN<N> {
 pub struct Iso1(pub i32);
 
 /// Has auto init
-#[comp(dynec_as(crate), of = TestArch, isotope = TestDiscrim2, init = || [(TestDiscrim2(71), Self(73))])]
+#[comp(dynec_as(crate), of = TestArch, isotope = TestDiscrim2)]
 #[derive(Debug, Clone, PartialEq)]
 pub struct Iso2(pub i32);
 

@@ -113,7 +113,7 @@ pub trait Write<A: Archetype, C: 'static>: Read<A, C> + Mut<A, C> {
     /// Returns a mutable reference to the component for the specified entity.
     ///
     /// This method is infallible, assuming [`comp::Must`] is only implemented
-    /// for components with [`Required`](comp::SimplePresence::Required) presence.
+    /// for components with [`Required`](comp::Presence::Required) presence.
     fn get_mut<E: entity::Ref<Archetype = A>>(&mut self, entity: E) -> &mut C
     where
         C: comp::Must<A>,
@@ -131,7 +131,7 @@ pub trait Write<A: Archetype, C: 'static>: Read<A, C> + Mut<A, C> {
     /// Overwrites the component for the specified entity.
     ///
     /// Passing `None` to this method removes the component from the entity.
-    /// This leads to a panic for components with [`comp::SimplePresence::Required`] presence.
+    /// This leads to a panic for components with [`comp::Presence::Required`] presence.
     fn set<E: entity::Ref<Archetype = A>>(&mut self, entity: E, value: Option<C>) -> Option<C>;
 
     /// Returns an [`Accessor`](accessor::Accessor) implementor that yields `&C` for each entity.

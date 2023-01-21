@@ -75,7 +75,7 @@ mod archetype_tests {}
 /// `$ty`) instead of a simple component.
 ///
 /// ## `required`
-/// Indicates that the component must be [present](crate::comp::SimplePresence)
+/// Indicates that the component must be [present](crate::comp::Presence)
 /// for an entity of its archetype any time as long as the entity is created andnot destroyed.
 ///
 /// This argument is exclusive with `isotope`,
@@ -111,14 +111,14 @@ mod archetype_tests {}
 /// struct Qux(i32);
 ///
 /// static_assertions::assert_impl_all!(Qux: comp::Simple<Foo>, comp::Simple<Bar>);
-/// assert!(matches!(<Qux as comp::Simple<Foo>>::PRESENCE, comp::SimplePresence::Optional));
+/// assert!(matches!(<Qux as comp::Simple<Foo>>::PRESENCE, comp::Presence::Optional));
 /// assert!(<Qux as comp::Simple<Bar>>::IS_FINALIZER);
 ///
 /// #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, dynec::Discrim)]
 /// #[dynec(map = discrim::SortedVecMap)]
 /// struct Id(usize);
 ///
-/// #[comp(of = Foo, isotope = Id, init = Self::make/0)]
+/// #[comp(of = Foo, isotope = Id)]
 /// struct Corge(i32);
 ///
 /// impl Corge {
@@ -547,7 +547,7 @@ mod global_tests {}
 /// #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, dynec::Discrim)]
 /// struct SkillType(usize);
 ///
-/// #[dynec::comp(of = Player, isotope = SkillType, init = || [(SkillType(0), SkillLevel(1))])]
+/// #[dynec::comp(of = Player, isotope = SkillType)]
 /// struct SkillLevel(u8);
 ///
 /// #[system(

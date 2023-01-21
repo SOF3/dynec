@@ -14,7 +14,7 @@ impl super::Referrer for Flag {
 impl<A: Archetype> comp::Simple<A> for Flag {
     type Storage = storage::Vec<A::RawEntity, Self>;
 
-    const PRESENCE: comp::SimplePresence = comp::SimplePresence::Optional;
-    const INIT_STRATEGY: comp::SimpleInitStrategy<A> = comp::SimpleInitStrategy::None;
+    const PRESENCE: comp::Presence = comp::Presence::Optional;
+    const INIT_STRATEGY: comp::InitStrategy<A> = comp::InitStrategy::None;
     const IS_FINALIZER: bool = false;
 }

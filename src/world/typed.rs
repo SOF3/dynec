@@ -100,16 +100,16 @@ fn toposort_populators<A: Archetype>(
 
     for (&ty, storage) in simple_storages {
         match &storage.init_strategy {
-            comp::SimpleInitStrategy::None => continue, /* direct requirement, does not affect population */
-            comp::SimpleInitStrategy::Auto(initer) => {
+            comp::InitStrategy::None => continue, /* direct requirement, does not affect population */
+            comp::InitStrategy::Auto(initer) => {
                 unprocessed.push((ty, initer.f.deps(), Box::new(|map| initer.f.populate(map))))
             }
         };
     }
     for (&ty, storage) in isotope_maps {
         match &storage.init_strategy() {
-            comp::IsotopeInitStrategy::None => continue, /* direct requirement, does not affect population */
-            comp::IsotopeInitStrategy::Auto(initer) => {
+            comp::InitStrategy::None => continue, /* direct requirement, does not affect population */
+            comp::InitStrategy::Auto(initer) => {
                 unprocessed.push((ty, initer.f.deps(), Box::new(|map| initer.f.populate(map))))
             }
         };
@@ -130,9 +130,9 @@ fn toposort_populators<A: Archetype>(
             dependents_map.entry(dep_ty).or_default().push(ty); // ty is pushed to unprocessed, which will fill requests later
             match dep_strategy {
                 // required dependency, does not affect population
-                comp::SimpleInitStrategy::None => continue,
+                comp::InitStrategy::None => continue,
                 // push to unprocessed again to recurse
-                comp::SimpleInitStrategy::Auto(initer) => {
+                comp::InitStrategy::Auto(initer) => {
                     request.dep_count += 1;
                     unprocessed.push((
                         dep_ty,

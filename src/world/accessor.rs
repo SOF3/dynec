@@ -13,7 +13,8 @@ use crate::storage::{Chunked as _, Storage as _};
 use crate::util::{self, DbgTypeId};
 use crate::{comp, entity, storage, system, Archetype};
 
-type LockedIsotopeStorage<A, C> = ArcRwLockWriteGuard<RawRwLock, <C as comp::Isotope<A>>::Storage>;
+type LockedIsotopeStorage<A, C> =
+    ArcRwLockWriteGuard<RawRwLock, <C as comp::SimpleOrIsotope<A>>::Storage>;
 
 /// Stores the component states in a world.
 pub struct Components {

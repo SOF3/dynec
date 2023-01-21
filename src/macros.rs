@@ -111,7 +111,7 @@ mod archetype_tests {}
 /// struct Qux(i32);
 ///
 /// static_assertions::assert_impl_all!(Qux: comp::Simple<Foo>, comp::Simple<Bar>);
-/// assert!(matches!(<Qux as comp::Simple<Foo>>::PRESENCE, comp::Presence::Optional));
+/// assert!(matches!(<Qux as comp::SimpleOrIsotope<Foo>>::PRESENCE, comp::Presence::Optional));
 /// assert!(<Qux as comp::Simple<Bar>>::IS_FINALIZER);
 ///
 /// #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, dynec::Discrim)]

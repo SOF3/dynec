@@ -160,7 +160,7 @@ macro_rules! impl_simple_init_fn {
 
             fn deps(&self) -> Vec<(DbgTypeId, comp::InitStrategy<A>)> {
                 vec![
-                    $((DbgTypeId::of::<$deps>(), <$deps as comp::Simple<A>>::INIT_STRATEGY),)*
+                    $((DbgTypeId::of::<$deps>(), <$deps as comp::SimpleOrIsotope<A>>::INIT_STRATEGY),)*
                 ]
             }
         }
@@ -229,7 +229,7 @@ macro_rules! impl_isotope_init_fn {
 
             fn deps(&self) -> Vec<(DbgTypeId, comp::InitStrategy<A>)> {
                 vec![
-                    $((DbgTypeId::of::<$deps>(), <$deps as comp::Simple<A>>::INIT_STRATEGY),)*
+                    $((DbgTypeId::of::<$deps>(), <$deps as comp::SimpleOrIsotope<A>>::INIT_STRATEGY),)*
                 ]
             }
         }

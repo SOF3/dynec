@@ -53,38 +53,34 @@ pub use discrim::Discrim;
 pub(crate) mod any;
 pub use any::{DepList, InitFn, Initer, IsotopeInitFn, IsotopeIniter, Map};
 
-/// A simple component has only one instance per entity.
-///
-/// See the [module-level documentation](mod@crate::comp) for more information.
-pub trait Simple<A: Archetype>: entity::Referrer + Send + Sync + Sized + 'static {
+pub trait SimpleOrIsotope<A: Archetype>: entity::Referrer + Send + Sync + Sized + 'static {
     /// The presence constraint of this component.
     const PRESENCE: Presence;
 
     /// The initialization strategy for this component.
     const INIT_STRATEGY: InitStrategy<A>;
 
+    /// The storage type used for storing this simple component.
+    type Storage: Storage<RawEntity = A::RawEntity, Comp = Self>;
+}
+
+/// A simple component has only one instance per entity.
+///
+/// See the [module-level documentation](mod@crate::comp) for more information.
+pub trait Simple<A: Archetype>: SimpleOrIsotope<A> {
     /// Override this to `true` if the component is a finalizer.
     ///
     /// Finalizer components must be [optional](Presence::Optional).
     /// Entities are not removed until all finalizer components have been removed.
     const IS_FINALIZER: bool = false;
-
-    /// The storage type used for storing this simple component.
-    type Storage: Storage<RawEntity = A::RawEntity, Comp = Self>;
 }
 
 /// An isotope component may have multiple instances per entity.
 ///
 /// See the [module-level documentation](mod@crate::comp) for more information.
-pub trait Isotope<A: Archetype>: entity::Referrer + Send + Sync + Sized + 'static {
-    /// The initialization strategy for this component.
-    const INIT_STRATEGY: InitStrategy<A>;
-
+pub trait Isotope<A: Archetype>: SimpleOrIsotope<A> {
     /// The discriminant type.
     type Discrim: Discrim;
-
-    /// The storage type used for storing this simple component.
-    type Storage: Storage<RawEntity = A::RawEntity, Comp = Self>;
 }
 
 /// Describes whether a simple component must be present.

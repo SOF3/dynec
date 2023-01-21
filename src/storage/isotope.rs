@@ -8,8 +8,10 @@ use super::Storage;
 use crate::entity::referrer;
 use crate::{comp, Archetype};
 
-pub(crate) type MapInner<A, C> =
-    HashMap<<C as comp::Isotope<A>>::Discrim, Arc<RwLock<<C as comp::Isotope<A>>::Storage>>>;
+pub(crate) type MapInner<A, C> = HashMap<
+    <C as comp::Isotope<A>>::Discrim,
+    Arc<RwLock<<C as comp::SimpleOrIsotope<A>>::Storage>>,
+>;
 
 /// Isotope storages of the same type but different discriminants.
 pub(crate) struct Map<A: Archetype, C: comp::Isotope<A>> {

@@ -73,61 +73,46 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             quote!(#storage)
         };
 
-        if let Some((_, discrim)) = isotope {
-            let init = match init {
-                Some((_, func)) => {
-                    // do not implement comp::Must, because presence is value-dependent.
-
-                    let func = func.as_fn_ptr(
-                        &generics,
-                        |ty| quote!(impl ::std::iter::IntoIterator<Item = (#discrim, #ty)>),
-                    )?;
-                    quote! {
-                        #crate_name::comp::InitStrategy::Auto(
-                            #crate_name::comp::Initer { f: &#func },
-                        )
-                    }
+        let init_strategy = match init {
+            None => quote!(#crate_name::comp::InitStrategy::None),
+            Some((_, func)) => {
+                let func = func.as_fn_ptr(&generics, |ty| ty)?;
+                quote! {
+                    #crate_name::comp::InitStrategy::Auto(#crate_name::comp::Initer { f: &#func })
                 }
-                None => quote!(#crate_name::comp::InitStrategy::None),
-            };
+            }
+        };
 
+        output.extend(generics.impl_trait(
+            quote!(#crate_name::comp::SimpleOrIsotope<#archetype>),
+            quote! {
+                const PRESENCE: #crate_name::comp::Presence = #presence_enum;
+                const INIT_STRATEGY: #crate_name::comp::InitStrategy<#archetype> = #init_strategy;
+
+                type Storage = #storage;
+            },
+        ));
+
+        if let Some((_, discrim)) = isotope {
             output.extend(generics.impl_trait(
                 quote!(#crate_name::comp::Isotope<#archetype>),
                 quote! {
                     type Discrim = #discrim;
-
-                    const INIT_STRATEGY: #crate_name::comp::InitStrategy<#archetype> = #init;
-
-                    type Storage = #storage;
                 },
             ));
         } else {
-            let init_strategy = match init {
-                Some((_, func)) => {
-                    let func = func.as_fn_ptr(&generics, |ty| ty)?;
-                    quote!(#crate_name::comp::InitStrategy::Auto(
-                        #crate_name::comp::Initer { f: &#func }
-                    ))
-                }
-                None => quote!(#crate_name::comp::InitStrategy::None),
-            };
-
             output.extend(generics.impl_trait(
                 quote!(#crate_name::comp::Simple<#archetype>),
                 quote! {
-                    const PRESENCE: #crate_name::comp::Presence = #presence_enum;
-                    const INIT_STRATEGY: #crate_name::comp::InitStrategy<#archetype> = #init_strategy;
                     const IS_FINALIZER: bool = #finalizer;
-
-                    type Storage = #storage;
                 },
             ));
+        }
 
-            if presence.is_some() {
-                output.extend(
-                    generics.impl_trait(quote!(#crate_name::comp::Must<#archetype>), quote! {}),
-                );
-            }
+        if presence.is_some() {
+            output.extend(
+                generics.impl_trait(quote!(#crate_name::comp::Must<#archetype>), quote! {}),
+            );
         }
     }
 

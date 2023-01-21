@@ -293,12 +293,14 @@ impl<const N: usize> entity::Referrer for CompN<N> {
     fn visit_mut<V: entity::referrer::VisitMutArg>(&mut self, _: &mut V) {}
 }
 
-impl<const N: usize> comp::Simple<TestArch> for CompN<N> {
+impl<const N: usize> comp::SimpleOrIsotope<TestArch> for CompN<N> {
     const PRESENCE: comp::Presence = comp::Presence::Optional;
     const INIT_STRATEGY: comp::InitStrategy<TestArch> = comp::InitStrategy::None;
-    const IS_FINALIZER: bool = false;
 
     type Storage = storage::Vec<NonZeroU32, Self>;
+}
+impl<const N: usize> comp::Simple<TestArch> for CompN<N> {
+    const IS_FINALIZER: bool = false;
 }
 
 /// Does not have auto init

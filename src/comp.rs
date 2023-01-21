@@ -41,7 +41,7 @@
 //!
 //! # Instantiation
 //! When an entity is created, its simple components are auto-instantiated based on the [`InitStrategy`]
-//! specified in [`Simple::INIT_STRATEGY`] if it is absent in the creation args.
+//! specified in [`SimpleOrIsotope::INIT_STRATEGY`] if it is absent in the creation args.
 //!
 //! Isotope components are never instantiated on entity creation.
 
@@ -51,8 +51,9 @@ pub mod discrim;
 pub use discrim::Discrim;
 
 pub(crate) mod any;
-pub use any::{DepList, InitFn, Initer, IsotopeInitFn, IsotopeIniter, Map};
+pub use any::{DepList, InitFn, Initer, Map};
 
+/// The common items for a simple or isotope component.
 pub trait SimpleOrIsotope<A: Archetype>: entity::Referrer + Send + Sync + Sized + 'static {
     /// The presence constraint of this component.
     const PRESENCE: Presence;
@@ -114,9 +115,9 @@ impl<A: Archetype> InitStrategy<A> {
 
 /// Marks that a component type is always present.
 ///
-/// This trait must only be implemented by components that
-/// implement [`Simple`] with [`Simple::PRESENCE`] set to [`Presence::Required`].
+/// This trait must only be implemented by components that implement [`SimpleOrIsotope`]
+/// with [`SimpleOrIsotope::PRESENCE`] set to [`Presence::Required`].
 ///
 /// Not implementing this trait does not result in any issues
 /// except for ergonomic inconvenience when using getters on storages.
-pub trait Must<A: Archetype> {}
+pub trait Must<A: Archetype>: SimpleOrIsotope<A> {}

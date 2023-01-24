@@ -144,7 +144,7 @@ impl SimpleRequest {
             arch: ArchetypeDescriptor::of::<A>(),
             comp: DbgTypeId::of::<C>(),
             mutable,
-            storage_builder: || Box::new(storage::Simple::<A>::new::<C>()),
+            storage_builder: storage::simple::builder::<A, C> as fn() -> Box<dyn Any>,
             strong_refs: visitor.found_archs,
         }
     }

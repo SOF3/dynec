@@ -1,136 +1,102 @@
 //! Utilities for dynamic dispatch related to components.
 
 use std::any::{self, Any};
-use std::collections::BTreeMap;
+use std::collections::HashMap;
 use std::marker::PhantomData;
-use std::{cmp, hash};
 
-use super::Discrim;
+use parking_lot::lock_api::ArcRwLockWriteGuard;
+
+use crate::storage::simple::AnySimpleStorage;
 use crate::util::DbgTypeId;
-use crate::{comp, Archetype};
-
-/// Identifies a generic simple or discriminated isotope component type.
-#[derive(Debug, Clone, Copy)]
-pub(crate) struct Identifier {
-    pub(crate) id:      DbgTypeId,
-    pub(crate) discrim: Option<usize>,
-}
-
-impl Identifier {
-    pub(crate) fn simple<A: Archetype, C: comp::Simple<A>>() -> Self {
-        Identifier { id: DbgTypeId::of::<C>(), discrim: None }
-    }
-
-    pub(crate) fn isotope<A: Archetype, C: comp::Isotope<A>>(discrim: C::Discrim) -> Self {
-        Identifier { id: DbgTypeId::of::<C>(), discrim: Some(discrim.into_usize()) }
-    }
-}
-
-impl PartialEq for Identifier {
-    fn eq(&self, other: &Self) -> bool { self.id == other.id && self.discrim == other.discrim }
-}
-
-impl Eq for Identifier {}
-
-impl PartialOrd for Identifier {
-    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> { Some(self.cmp(other)) }
-}
-
-impl Ord for Identifier {
-    fn cmp(&self, other: &Self) -> cmp::Ordering {
-        self.id.cmp(&other.id).then_with(|| self.discrim.cmp(&other.discrim))
-    }
-}
-
-impl hash::Hash for Identifier {
-    fn hash<H: hash::Hasher>(&self, state: &mut H) {
-        self.id.hash(state);
-        self.discrim.hash(state)
-    }
-}
+use crate::{comp, storage, Archetype};
 
 /// A generic TypeMap of owned simple and isotope components.
 ///
 /// This type is only used in parameter passing, not in the actual storage.
 pub struct Map<A: Archetype> {
-    map: BTreeMap<Identifier, Box<dyn Any + Send + Sync>>,
+    simple:  HashMap<DbgTypeId, Box<dyn Any + Send + Sync>>,
+    isotope: HashMap<DbgTypeId, Box<dyn Any + Send + Sync>>,
 
     _ph: PhantomData<A>,
 }
 
 impl<A: Archetype> Default for Map<A> {
-    fn default() -> Self { Map { map: BTreeMap::default(), _ph: PhantomData } }
+    fn default() -> Self {
+        Map { simple: HashMap::new(), isotope: HashMap::new(), _ph: PhantomData }
+    }
 }
+
+pub(crate) type IsotopeMap<A, C> = Vec<(<C as comp::Isotope<A>>::Discrim, C)>;
 
 impl<A: Archetype> Map<A> {
     /// Inserts a simple component into the map.
     pub fn insert_simple<C: comp::Simple<A>>(&mut self, comp: C) {
-        let prev = self.map.insert(Identifier::simple::<A, C>(), Box::new(comp));
+        let prev = self.simple.insert(DbgTypeId::of::<C>(), Box::new(comp));
         if prev.is_some() {
             panic!("Cannot insert the same simple component into the same comp::Map twice");
         }
     }
 
-    /// Gets a simple component from the map.
-    pub(crate) fn get_simple<C: comp::Simple<A>>(&self) -> Option<&C> {
-        self.map.get(&Identifier::simple::<A, C>()).and_then(|c| c.downcast_ref())
-    }
-
-    /// Gets a simple component from the map.
     pub(crate) fn remove_simple<C: comp::Simple<A>>(&mut self) -> Option<C> {
-        let comp = self.map.remove(&Identifier::simple::<A, C>())?;
-        let comp = comp.downcast::<C>().expect("TypeId mismatch");
-        Some(*comp)
+        Some(*self.simple.remove(&DbgTypeId::of::<C>())?.downcast().expect("TypeId mismatch"))
     }
 
     /// Inserts an isotope component into the map.
     pub fn insert_isotope<C: comp::Isotope<A>>(&mut self, discrim: C::Discrim, comp: C) {
-        let prev = self.map.insert(Identifier::isotope::<A, C>(discrim), Box::new(comp));
-        if prev.is_some() {
-            panic!(
-                "Cannot insert the same isotope component with the same discriminant into the \
-                 same comp::Map twice"
-            );
+        let entry = self.isotope.entry(DbgTypeId::of::<C>());
+        entry
+            .or_insert_with(|| Box::<IsotopeMap<A, C>>::default())
+            .downcast_mut::<IsotopeMap<A, C>>()
+            .expect("TypeId mismatch")
+            .push((discrim, comp));
+    }
+
+    pub(crate) fn remove_isotope<C: comp::Isotope<A>>(&mut self) -> IsotopeMap<A, C> {
+        match self.isotope.remove(&DbgTypeId::of::<C>()) {
+            Some(map) => *map.downcast().expect("TypeId mismatch"),
+            None => Vec::new(),
         }
     }
 
-    /// Drops this map, returning an iterator of all isotope components.
-    ///
-    /// This should be changed to `drain_filter` when it is stable.
-    pub(crate) fn into_isotopes(
-        self,
-    ) -> impl Iterator<Item = (Identifier, Box<dyn Any + Send + Sync>)> {
-        self.map.into_iter().filter(|(id, _)| id.discrim.is_some())
-    }
-
-    /// Returns the number of components in the map.
-    pub fn len(&self) -> usize { self.map.len() }
-
-    /// Returns true if the map contains no components.
-    pub fn is_empty(&self) -> bool { self.map.is_empty() }
+    /// Number of simple components.
+    pub fn simple_len(&self) -> usize { self.simple.len() }
+    /// Number of distinct isotope component types.
+    pub fn isotope_type_count(&self) -> usize { self.isotope.len() }
 }
 
 /// Dependency list.
 ///
-/// Items are tuples of `(DbgTypeIdOf::<C>(), C::INIT_STRATEGY)`.
-pub type DepList<A> = Vec<(DbgTypeId, comp::InitStrategy<A>)>;
+/// Items are tuples of `(DbgTypeIdOf::<C>(), storage::simple::builder::<A, C>)`.
+pub type DepList = Vec<(DbgTypeId, fn() -> Box<dyn Any>)>;
 
 /// Describes how to instantiate a component based on other component types.
-pub struct Initer<A: Archetype> {
+pub struct Initer<A: Archetype, C: comp::SimpleOrIsotope<A>> {
     /// The component function.
-    pub f: &'static dyn InitFn<A>,
+    pub f: &'static dyn InitFn<A, C>,
 }
 
 /// A function used for [`comp::InitStrategy::Auto`].
 ///
 /// This trait is blanket-implemented for all functions that take up to 32 simple component
 /// parameters and output the component value.
-pub trait InitFn<A: Archetype>: Send + Sync + 'static {
-    /// Calls the underlying function, extracting the arguments.
-    fn populate(&self, map: &mut Map<A>);
+pub trait InitFn<A: Archetype, C: comp::SimpleOrIsotope<A>>: Send + Sync + 'static {
+    /// Calls the underlying function, building the arguments.
+    fn init(&self, dep_getter: DepGetter<'_, A>) -> C;
 
     /// Returns the component types required by this function.
-    fn deps(&self) -> DepList<A>;
+    fn deps(&self) -> DepList;
+}
+
+pub struct DepGetter<'t, A: Archetype> {
+    pub(crate) inner:  &'t dyn DepGetterInner<A>,
+    pub(crate) entity: A::RawEntity,
+}
+
+pub(crate) trait DepGetterInner<A: Archetype> {
+    fn get(
+        &self,
+        ty: DbgTypeId,
+    ) -> ArcRwLockWriteGuard<parking_lot::RawRwLock, dyn AnySimpleStorage<A>>;
 }
 
 macro_rules! impl_simple_init_fn {
@@ -138,29 +104,28 @@ macro_rules! impl_simple_init_fn {
         impl<
             A: Archetype, C: comp::Simple<A>,
             $($deps: comp::Simple<A>,)*
-        > InitFn<A> for fn(
+        > InitFn<A, C> for fn(
             $(&$deps,)*
         ) -> C {
-            fn populate(&self, map: &mut Map<A>) {
-                let populate = (self)(
+            fn init(&self, dep_getter: DepGetter<'_, A>) -> C {
+                (self)(
                     $(
-                        match map.get_simple::<$deps>() {
-                            Some(comp) => comp,
+                        match dep_getter.inner.get(DbgTypeId::of::<$deps>()).get_any(dep_getter.entity) {
+                            Some(comp) => comp.downcast_ref::<$deps>().expect("TypeId mismatch"),
                             None => panic!(
-                                "Cannot create an entity of type `{}` without explicitly passing a component of type `{}`, which is required for `{}`",
+                                "Cannot create an entity of type `{}` without explicitly passing a component of type `{}`, or `{}` to invoke its auto-initializer",
                                 any::type_name::<A>(),
-                                any::type_name::<$deps>(),
                                 any::type_name::<C>(),
+                                any::type_name::<$deps>(),
                             ),
                         },
                     )*
-                );
-                map.insert_simple(populate);
+                )
             }
 
-            fn deps(&self) -> Vec<(DbgTypeId, comp::InitStrategy<A>)> {
+            fn deps(&self) -> DepList {
                 vec![
-                    $((DbgTypeId::of::<$deps>(), <$deps as comp::SimpleOrIsotope<A>>::INIT_STRATEGY),)*
+                    $((DbgTypeId::of::<$deps>(), storage::simple::builder::<A, $deps>),)*
                 ]
             }
         }

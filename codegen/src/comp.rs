@@ -87,7 +87,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             quote!(#crate_name::comp::SimpleOrIsotope<#archetype>),
             quote! {
                 const PRESENCE: #crate_name::comp::Presence = #presence_enum;
-                const INIT_STRATEGY: #crate_name::comp::InitStrategy<#archetype> = #init_strategy;
+                const INIT_STRATEGY: #crate_name::comp::InitStrategy<#archetype, Self> = #init_strategy;
 
                 type Storage = #storage;
             },

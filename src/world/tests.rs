@@ -22,8 +22,6 @@ fn test_system(
 }
 
 #[test]
-#[should_panic = "The component dynec::test_util::Comp2 cannot be retrieved because it is not used \
-                  in any systems"]
 fn test_dependencies_successful() {
     let mut world = system_test!(test_system.build(););
     let entity = world.create::<TestArch>(crate::comps![ @(crate) TestArch =>
@@ -54,8 +52,8 @@ fn test_dependencies_missing_required_simple() {
 
 #[test]
 #[should_panic = "Cannot create an entity of type `dynec::test_util::TestArch` without explicitly \
-                  passing a component of type `dynec::test_util::Comp1`, which is required for \
-                  `dynec::test_util::Comp2`"]
+                  passing a component of type `dynec::test_util::Comp2`, or \
+                  `dynec::test_util::Comp1` to invoke its auto-initializer"]
 fn test_dependencies_missing_required_dep() {
     let mut world = system_test!(test_system.build(););
     world.create::<TestArch>(crate::comps![@(crate) TestArch => Comp5(1)]);

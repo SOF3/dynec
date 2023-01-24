@@ -164,7 +164,8 @@ mod comp_tests {}
 /// ```
 /// dynec::archetype!(Foo);
 /// let empty = dynec::comps![Foo =>];
-/// assert_eq!(empty.len(), 0);
+/// assert_eq!(empty.simple_len(), 0);
+/// assert_eq!(empty.isotope_type_count(), 0);
 ///
 /// #[dynec::comp(of = Foo)]
 /// struct Comp1;
@@ -197,7 +198,8 @@ mod comp_tests {}
 ///     @(MyDiscrim(4), Iso("xxx")),
 ///     @?hashed,
 /// ];
-/// assert_eq!(map.len(), 7);
+/// assert_eq!(map.simple_len(), 3);
+/// assert_eq!(map.isotope_type_count(), 2);
 /// ```
 #[doc(inline)]
 pub use dynec_codegen::comps;

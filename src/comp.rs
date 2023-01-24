@@ -45,6 +45,8 @@
 //!
 //! Isotope components are never instantiated on entity creation.
 
+use std::any::type_name;
+
 use crate::{entity, Archetype, Storage};
 
 pub mod discrim;
@@ -52,6 +54,7 @@ pub use discrim::Discrim;
 
 pub(crate) mod any;
 pub use any::{DepList, InitFn, Initer, Map};
+use itertools::Itertools;
 
 /// The common items for a simple or isotope component.
 pub trait SimpleOrIsotope<A: Archetype>: entity::Referrer + Send + Sync + Sized + 'static {
@@ -59,7 +62,7 @@ pub trait SimpleOrIsotope<A: Archetype>: entity::Referrer + Send + Sync + Sized 
     const PRESENCE: Presence;
 
     /// The initialization strategy for this component.
-    const INIT_STRATEGY: InitStrategy<A>;
+    const INIT_STRATEGY: InitStrategy<A, Self>;
 
     /// The storage type used for storing this simple component.
     type Storage: Storage<RawEntity = A::RawEntity, Comp = Self>;
@@ -100,17 +103,33 @@ pub enum Presence {
 }
 
 /// Describes how a simple component is auto-initialized.
-pub enum InitStrategy<A: Archetype> {
+pub enum InitStrategy<A: Archetype, C: SimpleOrIsotope<A>> {
     /// The component is not auto-initialized.
     None,
     /// The component should be auto-initialized using the [`Initer`]
     /// if it is not given in the creation args.
-    Auto(Initer<A>),
+    Auto(Initer<A, C>),
 }
 
-impl<A: Archetype> InitStrategy<A> {
+impl<A: Archetype, C: SimpleOrIsotope<A>> InitStrategy<A, C> {
     /// Constructs an auto-initializing init strategy from a closure.
-    pub fn auto(f: &'static impl InitFn<A>) -> Self { Self::Auto(Initer { f }) }
+    pub fn auto(f: &'static impl InitFn<A, C>) -> Self { Self::Auto(Initer { f }) }
+
+    /// Gets the list of dependencies and panics if there are duplicates.
+    pub(crate) fn checked_deps(&self) -> DepList {
+        let deps = match self {
+            InitStrategy::None => Vec::new(),
+            InitStrategy::Auto(initer) => initer.f.deps(),
+        };
+        if let Some(dup_dep) = deps.iter().map(|&(ty, _)| ty).duplicates().next() {
+            panic!(
+                "Initializer of {} cannot depend on the same component type {dup_dep} multiple \
+                 times",
+                type_name::<C>()
+            );
+        }
+        deps
+    }
 }
 
 /// Marks that a component type is always present.

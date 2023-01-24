@@ -27,14 +27,12 @@ pub(crate) trait AnyMap<A: Archetype>: Send + Sync {
     fn as_any(&self) -> &(dyn Any + Send + Sync);
     fn as_any_mut(&mut self) -> &mut (dyn Any + Send + Sync);
 
-    fn init_strategy(&self) -> &'static comp::InitStrategy<A>;
-
-    /// Fills an entry. Called during entity initialization.
-    fn fill_init(
+    /// Fills all entries. Called during entity initialization.
+    fn fill_init_isotope(
         &mut self,
-        discrim: usize,
         entity: A::RawEntity,
-        value: Box<dyn Any + Send + Sync>,
+        comp_map: &mut comp::Map<A>,
+        dep_getter: comp::any::DepGetter<'_, A>,
     );
 
     fn referrer_dyn<'t>(&'t mut self) -> Box<dyn referrer::Object + 't>;
@@ -44,22 +42,22 @@ impl<A: Archetype, C: comp::Isotope<A>> AnyMap<A> for Map<A, C> {
     fn as_any(&self) -> &(dyn Any + Send + Sync) { self }
     fn as_any_mut(&mut self) -> &mut (dyn Any + Send + Sync) { self }
 
-    fn init_strategy(&self) -> &'static comp::InitStrategy<A> { &C::INIT_STRATEGY }
-
-    fn fill_init(
+    fn fill_init_isotope(
         &mut self,
-        discrim: usize,
-        entity: A::RawEntity,
-        value: Box<dyn Any + Send + Sync>,
+        entity: <A as Archetype>::RawEntity,
+        comp_map: &mut comp::Map<A>,
+        dep_getter: comp::any::DepGetter<'_, A>,
     ) {
-        let storage: &mut Arc<RwLock<C::Storage>> = self
-            .map
-            .get_mut()
-            .entry(<C::Discrim as comp::Discrim>::from_usize(discrim))
-            .or_insert_with(Arc::<RwLock<C::Storage>>::default);
-        let storage = Arc::get_mut(storage).expect("storage arc was leaked");
-        let value = value.downcast::<C>().expect("TypeId mismatch");
-        storage.get_mut().set(entity, Some(*value));
+        let map = self.map.get_mut();
+        let values = comp_map.remove_isotope::<C>();
+
+        for (discrim, value) in values {
+            let storage = map.entry(discrim).or_insert_with(Arc::<RwLock<C::Storage>>::default);
+            let storage = Arc::get_mut(storage).expect("storage arc was leaked").get_mut();
+            storage.set(entity, Some(value));
+        }
+
+        // TODO process init strategy
     }
 
     fn referrer_dyn<'t>(&'t mut self) -> Box<dyn referrer::Object + 't> {

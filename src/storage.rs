@@ -8,7 +8,7 @@ pub use vec::VecStorage as Vec;
 mod tree;
 pub use tree::Tree;
 
-mod simple;
+pub(crate) mod simple;
 pub(crate) use simple::Simple;
 mod isotope;
 pub(crate) use isotope::{AnyMap as AnyIsotopeMap, Map as IsotopeMap, MapInner as IsotopeMapInner};

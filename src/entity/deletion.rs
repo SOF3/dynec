@@ -13,7 +13,7 @@ impl super::Referrer for Flag {
 
 impl<A: Archetype> comp::SimpleOrIsotope<A> for Flag {
     const PRESENCE: comp::Presence = comp::Presence::Optional;
-    const INIT_STRATEGY: comp::InitStrategy<A> = comp::InitStrategy::None;
+    const INIT_STRATEGY: comp::InitStrategy<A, Self> = comp::InitStrategy::None;
 
     type Storage = storage::Vec<A::RawEntity, Self>;
 }

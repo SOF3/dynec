@@ -295,7 +295,7 @@ impl<const N: usize> entity::Referrer for CompN<N> {
 
 impl<const N: usize> comp::SimpleOrIsotope<TestArch> for CompN<N> {
     const PRESENCE: comp::Presence = comp::Presence::Optional;
-    const INIT_STRATEGY: comp::InitStrategy<TestArch> = comp::InitStrategy::None;
+    const INIT_STRATEGY: comp::InitStrategy<TestArch, Self> = comp::InitStrategy::None;
 
     type Storage = storage::Vec<NonZeroU32, Self>;
 }

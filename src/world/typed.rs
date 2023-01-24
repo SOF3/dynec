@@ -1,8 +1,12 @@
 use std::any::{self, Any};
-use std::collections::{hash_map, HashMap};
+use std::collections::HashMap;
 use std::sync::Arc;
 
+use indexmap::IndexMap;
+use parking_lot::lock_api::ArcRwLockWriteGuard;
+
 use crate::entity::{self, referrer};
+use crate::storage::simple::AnySimpleStorage;
 use crate::util::DbgTypeId;
 use crate::{comp, storage, Archetype};
 
@@ -16,50 +20,69 @@ pub(crate) trait AnyBuilder {
     fn add_isotope_map_if_missing(
         &mut self,
         component: DbgTypeId,
-        factory_builder: fn() -> Box<dyn Any>,
+        map_builder: fn() -> Box<dyn Any>,
     );
 
     fn build(self: Box<Self>) -> Box<dyn AnyTyped>;
 }
 
 pub(crate) fn builder<A: Archetype>() -> impl AnyBuilder {
-    let mut builder =
-        Builder::<A> { simple_storages: HashMap::new(), isotope_storage_maps: HashMap::new() };
-    populate_default_component::<A, entity::deletion::Flag>(&mut builder);
+    let mut builder = Builder::<A> {
+        simple_storages:      IndexMap::new(),
+        isotope_storage_maps: HashMap::new(),
+    };
+
+    // Native components from dynec that must be present for every archetype.
+    populate_native_component::<A, entity::deletion::Flag>(&mut builder);
+
     builder
 }
 
-fn populate_default_component<A: Archetype, C: comp::Simple<A>>(builder: &mut Builder<A>) {
+fn populate_native_component<A: Archetype, C: comp::Simple<A>>(builder: &mut Builder<A>) {
     builder.simple_storages.insert(DbgTypeId::of::<C>(), storage::Simple::new::<C>());
 }
 
 struct Builder<A: Archetype> {
-    simple_storages:      HashMap<DbgTypeId, storage::Simple<A>>,
+    simple_storages:      IndexMap<DbgTypeId, storage::Simple<A>>,
     isotope_storage_maps: HashMap<DbgTypeId, Arc<dyn storage::AnyIsotopeMap<A>>>,
 }
 
 impl<A: Archetype> AnyBuilder for Builder<A> {
+    // TODO: add unit tests to ensure that simple_storages is always toposorted
     fn add_simple_storage_if_missing(
         &mut self,
         component: DbgTypeId,
-        box_fn: fn() -> Box<dyn Any>,
+        storage_builder: fn() -> Box<dyn Any>,
     ) {
-        self.simple_storages.entry(component).or_insert_with(|| {
-            let boxed = box_fn();
-            match boxed.downcast::<storage::Simple<A>>() {
-                Ok(ss) => *ss,
+        let entry = self.simple_storages.entry(component);
+        if let indexmap::map::Entry::Vacant(entry) = entry {
+            let boxed = storage_builder();
+            let storage = match boxed.downcast::<storage::Simple<A>>() {
+                Ok(storage) => *storage,
                 Err(boxed) => panic!(
                     "Expected storage::Simple<{}>, got {:?}",
                     any::type_name::<A>(),
                     boxed.type_id(),
                 ),
+            };
+
+            let deps = &storage.dep_list;
+            for &(dep_ty, dep_storage_builder) in deps {
+                self.add_simple_storage_if_missing(dep_ty, dep_storage_builder);
             }
-        });
+
+            // insert the new component after all dependencies have been inserted
+            self.simple_storages.insert(component, storage);
+        }
     }
 
-    fn add_isotope_map_if_missing(&mut self, component: DbgTypeId, box_fn: fn() -> Box<dyn Any>) {
+    fn add_isotope_map_if_missing(
+        &mut self,
+        component: DbgTypeId,
+        map_builder: fn() -> Box<dyn Any>,
+    ) {
         self.isotope_storage_maps.entry(component).or_insert_with(|| {
-            let boxed = box_fn();
+            let boxed = map_builder();
             match boxed.downcast::<Arc<dyn storage::AnyIsotopeMap<A>>>() {
                 Ok(factory) => *factory,
                 Err(boxed) => panic!(
@@ -71,139 +94,77 @@ impl<A: Archetype> AnyBuilder for Builder<A> {
         });
     }
 
-    fn build(mut self: Box<Self>) -> Box<dyn AnyTyped> {
-        let populators =
-            toposort_populators(&mut self.simple_storages, &mut self.isotope_storage_maps);
-
+    fn build(self: Box<Self>) -> Box<dyn AnyTyped> {
         Box::new(Typed::<A> {
-            simple_storages: self.simple_storages,
+            simple_storages:      self.simple_storages,
             isotope_storage_maps: self.isotope_storage_maps,
-            populators,
         })
     }
 }
 
-type Populator<A> = Box<dyn Fn(&mut comp::Map<A>) + Send + Sync>;
-
-fn toposort_populators<A: Archetype>(
-    simple_storages: &mut HashMap<DbgTypeId, storage::Simple<A>>,
-    isotope_maps: &mut HashMap<DbgTypeId, Arc<dyn storage::AnyIsotopeMap<A>>>,
-) -> Vec<Populator<A>> {
-    let mut populators = Vec::new();
-
-    struct Request<A: Archetype> {
-        dep_count: usize,
-        populator: Populator<A>,
-    }
-
-    let mut unprocessed: Vec<(DbgTypeId, comp::DepList<A>, Populator<A>)> = Vec::new();
-
-    for (&ty, storage) in simple_storages {
-        match &storage.init_strategy {
-            comp::InitStrategy::None => continue, /* direct requirement, does not affect population */
-            comp::InitStrategy::Auto(initer) => {
-                unprocessed.push((ty, initer.f.deps(), Box::new(|map| initer.f.populate(map))))
-            }
-        };
-    }
-    for (&ty, storage) in isotope_maps {
-        match &storage.init_strategy() {
-            comp::InitStrategy::None => continue, /* direct requirement, does not affect population */
-            comp::InitStrategy::Auto(initer) => {
-                unprocessed.push((ty, initer.f.deps(), Box::new(|map| initer.f.populate(map))))
-            }
-        };
-    }
-
-    let mut requests = HashMap::<DbgTypeId, Request<A>>::new();
-    let mut dependents_map = HashMap::<DbgTypeId, Vec<DbgTypeId>>::new(); // all values here must also have an entry in requests before popping
-    let mut heads = Vec::<DbgTypeId>::new(); // all entries here must also have an entry in requests
-
-    while let Some((ty, deps, populator)) = unprocessed.pop() {
-        let request = if let hash_map::Entry::Vacant(entry) = requests.entry(ty) {
-            entry.insert(Request { dep_count: 0, populator })
-        } else {
-            continue;
-        };
-
-        for (dep_ty, dep_strategy) in deps {
-            dependents_map.entry(dep_ty).or_default().push(ty); // ty is pushed to unprocessed, which will fill requests later
-            match dep_strategy {
-                // required dependency, does not affect population
-                comp::InitStrategy::None => continue,
-                // push to unprocessed again to recurse
-                comp::InitStrategy::Auto(initer) => {
-                    request.dep_count += 1;
-                    unprocessed.push((
-                        dep_ty,
-                        initer.f.deps(),
-                        Box::new(|map| initer.f.populate(map)),
-                    ));
-                }
-            }
-        }
-
-        if request.dep_count == 0 {
-            heads.push(ty); // requests.entry(ty) inserted above
-        }
-    }
-
-    while let Some(head) = heads.pop() {
-        let request = requests.remove(&head).expect("type is in heads but not in requests");
-        assert_eq!(request.dep_count, 0);
-        populators.push(request.populator);
-
-        if let Some(dependents) = dependents_map.get(&head) {
-            for &dependent in dependents {
-                let request = requests
-                    .get_mut(&dependent)
-                    .expect("type is a value in dependents_map but not in requests");
-                request.dep_count -= 1;
-                if request.dep_count == 0 {
-                    heads.push(dependent); // requests.get_mut(&dependent) returned Some
-                }
-            }
-        }
-    }
-
-    if !requests.is_empty() {
-        panic!(
-            "Cyclic dependency detected for component initializers of {}",
-            any::type_name::<A>(),
-        );
-    }
-
-    populators
-}
-// TODO unit test toposort_populators
-
 /// Stores everything related to a specific archetype.
 #[derive(Default)]
 pub(crate) struct Typed<A: Archetype> {
-    pub(crate) simple_storages:      HashMap<DbgTypeId, storage::Simple<A>>,
+    pub(crate) simple_storages:      IndexMap<DbgTypeId, storage::Simple<A>>,
     pub(crate) isotope_storage_maps: HashMap<DbgTypeId, Arc<dyn storage::AnyIsotopeMap<A>>>,
-    pub(crate) populators:           Vec<Populator<A>>,
 }
 
 impl<A: Archetype> Typed<A> {
     /// Initialize an entity. This function should only be called offline.
-    pub(crate) fn init_entity(&mut self, id: A::RawEntity, mut comp_map: comp::Map<A>) {
-        for populate in &self.populators {
-            populate(&mut comp_map);
+    pub(crate) fn init_entity(&mut self, entity: A::RawEntity, mut comp_map: comp::Map<A>) {
+        struct DepGetter<'t, A: Archetype> {
+            simple_storages: &'t IndexMap<DbgTypeId, storage::Simple<A>>,
+            index:           Option<usize>,
+            entity:          A::RawEntity,
         }
-
-        for storage in self.simple_storages.values_mut() {
-            let any_storage = Arc::get_mut(&mut storage.storage).expect("storage arc was leaked");
-            any_storage.get_mut().fill_init_simple(id, &mut comp_map);
-        }
-
-        for (ty, value) in comp_map.into_isotopes() {
-            let discrim =
-                ty.discrim.expect("Map::into_isotopes() should filter away None discrims");
-            if let Some(storage) = self.isotope_storage_maps.get_mut(&ty.id) {
-                let storage = Arc::get_mut(storage).expect("storage arc was leaked");
-                storage.fill_init(discrim, id, value);
+        impl<'t, A: Archetype> comp::any::DepGetterInner<A> for DepGetter<'t, A> {
+            fn get(
+                &self,
+                ty: DbgTypeId,
+            ) -> ArcRwLockWriteGuard<parking_lot::RawRwLock, dyn AnySimpleStorage<A>> {
+                let (dep_index, _, dep_storage) = self
+                    .simple_storages
+                    .get_full(&ty)
+                    .expect("dep storage does not exist, toposort bug");
+                if let Some(index) = self.index {
+                    assert!(dep_index < index, "{dep_index} >= {index}, toposort bug");
+                }
+                dep_storage.storage.try_write_arc().expect(
+                    "mut access to indexmap and dep indices checked to be unique during toposort",
+                )
             }
+        }
+
+        for (index, storage) in self.simple_storages.values().enumerate() {
+            let mut any_storage = storage.storage.try_write().expect("storage arc was leaked");
+
+            any_storage.fill_init_simple(
+                entity,
+                &mut comp_map,
+                comp::any::DepGetter {
+                    inner: &DepGetter {
+                        simple_storages: &self.simple_storages,
+                        index: Some(index),
+                        entity,
+                    },
+                    entity,
+                },
+            );
+        }
+
+        for map in self.isotope_storage_maps.values_mut() {
+            Arc::get_mut(map).expect("storage map arc was leaked").fill_init_isotope(
+                entity,
+                &mut comp_map,
+                comp::any::DepGetter {
+                    inner: &DepGetter {
+                        simple_storages: &self.simple_storages,
+                        index: None,
+                        entity,
+                    },
+                    entity,
+                },
+            );
         }
     }
 }

@@ -134,6 +134,7 @@ impl World {
             &mut self.rctrack,
             &mut self.components,
             comp_map,
+            &mut self.ealloc_map,
         );
 
         allocated
@@ -238,6 +239,7 @@ fn init_entity<A: Archetype>(
     _rctrack: &mut rctrack::MaybeStoreMap,
     components: &mut Components,
     comp_map: comp::Map<A>,
+    ealloc_map: &mut ealloc::Map,
 ) {
     sync_globals.get_mut::<generation::StoreMap>().next::<A>(id.to_primitive());
 
@@ -250,7 +252,7 @@ fn init_entity<A: Archetype>(
     }
 
     let typed = components.archetype_mut::<A>();
-    typed.init_entity(id, comp_map);
+    typed.init_entity(id, comp_map, ealloc_map.get::<A>());
 }
 
 /// Result of deleting an entity.
@@ -332,14 +334,7 @@ fn try_real_delete_entity<'t, A: Archetype>(
         }
     }
 
-    let ealloc = world
-        .ealloc_map
-        .map
-        .get_mut(&TypeId::of::<A>())
-        .expect("Attempted to delete entity of unknown archetype");
-    let ealloc: &mut A::Ealloc = ealloc.as_any_mut().downcast_mut().expect("TypeId mismatch");
-
-    ealloc.queue_deallocate(entity);
+    world.ealloc_map.get::<A>().queue_deallocate(entity);
 
     DeleteResult::Deleted
 }

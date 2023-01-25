@@ -46,6 +46,7 @@ impl<A: Archetype> Operation for CreateEntity<A> {
             world.rctrack,
             world.components,
             self.comp_map,
+            world.ealloc_map,
         );
         OperationResult::Ok
     }

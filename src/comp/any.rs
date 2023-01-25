@@ -92,6 +92,12 @@ pub struct DepGetter<'t, A: Archetype> {
     pub(crate) entity: A::RawEntity,
 }
 
+impl<'t, A: Archetype> Clone for DepGetter<'t, A> {
+    fn clone(&self) -> Self { Self { inner: self.inner, entity: self.entity } }
+}
+
+impl<'t, A: Archetype> Copy for DepGetter<'t, A> {}
+
 pub(crate) trait DepGetterInner<A: Archetype> {
     fn get(
         &self,
@@ -102,7 +108,7 @@ pub(crate) trait DepGetterInner<A: Archetype> {
 macro_rules! impl_simple_init_fn {
     ($($deps:ident),* $(,)?) => {
         impl<
-            A: Archetype, C: comp::Simple<A>,
+            A: Archetype, C: comp::SimpleOrIsotope<A>,
             $($deps: comp::Simple<A>,)*
         > InitFn<A, C> for fn(
             $(&$deps,)*

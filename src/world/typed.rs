@@ -111,7 +111,12 @@ pub(crate) struct Typed<A: Archetype> {
 
 impl<A: Archetype> Typed<A> {
     /// Initialize an entity. This function should only be called offline.
-    pub(crate) fn init_entity(&mut self, entity: A::RawEntity, mut comp_map: comp::Map<A>) {
+    pub(crate) fn init_entity(
+        &mut self,
+        entity: A::RawEntity,
+        mut comp_map: comp::Map<A>,
+        ealloc: &mut A::Ealloc,
+    ) {
         struct DepGetter<'t, A: Archetype> {
             simple_storages: &'t IndexMap<DbgTypeId, storage::Simple<A>>,
             index:           Option<usize>,
@@ -164,6 +169,7 @@ impl<A: Archetype> Typed<A> {
                     },
                     entity,
                 },
+                ealloc,
             );
         }
     }

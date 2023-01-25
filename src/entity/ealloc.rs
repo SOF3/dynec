@@ -44,6 +44,11 @@ pub trait Ealloc: 'static {
     /// to avoid centralizing on a single shard.
     fn shards<U, F: Fn(Self::Shard) -> U>(&mut self, vec: &mut Vec<U>, transform: F);
 
+    type IterAllocatedChunks<'t>: Iterator<Item = ops::Range<Self::Raw>> + iter::FusedIterator + 't
+    where
+        Self: 't;
+    fn iter_allocated_chunks_offline(&mut self) -> Self::IterAllocatedChunks<'_>;
+
     /// Allocate an ID in offline mode.
     fn allocate(&mut self, hint: Self::AllocHint) -> Self::Raw;
 
@@ -157,12 +162,6 @@ impl<E: Raw, T: Recycler<E>, S: ShardAssigner> Recycling<E, T, S> {
         let arc = reuse_queues.get_mut(index).expect("index out of bounds");
         Arc::get_mut(arc).expect("shards are dropped in offline mode").get_mut()
     }
-
-    fn iter_allocated_chunks_offline(
-        &mut self,
-    ) -> impl Iterator<Item = ops::Range<E>> + iter::FusedIterator + '_ {
-        iter_gaps(self.global_gauge.load(), self.recyclable.iter().copied())
-    }
 }
 
 impl<E: Raw, T: Recycler<E>, S: ShardAssigner> Ealloc for Recycling<E, T, S> {
@@ -191,6 +190,11 @@ impl<E: Raw, T: Recycler<E>, S: ShardAssigner> Ealloc for Recycling<E, T, S> {
         );
         let my_slice = vec.get_mut(slice_start..).expect("just inserted");
         self.shard_assigner.shuffle_shards(my_slice);
+    }
+
+    type IterAllocatedChunks<'t> = impl Iterator<Item = ops::Range<E>> + iter::FusedIterator + 't where Self: 't;
+    fn iter_allocated_chunks_offline(&mut self) -> Self::IterAllocatedChunks<'_> {
+        iter_gaps(self.global_gauge.load(), self.recyclable.iter().copied())
     }
 
     fn allocate(&mut self, hint: Self::AllocHint) -> Self::Raw {
@@ -509,6 +513,15 @@ pub(crate) struct Map {
 
 impl Map {
     pub(crate) fn new(map: HashMap<DbgTypeId, Box<dyn AnyEalloc>>) -> Self { Self { map } }
+
+    pub(crate) fn get<A: Archetype>(&mut self) -> &mut A::Ealloc {
+        self.map
+            .get_mut(&TypeId::of::<A>())
+            .expect("Attempted to delete entity of unknown archetype")
+            .as_any_mut()
+            .downcast_mut()
+            .expect("TypeId mismatch")
+    }
 
     pub(crate) fn shards(&mut self, num_shards: usize) -> Vec<ShardMap> {
         let mut shard_maps: Vec<ShardMap> = (0..num_shards).map(|_| ShardMap::default()).collect();

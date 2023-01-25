@@ -237,7 +237,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                 })
             }
             ArgType::EntityIterator { arch } => {
-                quote!(#crate_name::system::entity_iterator::<#arch, _>(ealloc_shard_map.borrow::<#arch>()))
+                quote!(#crate_name::system::entity_iterator::<#arch>(ealloc_shard_map.snapshot::<#arch>().clone()))
             }
         };
         system_run_args.push(run_arg);

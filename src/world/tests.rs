@@ -857,3 +857,27 @@ fn test_entity_iter_full_mut() {
 
     world.execute(&tracer::Log(log::Level::Trace));
 }
+
+// Test that there is no access conflict when creating, deleting and iterating the same archetype.
+#[test]
+fn test_entity_create_and_delete() {
+    #[system(dynec_as(crate))]
+    fn test_system(
+        mut entity_creator: impl system::EntityCreator<TestArch>,
+        _entity_deleter: impl system::EntityDeleter<TestArch>,
+        entity_iter: impl system::EntityIterator<TestArch>,
+    ) {
+        let entity = entity_creator.create(crate::comps![ @(crate) TestArch => Comp1(1) ]);
+        for v in entity_iter.entities() {
+            assert_ne!(entity.id(), v.id());
+        }
+    }
+
+    #[system(dynec_as(crate))]
+    fn dummy_reader_system(_: impl system::ReadSimple<TestArch, Comp1>) {}
+
+    let mut world = system_test! {
+        test_system.build(), dummy_reader_system.build();
+    };
+    world.execute(&tracer::Log(log::Level::Trace));
+}

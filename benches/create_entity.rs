@@ -27,7 +27,6 @@ fn create_entity(c: &mut Criterion) {
         }
     }
 
-    create_entity_batch!(0; );
     create_entity_batch!(1; test_util::CompN::<1>(1));
     create_entity_batch!(2; test_util::CompN::<1>(1), test_util::CompN::<2>(2));
     create_entity_batch!(4; test_util::CompN::<1>(1), test_util::CompN::<2>(2), test_util::CompN::<3>(3), test_util::CompN::<4>(4));

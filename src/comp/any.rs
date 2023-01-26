@@ -113,7 +113,10 @@ macro_rules! impl_simple_init_fn {
         > InitFn<A, C> for fn(
             $(&$deps,)*
         ) -> C {
-            fn init(&self, dep_getter: DepGetter<'_, A>) -> C {
+            fn init(
+                &self,
+                #[allow(unused_variables)] dep_getter: DepGetter<'_, A>,
+            ) -> C {
                 (self)(
                     $(
                         match dep_getter.inner.get(DbgTypeId::of::<$deps>()).get_any(dep_getter.entity) {

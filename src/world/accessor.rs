@@ -217,7 +217,10 @@ impl Components {
     /// # Panics
     /// - if the archetyped component is not used in any systems.
     /// - if another thread is accessing the same archetyped component.
-    pub fn write_full_isotope_storage<A, C>(&self) -> impl system::WriteIsotope<A, C> + '_
+    pub fn write_full_isotope_storage<A, C>(
+        &self,
+        snapshot: ealloc::Snapshot<A::RawEntity>,
+    ) -> impl system::WriteIsotope<A, C> + '_
     where
         A: Archetype,
         C: comp::Isotope<A>,
@@ -243,6 +246,7 @@ impl Components {
         {
             /// The actual map that persists isotope storages over multiple systems.
             persistent_map: RwLockWriteGuard<'t, storage::IsotopeMapInner<A, C>>,
+            snapshot:       ealloc::Snapshot<A::RawEntity>,
             _ph:            PhantomData<(A, C)>,
         }
         impl<'t, A, C> StorageMapProcessorRef for Proc<'t, A, C>
@@ -280,7 +284,9 @@ impl Components {
                 LockedIsotopeStorage<A, C>: 'u,
             {
                 storages.get_by_or_insert(discrim, || {
-                    let storage = self.persistent_map.get_or_create(discrim);
+                    let storage = self
+                        .persistent_map
+                        .get_or_create(discrim, self.snapshot.iter_allocated_chunks());
                     own_write_isotope_storage::<A, C>(discrim, storage)
                 })
             }
@@ -296,7 +302,9 @@ impl Components {
                 storages.get_by_or_insert_array(
                     keys,
                     |discrim| {
-                        let storage = self.persistent_map.get_or_create(discrim);
+                        let storage = self
+                            .persistent_map
+                            .get_or_create(discrim, self.snapshot.iter_allocated_chunks());
                         own_write_isotope_storage::<A, C>(discrim, storage)
                     },
                     |storage| &mut **storage,
@@ -306,7 +314,7 @@ impl Components {
 
         IsotopeAccessor::<A, C, LockedIsotopeStorage<A, C>, _, _> {
             storages:  accessor_storages,
-            processor: Proc::<'_, A, C> { persistent_map: full_map, _ph: PhantomData },
+            processor: Proc::<'_, A, C> { persistent_map: full_map, snapshot, _ph: PhantomData },
             _ph:       PhantomData,
         }
     }
@@ -320,6 +328,7 @@ impl Components {
     pub fn write_partial_isotope_storage<'t, A, C, DiscrimSet>(
         &'t self,
         discrims: &'t DiscrimSet,
+        snapshot: ealloc::Snapshot<A::RawEntity>,
     ) -> impl system::WriteIsotope<A, C, DiscrimSet::Key> + 't
     where
         A: Archetype,
@@ -334,7 +343,7 @@ impl Components {
             let mut map = storage_map.map.write();
 
             discrims.map(|discrim| {
-                let storage = map.get_or_create(discrim);
+                let storage = map.get_or_create(discrim, snapshot.iter_allocated_chunks());
                 own_write_isotope_storage::<A, C>(discrim, storage)
             })
         };

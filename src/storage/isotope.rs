@@ -27,20 +27,18 @@ impl<A: Archetype, C: comp::Isotope<A>> MapInner<A, C> {
     pub(crate) fn get_or_create(
         &mut self,
         discrim: C::Discrim,
-        // entities: impl Iterator<Item = ops::Range<A::RawEntity>>,
+        entities: impl Iterator<Item = ops::Range<A::RawEntity>>,
     ) -> &mut Arc<RwLock<C::Storage>> {
         self.map.entry(discrim).or_insert_with(|| {
             let mut storage = C::Storage::default();
 
             if let comp::InitStrategy::Auto(initer) = C::INIT_STRATEGY {
-                /*
-                for entity in entities.flat_map(|chunk| <A::RawEntity as entity::Raw>::range(chunk))
-                {
+                for entity in entities.flat_map(<A::RawEntity as entity::Raw>::range) {
                     struct PanicDepGetter;
                     impl<A: Archetype> comp::any::DepGetterInner<A> for PanicDepGetter {
                         fn get(
                             &self,
-                            ty: crate::util::DbgTypeId,
+                            _ty: crate::util::DbgTypeId,
                         ) -> ArcRwLockWriteGuard<
                             parking_lot::RawRwLock,
                             dyn storage::simple::AnySimpleStorage<A>,
@@ -59,7 +57,6 @@ impl<A: Archetype, C: comp::Isotope<A>> MapInner<A, C> {
                         ),
                     );
                 }
-                */
             }
 
             Arc::new(RwLock::new(storage))
@@ -121,16 +118,13 @@ impl<A: Archetype, C: comp::Isotope<A>> AnyMap<A> for Map<A, C> {
         let value_count = values.len();
 
         for (discrim, value) in values {
-            let storage = map.get_or_create(
-                discrim,
-                //  ealloc.iter_allocated_chunks_offline(),
-            );
+            let storage = map.get_or_create(discrim, ealloc.snapshot().iter_allocated_chunks());
             let storage = Arc::get_mut(storage).expect("storage arc was leaked").get_mut();
             storage.set(entity, Some(value));
         }
 
         if let comp::InitStrategy::Auto(initer) = C::INIT_STRATEGY {
-            for (discrim, storage) in map.iter_mut() {
+            for (_discrim, storage) in map.iter_mut() {
                 let storage: &mut C::Storage =
                     Arc::get_mut(storage).expect("storage arc was leaked").get_mut();
                 if storage.get(entity).is_none() {

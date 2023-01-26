@@ -216,9 +216,15 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                     (false, false) => quote!(read_full_isotope_storage::<#arch, #comp>),
                 };
 
+                let snapshot_variadic = mutable.then(|| {
+                    quote! {
+                        ealloc_shard_map.snapshot::<#arch>().clone()
+                    }
+                });
+
                 quote!(components.#method_ident(
                     #discrim_field_variadic
-                    // ealloc_shard_map.borrow::<#arch>(),
+                    #snapshot_variadic
                 ))
             }
             ArgType::EntityCreator { arch, no_partition } => {

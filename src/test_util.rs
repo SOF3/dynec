@@ -309,7 +309,7 @@ impl<const N: usize> comp::Simple<TestArch> for CompN<N> {
 pub struct Iso1(pub i32);
 
 /// Has auto init
-#[comp(dynec_as(crate), of = TestArch, isotope = TestDiscrim2)]
+#[comp(dynec_as(crate), of = TestArch, isotope = TestDiscrim2, init = || Self(73))]
 #[derive(Debug, Clone, PartialEq)]
 pub struct Iso2(pub i32);
 

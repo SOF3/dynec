@@ -54,8 +54,7 @@ impl<A: Archetype> AnyBuilder for Builder<A> {
         component: DbgTypeId,
         storage_builder: fn() -> Box<dyn Any>,
     ) {
-        let entry = self.simple_storages.entry(component);
-        if let indexmap::map::Entry::Vacant(entry) = entry {
+        if !self.simple_storages.contains_key(&component) {
             let boxed = storage_builder();
             let storage = match boxed.downcast::<storage::Simple<A>>() {
                 Ok(storage) => *storage,

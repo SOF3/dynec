@@ -503,11 +503,11 @@ struct SimpleAccessor<S> {
 
 impl<S: ops::Deref> SimpleAccessor<S> {}
 
-impl<A, C, S> system::Read<A, C> for SimpleAccessor<S>
+impl<A, C, StorageRef> system::Read<A, C> for SimpleAccessor<StorageRef>
 where
     A: Archetype,
     C: comp::Simple<A>,
-    S: ops::Deref<Target = C::Storage>,
+    StorageRef: ops::Deref<Target = C::Storage>,
 {
     fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Option<&C> {
         self.storage.get(entity.id())
@@ -518,19 +518,22 @@ where
         self.storage.iter().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
     }
 
-    type DuplicateImmut<'t> = SimpleAccessor<util::DoubleDeref<&'t S>> where Self: 't;
+    type DuplicateImmut<'t> = SimpleAccessor<util::DoubleDeref<&'t StorageRef>> where Self: 't;
     fn duplicate_immut(
         &self,
-    ) -> (SimpleAccessor<util::DoubleDeref<&'_ S>>, SimpleAccessor<util::DoubleDeref<&'_ S>>) {
+    ) -> (
+        SimpleAccessor<util::DoubleDeref<&'_ StorageRef>>,
+        SimpleAccessor<util::DoubleDeref<&'_ StorageRef>>,
+    ) {
         let dup = SimpleAccessor { storage: util::DoubleDeref(&self.storage) };
         (dup, dup)
     }
 }
-impl<A, C, S> system::ReadChunk<A, C> for SimpleAccessor<S>
+impl<A, C, StorageRef> system::ReadChunk<A, C> for SimpleAccessor<StorageRef>
 where
     A: Archetype,
     C: comp::Simple<A>,
-    S: ops::Deref<Target = C::Storage>,
+    StorageRef: ops::Deref<Target = C::Storage>,
     C::Storage: storage::Chunked,
 {
     fn get_chunk(&self, chunk: entity::TempRefChunk<'_, A>) -> &[C]
@@ -540,22 +543,22 @@ where
         self.storage.get_chunk(chunk.start, chunk.end).expect("chunk is not completely filled")
     }
 }
-impl<A, C, S> system::ReadSimple<A, C> for SimpleAccessor<S>
+impl<A, C, StorageRef> system::ReadSimple<A, C> for SimpleAccessor<StorageRef>
 where
     A: Archetype,
     C: comp::Simple<A>,
-    S: ops::Deref<Target = C::Storage>,
+    StorageRef: ops::Deref<Target = C::Storage>,
 {
     fn access_chunk(&self) -> system::accessor::MustReadChunkSimple<A, C> {
         system::accessor::MustReadChunkSimple { storage: &self.storage }
     }
 }
 
-impl<A, C, S> system::Mut<A, C> for SimpleAccessor<S>
+impl<A, C, StorageRef> system::Mut<A, C> for SimpleAccessor<StorageRef>
 where
     A: Archetype,
     C: comp::Simple<A>,
-    S: ops::DerefMut<Target = C::Storage>,
+    StorageRef: ops::DerefMut<Target = C::Storage>,
 {
     fn try_get_mut<E: entity::Ref<Archetype = A>>(&mut self, entity: E) -> Option<&mut C> {
         self.storage.get_mut(entity.id())
@@ -579,21 +582,21 @@ where
     }
 }
 
-impl<A, C, S> system::Write<A, C> for SimpleAccessor<S>
+impl<A, C, StorageRef> system::Write<A, C> for SimpleAccessor<StorageRef>
 where
     A: Archetype,
     C: comp::Simple<A>,
-    S: ops::DerefMut<Target = C::Storage>,
+    StorageRef: ops::DerefMut<Target = C::Storage>,
 {
     fn set<E: entity::Ref<Archetype = A>>(&mut self, entity: E, value: Option<C>) -> Option<C> {
         self.storage.set(entity.id(), value)
     }
 }
-impl<A, C, S> system::WriteChunk<A, C> for SimpleAccessor<S>
+impl<A, C, StorageRef> system::WriteChunk<A, C> for SimpleAccessor<StorageRef>
 where
     A: Archetype,
     C: comp::Simple<A>,
-    S: ops::DerefMut<Target = C::Storage>,
+    StorageRef: ops::DerefMut<Target = C::Storage>,
     C::Storage: storage::Chunked,
 {
     fn get_chunk_mut(&mut self, chunk: entity::TempRefChunk<'_, A>) -> &mut [C]
@@ -603,11 +606,11 @@ where
         self.storage.get_chunk_mut(chunk.start, chunk.end).expect("chunk is not completely filled")
     }
 }
-impl<A, C, S> system::WriteSimple<A, C> for SimpleAccessor<S>
+impl<A, C, StorageRef> system::WriteSimple<A, C> for SimpleAccessor<StorageRef>
 where
     A: Archetype,
     C: comp::Simple<A>,
-    S: ops::DerefMut<Target = C::Storage>,
+    StorageRef: ops::DerefMut<Target = C::Storage>,
 {
     fn access_chunk_mut(&mut self) -> system::accessor::MustWriteChunkSimple<'_, A, C> {
         system::accessor::MustWriteChunkSimple { storage: &mut self.storage }
@@ -650,11 +653,11 @@ struct PartitionAccessor<A: Archetype, C, S: storage::Partition<A::RawEntity, C>
     storage: S,
     _ph:     PhantomData<(A, C)>,
 }
-impl<A, C, S> system::Mut<A, C> for PartitionAccessor<A, C, S>
+impl<A, C, StorageParT> system::Mut<A, C> for PartitionAccessor<A, C, StorageParT>
 where
     A: Archetype,
     C: 'static,
-    S: storage::Partition<A::RawEntity, C>,
+    StorageParT: storage::Partition<A::RawEntity, C>,
 {
     fn try_get_mut<E: entity::Ref<Archetype = A>>(&mut self, entity: E) -> Option<&mut C> {
         self.storage.get_mut(entity.id())
@@ -693,20 +696,20 @@ fn panic_invalid_key<A, C>(key: impl fmt::Debug) -> ! {
     )
 }
 
-impl<A, C, S, M, P> IsotopeAccessor<A, C, S, M, P>
+impl<A, C, StorageRef, DiscrimMapped, ProcT> IsotopeAccessor<A, C, StorageRef, DiscrimMapped, ProcT>
 where
     A: Archetype,
     C: comp::Isotope<A>,
-    S: ops::Deref<Target = C::Storage>,
-    M: discrim::Mapped<Discrim = C::Discrim>,
-    P: StorageMapProcessorRef<Input = M::Value, Output = S>,
+    StorageRef: ops::Deref<Target = C::Storage>,
+    DiscrimMapped: discrim::Mapped<Discrim = C::Discrim>,
+    ProcT: StorageMapProcessorRef<Input = DiscrimMapped::Value, Output = StorageRef>,
 {
     fn get_all_raw(
         &self,
         index: A::RawEntity,
     ) -> impl Iterator<Item = (<C as comp::Isotope<A>>::Discrim, &C)> {
         self.storages.iter_values().filter_map(move |(discrim, storage)| {
-            let storage = P::admit(storage)?;
+            let storage = ProcT::admit(storage)?;
             let comp = storage.get(index)?;
             Some((discrim, comp))
         })
@@ -726,17 +729,22 @@ trait StorageMapProcessorRef {
     fn admit(input: &Self::Input) -> Option<&Self::Output>;
 }
 
-impl<A, C, S, M, P> system::ReadIsotope<A, C, M::Key> for IsotopeAccessor<A, C, S, M, P>
+impl<A, C, StorageRef, DiscrimMapped, ProcT> system::ReadIsotope<A, C, DiscrimMapped::Key>
+    for IsotopeAccessor<A, C, StorageRef, DiscrimMapped, ProcT>
 where
     A: Archetype,
     C: comp::Isotope<A>,
-    S: ops::Deref<Target = C::Storage>,
-    M: discrim::Mapped<Discrim = C::Discrim>,
-    P: StorageMapProcessorRef<Input = M::Value, Output = S>,
+    StorageRef: ops::Deref<Target = C::Storage>,
+    DiscrimMapped: discrim::Mapped<Discrim = C::Discrim>,
+    ProcT: StorageMapProcessorRef<Input = DiscrimMapped::Value, Output = StorageRef>,
 {
-    fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E, key: M::Key) -> Option<&C> {
-        let storage: Option<&M::Value> = self.storages.get_by(key);
-        let storage: Option<&S> = self.processor.process(storage, || key);
+    fn try_get<E: entity::Ref<Archetype = A>>(
+        &self,
+        entity: E,
+        key: DiscrimMapped::Key,
+    ) -> Option<&C> {
+        let storage: Option<&DiscrimMapped::Value> = self.storages.get_by(key);
+        let storage: Option<&StorageRef> = self.processor.process(storage, || key);
         storage.and_then(|storage| storage.get(entity.id()))
     }
 
@@ -749,9 +757,9 @@ where
     type Iter<'t> = impl Iterator<Item = (entity::TempRef<'t, A>, &'t C)>
     where
         Self: 't;
-    fn iter(&self, key: M::Key) -> Self::Iter<'_> {
-        let storage: Option<&M::Value> = self.storages.get_by(key);
-        let storage: Option<&S> = self.processor.process(storage, || key);
+    fn iter(&self, key: DiscrimMapped::Key) -> Self::Iter<'_> {
+        let storage: Option<&DiscrimMapped::Value> = self.storages.get_by(key);
+        let storage: Option<&StorageRef> = self.processor.process(storage, || key);
         storage.into_iter().flat_map(|storage| {
             storage.iter().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
         })
@@ -760,19 +768,21 @@ where
     type Split<'t> = impl system::Read<A, C> + 't
     where
         Self: 't;
-    fn split<const N: usize>(&self, keys: [M::Key; N]) -> [Self::Split<'_>; N] {
+    fn split<const N: usize>(&self, keys: [DiscrimMapped::Key; N]) -> [Self::Split<'_>; N] {
         struct With<A, C, K, R: ops::Deref> {
             accessor: R,
             discrim:  K,
             _ph:      PhantomData<(A, C)>,
         }
 
-        impl<A, C, K, R: ops::Deref> system::Read<A, C> for With<A, C, K, R>
+        impl<A, C, DiscrimMapKeyT, ReadIsotopeRef> system::Read<A, C>
+            for With<A, C, DiscrimMapKeyT, ReadIsotopeRef>
         where
             A: Archetype,
             C: comp::Isotope<A>,
-            K: fmt::Debug + Copy + 'static,
-            <R as ops::Deref>::Target: system::ReadIsotope<A, C, K>,
+            DiscrimMapKeyT: fmt::Debug + Copy + 'static,
+            ReadIsotopeRef: ops::Deref,
+            <ReadIsotopeRef as ops::Deref>::Target: system::ReadIsotope<A, C, DiscrimMapKeyT>,
         {
             fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Option<&C> {
                 system::ReadIsotope::try_get(&*self.accessor, entity, self.discrim)
@@ -812,38 +822,44 @@ where
 ///
 /// This trait is not symmetric to `StorageMapProcessorRef` because
 /// the equivalent API may lead to Polonius compile errors.
-trait MutStorageAccessor<A, C, S, M>
+trait MutStorageAccessor<A, C, StorageRef, DiscrimMapped>
 where
     A: Archetype,
     C: comp::Isotope<A>,
-    S: ops::Deref<Target = C::Storage>,
-    M: discrim::Mapped<Discrim = C::Discrim>,
+    StorageRef: ops::Deref<Target = C::Storage>,
+    DiscrimMapped: discrim::Mapped<Discrim = C::Discrim>,
 {
-    fn get_storage<'t>(&mut self, key: M::Key, storages: &'t mut M) -> &'t mut C::Storage
+    fn get_storage<'t>(
+        &mut self,
+        key: DiscrimMapped::Key,
+        storages: &'t mut DiscrimMapped,
+    ) -> &'t mut C::Storage
     where
-        S: 't;
+        StorageRef: 't;
 
     fn get_storage_multi<'t, const N: usize>(
         &mut self,
-        keys: [M::Key; N],
-        storages: &'t mut M,
+        keys: [DiscrimMapped::Key; N],
+        storages: &'t mut DiscrimMapped,
     ) -> [&'t mut C::Storage; N]
     where
-        S: 't;
+        StorageRef: 't;
 }
 
-impl<A, C, S, M, P> system::WriteIsotope<A, C, M::Key> for IsotopeAccessor<A, C, S, M, P>
+impl<A, C, StorageRef, DiscrimMapped, ProcT> system::WriteIsotope<A, C, DiscrimMapped::Key>
+    for IsotopeAccessor<A, C, StorageRef, DiscrimMapped, ProcT>
 where
     A: Archetype,
     C: comp::Isotope<A>,
-    S: ops::Deref<Target = C::Storage>,
-    M: discrim::Mapped<Discrim = C::Discrim>,
-    P: StorageMapProcessorRef<Input = M::Value, Output = S> + MutStorageAccessor<A, C, S, M>,
+    StorageRef: ops::Deref<Target = C::Storage>,
+    DiscrimMapped: discrim::Mapped<Discrim = C::Discrim>,
+    ProcT: StorageMapProcessorRef<Input = DiscrimMapped::Value, Output = StorageRef>
+        + MutStorageAccessor<A, C, StorageRef, DiscrimMapped>,
 {
     fn try_get_mut<E: entity::Ref<Archetype = A>>(
         &mut self,
         entity: E,
-        key: M::Key,
+        key: DiscrimMapped::Key,
     ) -> Option<&mut C> {
         let storage = self.processor.get_storage(key, &mut self.storages);
 
@@ -853,7 +869,7 @@ where
     fn set<E: entity::Ref<Archetype = A>>(
         &mut self,
         entity: E,
-        key: M::Key,
+        key: DiscrimMapped::Key,
         value: Option<C>,
     ) -> Option<C> {
         let storage = self.processor.get_storage(key, &mut self.storages);
@@ -864,13 +880,16 @@ where
     where
         Self: 't;
     /// Iterates over mutable references to all components of a specific discriminant.
-    fn iter_mut(&mut self, key: M::Key) -> Self::IterMut<'_> {
+    fn iter_mut(&mut self, key: DiscrimMapped::Key) -> Self::IterMut<'_> {
         let storage = self.processor.get_storage(key, &mut self.storages);
         storage.iter_mut().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
     }
 
     type SplitDiscrim<'t> = impl system::Write<A, C> + 't where Self: 't;
-    fn split_isotopes<const N: usize>(&mut self, keys: [M::Key; N]) -> [Self::SplitDiscrim<'_>; N] {
+    fn split_isotopes<const N: usize>(
+        &mut self,
+        keys: [DiscrimMapped::Key; N],
+    ) -> [Self::SplitDiscrim<'_>; N] {
         self.processor
             .get_storage_multi(keys, &mut self.storages)
             .map(|storage| SplitDiscrim { storage, _ph: PhantomData })
@@ -904,12 +923,12 @@ impl<A: Archetype, C: comp::Isotope<A>, S: ops::Deref<Target = C::Storage>> syst
         )
     }
 }
-impl<A, C, S> system::ReadChunk<A, C> for SplitDiscrim<A, C, S>
+impl<A, C, StorageRef> system::ReadChunk<A, C> for SplitDiscrim<A, C, StorageRef>
 where
     A: Archetype,
     C: comp::Isotope<A>,
     C::Storage: storage::Chunked,
-    S: ops::Deref<Target = C::Storage>,
+    StorageRef: ops::Deref<Target = C::Storage>,
 {
     fn get_chunk(&self, chunk: entity::TempRefChunk<'_, A>) -> &[C]
     where

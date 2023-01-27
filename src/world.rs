@@ -14,8 +14,8 @@ pub use builder::Builder;
 pub(crate) mod global;
 pub use global::{SyncGlobals, UnsyncGlobals};
 
-pub(crate) mod accessor;
-pub use accessor::Components;
+pub(crate) mod rw;
+pub use rw::Components;
 
 pub(crate) mod typed;
 

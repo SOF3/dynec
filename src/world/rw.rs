@@ -76,4 +76,7 @@ where
 }
 
 #[cfg(test)]
-static_assertions::assert_impl_all!(Components: Send, Sync);
+#[allow(clippy::extra_unused_type_parameters)] // macro magic
+mod _assert {
+    static_assertions::assert_impl_all!(super::Components: Send, Sync);
+}

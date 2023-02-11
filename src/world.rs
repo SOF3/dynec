@@ -266,9 +266,9 @@ pub enum DeleteResult {
 }
 
 /// Flags an entity for deletion, and deletes it immediately if there are no finalizers.
-fn flag_delete_entity<'t, A: Archetype>(
+fn flag_delete_entity<A: Archetype>(
     id: A::RawEntity,
-    world: WorldMut<'t>,
+    world: WorldMut<'_>,
     systems: &mut [(&str, &mut dyn system::Descriptor)],
 ) -> DeleteResult {
     let storage = world
@@ -284,9 +284,9 @@ fn flag_delete_entity<'t, A: Archetype>(
 
 /// Deletes an entity immediately if there are no finalizers.
 #[allow(unused_variables)]
-fn try_real_delete_entity<'t, A: Archetype>(
+fn try_real_delete_entity<A: Archetype>(
     entity: <A as Archetype>::RawEntity,
-    world: WorldMut<'t>,
+    world: WorldMut<'_>,
     systems: &mut [(&str, &mut dyn system::Descriptor)],
 ) -> DeleteResult {
     let storages = &mut world.components.archetype_mut::<A>().simple_storages;

@@ -230,8 +230,7 @@ impl FunctionRefWithArity {
                     let args = &closure.inputs;
                     let body = &closure.body;
 
-                    let &util::ParsedGenerics { ref ident, ref decl, ref usage, ref where_ } =
-                        expect_ty;
+                    let util::ParsedGenerics { ident, decl, usage, where_ } = expect_ty;
 
                     let ret_ty = ret_ty_wrapper(quote!(#ident #usage));
 

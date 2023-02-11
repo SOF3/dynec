@@ -1,5 +1,5 @@
 use std::marker::PhantomData;
-use std::{fmt, ops};
+use std::ops;
 
 use crate::comp::{self, discrim};
 use crate::entity::ealloc;
@@ -25,9 +25,8 @@ impl world::Components {
         let storage_map = self.isotope_storage_map::<A, C>();
 
         let storages = {
-            // note: lock contention may occur here if another thread is requesting write access to
-            // storages of other discriminants.
-            let mut map = storage_map.map.write();
+            // see documentation of storage_map.map for contention analysis.
+            let mut map = storage_map.map.lock();
 
             discrims.map(|discrim| {
                 let storage = map.get_or_create(discrim, snapshot.iter_allocated_chunks());
@@ -35,38 +34,49 @@ impl world::Components {
             })
         };
 
-        super::IsotopeAccessor { storages, processor: Proc(PhantomData), _ph: PhantomData }
+        super::IsotopeAccessor { storages, view: View(PhantomData), _ph: PhantomData }
     }
 }
 
-struct Proc<A, C, S>(PhantomData<(A, C, S)>);
-impl<A, C, S> super::StorageMapProcessorRef for Proc<A, C, S> {
-    type Input = S;
-    type Output = S;
-
-    fn process<'t, D: fmt::Debug, F: FnOnce() -> D>(
-        &self,
-        input: Option<&'t S>,
-        key: F,
-    ) -> Option<&'t S> {
-        match input {
-            Some(input) => Some(input),
-            None => super::panic_invalid_key::<A, C>(key()),
-        }
-    }
-
-    fn admit(input: &Self::Input) -> Option<&Self::Output> { Some(input) }
-}
-impl<A, C, S, M> super::MutStorageAccessor<A, C, S, M> for Proc<A, C, S>
+struct View<A, C, StorageRef, DiscrimMapped>(PhantomData<(A, C, StorageRef, DiscrimMapped)>);
+impl<A, C, StorageRef, DiscrimMapped> super::StorageMapView<A, C>
+    for View<A, C, StorageRef, DiscrimMapped>
 where
     A: Archetype,
     C: comp::Isotope<A>,
-    S: ops::DerefMut<Target = C::Storage>,
-    M: discrim::Mapped<Discrim = C::Discrim, Value = S>,
+    StorageRef: ops::DerefMut<Target = C::Storage>,
+    DiscrimMapped: discrim::Mapped<Discrim = C::Discrim, Value = StorageRef>,
 {
-    fn get_storage<'t>(&mut self, key: M::Key, storages: &'t mut M) -> &'t mut C::Storage
+    type StorageRef = StorageRef;
+    type DiscrimMapped = DiscrimMapped;
+
+    fn view<'t>(
+        &self,
+        key: DiscrimMapped::Key,
+        storages: &'t DiscrimMapped,
+    ) -> Option<&'t StorageRef> {
+        let storage = storages.get_by(key);
+        match storage {
+            Some(input) => Some(input),
+            None => super::panic_invalid_key::<A, C>(key),
+        }
+    }
+}
+impl<A, C, StorageRef, DiscrimMapped> super::MutStorageMapView<A, C>
+    for View<A, C, StorageRef, DiscrimMapped>
+where
+    A: Archetype,
+    C: comp::Isotope<A>,
+    StorageRef: ops::DerefMut<Target = C::Storage>,
+    DiscrimMapped: discrim::Mapped<Discrim = C::Discrim, Value = StorageRef>,
+{
+    fn view_mut<'t>(
+        &mut self,
+        key: DiscrimMapped::Key,
+        storages: &'t mut DiscrimMapped,
+    ) -> &'t mut C::Storage
     where
-        S: 't,
+        StorageRef: 't,
     {
         match storages.get_mut_by(key).map(|s| &mut **s) {
             Some(storage) => storage,
@@ -77,13 +87,13 @@ where
         }
     }
 
-    fn get_storage_multi<'u, const N: usize>(
+    fn view_many<'u, const N: usize>(
         &mut self,
-        keys: [M::Key; N],
-        storages: &'u mut M,
+        keys: [DiscrimMapped::Key; N],
+        storages: &'u mut DiscrimMapped,
     ) -> [&'u mut C::Storage; N]
     where
-        S: 'u,
+        StorageRef: 'u,
     {
         storages.get_mut_array_by(
             keys,

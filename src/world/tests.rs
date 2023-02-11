@@ -6,7 +6,7 @@ use crate::test_util::*;
 use crate::{global, system, system_test, tracer, world, Entity};
 
 #[system(dynec_as(crate))]
-fn test_system(
+fn common_test_system(
     _comp3: impl system::ReadSimple<TestArch, Comp3>,
     _comp4: impl system::WriteSimple<TestArch, Comp4>,
     _comp5: impl system::ReadSimple<TestArch, Comp5>,
@@ -23,7 +23,7 @@ fn test_system(
 
 #[test]
 fn test_dependencies_successful() {
-    let mut world = system_test!(test_system.build(););
+    let mut world = system_test!(common_test_system.build(););
     let entity = world.create::<TestArch>(crate::comps![ @(crate) TestArch =>
         Comp1(1), Comp5(1),
         @(TestDiscrim1(11), Iso1(1)),
@@ -46,7 +46,7 @@ fn test_dependencies_successful() {
 #[should_panic = "Cannot create an entity of type `dynec::test_util::TestArch` without explicitly \
                   passing a component of type `dynec::test_util::Comp5`"]
 fn test_dependencies_missing_required_simple() {
-    let mut world = system_test!(test_system.build(););
+    let mut world = system_test!(common_test_system.build(););
     world.create::<TestArch>(crate::comps![@(crate) TestArch => Comp1(1)]);
 }
 
@@ -55,7 +55,7 @@ fn test_dependencies_missing_required_simple() {
                   passing a component of type `dynec::test_util::Comp2`, or \
                   `dynec::test_util::Comp1` to invoke its auto-initializer"]
 fn test_dependencies_missing_required_dep() {
-    let mut world = system_test!(test_system.build(););
+    let mut world = system_test!(common_test_system.build(););
     world.create::<TestArch>(crate::comps![@(crate) TestArch => Comp5(1)]);
 }
 
@@ -110,6 +110,64 @@ fn test_simple_fetch() {
     assert_eq!(comp, Some(&mut Comp5(20)));
 }
 
+fn isotope_discrim_read_test_system(
+    iso1: impl system::ReadIsotope<TestArch, Iso1>,
+    iso2: impl system::ReadIsotope<TestArch, Iso2>,
+    initials: &InitialEntities,
+) {
+    let ent = initials.strong.as_ref().expect("initials.strong is None");
+
+    {
+        let iso = iso1.try_get(ent, TestDiscrim1(11));
+        assert_eq!(iso, Some(&Iso1(3)));
+    }
+
+    // should not panic on nonexistent storages
+    {
+        let iso = iso1.try_get(ent, TestDiscrim1(17));
+        assert_eq!(iso, None);
+    }
+
+    // should return default value for autoinit isotopes
+    {
+        let iso = iso2.try_get(ent, TestDiscrim2(71));
+        assert_eq!(iso, Some(&Iso2(73)));
+    }
+
+    let map = iso1.get_all(ent);
+    let mut map_vec: Vec<(TestDiscrim1, &Iso1)> = map.collect();
+    map_vec.sort_by_key(|(TestDiscrim1(discrim), _)| *discrim);
+    assert_eq!(map_vec, vec![(TestDiscrim1(11), &Iso1(3)), (TestDiscrim1(13), &Iso1(5))]);
+}
+
+fn isotope_discrim_test_world(system: impl system::Sendable + 'static) -> world::World {
+    let mut world = system_test!(system;);
+
+    let ent = world.create(crate::comps![@(crate) TestArch =>
+        @(TestDiscrim1(11), Iso1(3)),
+        @(TestDiscrim1(13), Iso1(5)),
+    ]);
+    world.get_global::<InitialEntities>().strong = Some(ent);
+
+    world
+}
+
+#[test]
+fn test_full_isotope_discrim_write() {
+    #[system(dynec_as(crate))]
+    fn test_sys(
+        iso1: impl system::WriteIsotope<TestArch, Iso1>,
+        iso2: impl system::WriteIsotope<TestArch, Iso2>,
+        #[dynec(global)] initials: &InitialEntities,
+    ) {
+        isotope_discrim_read_test_system(iso1, iso2, initials);
+    }
+
+    let mut world = isotope_discrim_test_world(test_sys.build());
+
+    world.execute(&tracer::Log(log::Level::Trace));
+}
+
 #[test]
 fn test_full_isotope_discrim_read() {
     #[system(dynec_as(crate))]
@@ -118,40 +176,25 @@ fn test_full_isotope_discrim_read() {
         iso2: impl system::ReadIsotope<TestArch, Iso2>,
         #[dynec(global)] initials: &InitialEntities,
     ) {
-        let ent = initials.strong.as_ref().expect("initials.strong is None");
-
-        {
-            let iso = iso1.try_get(ent, TestDiscrim1(11));
-            assert_eq!(iso, Some(&Iso1(3)));
-        }
-
-        // should not panic on nonexistent storages
-        {
-            let iso = iso1.try_get(ent, TestDiscrim1(17));
-            assert_eq!(iso, None);
-        }
-
-        // should return default value for autoinit isotopes
-        {
-            let iso = iso2.try_get(ent, TestDiscrim2(71));
-            assert_eq!(iso, Some(&Iso2(73)));
-        }
-
-        let map = iso1.get_all(ent);
-        let mut map_vec: Vec<(TestDiscrim1, &Iso1)> = map.collect();
-        map_vec.sort_by_key(|(TestDiscrim1(discrim), _)| *discrim);
-        assert_eq!(map_vec, vec![(TestDiscrim1(11), &Iso1(3)), (TestDiscrim1(13), &Iso1(5))]);
+        isotope_discrim_read_test_system(iso1, iso2, initials)
     }
 
-    let mut world = system_test!(test_system.build(););
-
-    let ent = world.create(crate::comps![@(crate) TestArch =>
-        @(TestDiscrim1(11), Iso1(3)),
-        @(TestDiscrim1(13), Iso1(5)),
-    ]);
-    world.get_global::<InitialEntities>().strong = Some(ent);
-
+    let mut world = isotope_discrim_test_world(test_system.build());
     world.execute(&tracer::Log(log::Level::Trace));
+}
+
+#[test]
+fn test_partial_isotope_discrim_write() {
+    partial_isotope_discrim_write(
+        vec![TestDiscrim1(7), TestDiscrim1(11), TestDiscrim1(17), TestDiscrim1(19)],
+        vec![
+            (0, Some(Iso1(2)), Some(None)),
+            (1, Some(Iso1(3)), Some(Some(Iso1(23)))),
+            (2, None, None),
+            (3, None, Some(Some(Iso1(29)))),
+        ],
+        vec![(TestDiscrim1(11), Iso1(23)), (TestDiscrim1(19), Iso1(29))],
+    );
 }
 
 #[test]
@@ -210,91 +253,6 @@ fn partial_isotope_discrim_read(
     world.get_global::<InitialEntities>().strong = Some(ent);
 
     world.execute(&tracer::Log(log::Level::Trace));
-}
-
-#[test]
-fn test_full_isotope_discrim_write() {
-    #[system(dynec_as(crate))]
-    fn test_system(
-        mut iso1: impl system::WriteIsotope<TestArch, Iso1>,
-        mut iso2: impl system::WriteIsotope<TestArch, Iso2>,
-        #[dynec(global)] initials: &InitialEntities,
-    ) {
-        let ent = initials.strong.as_ref().expect("initials.strong is None");
-
-        {
-            let iso = iso1.try_get_mut(ent, TestDiscrim1(11));
-            let iso = iso.expect("was passed input");
-            assert_eq!(iso, &mut Iso1(3));
-            *iso = Iso1(23);
-        }
-
-        // should not panic on nonexistent storages
-        {
-            let iso = iso1.try_get_mut(ent, TestDiscrim1(17));
-            assert_eq!(iso, None);
-        }
-
-        // should update new storages
-        {
-            let iso = iso1.set(ent, TestDiscrim1(19), Some(Iso1(29)));
-            assert_eq!(iso, None);
-        }
-
-        // should return default value
-        {
-            let iso = iso2.try_get(ent, TestDiscrim2(71));
-            assert_eq!(iso, Some(&Iso2(73)));
-        }
-
-        // should not reset to default value
-        {
-            let iso = iso2.set(ent, TestDiscrim2(71), None);
-            assert_eq!(iso, Some(Iso2(73)));
-        }
-        {
-            let iso = iso2.try_get(ent, TestDiscrim2(71));
-            assert_eq!(iso, None);
-        }
-
-        // should include new discriminants
-        let map = iso1.get_all(ent);
-        let mut map_vec: Vec<(TestDiscrim1, &Iso1)> = map.collect();
-        map_vec.sort_by_key(|(TestDiscrim1(discrim), _)| *discrim);
-        assert_eq!(
-            map_vec,
-            vec![
-                (TestDiscrim1(11), &Iso1(23)),
-                (TestDiscrim1(13), &Iso1(5)),
-                (TestDiscrim1(19), &Iso1(29)),
-            ]
-        );
-    }
-
-    let mut world = system_test!(test_system.build(););
-
-    let ent = world.create(crate::comps![@(crate) TestArch =>
-        @(TestDiscrim1(11), Iso1(3)),
-        @(TestDiscrim1(13), Iso1(5)),
-        @(TestDiscrim2(37), Iso2(41)),
-    ]);
-    world.get_global::<InitialEntities>().strong = Some(ent);
-
-    world.execute(&tracer::Log(log::Level::Trace));
-}
-
-#[test]
-fn test_partial_isotope_discrim_write() {
-    partial_isotope_discrim_write(
-        vec![TestDiscrim1(7), TestDiscrim1(11), TestDiscrim1(17), TestDiscrim1(19)],
-        vec![
-            (0, Some(Iso1(2)), Some(None)),
-            (1, Some(Iso1(3)), Some(Some(Iso1(23)))),
-            (2, None, None),
-            (3, None, Some(Some(Iso1(29)))),
-        ],
-        vec![(TestDiscrim1(11), Iso1(23)), (TestDiscrim1(19), Iso1(29))],
-    );
 }
 
 #[test]

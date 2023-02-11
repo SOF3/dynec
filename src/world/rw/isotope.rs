@@ -111,11 +111,11 @@ fn own_write_isotope_storage<A: Archetype, C: comp::Isotope<A>>(
     }
 }
 
-struct IsotopeAccessor<A, C, S, M, P> {
+struct IsotopeAccessor<A, C, StorageRef, DiscrimMapped, ViewT> {
     /// Cloned arcs of the actual storage.
-    storages:  M,
-    processor: P,
-    _ph:       PhantomData<(A, C, S)>,
+    storages: DiscrimMapped,
+    view:     ViewT,
+    _ph:      PhantomData<(A, C, StorageRef)>,
 }
 
 fn panic_invalid_key<A, C>(key: impl fmt::Debug) -> ! {
@@ -126,20 +126,19 @@ fn panic_invalid_key<A, C>(key: impl fmt::Debug) -> ! {
     )
 }
 
-impl<A, C, StorageRef, DiscrimMapped, ProcT> IsotopeAccessor<A, C, StorageRef, DiscrimMapped, ProcT>
+impl<A, C, StorageRef, DiscrimMapped, ViewT> IsotopeAccessor<A, C, StorageRef, DiscrimMapped, ViewT>
 where
     A: Archetype,
     C: comp::Isotope<A>,
     StorageRef: ops::Deref<Target = C::Storage>,
-    DiscrimMapped: discrim::Mapped<Discrim = C::Discrim>,
-    ProcT: StorageMapProcessorRef<Input = DiscrimMapped::Value, Output = StorageRef>,
+    DiscrimMapped: discrim::Mapped<Discrim = C::Discrim, Value = StorageRef>,
+    ViewT: StorageMapView<A, C>,
 {
     fn get_all_raw(
         &self,
         index: A::RawEntity,
     ) -> impl Iterator<Item = (<C as comp::Isotope<A>>::Discrim, &C)> {
         self.storages.iter_values().filter_map(move |(discrim, storage)| {
-            let storage = ProcT::admit(storage)?;
             let comp = storage.get(index)?;
             Some((discrim, comp))
         })
@@ -147,42 +146,41 @@ where
 }
 
 /// Generalizes different implementations of storage maps to handle the logic of optional storages.
-trait StorageMapProcessorRef {
-    /// The type returned by `storages.get_by`.
-    type Input;
-    /// Derefs to the actual storage type.
-    type Output;
+trait StorageMapView<A, C>
+where
+    A: Archetype,
+    C: comp::Isotope<A>,
+{
+    type StorageRef: ops::Deref<Target = C::Storage>;
+    type DiscrimMapped: discrim::Mapped<Discrim = C::Discrim>;
 
-    /// Processes the result of `storages.get_by`.
+    /// Admits the result of `storages.get_by`.
     ///
     /// Returns `Some` if the storage is valid,
     /// or `None` if the storage should be assumed empty.
     /// May panic if the storage cannot be empty.
-    fn process<'t, D: fmt::Debug, F: FnOnce() -> D>(
+    fn view<'t>(
         &self,
-        input: Option<&'t Self::Input>,
-        key: F,
-    ) -> Option<&'t Self::Output>;
-    /// Converts the input type to the output type.
-    fn admit(input: &Self::Input) -> Option<&Self::Output>;
+        key: <Self::DiscrimMapped as discrim::Mapped>::Key,
+        storages: &'t Self::DiscrimMapped,
+    ) -> Option<&'t Self::StorageRef>;
 }
 
-impl<A, C, StorageRef, DiscrimMapped, ProcT> system::ReadIsotope<A, C, DiscrimMapped::Key>
-    for IsotopeAccessor<A, C, StorageRef, DiscrimMapped, ProcT>
+impl<A, C, StorageRef, DiscrimMapped, ViewT> system::ReadIsotope<A, C, DiscrimMapped::Key>
+    for IsotopeAccessor<A, C, StorageRef, DiscrimMapped, ViewT>
 where
     A: Archetype,
     C: comp::Isotope<A>,
     StorageRef: ops::Deref<Target = C::Storage>,
-    DiscrimMapped: discrim::Mapped<Discrim = C::Discrim>,
-    ProcT: StorageMapProcessorRef<Input = DiscrimMapped::Value, Output = StorageRef>,
+    DiscrimMapped: discrim::Mapped<Discrim = C::Discrim, Value = StorageRef>,
+    ViewT: StorageMapView<A, C, StorageRef = StorageRef, DiscrimMapped = DiscrimMapped>,
 {
     fn try_get<E: entity::Ref<Archetype = A>>(
         &self,
         entity: E,
         key: DiscrimMapped::Key,
     ) -> Option<&C> {
-        let storage: Option<&DiscrimMapped::Value> = self.storages.get_by(key);
-        let storage: Option<&StorageRef> = self.processor.process(storage, || key);
+        let storage: Option<&StorageRef> = self.view.view(key, &self.storages);
         storage.and_then(|storage| storage.get(entity.id()))
     }
 
@@ -196,8 +194,7 @@ where
     where
         Self: 't;
     fn iter(&self, key: DiscrimMapped::Key) -> Self::Iter<'_> {
-        let storage: Option<&DiscrimMapped::Value> = self.storages.get_by(key);
-        let storage: Option<&StorageRef> = self.processor.process(storage, || key);
+        let storage: Option<&StorageRef> = self.view.view(key, &self.storages);
         storage.into_iter().flat_map(|storage| {
             storage.iter().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
         })
@@ -258,48 +255,46 @@ where
 /// The two implementors from `write_full_isotope_storage` and `write_partial_isotope_storage`
 /// would either lazily create or panic on missing storage.
 ///
-/// This trait is not symmetric to `StorageMapProcessorRef` because
+/// This trait is not symmetric to `StorageMapView` because
 /// the equivalent API may lead to Polonius compile errors.
-trait MutStorageAccessor<A, C, StorageRef, DiscrimMapped>
+trait MutStorageMapView<A, C>
 where
     A: Archetype,
     C: comp::Isotope<A>,
-    StorageRef: ops::Deref<Target = C::Storage>,
-    DiscrimMapped: discrim::Mapped<Discrim = C::Discrim>,
+    Self: StorageMapView<A, C>,
 {
-    fn get_storage<'t>(
+    fn view_mut<'t>(
         &mut self,
-        key: DiscrimMapped::Key,
-        storages: &'t mut DiscrimMapped,
+        key: <Self::DiscrimMapped as discrim::Mapped>::Key,
+        storages: &'t mut Self::DiscrimMapped,
     ) -> &'t mut C::Storage
     where
-        StorageRef: 't;
+        Self::StorageRef: 't;
 
-    fn get_storage_multi<'t, const N: usize>(
+    fn view_many<'t, const N: usize>(
         &mut self,
-        keys: [DiscrimMapped::Key; N],
-        storages: &'t mut DiscrimMapped,
+        keys: [<Self::DiscrimMapped as discrim::Mapped>::Key; N],
+        storages: &'t mut Self::DiscrimMapped,
     ) -> [&'t mut C::Storage; N]
     where
-        StorageRef: 't;
+        Self::StorageRef: 't;
 }
 
-impl<A, C, StorageRef, DiscrimMapped, ProcT> system::WriteIsotope<A, C, DiscrimMapped::Key>
-    for IsotopeAccessor<A, C, StorageRef, DiscrimMapped, ProcT>
+impl<A, C, StorageRef, DiscrimMapped, ViewT> system::WriteIsotope<A, C, DiscrimMapped::Key>
+    for IsotopeAccessor<A, C, StorageRef, DiscrimMapped, ViewT>
 where
     A: Archetype,
     C: comp::Isotope<A>,
     StorageRef: ops::Deref<Target = C::Storage>,
-    DiscrimMapped: discrim::Mapped<Discrim = C::Discrim>,
-    ProcT: StorageMapProcessorRef<Input = DiscrimMapped::Value, Output = StorageRef>
-        + MutStorageAccessor<A, C, StorageRef, DiscrimMapped>,
+    DiscrimMapped: discrim::Mapped<Discrim = C::Discrim, Value = StorageRef>,
+    ViewT: MutStorageMapView<A, C, StorageRef = StorageRef, DiscrimMapped = DiscrimMapped>,
 {
     fn try_get_mut<E: entity::Ref<Archetype = A>>(
         &mut self,
         entity: E,
         key: DiscrimMapped::Key,
     ) -> Option<&mut C> {
-        let storage = self.processor.get_storage(key, &mut self.storages);
+        let storage = self.view.view_mut(key, &mut self.storages);
 
         storage.get_mut(entity.id())
     }
@@ -310,7 +305,7 @@ where
         key: DiscrimMapped::Key,
         value: Option<C>,
     ) -> Option<C> {
-        let storage = self.processor.get_storage(key, &mut self.storages);
+        let storage = self.view.view_mut(key, &mut self.storages);
         storage.set(entity.id(), value)
     }
 
@@ -319,7 +314,7 @@ where
         Self: 't;
     /// Iterates over mutable references to all components of a specific discriminant.
     fn iter_mut(&mut self, key: DiscrimMapped::Key) -> Self::IterMut<'_> {
-        let storage = self.processor.get_storage(key, &mut self.storages);
+        let storage = self.view.view_mut(key, &mut self.storages);
         storage.iter_mut().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
     }
 
@@ -328,8 +323,8 @@ where
         &mut self,
         keys: [DiscrimMapped::Key; N],
     ) -> [Self::SplitDiscrim<'_>; N] {
-        self.processor
-            .get_storage_multi(keys, &mut self.storages)
+        self.view
+            .view_many(keys, &mut self.storages)
             .map(|storage| SplitDiscrim { storage, _ph: PhantomData })
     }
 }

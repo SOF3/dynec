@@ -83,9 +83,9 @@ impl Buffer {
         Self { rerun_queue: Vec::new(), shards }
     }
 
-    pub(crate) fn drain_cycle<'t>(
+    pub(crate) fn drain_cycle(
         &mut self,
-        mut world: WorldMut<'t>,
+        mut world: WorldMut<'_>,
         mut systems: Vec<(&str, &mut dyn system::Descriptor)>,
     ) {
         let mut new_queue = Vec::new();

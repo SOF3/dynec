@@ -1,3 +1,5 @@
+#![allow(clippy::extra_unused_type_parameters)] // due to test_storage macro consistency
+
 use std::marker::PhantomData;
 use std::num::NonZeroU32;
 

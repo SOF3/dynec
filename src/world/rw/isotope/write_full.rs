@@ -1,7 +1,6 @@
-use std::fmt;
 use std::marker::PhantomData;
 
-use parking_lot::RwLockWriteGuard;
+use parking_lot::MutexGuard;
 
 use crate::comp::{self, discrim, Discrim};
 use crate::entity::ealloc;
@@ -24,8 +23,7 @@ impl world::Components {
     {
         let storage_map = self.isotope_storage_map::<A, C>();
 
-        let full_map: RwLockWriteGuard<'_, storage::IsotopeMapInner<A, C>> =
-            storage_map.map.write();
+        let full_map: MutexGuard<'_, storage::IsotopeMapInner<A, C>> = storage_map.map.lock();
 
         let accessor_storages: <C::Discrim as Discrim>::FullMap<super::LockedIsotopeStorage<A, C>> =
             full_map
@@ -37,51 +35,59 @@ impl world::Components {
                 .collect();
 
         super::IsotopeAccessor::<A, C, super::LockedIsotopeStorage<A, C>, _, _> {
-            storages:  accessor_storages,
-            processor: Proc::<'_, A, C> { persistent_map: full_map, snapshot, _ph: PhantomData },
-            _ph:       PhantomData,
+            storages: accessor_storages,
+            view:     View::<'_, A, C, _> { persistent_map: full_map, snapshot, _ph: PhantomData },
+            _ph:      PhantomData,
         }
     }
 }
 
-struct Proc<'t, A, C>
+struct View<'t, A, C, DiscrimMapped>
 where
     A: Archetype,
     C: comp::Isotope<A>,
 {
     /// The actual map that persists isotope storages over multiple systems.
-    persistent_map: RwLockWriteGuard<'t, storage::IsotopeMapInner<A, C>>,
+    persistent_map: MutexGuard<'t, storage::IsotopeMapInner<A, C>>,
     snapshot:       ealloc::Snapshot<A::RawEntity>,
-    _ph:            PhantomData<(A, C)>,
+    _ph:            PhantomData<(A, C, DiscrimMapped)>,
 }
-impl<'t, A, C> super::StorageMapProcessorRef for Proc<'t, A, C>
+impl<'t, A, C, DiscrimMapped> super::StorageMapView<A, C> for View<'t, A, C, DiscrimMapped>
 where
     A: Archetype,
     C: comp::Isotope<A>,
-{
-    type Input = super::LockedIsotopeStorage<A, C>;
-    type Output = Self::Input;
-    fn process<'u, D: fmt::Debug, F: FnOnce() -> D>(
-        &self,
-        input: Option<&'u Self::Input>,
-        _: F,
-    ) -> Option<&'u Self::Input> {
-        input
-    }
-    fn admit(input: &Self::Input) -> Option<&Self::Input> { Some(input) }
-}
-impl<'t, A, C, M> super::MutStorageAccessor<A, C, super::LockedIsotopeStorage<A, C>, M>
-    for Proc<'t, A, C>
-where
-    A: Archetype,
-    C: comp::Isotope<A>,
-    M: discrim::FullMap<
+    DiscrimMapped: discrim::FullMap<
         Discrim = C::Discrim,
         Key = C::Discrim,
         Value = super::LockedIsotopeStorage<A, C>,
     >,
 {
-    fn get_storage<'u>(&mut self, discrim: C::Discrim, storages: &'u mut M) -> &'u mut C::Storage
+    type StorageRef = super::LockedIsotopeStorage<A, C>;
+    type DiscrimMapped = DiscrimMapped;
+
+    fn view<'u>(
+        &self,
+        key: C::Discrim,
+        storages: &'u DiscrimMapped,
+    ) -> Option<&'u super::LockedIsotopeStorage<A, C>> {
+        storages.get_by(key)
+    }
+}
+impl<'t, A, C, DiscrimMapped> super::MutStorageMapView<A, C> for View<'t, A, C, DiscrimMapped>
+where
+    A: Archetype,
+    C: comp::Isotope<A>,
+    DiscrimMapped: discrim::FullMap<
+        Discrim = C::Discrim,
+        Key = C::Discrim,
+        Value = super::LockedIsotopeStorage<A, C>,
+    >,
+{
+    fn view_mut<'u>(
+        &mut self,
+        discrim: C::Discrim,
+        storages: &'u mut DiscrimMapped,
+    ) -> &'u mut C::Storage
     where
         super::LockedIsotopeStorage<A, C>: 'u,
     {
@@ -92,10 +98,10 @@ where
         })
     }
 
-    fn get_storage_multi<'u, const N: usize>(
+    fn view_many<'u, const N: usize>(
         &mut self,
         keys: [C::Discrim; N],
-        storages: &'u mut M,
+        storages: &'u mut DiscrimMapped,
     ) -> [&'u mut C::Storage; N]
     where
         super::LockedIsotopeStorage<A, C>: 'u,

@@ -12,7 +12,7 @@ macro_rules! impl_accessor_set_for_tuple {
             type Entity<'t> = ($(<$ty as Accessor<A>>::Entity<'t>,)*)
             where
                 Self: 't;
-            unsafe fn entity<'this, 'e, 'ret>(this: &'this mut Self, #[allow(unused_variables)] entity: entity::TempRef<'e, A>) -> Self::Entity<'ret>
+            unsafe fn entity<'ret>(this: &mut Self, #[allow(unused_variables)] entity: entity::TempRef<'_, A>) -> Self::Entity<'ret>
             {
                 #[allow(non_snake_case)]
                 let ($($var,)*) = this;
@@ -34,7 +34,7 @@ macro_rules! impl_accessor_set_for_tuple {
             type Chunk<'t> = ($(<$ty as accessor::Chunked<A>>::Chunk<'t>,)*)
             where
                 Self: 't;
-            unsafe fn chunk<'this, 'e, 'ret>(this: &'this mut Self, #[allow(unused_variables)] chunk: entity::TempRefChunk<'e, A>) -> Self::Chunk<'ret> {
+            unsafe fn chunk<'ret>(this: &mut Self, #[allow(unused_variables)] chunk: entity::TempRefChunk<'_, A>) -> Self::Chunk<'ret> {
                 #[allow(non_snake_case)]
                 let ($($var,)*) = this;
 

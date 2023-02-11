@@ -1,8 +1,9 @@
-use std::fmt;
 use std::marker::PhantomData;
+use std::ops;
 
-use crate::comp::{self, Discrim};
-use crate::{system, world, Archetype};
+use crate::comp::{self, discrim, Discrim};
+use crate::entity::ealloc;
+use crate::{storage, system, world, Archetype};
 
 impl world::Components {
     /// Creates a read-only, shared accessor to all discriminants of the given archetyped isotope component.
@@ -10,7 +11,10 @@ impl world::Components {
     /// # Panics
     /// - if the archetyped component is not used in any systems.
     /// - if another thread is exclusively accessing any discriminants of the isotope component.
-    pub fn read_full_isotope_storage<A, C>(&self) -> impl system::ReadIsotope<A, C> + '_
+    pub fn read_full_isotope_storage<A, C>(
+        &self,
+        snapshot: ealloc::Snapshot<A::RawEntity>,
+    ) -> impl system::ReadIsotope<A, C> + '_
     where
         A: Archetype,
         C: comp::Isotope<A>,
@@ -18,9 +22,8 @@ impl world::Components {
         let storage_map = self.isotope_storage_map::<A, C>();
 
         let storages: <C::Discrim as Discrim>::FullMap<_> = {
-            // note: lock contention may occur here if another thread is requesting write access to
-            // storages of other discriminants.
-            let map = storage_map.map.read();
+            // see documentation of storage_map.map for contention analysis.
+            let map = storage_map.map.lock();
 
             map.map()
                 .iter()
@@ -30,20 +33,35 @@ impl world::Components {
                 .collect()
         };
 
-        super::IsotopeAccessor { storages, processor: Proc(PhantomData), _ph: PhantomData }
+        super::IsotopeAccessor {
+            storages,
+            view: View { snapshot, map: storage_map, _ph: PhantomData },
+            _ph: PhantomData,
+        }
     }
 }
 
-struct Proc<S>(PhantomData<S>);
-impl<S> super::StorageMapProcessorRef for Proc<S> {
-    type Input = S;
-    type Output = S;
-    fn process<'t, D: fmt::Debug, F: FnOnce() -> D>(
+struct View<'t, S, A: Archetype, C: comp::Isotope<A>, DiscrimMapped> {
+    snapshot: ealloc::Snapshot<A::RawEntity>,
+    map:      &'t storage::IsotopeMap<A, C>,
+    _ph:      PhantomData<(S, DiscrimMapped)>,
+}
+impl<'t, A, C, StorageRef, DiscrimMapped> super::StorageMapView<A, C>
+    for View<'t, StorageRef, A, C, DiscrimMapped>
+where
+    A: Archetype,
+    C: comp::Isotope<A>,
+    StorageRef: ops::Deref<Target = C::Storage>,
+    DiscrimMapped: discrim::Mapped<Discrim = C::Discrim, Value = StorageRef>,
+{
+    type StorageRef = StorageRef;
+    type DiscrimMapped = DiscrimMapped;
+
+    fn view<'u>(
         &self,
-        input: Option<&'t S>,
-        _: F,
-    ) -> Option<&'t S> {
-        input
+        key: DiscrimMapped::Key,
+        storages: &'u DiscrimMapped,
+    ) -> Option<&'u StorageRef> {
+        storages.get_by(key)
     }
-    fn admit(input: &S) -> Option<&S> { Some(input) }
 }

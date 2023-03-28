@@ -17,4 +17,4 @@ itertools = "0.10.3"
 matches2 = "1.2.1"
 proc-macro2 = "1.0.29"
 quote = "1.0.8"
-syn = {version = "1.0.77", features = ["full"]}
+syn = {version = "2.0.11", features = ["full"]}

@@ -184,7 +184,7 @@ pub(crate) fn entity_ref(
 }
 
 fn drain_attr(vec: &mut Vec<syn::Attribute>, ident: &str) -> bool {
-    match vec.iter().position(|attr| attr.path.is_ident(ident)) {
+    match vec.iter().position(|attr| attr.path().is_ident(ident)) {
         Some(index) => {
             vec.remove(index);
             true

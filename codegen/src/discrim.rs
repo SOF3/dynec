@@ -14,7 +14,7 @@ pub(crate) fn derive(input: TokenStream) -> Result<TokenStream> {
 
     let mut args: Attr<ItemOpt> = Attr::default();
     for attr in &input.attrs {
-        if attr.path.is_ident("dynec") {
+        if attr.path().is_ident("dynec") {
             let this_args: Attr<ItemOpt> = attr.parse_args()?;
             args.items.extend(this_args.items);
         }

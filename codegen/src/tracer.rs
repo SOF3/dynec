@@ -59,7 +59,7 @@ pub(crate) fn polyfill(input: TokenStream) -> Result<TokenStream> {
     for item in &input.impl_block.items {
         let key = match item {
             syn::ImplItem::Type(item) => PolyfillDataKey::Type(item.ident.clone()),
-            syn::ImplItem::Method(item) => PolyfillDataKey::Fn(item.sig.ident.clone()),
+            syn::ImplItem::Fn(item) => PolyfillDataKey::Fn(item.sig.ident.clone()),
             _ => continue, // should cause compile error in later stages
         };
         data.remove(&key);

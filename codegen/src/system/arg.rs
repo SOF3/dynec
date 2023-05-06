@@ -147,7 +147,7 @@ pub(super) fn infer_arg_type(param: &mut syn::PatType) -> Result<ArgType> {
     let mut maybe_partial: Option<MaybePartial> = None;
 
     let param_span = param.span();
-    for attr in param.attrs.drain_filter(|attr| attr.path.is_ident("dynec")) {
+    for attr in param.attrs.drain_filter(|attr| attr.path().is_ident("dynec")) {
         let arg_attr = attr.parse_args::<Attr<opt::Arg>>()?;
 
         for arg in arg_attr.items {

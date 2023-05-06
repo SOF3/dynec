@@ -82,7 +82,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                     type #item_ident
                 });
             }
-            syn::TraitItem::Method(item) => {
+            syn::TraitItem::Fn(item) => {
                 let item_ident = &item.sig.ident;
 
                 let attrs = util::parse_attrs::<AssocFnOpt>(&mut item.attrs)?;

@@ -20,7 +20,7 @@ pub(crate) fn parse_generics(input: &syn::DeriveInput) -> ParsedGenerics {
             .iter()
             .map(|param| match param {
                 syn::GenericParam::Type(syn::TypeParam { ident, .. }) => quote!(#ident),
-                syn::GenericParam::Lifetime(syn::LifetimeDef { lifetime, .. }) => {
+                syn::GenericParam::Lifetime(syn::LifetimeParam { lifetime, .. }) => {
                     quote!(#lifetime)
                 }
                 syn::GenericParam::Const(syn::ConstParam { ident, .. }) => quote!(#ident),
@@ -131,7 +131,7 @@ where
     Named<T>: Parse,
 {
     attrs
-        .drain_filter(|attr| attr.path.is_ident("dynec"))
+        .drain_filter(|attr| attr.path().is_ident("dynec"))
         .map(|attr| attr.parse_args::<Attr<T>>())
         .collect()
 }

@@ -235,83 +235,85 @@ pub struct TestDiscrim1(pub(crate) usize);
 pub struct TestDiscrim2(pub(crate) usize);
 
 // Test component summary:
-// Comp1: optional, depends []
-// Comp2: optional, depends on Comp2
-// Comp3: optional, depends on Comp1 and Comp2
-// Comp4: optional, depends on Comp1 and Comp2
-// Comp5: required, no init
-// Comp6: required, depends []
+// Simple1: optional, depends []
+// Simple2: optional, depends on Simple2
+// Simple3: optional, depends on Simple1 and Simple2
+// Simple4: optional, depends on Simple1 and Simple2
+// Simple5: required, no init
+// Simple6: required, depends []
 
 /// optional, non-init, depless
 #[comp(dynec_as(crate), of = TestArch)]
 #[derive(Debug, PartialEq)]
-pub struct Comp1(pub i32);
+pub struct Simple1OptionalNoDepNoInit(pub i32);
 
-/// optional, depends on Comp1
+/// optional, depends on Simple1
 #[comp(dynec_as(crate), of = TestArch, init = init_comp2/1)]
 #[derive(Debug)]
-pub struct Comp2(pub i32);
-fn init_comp2(c1: &Comp1) -> Comp2 { Comp2(c1.0 + 2) }
+pub struct Simple2OptionalDepends1(pub i32);
+fn init_comp2(c1: &Simple1OptionalNoDepNoInit) -> Simple2OptionalDepends1 {
+    Simple2OptionalDepends1(c1.0 + 2)
+}
 
-/// optional, depends on Comp1 + Comp2
+/// optional, depends on Simple1 + Simple2
 #[comp(
     dynec_as(crate),
     of = TestArch,
-    init = |c1: &Comp1, c2: &Comp2| Comp3(c1.0 * 3, c2.0 * 5),
+    init = |c1: &Simple1OptionalNoDepNoInit, c2: &Simple2OptionalDepends1| Simple3OptionalDepends12(c1.0 * 3, c2.0 * 5),
 )]
 #[derive(Debug)]
-pub struct Comp3(pub i32, pub i32);
+pub struct Simple3OptionalDepends12(pub i32, pub i32);
 
-/// optional, depends on Comp1 + Comp2
+/// optional, depends on Simple1 + Simple2
 #[comp(
     dynec_as(crate),
     of = TestArch,
-    init = |c1: &Comp1, c2: &Comp2| Comp4(c1.0 * 7, c2.0 * 8),
+    init = |c1: &Simple1OptionalNoDepNoInit, c2: &Simple2OptionalDepends1| Simple4Depends12(c1.0 * 7, c2.0 * 8),
 )]
 #[derive(Debug, PartialEq)]
-pub struct Comp4(pub i32, pub i32);
+pub struct Simple4Depends12(pub i32, pub i32);
 
 /// required, non-init
 #[comp(dynec_as(crate), of = TestArch, required)]
 #[derive(Debug, PartialEq)]
-pub struct Comp5(pub i32);
+pub struct Simple5RequiredNoInit(pub i32);
 
 /// required, auto-init, depless
-#[comp(dynec_as(crate), of = TestArch, required, init = || Comp6(9))]
+#[comp(dynec_as(crate), of = TestArch, required, init = || Simple6RequiredWithInitNoDeps(9))]
 #[derive(Debug)]
-pub struct Comp6(pub i32);
+pub struct Simple6RequiredWithInitNoDeps(pub i32);
 
 /// non-init, has finalizers
 #[comp(dynec_as(crate), of = TestArch, finalizer)]
-pub struct CompFinal;
+pub struct Simple7WithFinalizerNoinit;
 
 /// a generic component
-pub struct CompN<const N: usize>(pub i32);
+pub struct SimpleN<const N: usize>(pub i32);
 
-impl<const N: usize> entity::Referrer for CompN<N> {
+impl<const N: usize> entity::Referrer for SimpleN<N> {
     fn visit_type(arg: &mut entity::referrer::VisitTypeArg) { arg.mark::<Self>(); }
     fn visit_mut<V: entity::referrer::VisitMutArg>(&mut self, _: &mut V) {}
 }
 
-impl<const N: usize> comp::SimpleOrIsotope<TestArch> for CompN<N> {
+impl<const N: usize> comp::SimpleOrIsotope<TestArch> for SimpleN<N> {
     const PRESENCE: comp::Presence = comp::Presence::Optional;
     const INIT_STRATEGY: comp::InitStrategy<TestArch, Self> = comp::InitStrategy::None;
 
     type Storage = storage::Vec<NonZeroU32, Self>;
 }
-impl<const N: usize> comp::Simple<TestArch> for CompN<N> {
+impl<const N: usize> comp::Simple<TestArch> for SimpleN<N> {
     const IS_FINALIZER: bool = false;
 }
 
 /// Does not have auto init
 #[comp(dynec_as(crate), of = TestArch, isotope = TestDiscrim1)]
 #[derive(Debug, Clone, PartialEq)]
-pub struct Iso1(pub i32);
+pub struct IsoNoInit(pub i32);
 
 /// Has auto init
 #[comp(dynec_as(crate), of = TestArch, isotope = TestDiscrim2, init = || Self(73))]
 #[derive(Debug, Clone, PartialEq)]
-pub struct Iso2(pub i32);
+pub struct IsoWithInit(pub i32);
 
 /// A simple component with a strong reference to [`TestArch`].
 #[comp(dynec_as(crate), of = TestArch)]
@@ -344,15 +346,15 @@ pub struct InitialEntities {
 /// A dummy system used for registering all non-entity-referencing test components.
 #[system(dynec_as(crate))]
 pub fn use_all_bare(
-    _comp1: impl system::ReadSimple<TestArch, Comp1>,
-    _comp2: impl system::ReadSimple<TestArch, Comp2>,
-    _comp3: impl system::ReadSimple<TestArch, Comp3>,
-    _comp4: impl system::ReadSimple<TestArch, Comp4>,
-    _comp5: impl system::ReadSimple<TestArch, Comp5>,
-    _comp6: impl system::ReadSimple<TestArch, Comp6>,
-    _comp_final: impl system::ReadSimple<TestArch, CompFinal>,
-    _iso1: impl system::ReadIsotope<TestArch, Iso1>,
-    _iso2: impl system::ReadIsotope<TestArch, Iso2>,
+    _comp1: impl system::ReadSimple<TestArch, Simple1OptionalNoDepNoInit>,
+    _comp2: impl system::ReadSimple<TestArch, Simple2OptionalDepends1>,
+    _comp3: impl system::ReadSimple<TestArch, Simple3OptionalDepends12>,
+    _comp4: impl system::ReadSimple<TestArch, Simple4Depends12>,
+    _comp5: impl system::ReadSimple<TestArch, Simple5RequiredNoInit>,
+    _comp6: impl system::ReadSimple<TestArch, Simple6RequiredWithInitNoDeps>,
+    _comp_final: impl system::ReadSimple<TestArch, Simple7WithFinalizerNoinit>,
+    _iso1: impl system::ReadIsotope<TestArch, IsoNoInit>,
+    _iso2: impl system::ReadIsotope<TestArch, IsoWithInit>,
     #[dynec(global)] _agg: &Aggregator,
 ) {
 }
@@ -360,21 +362,21 @@ pub fn use_all_bare(
 /// A dummy system with minimally simple dependencies.
 #[system(dynec_as(crate))]
 pub fn use_comp_n(
-    _comp0: impl system::ReadSimple<TestArch, CompN<0>>,
-    _comp1: impl system::ReadSimple<TestArch, CompN<1>>,
-    _comp2: impl system::ReadSimple<TestArch, CompN<2>>,
-    _comp3: impl system::ReadSimple<TestArch, CompN<3>>,
-    _comp4: impl system::ReadSimple<TestArch, CompN<4>>,
-    _comp5: impl system::ReadSimple<TestArch, CompN<5>>,
-    _comp6: impl system::ReadSimple<TestArch, CompN<6>>,
-    _comp7: impl system::ReadSimple<TestArch, CompN<7>>,
-    _comp8: impl system::ReadSimple<TestArch, CompN<8>>,
-    _comp9: impl system::ReadSimple<TestArch, CompN<9>>,
-    _comp10: impl system::ReadSimple<TestArch, CompN<10>>,
-    _comp11: impl system::ReadSimple<TestArch, CompN<11>>,
-    _comp12: impl system::ReadSimple<TestArch, CompN<12>>,
-    _comp13: impl system::ReadSimple<TestArch, CompN<13>>,
-    _comp14: impl system::ReadSimple<TestArch, CompN<14>>,
-    _comp15: impl system::ReadSimple<TestArch, CompN<15>>,
+    _comp0: impl system::ReadSimple<TestArch, SimpleN<0>>,
+    _comp1: impl system::ReadSimple<TestArch, SimpleN<1>>,
+    _comp2: impl system::ReadSimple<TestArch, SimpleN<2>>,
+    _comp3: impl system::ReadSimple<TestArch, SimpleN<3>>,
+    _comp4: impl system::ReadSimple<TestArch, SimpleN<4>>,
+    _comp5: impl system::ReadSimple<TestArch, SimpleN<5>>,
+    _comp6: impl system::ReadSimple<TestArch, SimpleN<6>>,
+    _comp7: impl system::ReadSimple<TestArch, SimpleN<7>>,
+    _comp8: impl system::ReadSimple<TestArch, SimpleN<8>>,
+    _comp9: impl system::ReadSimple<TestArch, SimpleN<9>>,
+    _comp10: impl system::ReadSimple<TestArch, SimpleN<10>>,
+    _comp11: impl system::ReadSimple<TestArch, SimpleN<11>>,
+    _comp12: impl system::ReadSimple<TestArch, SimpleN<12>>,
+    _comp13: impl system::ReadSimple<TestArch, SimpleN<13>>,
+    _comp14: impl system::ReadSimple<TestArch, SimpleN<14>>,
+    _comp15: impl system::ReadSimple<TestArch, SimpleN<15>>,
 ) {
 }

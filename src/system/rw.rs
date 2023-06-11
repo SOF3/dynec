@@ -193,7 +193,7 @@ where
     ///
     /// This method is infallible for correctly implemented `comp::Must`,
     /// which returns the auto-initialized value for missing components.
-    fn get<E: entity::Ref<Archetype = A>>(&self, entity: E, discrim: K) -> &C
+    fn get<E: entity::Ref<Archetype = A>>(&mut self, entity: E, discrim: K) -> &C
     where
         C: comp::Must<A>,
     {
@@ -210,16 +210,16 @@ where
     /// Returns an immutable reference to the component for the specified entity and discriminant,
     /// or the default value for isotopes with a default initializer or `None`
     /// if the component is not present in the entity.
-    fn try_get<E: entity::Ref<Archetype = A>>(&self, entity: E, discrim: K) -> Option<&C>;
+    fn try_get<E: entity::Ref<Archetype = A>>(&mut self, entity: E, discrim: K) -> Option<&C>;
 
     /// Return value of [`get_all`](Self::get_all).
-    type GetAll<'t>: Iterator<Item = (<C as comp::Isotope<A>>::Discrim, &'t C)> + 't
+    type GetAll<'t>: Iterator<Item = <C as comp::Isotope<A>>::Discrim> + 't
     where
         Self: 't;
-    /// Iterates over all isotopes of the component type for the given entity.
+    /// Iterates over all known discriminants of the component type.
     ///
     /// The yielded discriminants are not in any guaranteed order.
-    fn get_all<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Self::GetAll<'_>;
+    fn get_all(&mut self) -> Self::GetAll<'_>;
 
     /// Return value of [`iter`](Self::iter).
     type Iter<'t>: Iterator<Item = (entity::TempRef<'t, A>, &'t C)>
@@ -229,7 +229,7 @@ where
     ///
     /// Note that the initializer is not called for lazy-initialized isotope components.
     /// To avoid confusing behavior, do not use this function if [`C: comp::Must<A>`](comp::Must).
-    fn iter(&self, discrim: K) -> Self::Iter<'_>;
+    fn iter(&mut self, discrim: K) -> Self::Iter<'_>;
 
     /// Return value of [`split`](Self::split).
     type Split<'t>: Read<A, C> + 't
@@ -237,7 +237,7 @@ where
         Self: 't;
     /// Splits the accessor into multiple [`Read`] implementors
     /// so that they can be used independently.
-    fn split<const N: usize>(&self, keys: [K; N]) -> [Self::Split<'_>; N];
+    fn split<const N: usize>(&mut self, keys: [K; N]) -> [Self::Split<'_>; N];
 }
 
 /// Provides access to an isotope component in a specific archetype.
@@ -253,11 +253,7 @@ where
     /// Note that this method returns `Option<&mut C>`, not `&mut Option<C>`.
     /// This means setting the Option itself to `Some`/`None` will not modify any stored value.
     /// Use [`WriteIsotope::set`] to add/remove a component.
-    fn try_get_mut<E: entity::Ref<Archetype = A>>(
-        &mut self,
-        entity: E,
-        discrim: K,
-    ) -> Option<&mut C>;
+    fn try_get_mut<E: entity::Ref<Archetype = A>>(&mut self, entity: E, key: K) -> Option<&mut C>;
 
     /// Overwrites the component for the specified entity and discriminant.
     ///
@@ -265,7 +261,7 @@ where
     fn set<E: entity::Ref<Archetype = A>>(
         &mut self,
         entity: E,
-        discrim: K,
+        key: K,
         value: Option<C>,
     ) -> Option<C>;
 
@@ -274,7 +270,7 @@ where
     where
         Self: 't;
     /// Iterates over mutable references to all components of a specific discriminant.
-    fn iter_mut(&mut self, discrim: K) -> Self::IterMut<'_>;
+    fn iter_mut(&mut self, key: K) -> Self::IterMut<'_>;
 
     /// Return value of [`split_isotopes`](Self::split_isotopes).
     type SplitDiscrim<'t>: Write<A, C> + 't

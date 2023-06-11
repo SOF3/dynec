@@ -4,9 +4,9 @@ use std::ops;
 
 use parking_lot::{RwLockReadGuard, RwLockWriteGuard};
 
-use super::PartitionAccessor;
 use crate::storage::{self, Chunked};
-use crate::{comp, entity, system, util, world, Archetype, Storage};
+use crate::world::{self, rw};
+use crate::{comp, entity, system, util, Archetype, Storage};
 
 impl world::Components {
     /// Creates a read-only, shared accessor to the given archetyped simple component.
@@ -185,8 +185,8 @@ where
     ) -> (Self::SplitEntitiesAt<'_>, Self::SplitEntitiesAt<'_>) {
         let (left, right) = self.storage.partition_at(entity.id());
         (
-            PartitionAccessor { storage: left, _ph: PhantomData },
-            PartitionAccessor { storage: right, _ph: PhantomData },
+            rw::PartitionAccessor { storage: left, _ph: PhantomData },
+            rw::PartitionAccessor { storage: right, _ph: PhantomData },
         )
     }
 }

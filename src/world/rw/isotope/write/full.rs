@@ -56,10 +56,6 @@ where
     type Key = C::Discrim;
 
     fn get_storage(&mut self, discrim: C::Discrim) -> &C::Storage {
-        // TODO: optimize get_by_or_insert so that each cell could have its own mutex
-        // in feasible implementations of FullMap.
-        // For example, initialize all fields in FullMap with an `AtomicBool::new(false)`,
-        // then write to the field while the `full_map` mutex is acquired.
         self.accessor_storages.get_by_or_insert(discrim, || {
             let storage =
                 self.full_map.get_or_create(discrim, self.snapshot.iter_allocated_chunks());

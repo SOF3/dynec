@@ -1,11 +1,36 @@
+use std::any::type_name;
 use std::fmt;
 use std::marker::PhantomData;
+use std::sync::Arc;
+
+use parking_lot::lock_api::ArcRwLockReadGuard;
+use parking_lot::RwLock;
 
 use crate::world::rw::isotope;
 use crate::{comp, entity, system, Archetype, Storage as _};
 
 pub(super) mod full;
 pub(super) mod partial;
+
+type LockedStorage<A, C> =
+    ArcRwLockReadGuard<parking_lot::RawRwLock, <C as comp::SimpleOrIsotope<A>>::Storage>;
+
+fn own_storage<A: Archetype, C: comp::Isotope<A>>(
+    discrim: C::Discrim,
+    storage: &Arc<RwLock<C::Storage>>,
+) -> LockedStorage<A, C> {
+    let storage: Arc<RwLock<C::Storage>> = Arc::clone(storage);
+    match storage.try_read_arc() {
+        Some(guard) => guard,
+        None => panic!(
+            "The component {}/{}/{:?} is currently uniquely locked by another system. Maybe \
+             scheduler bug?",
+            type_name::<A>(),
+            type_name::<C>(),
+            discrim,
+        ),
+    }
+}
 
 /// Abstracts the storage access pattern for an accessor type.
 pub(super) trait StorageGet<A, C>

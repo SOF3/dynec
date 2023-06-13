@@ -81,20 +81,25 @@ pub(crate) struct Map<A: Archetype, C: comp::Isotope<A>> {
     /// The actual storages behind a mutex.
     ///
     /// # Lock contention
-    /// This lock is acquired for the following purposes, in ascending order of duration:
-    /// - `map.get_or_create` (getting):
+    /// This lock is acquired for the following purposes, in ascending order of impact:
+    /// - `write_full_isotope_storage`:
+    ///   This function locks the mutex for the entire duration of the running system.
+    ///   The scheduler is expected to prevent this case from happening.
+    /// - `read_full_isotope_storage` init:
+    ///   This function locks the mutex during initialization.
+    ///   While multiple systems reading the same type could race for this lock,
+    ///   the contention effect is negligible since it just needs to arc-clone all discriminants,
+    ///   which is expected to be a small number.
+    /// - `read_full_isotope_storage` `map.get_or_create` (already exists):
     ///   This process just performs a hashtable lookup and
     ///   acquires another RwLock expecting no contention,
     ///   so the time cost is O(1) and expected to be almost-instant.
-    /// - `map.get_or_create` (creating):
+    /// - `read_full_isotope_storage` `map.get_or_create` (does not exist yet):
     ///   This process performs a hashtable update and fills it with a new storage.
     ///   All existing entities are auto-initialized during storage creation,
     ///   so the time cost is **O(n)** (**n** = number of entities in archetype).
     ///   The number of times this is triggered for the entire world lifecycle is bounded to
     ///   (number of archetypes \* number of components \* number of discriminants).
-    /// - `write_full_isotope_storage`:
-    ///   This function locks the mutex for the entire duration of the running system.
-    ///   The scheduler is expected to prevent this case from happening.
     pub(crate) map: Mutex<MapInner<A, C>>,
 }
 

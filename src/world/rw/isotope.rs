@@ -1,4 +1,5 @@
 use std::any::{type_name, TypeId};
+use std::fmt;
 
 use crate::{comp, storage, world, Archetype};
 
@@ -21,4 +22,12 @@ fn storage_map<A: Archetype, C: comp::Isotope<A>>(
             type_name::<C>(),
         ),
     }
+}
+
+fn panic_invalid_key<A, C>(key: impl fmt::Debug) -> ! {
+    panic!(
+        "The index {key:?} is not available in the isotope request for {}/{}",
+        type_name::<A>(),
+        type_name::<C>(),
+    )
 }

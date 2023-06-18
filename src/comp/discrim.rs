@@ -105,18 +105,19 @@ pub trait Mapped {
     /// This method panics if `keys` contains duplicate discriminants,
     /// or if any keys do not exist in the map.
     /// For the latter case, `on_missing` is invoked, which should panic.
-    fn get_mut_array_by<U, TransformFn, OnMissing, const N: usize>(
-        &mut self,
+    fn get_mut_array_by<'t, U, TransformFn, OnMissing, const N: usize>(
+        &'t mut self,
         keys: [Self::Key; N],
         transform: TransformFn,
         on_missing: OnMissing,
-    ) -> [&mut U; N]
+    ) -> [U; N]
     where
-        TransformFn: FnMut(&mut Self::Value) -> &mut U,
+        U: RefToPtr,
+        TransformFn: FnMut(&'t mut Self::Value) -> U,
         OnMissing: FnMut(Self::Key) -> !;
 
     /// Return value of [`iter_values`](Self::iter_values).
-    type Iter<'t>: Iterator<Item = (Self::Discrim, &'t Self::Value)> + 't
+    type Iter<'t>: Iterator<Item = (Self::Key, Self::Discrim, &'t Self::Value)> + 't
     where
         Self: 't;
     /// Iterates over the values in this map with the discriminant.
@@ -260,14 +261,15 @@ impl<D: Discrim, V, const N: usize> Mapped for [(D, V); N] {
         Some(value)
     }
 
-    fn get_mut_array_by<U, TransformFn, OnMissing, const M: usize>(
-        &mut self,
+    fn get_mut_array_by<'t, U, TransformFn, OnMissing, const M: usize>(
+        &'t mut self,
         keys: [usize; M],
         mut transform: TransformFn,
         mut on_missing: OnMissing,
-    ) -> [&mut U; M]
+    ) -> [U; M]
     where
-        TransformFn: FnMut(&mut Self::Value) -> &mut U,
+        U: RefToPtr,
+        TransformFn: FnMut(&'t mut Self::Value) -> U,
         OnMissing: FnMut(Self::Key) -> !,
     {
         // Safety: `slice.get_mut` is an injection.
@@ -282,9 +284,9 @@ impl<D: Discrim, V, const N: usize> Mapped for [(D, V); N] {
         }
     }
 
-    type Iter<'t> = impl Iterator<Item = (D, &'t V)> + 't where Self: 't;
+    type Iter<'t> = impl Iterator<Item = (usize, D, &'t V)> + 't where Self: 't;
     fn iter_mapped(&self) -> Self::Iter<'_> {
-        self[..].iter().map(|(discrim, value)| (*discrim, value))
+        self[..].iter().enumerate().map(|(key, (discrim, value))| (key, *discrim, value))
     }
 
     type IterMut<'t> = impl Iterator<Item = (D, &'t mut V)> + 't where Self: 't;
@@ -313,14 +315,15 @@ impl<D: Discrim, V> Mapped for Vec<(D, V)> {
         Some(value)
     }
 
-    fn get_mut_array_by<U, TransformFn, OnMissing, const M: usize>(
-        &mut self,
+    fn get_mut_array_by<'t, U, TransformFn, OnMissing, const M: usize>(
+        &'t mut self,
         keys: [usize; M],
         mut transform: TransformFn,
         mut on_missing: OnMissing,
-    ) -> [&mut U; M]
+    ) -> [U; M]
     where
-        TransformFn: FnMut(&mut Self::Value) -> &mut U,
+        U: RefToPtr,
+        TransformFn: FnMut(&'t mut Self::Value) -> U,
         OnMissing: FnMut(Self::Key) -> !,
     {
         // Safety: `slice.get_mut` is an injection.
@@ -335,9 +338,9 @@ impl<D: Discrim, V> Mapped for Vec<(D, V)> {
         }
     }
 
-    type Iter<'t> = impl Iterator<Item = (D, &'t V)> + 't where Self: 't;
+    type Iter<'t> = impl Iterator<Item = (usize, D, &'t V)> + 't where Self: 't;
     fn iter_mapped(&self) -> Self::Iter<'_> {
-        self[..].iter().map(|(discrim, value)| (*discrim, value))
+        self[..].iter().enumerate().map(|(key, (discrim, value))| (key, *discrim, value))
     }
 
     type IterMut<'t> = impl Iterator<Item = (D, &'t mut V)> + 't where Self: 't;
@@ -375,14 +378,15 @@ impl<D: Discrim, T> Mapped for LinearVecMap<D, T> {
         self.vec[..].iter_mut().find(|&&mut (d, _)| d == key).map(|(_, s)| s)
     }
 
-    fn get_mut_array_by<U, TransformFn, OnMissing, const M: usize>(
-        &mut self,
+    fn get_mut_array_by<'t, U, TransformFn, OnMissing, const M: usize>(
+        &'t mut self,
         keys: [D; M],
         mut transform: TransformFn,
         mut on_missing: OnMissing,
-    ) -> [&mut U; M]
+    ) -> [U; M]
     where
-        TransformFn: FnMut(&mut Self::Value) -> &mut U,
+        U: RefToPtr,
+        TransformFn: FnMut(&'t mut Self::Value) -> U,
         OnMissing: FnMut(Self::Key) -> !,
     {
         // We first collect the matching indices to an array.
@@ -407,9 +411,9 @@ impl<D: Discrim, T> Mapped for LinearVecMap<D, T> {
         }
     }
 
-    type Iter<'t> = impl Iterator<Item = (D, &'t T)> + 't where Self: 't;
+    type Iter<'t> = impl Iterator<Item = (D, D, &'t T)> + 't where Self: 't;
     fn iter_mapped(&self) -> Self::Iter<'_> {
-        self.vec[..].iter().map(|(discrim, value)| (*discrim, value))
+        self.vec[..].iter().map(|&(discrim, ref value)| (discrim, discrim, value))
     }
 
     type IterMut<'t> = impl Iterator<Item = (D, &'t mut T)> + 't where Self: 't;
@@ -519,14 +523,15 @@ impl<D: Discrim, T> Mapped for SortedVecMap<D, T> {
         }
     }
 
-    fn get_mut_array_by<U, TransformFn, OnMissing, const M: usize>(
-        &mut self,
+    fn get_mut_array_by<'t, U, TransformFn, OnMissing, const M: usize>(
+        &'t mut self,
         keys: [D; M],
         mut transform: TransformFn,
         mut on_missing: OnMissing,
-    ) -> [&mut U; M]
+    ) -> [U; M]
     where
-        TransformFn: FnMut(&mut Self::Value) -> &mut U,
+        U: RefToPtr,
+        TransformFn: FnMut(&'t mut Self::Value) -> U,
         OnMissing: FnMut(Self::Key) -> !,
     {
         // We first collect the matching indices to an array.
@@ -553,9 +558,9 @@ impl<D: Discrim, T> Mapped for SortedVecMap<D, T> {
         }
     }
 
-    type Iter<'t> = impl Iterator<Item = (D, &'t T)> + 't where Self: 't;
+    type Iter<'t> = impl Iterator<Item = (D, D, &'t T)> + 't where Self: 't;
     fn iter_mapped(&self) -> Self::Iter<'_> {
-        self.vec[..].iter().map(|(discrim, value)| (*discrim, value))
+        self.vec[..].iter().map(|&(discrim, ref value)| (discrim, discrim, value))
     }
 
     type IterMut<'t> = impl Iterator<Item = (D, &'t mut T)> + 't where Self: 't;
@@ -674,14 +679,15 @@ impl<D: Discrim, T> Mapped for BoundedVecMap<D, T> {
         self.vec.get_mut(key.into_usize()).and_then(Option::as_mut)
     }
 
-    fn get_mut_array_by<U, TransformFn, OnMissing, const M: usize>(
-        &mut self,
+    fn get_mut_array_by<'t, U, TransformFn, OnMissing, const M: usize>(
+        &'t mut self,
         keys: [D; M],
         mut transform: TransformFn,
         mut on_missing: OnMissing,
-    ) -> [&mut U; M]
+    ) -> [U; M]
     where
-        TransformFn: FnMut(&mut Self::Value) -> &mut U,
+        U: RefToPtr,
+        TransformFn: FnMut(&'t mut Self::Value) -> U,
         OnMissing: FnMut(Self::Key) -> !,
     {
         // We collect the keys into [usize] first,
@@ -703,12 +709,11 @@ impl<D: Discrim, T> Mapped for BoundedVecMap<D, T> {
         }
     }
 
-    type Iter<'t> = impl Iterator<Item = (D, &'t T)> + 't where Self: 't;
+    type Iter<'t> = impl Iterator<Item = (D, D, &'t T)> + 't where Self: 't;
     fn iter_mapped(&self) -> Self::Iter<'_> {
-        self.vec[..]
-            .iter()
-            .enumerate()
-            .filter_map(|(discrim, value)| Some((D::from_usize(discrim), value.as_ref()?)))
+        self.vec[..].iter().enumerate().filter_map(|(discrim, value)| {
+            Some((D::from_usize(discrim), D::from_usize(discrim), value.as_ref()?))
+        })
     }
 
     type IterMut<'t> = impl Iterator<Item = (D, &'t mut T)> + 't where Self: 't;
@@ -830,14 +835,15 @@ impl<D: Discrim, T, const N: usize> Mapped for ArrayMap<D, T, N> {
         self.array.get_mut(key.into_usize()).and_then(Option::as_mut)
     }
 
-    fn get_mut_array_by<U, TransformFn, OnMissing, const M: usize>(
-        &mut self,
+    fn get_mut_array_by<'t, U, TransformFn, OnMissing, const M: usize>(
+        &'t mut self,
         keys: [D; M],
         mut transform: TransformFn,
         mut on_missing: OnMissing,
-    ) -> [&mut U; M]
+    ) -> [U; M]
     where
-        TransformFn: FnMut(&mut Self::Value) -> &mut U,
+        U: RefToPtr,
+        TransformFn: FnMut(&'t mut Self::Value) -> U,
         OnMissing: FnMut(Self::Key) -> !,
     {
         // We collect the keys into [usize] first,
@@ -859,12 +865,11 @@ impl<D: Discrim, T, const N: usize> Mapped for ArrayMap<D, T, N> {
         }
     }
 
-    type Iter<'t> = impl Iterator<Item = (D, &'t T)> + 't where Self: 't;
+    type Iter<'t> = impl Iterator<Item = (D, D, &'t T)> + 't where Self: 't;
     fn iter_mapped(&self) -> Self::Iter<'_> {
-        self.array[..]
-            .iter()
-            .enumerate()
-            .filter_map(|(discrim, value)| Some((D::from_usize(discrim), value.as_ref()?)))
+        self.array[..].iter().enumerate().filter_map(|(discrim, value)| {
+            Some((D::from_usize(discrim), D::from_usize(discrim), value.as_ref()?))
+        })
     }
 
     type IterMut<'t> = impl Iterator<Item = (D, &'t mut T)> + 't where Self: 't;

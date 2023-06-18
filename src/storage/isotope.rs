@@ -85,7 +85,7 @@ pub(crate) struct Map<A: Archetype, C: comp::Isotope<A>> {
     /// - `write_full_isotope_storage`:
     ///   This function locks the mutex for the entire duration of the running system.
     ///   The scheduler is expected to prevent this case from happening.
-    /// - `read_full_isotope_storage` init:
+    /// - Accessor initialization:
     ///   This function locks the mutex during initialization.
     ///   While multiple systems reading the same type could race for this lock,
     ///   the contention effect is negligible since it just needs to arc-clone all discriminants,

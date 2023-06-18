@@ -82,7 +82,7 @@ where
     where
         Self: 't;
     fn iter_keys(&mut self) -> Self::IterKeys<'_> {
-        self.accessor_storages.iter_mapped().map(|(discrim, _)| (discrim, discrim))
+        self.accessor_storages.iter_mapped().map(|(_, discrim, _)| (discrim, discrim))
     }
 }
 

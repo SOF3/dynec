@@ -81,8 +81,18 @@ where
     type IterKeys<'t> = impl Iterator<Item = (Self::Key, C::Discrim)> + 't
     where
         Self: 't;
-    fn iter_keys(&mut self) -> Self::IterKeys<'_> {
+    fn iter_keys(&self) -> Self::IterKeys<'_> {
         self.accessor_storages.iter_mapped().map(|(_, discrim, _)| (discrim, discrim))
+    }
+
+    type IterValue = isotope::write::LockedStorage<A, C>;
+    type IterValues<'t> = impl Iterator<Item = (Self::Key, C::Discrim, &'t Self::IterValue)> + 't
+    where
+        Self: 't;
+    fn iter_values(&self) -> Self::IterValues<'_> {
+        self.accessor_storages
+            .iter_mapped()
+            .map(|(_, discrim, storage)| (discrim, discrim, storage))
     }
 }
 

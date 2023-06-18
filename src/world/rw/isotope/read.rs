@@ -1,7 +1,7 @@
 use std::any::type_name;
-use std::fmt;
 use std::marker::PhantomData;
 use std::sync::Arc;
+use std::{fmt, ops};
 
 use parking_lot::lock_api::ArcRwLockReadGuard;
 use parking_lot::RwLock;
@@ -67,7 +67,29 @@ where
     /// For partial accessors, this is the set of keys to the discriminants provided by the user.
     ///
     /// For full accessors, this is the set of discriminants that have been initialized.
-    fn iter_keys(&mut self) -> Self::IterKeys<'_>;
+    fn iter_keys(&self) -> Self::IterKeys<'_>;
+
+    /// Storage type yielded by [`iter_values`](Self::iter_values).
+    type IterValue: ops::Deref<Target = C::Storage>;
+    /// Return value of [`iter_values`](Self::iter_values).
+    type IterValues<'t>: Iterator<Item = (Self::Key, C::Discrim, &'t Self::IterValue)> + 't
+    where
+        Self: 't;
+    /// Iterates over all storages currently accessible from this accessor.
+    ///
+    /// For partial accessors, this is the set of keys to the discriminants provided by the user.
+    ///
+    /// For full accessors, this is the set of discriminants that have been initialized.
+    fn iter_values(&self) -> Self::IterValues<'_>;
+}
+
+pub(super) trait StorageGetRef<A, C>
+where
+    A: Archetype,
+    C: comp::Isotope<A>,
+    Self: isotope::read::StorageGet<A, C>,
+{
+    fn get_storage_ref(&self, key: Self::Key) -> &C::Storage;
 }
 
 impl<A, C, GetterT> system::ReadIsotope<A, C, GetterT::Key> for isotope::Base<GetterT>
@@ -85,10 +107,31 @@ where
         storage.get(entity.id())
     }
 
-    type GetAll<'t> = impl Iterator<Item = <C as comp::Isotope<A>>::Discrim> + 't where
+    type KnownDiscrims<'t> = impl Iterator<Item = <C as comp::Isotope<A>>::Discrim> + 't where
         Self: 't;
-    fn get_all(&mut self) -> Self::GetAll<'_> {
+    fn known_discrims(&self) -> Self::KnownDiscrims<'_> {
         self.getter.iter_keys().map(|(_key, discrim)| discrim)
+    }
+
+    type GetAll<'t> = impl Iterator<Item = (C::Discrim, &'t C)> + 't where Self: 't;
+    fn get_all<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Self::GetAll<'_> {
+        let id = entity.id();
+
+        // workaround for https://github.com/rust-lang/rust/issues/65442
+        fn without_e<A, C>(
+            getter: &impl StorageGet<A, C>,
+            id: A::RawEntity,
+        ) -> impl Iterator<Item = (C::Discrim, &'_ C)> + '_
+        where
+            A: Archetype,
+            C: comp::Isotope<A>,
+        {
+            getter
+                .iter_values()
+                .filter_map(move |(_key, discrim, storage)| Some((discrim, storage.get(id)?)))
+        }
+
+        without_e(&self.getter, entity.id())
     }
 
     type Iter<'t> = impl Iterator<Item = (entity::TempRef<'t, A>, &'t C)>
@@ -107,6 +150,28 @@ where
     fn split<const N: usize>(&mut self, keys: [GetterT::Key; N]) -> [Self::Split<'_>; N] {
         let storages = self.getter.get_storage_many(keys);
         storages.map(|storage| SplitReader { storage, _ph: PhantomData })
+    }
+}
+
+impl<A, C, GetterT> system::ReadIsotopeRef<A, C, GetterT::Key> for isotope::Base<GetterT>
+where
+    A: Archetype,
+    C: comp::Isotope<A>,
+    GetterT: StorageGetRef<A, C>,
+{
+    fn try_get_ref<E: entity::Ref<Archetype = A>>(
+        &self,
+        entity: E,
+        key: GetterT::Key,
+    ) -> Option<&C> {
+        let storage = self.getter.get_storage_ref(key);
+        storage.get(entity.id())
+    }
+
+    type IterRef<'t> = impl Iterator<Item = (entity::TempRef<'t, A>, &'t C)> where Self: 't;
+    fn iter_ref(&self, key: GetterT::Key) -> Self::IterRef<'_> {
+        let storage = self.getter.get_storage_ref(key);
+        storage.iter().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
     }
 }
 

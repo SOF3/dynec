@@ -185,6 +185,17 @@ pub trait WriteSimple<A: Archetype, C: comp::Simple<A>>: ReadSimple<A, C> + Writ
 /// `K` is the type used to index the discriminant.
 /// For partial isotope access, `K` is usually `usize`.
 /// For full isotope access, `K` is the discriminant type.
+///
+/// Partial isotope access also implements [`ReadIsotopeRef`],
+/// which allows using the accessor immutably
+/// so that it can be dispatched to multiple workers.
+///
+/// For full accessors, getters require a mutable receiver
+/// to allow lazy initialization of new discriminants.
+/// Consider [splitting](Self::split) accessors,
+/// which return [`Read`] with a shared receiver.
+/// If it can be asserted that no uninitialized discriminants will be encountered,
+/// use with [`known_discrims`].
 pub trait ReadIsotope<A: Archetype, C: comp::Isotope<A>, K = <C as comp::Isotope<A>>::Discrim>
 where
     K: fmt::Debug + Copy + 'static,
@@ -212,14 +223,19 @@ where
     /// if the component is not present in the entity.
     fn try_get<E: entity::Ref<Archetype = A>>(&mut self, entity: E, discrim: K) -> Option<&C>;
 
-    /// Return value of [`get_all`](Self::get_all).
-    type GetAll<'t>: Iterator<Item = <C as comp::Isotope<A>>::Discrim> + 't
+    /// Return value of [`known_discrims`](Self::known_discrims).
+    type KnownDiscrims<'t>: Iterator<Item = <C as comp::Isotope<A>>::Discrim> + 't
     where
         Self: 't;
     /// Iterates over all known discriminants of the component type.
     ///
     /// The yielded discriminants are not in any guaranteed order.
-    fn get_all(&mut self) -> Self::GetAll<'_>;
+    fn known_discrims(&self) -> Self::KnownDiscrims<'_>;
+
+    type GetAll<'t>: Iterator<Item = (C::Discrim, &'t C)> + 't
+    where
+        Self: 't;
+    fn get_all<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Self::GetAll<'_>;
 
     /// Return value of [`iter`](Self::iter).
     type Iter<'t>: Iterator<Item = (entity::TempRef<'t, A>, &'t C)>
@@ -240,12 +256,62 @@ where
     fn split<const N: usize>(&mut self, keys: [K; N]) -> [Self::Split<'_>; N];
 }
 
+/// Provides shared access to an isotope component in a specific archetype.
+/// Only available for partial storages.
+pub trait ReadIsotopeRef<A: Archetype, C: comp::Isotope<A>, K>: ReadIsotope<A, C, K>
+where
+    K: fmt::Debug + Copy + 'static,
+{
+    fn get_ref<E: entity::Ref<Archetype = A>>(&self, entity: E, key: K) -> &C
+    where
+        C: comp::Must<A>,
+    {
+        match self.try_get_ref(entity, key) {
+            Some(value) => value,
+            None => panic!(
+                "{}: comp::Must<{}> but has no default initializer",
+                any::type_name::<C>(),
+                any::type_name::<A>()
+            ),
+        }
+    }
+
+    /// Returns an immutable reference to the component for the specified entity and discriminant,
+    /// or the default value for isotopes with a default initializer or `None`
+    /// if the component is not present in the entity.
+    fn try_get_ref<E: entity::Ref<Archetype = A>>(&self, entity: E, key: K) -> Option<&C>;
+
+    /// Return value of [`iter`](Self::iter).
+    type IterRef<'t>: Iterator<Item = (entity::TempRef<'t, A>, &'t C)>
+    where
+        Self: 't;
+    fn iter_ref(&self, key: K) -> Self::IterRef<'_>;
+}
+
 /// Provides access to an isotope component in a specific archetype.
 pub trait WriteIsotope<A: Archetype, C: comp::Isotope<A>, K = <C as comp::Isotope<A>>::Discrim>:
     ReadIsotope<A, C, K>
 where
     K: fmt::Debug + Copy + 'static,
 {
+    /// Retrieves the component for the given entity and discriminant.
+    ///
+    /// This method is infallible for correctly implemented `comp::Must`,
+    /// which returns the auto-initialized value for missing components.
+    fn get_mut<E: entity::Ref<Archetype = A>>(&mut self, entity: E, discrim: K) -> &mut C
+    where
+        C: comp::Must<A>,
+    {
+        match self.try_get_mut(entity, discrim) {
+            Some(value) => value,
+            None => panic!(
+                "{}: comp::Must<{}> but has no default initializer",
+                any::type_name::<C>(),
+                any::type_name::<A>()
+            ),
+        }
+    }
+
     /// Returns a mutable reference to the component for the specified entity and discriminant,
     /// automatically initialized with the default initializer if present,
     /// or `None` if the component is unset and has no default initializer.

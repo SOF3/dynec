@@ -112,8 +112,8 @@ fn test_simple_fetch() {
 }
 
 fn isotope_discrim_read_test_system(
-    iso1: impl system::ReadIsotope<TestArch, IsoNoInit>,
-    iso2: impl system::ReadIsotope<TestArch, IsoWithInit>,
+    mut iso1: impl system::ReadIsotope<TestArch, IsoNoInit>,
+    mut iso2: impl system::ReadIsotope<TestArch, IsoWithInit>,
     initials: &InitialEntities,
 ) {
     let ent = initials.strong.as_ref().expect("initials.strong is None");
@@ -224,7 +224,7 @@ fn partial_isotope_discrim_read(
         #[dynec(param)] _req_discrims: &Vec<TestDiscrim1>,
         #[dynec(param)] single_expects: &Vec<(usize, Option<IsoNoInit>)>,
         #[dynec(param)] expect_all: &Vec<(TestDiscrim1, IsoNoInit)>,
-        #[dynec(isotope(discrim = _req_discrims))] iso1: impl system::ReadIsotope<
+        #[dynec(isotope(discrim = _req_discrims))] mut iso1: impl system::ReadIsotope<
             TestArch,
             IsoNoInit,
             usize,
@@ -261,8 +261,8 @@ fn partial_isotope_discrim_read(
 }
 
 #[test]
-#[should_panic = "Cannot access isotope indexed by 42 because it is not in the list of requested \
-                  discriminants"]
+#[should_panic = "The index 42 is not available in the isotope request for \
+                  dynec::test_util::TestArch/dynec::test_util::IsoNoInit"]
 fn test_partial_isotope_discrim_write_panic() {
     partial_isotope_discrim_write(vec![TestDiscrim1(11)], vec![(42, None, None)], vec![]);
 }
@@ -710,7 +710,7 @@ fn test_entity_iter_partial_mut() {
         comp1_acc: impl system::ReadSimple<TestArch, Simple1OptionalNoDepNoInit>,
         #[dynec(isotope(discrim = [TestDiscrim1(7), TestDiscrim1(13)]))]
         mut iso1_acc: impl system::WriteIsotope<TestArch, IsoNoInit, usize>,
-        #[dynec(isotope(discrim = [TestDiscrim1(31)]))] iso1_acc_31: impl system::ReadIsotope<
+        #[dynec(isotope(discrim = [TestDiscrim1(31)]))] mut iso1_acc_31: impl system::ReadIsotope<
             TestArch,
             IsoNoInit,
             usize,

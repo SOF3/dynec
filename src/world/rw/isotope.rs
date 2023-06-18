@@ -3,6 +3,7 @@ use std::fmt;
 
 use crate::{comp, storage, world, Archetype};
 
+mod offline;
 mod read;
 mod write;
 

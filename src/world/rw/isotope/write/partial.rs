@@ -10,7 +10,9 @@ impl world::Components {
         &'t self,
         discrims: &'t DiscrimSet,
         snapshot: ealloc::Snapshot<A::RawEntity>,
-    ) -> impl system::WriteIsotope<A, C, DiscrimSet::Key> + 't
+    ) -> impl system::ReadIsotopeRef<A, C, DiscrimSet::Key>
+           + system::WriteIsotope<A, C, DiscrimSet::Key>
+           + 't
     where
         A: Archetype,
         C: comp::Isotope<A>,
@@ -65,8 +67,30 @@ where
     }
 
     type IterKeys<'t> = impl Iterator<Item = (DiscrimSet::Key, C::Discrim)> + 't;
-    fn iter_keys(&mut self) -> Self::IterKeys<'_> {
+    fn iter_keys(&self) -> Self::IterKeys<'_> {
         self.storages.iter_mapped().map(|(key, discrim, _)| (key, discrim))
+    }
+
+    type IterValue = isotope::write::LockedStorage<A, C>;
+    type IterValues<'t> = impl Iterator<Item = (Self::Key, C::Discrim, &'t Self::IterValue)> + 't
+    where
+        Self: 't;
+    fn iter_values(&self) -> Self::IterValues<'_> {
+        self.storages.iter_mapped().map(|(key, discrim, storage)| (key, discrim, storage))
+    }
+}
+
+impl<A, C, DiscrimSet> isotope::read::StorageGetRef<A, C> for Getter<A, C, DiscrimSet>
+where
+    A: Archetype,
+    C: comp::Isotope<A>,
+    DiscrimSet: discrim::Set<C::Discrim>,
+{
+    fn get_storage_ref(&self, key: Self::Key) -> &<C>::Storage {
+        match self.storages.get_by(key) {
+            Some(storage) => storage,
+            None => isotope::panic_invalid_key::<A, C>(key),
+        }
     }
 }
 

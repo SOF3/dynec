@@ -485,13 +485,23 @@ impl ShardAssigner for StaticShardAssigner {
     }
 }
 
+/// Contains entity allocators for all archetypes.
 #[derive(Default)]
-pub(crate) struct Map {
+pub struct Map {
     pub(crate) map: HashMap<DbgTypeId, Box<dyn AnyEalloc>>,
 }
 
 impl Map {
     pub(crate) fn new(map: HashMap<DbgTypeId, Box<dyn AnyEalloc>>) -> Self { Self { map } }
+
+    pub(crate) fn get<A: Archetype>(&mut self) -> &mut A::Ealloc {
+        self.map
+            .get_mut(&TypeId::of::<A>())
+            .expect("Attempted to delete entity of unknown archetype")
+            .as_any_mut()
+            .downcast_mut()
+            .expect("TypeId mismatch")
+    }
 
     pub(crate) fn shards(&mut self, num_shards: usize) -> Vec<ShardMap> {
         let mut shard_maps: Vec<ShardMap> = (0..num_shards).map(|_| ShardMap::default()).collect();
@@ -510,6 +520,14 @@ impl Map {
         }
 
         shard_maps
+    }
+
+    /// Creates a snapshot of the allocated entities for an archetype.
+    ///
+    /// For online access, get the snapshot through [`ShardMap::snapshot`] instead.
+    /// This function is intended for offline access e.g. in unit tests.
+    pub fn snapshot<A: Archetype>(&mut self) -> Snapshot<A::RawEntity> {
+        Ealloc::snapshot(self.get::<A>())
     }
 }
 

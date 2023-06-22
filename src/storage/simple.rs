@@ -6,22 +6,28 @@ use std::sync::Arc;
 use parking_lot::RwLock;
 
 use super::Storage;
+use crate::comp::any::DepGetter;
 use crate::entity::referrer;
 use crate::{comp, Archetype};
+
+/// Constructor for [`Simple`].
+pub(crate) fn builder<A: Archetype, C: comp::Simple<A>>() -> Box<dyn Any> {
+    Box::new(Simple::<A>::new::<C>())
+}
 
 /// Storage and metadata for a simple component.
 pub(crate) struct Simple<A: Archetype> {
     /// The init strategy of the component.
-    pub(crate) init_strategy: comp::SimpleInitStrategy<A>,
+    pub(crate) dep_list: comp::DepList,
     /// The actual storage object. Downcasts to `C::Storage`.
-    pub(crate) storage:       Arc<RwLock<dyn AnySimpleStorage<A>>>,
+    pub(crate) storage:  Arc<RwLock<dyn AnySimpleStorage<A>>>,
 }
 
 impl<A: Archetype> Simple<A> {
     pub(crate) fn new<C: comp::Simple<A>>() -> Self {
         Self {
-            init_strategy: C::INIT_STRATEGY,
-            storage:       Arc::new(RwLock::new(SimpleStorage::<A, C>(C::Storage::default())))
+            dep_list: C::INIT_STRATEGY.checked_deps(),
+            storage:  Arc::new(RwLock::new(SimpleStorage::<A, C>(C::Storage::default())))
                 as Arc<RwLock<dyn AnySimpleStorage<A>>>,
         }
     }
@@ -74,7 +80,12 @@ pub(crate) trait AnySimpleStorage<A: Archetype>: Send + Sync {
     fn as_any_mut(&mut self) -> &mut (dyn Any + Send + Sync);
 
     /// Fills a simple component of with the initial value.
-    fn fill_init_simple(&mut self, entity: A::RawEntity, comp_map: &mut comp::Map<A>);
+    fn fill_init_simple(
+        &mut self,
+        entity: A::RawEntity,
+        comp_map: &mut comp::Map<A>,
+        dep_getter: DepGetter<'_, A>,
+    );
 
     /// Returns true if [`C::IS_FINALIZER`](comp::Simple::IS_FINALIZER).
     /// and the component exists for the given entity.
@@ -85,6 +96,12 @@ pub(crate) trait AnySimpleStorage<A: Archetype>: Send + Sync {
 
     /// Returns a [`referrer::Dyn`] implementation that visits all components in this storage.
     fn referrer_dyn<'t>(&'t mut self) -> Box<dyn referrer::Object + 't>;
+
+    /// Returns the value for an entity and return it as an [`Any`].
+    ///
+    /// Due to the poor performance of [`Any`],
+    /// this method should not be used unless component type elision is necessary.
+    fn get_any(&self, entity: A::RawEntity) -> Option<&dyn Any>;
 }
 
 impl<A: Archetype> dyn AnySimpleStorage<A> {
@@ -104,10 +121,17 @@ impl<A: Archetype, C: comp::Simple<A>> AnySimpleStorage<A> for SimpleStorage<A, 
 
     fn as_any_mut(&mut self) -> &mut (dyn Any + Send + Sync) { self }
 
-    fn fill_init_simple(&mut self, entity: A::RawEntity, comp_map: &mut comp::Map<A>) {
+    fn fill_init_simple(
+        &mut self,
+        entity: A::RawEntity,
+        comp_map: &mut comp::Map<A>,
+        dep_getter: DepGetter<'_, A>,
+    ) {
         if let Some(comp) = comp_map.remove_simple::<C>() {
             self.0.set(entity, Some(comp));
-        } else if let comp::SimplePresence::Required = C::PRESENCE {
+        } else if let comp::InitStrategy::Auto(initer) = C::INIT_STRATEGY {
+            self.0.set(entity, Some(initer.f.init(dep_getter)));
+        } else if let comp::Presence::Required = C::PRESENCE {
             panic!(
                 "Cannot create an entity of type `{}` without explicitly passing a component of \
                  type `{}`",
@@ -129,5 +153,9 @@ impl<A: Archetype, C: comp::Simple<A>> AnySimpleStorage<A> for SimpleStorage<A, 
 
     fn referrer_dyn<'t>(&'t mut self) -> Box<dyn referrer::Object + 't> {
         Box::new(referrer::UnnamedIter(self.0.iter_chunks_mut().flat_map(|chunk| chunk.slice)))
+    }
+
+    fn get_any(&self, entity: A::RawEntity) -> Option<&dyn Any> {
+        self.0.get(entity).map(|v| v as &dyn Any)
     }
 }

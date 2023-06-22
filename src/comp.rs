@@ -40,30 +40,103 @@
 //! so they always use a bitvec to store presence.
 //!
 //! # Instantiation
-//! When an entity is created, its simple components are auto-instantiated based on the [`SimpleInitStrategy`]
-//! specified in [`Simple::INIT_STRATEGY`] if it is absent in the creation args.
+//! When an entity is created, its simple components are auto-instantiated based on the [`InitStrategy`]
+//! specified in [`SimpleOrIsotope::INIT_STRATEGY`] if it is absent in the creation args.
 //!
 //! Isotope components are never instantiated on entity creation.
 
-use crate::Archetype;
+use std::any::type_name;
 
-mod simple;
-pub use simple::{Simple, SimpleInitStrategy, SimplePresence};
-
-mod isotope;
-pub use isotope::{Isotope, IsotopeInitStrategy};
+use crate::{entity, Archetype, Storage};
 
 pub mod discrim;
 pub use discrim::Discrim;
 
 pub(crate) mod any;
-pub use any::{DepList, IsotopeInitFn, IsotopeIniter, Map, SimpleInitFn, SimpleIniter};
+pub use any::{DepList, InitFn, Initer, Map};
+use itertools::Itertools;
+
+/// The common items for a simple or isotope component.
+pub trait SimpleOrIsotope<A: Archetype>: entity::Referrer + Send + Sync + Sized + 'static {
+    /// The presence constraint of this component.
+    const PRESENCE: Presence;
+
+    /// The initialization strategy for this component.
+    const INIT_STRATEGY: InitStrategy<A, Self>;
+
+    /// The storage type used for storing this simple component.
+    type Storage: Storage<RawEntity = A::RawEntity, Comp = Self>;
+}
+
+/// A simple component has only one instance per entity.
+///
+/// See the [module-level documentation](mod@crate::comp) for more information.
+pub trait Simple<A: Archetype>: SimpleOrIsotope<A> {
+    /// Override this to `true` if the component is a finalizer.
+    ///
+    /// Finalizer components must be [optional](Presence::Optional).
+    /// Entities are not removed until all finalizer components have been removed.
+    const IS_FINALIZER: bool = false;
+}
+
+/// An isotope component may have multiple instances per entity.
+///
+/// See the [module-level documentation](mod@crate::comp) for more information.
+pub trait Isotope<A: Archetype>: SimpleOrIsotope<A> {
+    /// The discriminant type.
+    type Discrim: Discrim;
+}
+
+/// Describes whether a simple component must be present.
+pub enum Presence {
+    /// The component may not be present in an entity.
+    /// The component is always retrieved as an `Option` type.
+    Optional,
+
+    /// The component must be present in an entity.
+    /// It can be mutated, but it cannot be removed from the entity.
+    ///
+    /// If it is not given in the entity creation args
+    /// and its [`InitStrategy`] is not [`Auto`](InitStrategy::Auto),
+    /// entity creation will panic.
+    Required,
+}
+
+/// Describes how a simple component is auto-initialized.
+pub enum InitStrategy<A: Archetype, C: SimpleOrIsotope<A>> {
+    /// The component is not auto-initialized.
+    None,
+    /// The component should be auto-initialized using the [`Initer`]
+    /// if it is not given in the creation args.
+    Auto(Initer<A, C>),
+}
+
+impl<A: Archetype, C: SimpleOrIsotope<A>> InitStrategy<A, C> {
+    /// Constructs an auto-initializing init strategy from a closure.
+    pub fn auto(f: &'static impl InitFn<A, C>) -> Self { Self::Auto(Initer { f }) }
+
+    /// Gets the list of dependencies and panics if there are duplicates.
+    pub(crate) fn checked_deps(&self) -> DepList {
+        let deps = match self {
+            InitStrategy::None => Vec::new(),
+            InitStrategy::Auto(initer) => initer.f.deps(),
+        };
+        if let Some(dup_dep) = deps.iter().map(|&(ty, _)| ty).duplicates().next() {
+            panic!(
+                "Initializer of {} cannot depend on the same component type {dup_dep} multiple \
+                 times",
+                type_name::<C>()
+            );
+        }
+        deps
+    }
+}
 
 /// Marks that a component type is always present.
 ///
-/// This trait must only be implemented by components that
-/// implement [`Simple`] with [`Simple::PRESENCE`] set to [`SimplePresence::Required`].
+/// This trait must only be implemented by components that implement [`SimpleOrIsotope`]
+/// with [`SimpleOrIsotope::PRESENCE`] set to [`Presence::Required`].
 ///
 /// Not implementing this trait does not result in any issues
 /// except for ergonomic inconvenience when using getters on storages.
-pub trait Must<A: Archetype> {}
+pub trait Must<A: Archetype>: SimpleOrIsotope<A> {}

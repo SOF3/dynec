@@ -27,12 +27,11 @@ fn create_entity(c: &mut Criterion) {
         }
     }
 
-    create_entity_batch!(0; );
-    create_entity_batch!(1; test_util::CompN::<1>(1));
-    create_entity_batch!(2; test_util::CompN::<1>(1), test_util::CompN::<2>(2));
-    create_entity_batch!(4; test_util::CompN::<1>(1), test_util::CompN::<2>(2), test_util::CompN::<3>(3), test_util::CompN::<4>(4));
-    create_entity_batch!(8; test_util::CompN::<1>(1), test_util::CompN::<2>(2), test_util::CompN::<3>(3), test_util::CompN::<4>(4), test_util::CompN::<5>(5), test_util::CompN::<6>(6), test_util::CompN::<7>(7), test_util::CompN::<8>(8));
-    create_entity_batch!(16; test_util::CompN::<1>(1), test_util::CompN::<2>(2), test_util::CompN::<3>(3), test_util::CompN::<4>(4), test_util::CompN::<5>(5), test_util::CompN::<6>(6), test_util::CompN::<7>(7), test_util::CompN::<8>(8), test_util::CompN::<9>(9), test_util::CompN::<10>(10), test_util::CompN::<11>(11), test_util::CompN::<12>(12), test_util::CompN::<13>(13), test_util::CompN::<14>(14), test_util::CompN::<15>(15), test_util::CompN::<16>(16));
+    create_entity_batch!(1; test_util::SimpleN::<1>(1));
+    create_entity_batch!(2; test_util::SimpleN::<1>(1), test_util::SimpleN::<2>(2));
+    create_entity_batch!(4; test_util::SimpleN::<1>(1), test_util::SimpleN::<2>(2), test_util::SimpleN::<3>(3), test_util::SimpleN::<4>(4));
+    create_entity_batch!(8; test_util::SimpleN::<1>(1), test_util::SimpleN::<2>(2), test_util::SimpleN::<3>(3), test_util::SimpleN::<4>(4), test_util::SimpleN::<5>(5), test_util::SimpleN::<6>(6), test_util::SimpleN::<7>(7), test_util::SimpleN::<8>(8));
+    create_entity_batch!(16; test_util::SimpleN::<1>(1), test_util::SimpleN::<2>(2), test_util::SimpleN::<3>(3), test_util::SimpleN::<4>(4), test_util::SimpleN::<5>(5), test_util::SimpleN::<6>(6), test_util::SimpleN::<7>(7), test_util::SimpleN::<8>(8), test_util::SimpleN::<9>(9), test_util::SimpleN::<10>(10), test_util::SimpleN::<11>(11), test_util::SimpleN::<12>(12), test_util::SimpleN::<13>(13), test_util::SimpleN::<14>(14), test_util::SimpleN::<15>(15), test_util::SimpleN::<16>(16));
 }
 
 criterion_group!(benches, create_entity);

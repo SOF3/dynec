@@ -148,6 +148,7 @@ impl<A: Archetype> Entity<A> {
     /// Creates a new strong reference to an entity.
     ///
     /// This method should only be used when a completely new entity has been created.
+    #[allow(clippy::default_constructed_unit_structs)]
     pub(crate) fn new_allocated(id: A::RawEntity) -> Self { Self { id, rc: MaybeArc::default() } }
 
     /// Converts the strong reference into a weak reference.

@@ -1,23 +1,110 @@
 use std::any::{self, Any};
 use std::collections::HashMap;
+use std::ops;
 use std::sync::Arc;
 
-use parking_lot::RwLock;
+use parking_lot::lock_api::ArcRwLockWriteGuard;
+use parking_lot::{Mutex, RwLock};
 
 use super::Storage;
-use crate::entity::referrer;
-use crate::{comp, Archetype};
+use crate::entity::{self, referrer, Ealloc};
+use crate::{comp, storage, Archetype};
 
-pub(crate) type MapInner<A, C> =
-    HashMap<<C as comp::Isotope<A>>::Discrim, Arc<RwLock<<C as comp::Isotope<A>>::Storage>>>;
+pub(crate) struct MapInner<A: Archetype, C: comp::Isotope<A>> {
+    map: HashMap<C::Discrim, Arc<RwLock<C::Storage>>>,
+}
+
+impl<A: Archetype, C: comp::Isotope<A>> Default for MapInner<A, C> {
+    fn default() -> Self { Self { map: HashMap::new() } }
+}
+
+/// We do not expose mutability to the HashMap
+/// to protect other code from creating an empty storage directly.
+/// However immutable reference is fine.
+impl<A: Archetype, C: comp::Isotope<A>> MapInner<A, C> {
+    pub(crate) fn map(&self) -> &HashMap<C::Discrim, Arc<RwLock<C::Storage>>> { &self.map }
+
+    pub(crate) fn get_or_create(
+        &mut self,
+        discrim: C::Discrim,
+        entities: impl Iterator<Item = ops::Range<A::RawEntity>>,
+    ) -> &mut Arc<RwLock<C::Storage>> {
+        self.map.entry(discrim).or_insert_with(|| {
+            let mut storage = C::Storage::default();
+
+            if let comp::InitStrategy::Auto(initer) = C::INIT_STRATEGY {
+                for entity in entities.flat_map(<A::RawEntity as entity::Raw>::range) {
+                    struct PanicDepGetter;
+                    impl<A: Archetype> comp::any::DepGetterInner<A> for PanicDepGetter {
+                        fn get(
+                            &self,
+                            _ty: crate::util::DbgTypeId,
+                        ) -> ArcRwLockWriteGuard<
+                            parking_lot::RawRwLock,
+                            dyn storage::simple::AnySimpleStorage<A>,
+                        > {
+                            unimplemented!(
+                                "Isotope initializers with dependencies are currently not \
+                                 supported if discriminants are dynamically instantiated during \
+                                 online"
+                            )
+                        }
+                    }
+                    storage.set(
+                        entity,
+                        Some(
+                            initer.f.init(comp::any::DepGetter { inner: &PanicDepGetter, entity }),
+                        ),
+                    );
+                }
+            }
+
+            Arc::new(RwLock::new(storage))
+        })
+    }
+
+    pub(crate) fn get_mut(&mut self, discrim: C::Discrim) -> Option<&mut Arc<RwLock<C::Storage>>> {
+        self.map.get_mut(&discrim)
+    }
+
+    pub(crate) fn iter_mut(
+        &mut self,
+    ) -> impl Iterator<Item = (C::Discrim, &mut Arc<RwLock<C::Storage>>)> {
+        self.map.iter_mut().map(|(discrim, storage)| (*discrim, storage))
+    }
+
+    pub(crate) fn len(&self) -> usize { self.map.len() }
+}
 
 /// Isotope storages of the same type but different discriminants.
 pub(crate) struct Map<A: Archetype, C: comp::Isotope<A>> {
-    pub(crate) map: RwLock<MapInner<A, C>>,
+    /// The actual storages behind a mutex.
+    ///
+    /// # Lock contention
+    /// This lock is acquired for the following purposes, in ascending order of impact:
+    /// - `write_full_isotope_storage`:
+    ///   This function locks the mutex for the entire duration of the running system.
+    ///   The scheduler is expected to prevent this case from happening.
+    /// - Accessor initialization:
+    ///   This function locks the mutex during initialization.
+    ///   While multiple systems reading the same type could race for this lock,
+    ///   the contention effect is negligible since it just needs to arc-clone all discriminants,
+    ///   which is expected to be a small number.
+    /// - `read_full_isotope_storage` `map.get_or_create` (already exists):
+    ///   This process just performs a hashtable lookup and
+    ///   acquires another RwLock expecting no contention,
+    ///   so the time cost is O(1) and expected to be almost-instant.
+    /// - `read_full_isotope_storage` `map.get_or_create` (does not exist yet):
+    ///   This process performs a hashtable update and fills it with a new storage.
+    ///   All existing entities are auto-initialized during storage creation,
+    ///   so the time cost is **O(n)** (**n** = number of entities in archetype).
+    ///   The number of times this is triggered for the entire world lifecycle is bounded to
+    ///   (number of archetypes \* number of components \* number of discriminants).
+    pub(crate) map: Mutex<MapInner<A, C>>,
 }
 
 impl<A: Archetype, C: comp::Isotope<A>> Map<A, C> {
-    pub(crate) fn new_any() -> Arc<dyn AnyMap<A>> { Arc::new(Self { map: RwLock::default() }) }
+    pub(crate) fn new_any() -> Arc<dyn AnyMap<A>> { Arc::new(Self { map: Mutex::default() }) }
 }
 
 /// Downcastable trait object of [`Map`].
@@ -25,14 +112,13 @@ pub(crate) trait AnyMap<A: Archetype>: Send + Sync {
     fn as_any(&self) -> &(dyn Any + Send + Sync);
     fn as_any_mut(&mut self) -> &mut (dyn Any + Send + Sync);
 
-    fn init_strategy(&self) -> &'static comp::IsotopeInitStrategy<A>;
-
-    /// Fills an entry. Called during entity initialization.
-    fn fill_init(
+    /// Fills all entries. Called during entity initialization.
+    fn fill_init_isotope(
         &mut self,
-        discrim: usize,
         entity: A::RawEntity,
-        value: Box<dyn Any + Send + Sync>,
+        comp_map: &mut comp::Map<A>,
+        dep_getter: comp::any::DepGetter<'_, A>,
+        ealloc: &mut A::Ealloc,
     );
 
     fn referrer_dyn<'t>(&'t mut self) -> Box<dyn referrer::Object + 't>;
@@ -42,22 +128,41 @@ impl<A: Archetype, C: comp::Isotope<A>> AnyMap<A> for Map<A, C> {
     fn as_any(&self) -> &(dyn Any + Send + Sync) { self }
     fn as_any_mut(&mut self) -> &mut (dyn Any + Send + Sync) { self }
 
-    fn init_strategy(&self) -> &'static comp::IsotopeInitStrategy<A> { &C::INIT_STRATEGY }
-
-    fn fill_init(
+    fn fill_init_isotope(
         &mut self,
-        discrim: usize,
-        entity: A::RawEntity,
-        value: Box<dyn Any + Send + Sync>,
+        entity: <A as Archetype>::RawEntity,
+        comp_map: &mut comp::Map<A>,
+        dep_getter: comp::any::DepGetter<'_, A>,
+        ealloc: &mut A::Ealloc,
     ) {
-        let storage: &mut Arc<RwLock<C::Storage>> = self
-            .map
-            .get_mut()
-            .entry(<C::Discrim as comp::Discrim>::from_usize(discrim))
-            .or_insert_with(Arc::<RwLock<C::Storage>>::default);
-        let storage = Arc::get_mut(storage).expect("storage arc was leaked");
-        let value = value.downcast::<C>().expect("TypeId mismatch");
-        storage.get_mut().set(entity, Some(*value));
+        let map = self.map.get_mut();
+        let values = comp_map.remove_isotope::<C>();
+        let value_count = values.len();
+
+        for (discrim, value) in values {
+            let storage = map.get_or_create(discrim, ealloc.snapshot().iter_allocated_chunks());
+            let storage = Arc::get_mut(storage).expect("storage arc was leaked").get_mut();
+            storage.set(entity, Some(value));
+        }
+
+        if let comp::InitStrategy::Auto(initer) = C::INIT_STRATEGY {
+            for (_discrim, storage) in map.iter_mut() {
+                let storage: &mut C::Storage =
+                    Arc::get_mut(storage).expect("storage arc was leaked").get_mut();
+                if storage.get(entity).is_none() {
+                    storage.set(entity, Some(initer.f.init(dep_getter)));
+                }
+            }
+        } else if let comp::Presence::Required = C::PRESENCE {
+            if value_count != map.len() {
+                panic!(
+                    "Isotope type `{}`/`{}` cannot declare `Required` presence without an \
+                     auto-initializer",
+                    any::type_name::<A>(),
+                    any::type_name::<C>(),
+                );
+            }
+        }
     }
 
     fn referrer_dyn<'t>(&'t mut self) -> Box<dyn referrer::Object + 't> {

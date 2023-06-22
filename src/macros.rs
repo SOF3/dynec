@@ -75,7 +75,7 @@ mod archetype_tests {}
 /// `$ty`) instead of a simple component.
 ///
 /// ## `required`
-/// Indicates that the component must be [present](crate::comp::SimplePresence)
+/// Indicates that the component must be [present](crate::comp::Presence)
 /// for an entity of its archetype any time as long as the entity is created andnot destroyed.
 ///
 /// This argument is exclusive with `isotope`,
@@ -111,14 +111,14 @@ mod archetype_tests {}
 /// struct Qux(i32);
 ///
 /// static_assertions::assert_impl_all!(Qux: comp::Simple<Foo>, comp::Simple<Bar>);
-/// assert!(matches!(<Qux as comp::Simple<Foo>>::PRESENCE, comp::SimplePresence::Optional));
+/// assert!(matches!(<Qux as comp::SimpleOrIsotope<Foo>>::PRESENCE, comp::Presence::Optional));
 /// assert!(<Qux as comp::Simple<Bar>>::IS_FINALIZER);
 ///
 /// #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, dynec::Discrim)]
 /// #[dynec(map = discrim::SortedVecMap)]
 /// struct Id(usize);
 ///
-/// #[comp(of = Foo, isotope = Id, init = Self::make/0)]
+/// #[comp(of = Foo, isotope = Id)]
 /// struct Corge(i32);
 ///
 /// impl Corge {
@@ -164,7 +164,8 @@ mod comp_tests {}
 /// ```
 /// dynec::archetype!(Foo);
 /// let empty = dynec::comps![Foo =>];
-/// assert_eq!(empty.len(), 0);
+/// assert_eq!(empty.simple_len(), 0);
+/// assert_eq!(empty.isotope_type_count(), 0);
 ///
 /// #[dynec::comp(of = Foo)]
 /// struct Comp1;
@@ -197,7 +198,8 @@ mod comp_tests {}
 ///     @(MyDiscrim(4), Iso("xxx")),
 ///     @?hashed,
 /// ];
-/// assert_eq!(map.len(), 7);
+/// assert_eq!(map.simple_len(), 3);
+/// assert_eq!(map.isotope_type_count(), 2);
 /// ```
 #[doc(inline)]
 pub use dynec_codegen::comps;
@@ -547,7 +549,7 @@ mod global_tests {}
 /// #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, dynec::Discrim)]
 /// struct SkillType(usize);
 ///
-/// #[dynec::comp(of = Player, isotope = SkillType, init = || [(SkillType(0), SkillLevel(1))])]
+/// #[dynec::comp(of = Player, isotope = SkillType)]
 /// struct SkillLevel(u8);
 ///
 /// #[system(
@@ -607,7 +609,10 @@ mod global_tests {}
 ///         world.components.write_simple_storage(),
 ///         world.components.write_simple_storage(),
 ///         world.components.read_simple_storage(),
-///         world.components.read_partial_isotope_storage(&[SkillType(3)]),
+///         world.components.read_partial_isotope_storage(
+///             &[SkillType(3)],
+///             world.ealloc_map.snapshot::<Player>(),
+///         ),
 ///     );
 ///
 ///     assert_eq!(counter, 1);

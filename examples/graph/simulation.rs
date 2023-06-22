@@ -98,7 +98,7 @@ pub struct Position(pub [f32; 2]);
 #[derive(Debug, Default, PartialEq)]
 pub struct Capacity(pub u32);
 
-#[dynec::comp(of = Node, isotope = ItemType, init = || [(ItemType(0), Volume(0))])]
+#[dynec::comp(of = Node, isotope = ItemType)]
 pub struct Volume(pub u32);
 
 dynec::archetype! {

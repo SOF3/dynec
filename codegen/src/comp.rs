@@ -47,8 +47,8 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
         ));
     }
     let presence_enum = match presence {
-        Some(_) => quote!(#crate_name::comp::SimplePresence::Required),
-        None => quote!(#crate_name::comp::SimplePresence::Optional),
+        Some(_) => quote!(#crate_name::comp::Presence::Required),
+        None => quote!(#crate_name::comp::Presence::Optional),
     };
 
     let finalizer = args.find_one(|arg| option_match!(arg, ItemOpt::Finalizer => &()))?;
@@ -73,61 +73,46 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             quote!(#storage)
         };
 
-        if let Some((_, discrim)) = isotope {
-            let init = match init {
-                Some((_, func)) => {
-                    // do not implement comp::Must, because presence is value-dependent.
-
-                    let func = func.as_fn_ptr(
-                        &generics,
-                        |ty| quote!(impl ::std::iter::IntoIterator<Item = (#discrim, #ty)>),
-                    )?;
-                    quote! {
-                        #crate_name::comp::IsotopeInitStrategy::Auto(
-                            #crate_name::comp::IsotopeIniter { f: &#func },
-                        )
-                    }
+        let init_strategy = match init {
+            None => quote!(#crate_name::comp::InitStrategy::None),
+            Some((_, func)) => {
+                let func = func.as_fn_ptr(&generics, |ty| ty)?;
+                quote! {
+                    #crate_name::comp::InitStrategy::Auto(#crate_name::comp::Initer { f: &#func })
                 }
-                None => quote!(#crate_name::comp::IsotopeInitStrategy::None),
-            };
+            }
+        };
 
+        output.extend(generics.impl_trait(
+            quote!(#crate_name::comp::SimpleOrIsotope<#archetype>),
+            quote! {
+                const PRESENCE: #crate_name::comp::Presence = #presence_enum;
+                const INIT_STRATEGY: #crate_name::comp::InitStrategy<#archetype, Self> = #init_strategy;
+
+                type Storage = #storage;
+            },
+        ));
+
+        if let Some((_, discrim)) = isotope {
             output.extend(generics.impl_trait(
                 quote!(#crate_name::comp::Isotope<#archetype>),
                 quote! {
                     type Discrim = #discrim;
-
-                    const INIT_STRATEGY: #crate_name::comp::IsotopeInitStrategy<#archetype> = #init;
-
-                    type Storage = #storage;
                 },
             ));
         } else {
-            let init_strategy = match init {
-                Some((_, func)) => {
-                    let func = func.as_fn_ptr(&generics, |ty| ty)?;
-                    quote!(#crate_name::comp::SimpleInitStrategy::Auto(
-                        #crate_name::comp::SimpleIniter { f: &#func }
-                    ))
-                }
-                None => quote!(#crate_name::comp::SimpleInitStrategy::None),
-            };
-
             output.extend(generics.impl_trait(
                 quote!(#crate_name::comp::Simple<#archetype>),
                 quote! {
-                    const PRESENCE: #crate_name::comp::SimplePresence = #presence_enum;
-                    const INIT_STRATEGY: #crate_name::comp::SimpleInitStrategy<#archetype> = #init_strategy;
                     const IS_FINALIZER: bool = #finalizer;
-
-                    type Storage = #storage;
                 },
             ));
+        }
 
-            if presence.is_some() {
-                output.extend(
-                    generics.impl_trait(quote!(#crate_name::comp::Must<#archetype>), quote! {}),
-                );
-            }
+        if presence.is_some() {
+            output.extend(
+                generics.impl_trait(quote!(#crate_name::comp::Must<#archetype>), quote! {}),
+            );
         }
     }
 
@@ -245,8 +230,7 @@ impl FunctionRefWithArity {
                     let args = &closure.inputs;
                     let body = &closure.body;
 
-                    let &util::ParsedGenerics { ref ident, ref decl, ref usage, ref where_ } =
-                        expect_ty;
+                    let util::ParsedGenerics { ident, decl, usage, where_ } = expect_ty;
 
                     let ret_ty = ret_ty_wrapper(quote!(#ident #usage));
 

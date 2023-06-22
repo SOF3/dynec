@@ -14,8 +14,8 @@ pub use builder::Builder;
 pub(crate) mod global;
 pub use global::{SyncGlobals, UnsyncGlobals};
 
-pub(crate) mod accessor;
-pub use accessor::Components;
+pub(crate) mod rw;
+pub use rw::Components;
 
 pub(crate) mod typed;
 
@@ -78,7 +78,7 @@ pub fn new_with_concurrency(
 /// The data structure that stores all states in the game.
 pub struct World {
     /// Stores the [`entity::Ealloc`] implementations for each archetype.
-    ealloc_map:         ealloc::Map,
+    pub ealloc_map:     ealloc::Map,
     /// Stores the component states in a world.
     pub components:     Components,
     /// Stores the system-local states and the scheduler topology.
@@ -134,6 +134,7 @@ impl World {
             &mut self.rctrack,
             &mut self.components,
             comp_map,
+            &mut self.ealloc_map,
         );
 
         allocated
@@ -238,6 +239,7 @@ fn init_entity<A: Archetype>(
     _rctrack: &mut rctrack::MaybeStoreMap,
     components: &mut Components,
     comp_map: comp::Map<A>,
+    ealloc_map: &mut ealloc::Map,
 ) {
     sync_globals.get_mut::<generation::StoreMap>().next::<A>(id.to_primitive());
 
@@ -250,7 +252,7 @@ fn init_entity<A: Archetype>(
     }
 
     let typed = components.archetype_mut::<A>();
-    typed.init_entity(id, comp_map);
+    typed.init_entity(id, comp_map, ealloc_map.get::<A>());
 }
 
 /// Result of deleting an entity.
@@ -264,9 +266,9 @@ pub enum DeleteResult {
 }
 
 /// Flags an entity for deletion, and deletes it immediately if there are no finalizers.
-fn flag_delete_entity<'t, A: Archetype>(
+fn flag_delete_entity<A: Archetype>(
     id: A::RawEntity,
-    world: WorldMut<'t>,
+    world: WorldMut<'_>,
     systems: &mut [(&str, &mut dyn system::Descriptor)],
 ) -> DeleteResult {
     let storage = world
@@ -282,9 +284,9 @@ fn flag_delete_entity<'t, A: Archetype>(
 
 /// Deletes an entity immediately if there are no finalizers.
 #[allow(unused_variables)]
-fn try_real_delete_entity<'t, A: Archetype>(
+fn try_real_delete_entity<A: Archetype>(
     entity: <A as Archetype>::RawEntity,
-    world: WorldMut<'t>,
+    world: WorldMut<'_>,
     systems: &mut [(&str, &mut dyn system::Descriptor)],
 ) -> DeleteResult {
     let storages = &mut world.components.archetype_mut::<A>().simple_storages;
@@ -332,14 +334,7 @@ fn try_real_delete_entity<'t, A: Archetype>(
         }
     }
 
-    let ealloc = world
-        .ealloc_map
-        .map
-        .get_mut(&TypeId::of::<A>())
-        .expect("Attempted to delete entity of unknown archetype");
-    let ealloc: &mut A::Ealloc = ealloc.as_any_mut().downcast_mut().expect("TypeId mismatch");
-
-    ealloc.queue_deallocate(entity);
+    world.ealloc_map.get::<A>().queue_deallocate(entity);
 
     DeleteResult::Deleted
 }

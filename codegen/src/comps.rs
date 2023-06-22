@@ -46,7 +46,10 @@ pub(crate) fn imp(input: TokenStream) -> Result<TokenStream> {
         };
 
         quote_spanned! { expr.span() =>
-            (#iter_expr).into_iter().for_each(#item);
+            #[allow(clippy::useless_conversion)]
+            {
+                (#iter_expr).into_iter().for_each(#item);
+            }
         }
     });
 

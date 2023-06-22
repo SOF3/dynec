@@ -189,7 +189,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                     None
                 };
 
-                let discrim_field_variadic = discrim_field.as_ref().map(|expr| quote!(&#expr));
+                let discrim_field_variadic = discrim_field.as_ref().map(|expr| quote!(&#expr, ));
                 let discrim_value_option = match &discrim_field {
                     Some(expr) => {
                         quote!(Some({
@@ -216,7 +216,10 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                     (false, false) => quote!(read_full_isotope_storage::<#arch, #comp>),
                 };
 
-                quote!(components.#method_ident(#discrim_field_variadic))
+                quote!(components.#method_ident(
+                    #discrim_field_variadic
+                    ealloc_shard_map.snapshot::<#arch>().clone(),
+                ))
             }
             ArgType::EntityCreator { arch, no_partition } => {
                 let no_partition_call = no_partition.then(|| quote!(.no_partition()));

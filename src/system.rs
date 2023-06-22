@@ -16,7 +16,8 @@ use crate::world::offline;
 
 mod rw;
 pub use rw::{
-    Mut, Read, ReadChunk, ReadIsotope, ReadSimple, Write, WriteChunk, WriteIsotope, WriteSimple,
+    Mut, Read, ReadChunk, ReadIsotope, ReadIsotopeRef, ReadSimple, Write, WriteChunk, WriteIsotope,
+    WriteSimple,
 };
 
 pub(crate) mod accessor;

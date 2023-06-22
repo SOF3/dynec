@@ -11,10 +11,13 @@ impl super::Referrer for Flag {
     fn visit_mut<V: super::referrer::VisitMutArg>(&mut self, _: &mut V) {}
 }
 
-impl<A: Archetype> comp::Simple<A> for Flag {
-    type Storage = storage::Vec<A::RawEntity, Self>;
+impl<A: Archetype> comp::SimpleOrIsotope<A> for Flag {
+    const PRESENCE: comp::Presence = comp::Presence::Optional;
+    const INIT_STRATEGY: comp::InitStrategy<A, Self> = comp::InitStrategy::None;
 
-    const PRESENCE: comp::SimplePresence = comp::SimplePresence::Optional;
-    const INIT_STRATEGY: comp::SimpleInitStrategy<A> = comp::SimpleInitStrategy::None;
+    type Storage = storage::Vec<A::RawEntity, Self>;
+}
+
+impl<A: Archetype> comp::Simple<A> for Flag {
     const IS_FINALIZER: bool = false;
 }

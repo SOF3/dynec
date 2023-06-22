@@ -67,10 +67,8 @@ pub unsafe trait Chunked<A: Archetype> {
     /// This effectively disables the borrow checker for return values.
     /// The caller must ensure that return values do not outlive `self`,
     /// and the function result is dropped before it is called again with an overlapping `chunk`.
-    unsafe fn chunk<'this, 'e, 'ret>(
-        this: &'this mut Self,
-        chunk: entity::TempRefChunk<'e, A>,
-    ) -> Self::Chunk<'ret>;
+    unsafe fn chunk<'ret>(this: &mut Self, chunk: entity::TempRefChunk<'_, A>)
+        -> Self::Chunk<'ret>;
 }
 
 /// Return value of [`Read::try_access`].
@@ -85,10 +83,7 @@ where
 {
     type Entity<'ret> = Option<&'ret C> where Self: 'ret;
 
-    unsafe fn entity<'this, 'e, 'ret>(
-        this: &'this mut Self,
-        id: entity::TempRef<'e, A>,
-    ) -> Self::Entity<'ret>
+    unsafe fn entity<'ret>(this: &mut Self, id: entity::TempRef<'_, A>) -> Self::Entity<'ret>
     where
         Self: 'ret,
     {

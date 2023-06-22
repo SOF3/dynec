@@ -486,7 +486,7 @@ impl ShardAssigner for StaticShardAssigner {
 }
 
 #[derive(Default)]
-pub(crate) struct Map {
+pub struct Map {
     pub(crate) map: HashMap<DbgTypeId, Box<dyn AnyEalloc>>,
 }
 
@@ -519,6 +519,10 @@ impl Map {
         }
 
         shard_maps
+    }
+
+    pub fn snapshot<A: Archetype>(&mut self) -> Snapshot<A::RawEntity> {
+        Ealloc::snapshot(self.get::<A>())
     }
 }
 

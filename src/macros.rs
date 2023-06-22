@@ -609,7 +609,10 @@ mod global_tests {}
 ///         world.components.write_simple_storage(),
 ///         world.components.write_simple_storage(),
 ///         world.components.read_simple_storage(),
-///         world.components.read_partial_isotope_storage(&[SkillType(3)]),
+///         world.components.read_partial_isotope_storage(
+///             &[SkillType(3)],
+///             world.ealloc_map.snapshot::<Player>(),
+///         ),
 ///     );
 ///
 ///     assert_eq!(counter, 1);

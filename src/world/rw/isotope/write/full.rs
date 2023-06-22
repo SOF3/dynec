@@ -10,7 +10,12 @@ use crate::world::rw::isotope;
 use crate::{storage, system, world, Archetype};
 
 impl world::Components {
-    /// Mutably access all discriminants of an isotope storage.
+    /// Mutably access all discriminants of an isotope storage,
+    /// lazily initializing new isotopes during usage.
+    ///
+    /// # Panics
+    /// - if the archetyped component is not used in any systems.
+    /// - if another thread is accessing the same archetyped component.
     pub fn write_full_isotope_storage<A, C>(
         &self,
         snapshot: ealloc::Snapshot<A::RawEntity>,
@@ -74,7 +79,7 @@ where
                     self.full_map.get_or_create(discrim, self.snapshot.iter_allocated_chunks());
                 isotope::write::own_storage::<A, C>(discrim, storage)
             },
-            |discrim, storage| &**storage,
+            |_discrim, storage| &**storage,
         )
     }
 
@@ -120,7 +125,7 @@ where
                     self.full_map.get_or_create(discrim, self.snapshot.iter_allocated_chunks());
                 isotope::write::own_storage::<A, C>(discrim, storage)
             },
-            |discrim, storage| &mut **storage,
+            |_discrim, storage| &mut **storage,
         )
     }
 }

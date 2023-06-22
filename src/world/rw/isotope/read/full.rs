@@ -7,6 +7,18 @@ use crate::world::rw::isotope;
 use crate::{comp, storage, system, world, Archetype};
 
 impl world::Components {
+    /// Immutably access all discriminants of an isotope storage,
+    /// lazily initializing new isotopes during usage.
+    ///
+    /// The returned storage requires mutable receiver
+    /// in order to lazily initialize new isotopes,
+    /// but multiple immutable accessors can still run concurrently
+    /// with lock contention only occurring when new discriminants are encountered.
+    /// See the documentation of [`ReadIsotope`] for details.
+    ///
+    /// # Panics
+    /// - if the archetyped component is not used in any systems.
+    /// - if another thread is exclusively accessing the same archetyped component.
     pub fn read_full_isotope_storage<A, C>(
         &self,
         snapshot: ealloc::Snapshot<A::RawEntity>,
@@ -74,7 +86,7 @@ where
                     full_map.get_or_create(discrim, self.snapshot.iter_allocated_chunks());
                 isotope::read::own_storage::<A, C>(discrim, storage)
             },
-            |discrim, storage| &**storage,
+            |_discrim, storage| &**storage,
         )
     }
 

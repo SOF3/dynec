@@ -196,6 +196,10 @@ pub trait WriteSimple<A: Archetype, C: comp::Simple<A>>: ReadSimple<A, C> + Writ
 /// which return [`Read`] with a shared receiver.
 /// If it can be asserted that no uninitialized discriminants will be encountered,
 /// use with [`known_discrims`].
+///
+/// Since mutable receiver is only required for initializing new isotopes,
+/// functions that only work on known existing isotops such as [`known_discrims`]
+/// only require a shared receiver.
 pub trait ReadIsotope<A: Archetype, C: comp::Isotope<A>, K = <C as comp::Isotope<A>>::Discrim>
 where
     K: fmt::Debug + Copy + 'static,
@@ -232,9 +236,11 @@ where
     /// The yielded discriminants are not in any guaranteed order.
     fn known_discrims(&self) -> Self::KnownDiscrims<'_>;
 
+    /// Return value of [`get_all`](Self::get_all).
     type GetAll<'t>: Iterator<Item = (C::Discrim, &'t C)> + 't
     where
         Self: 't;
+    /// Iterates over all known isotopes for a specific entity.
     fn get_all<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Self::GetAll<'_>;
 
     /// Return value of [`iter`](Self::iter).
@@ -256,12 +262,16 @@ where
     fn split<const N: usize>(&mut self, keys: [K; N]) -> [Self::Split<'_>; N];
 }
 
-/// Provides shared access to an isotope component in a specific archetype.
+/// Provides access to an isotope component in a specific archetype
+/// without requiring a mutable receiver.
 /// Only available for partial storages.
 pub trait ReadIsotopeRef<A: Archetype, C: comp::Isotope<A>, K>: ReadIsotope<A, C, K>
 where
     K: fmt::Debug + Copy + 'static,
 {
+    /// Retrieves the component for the given entity and discriminant.
+    ///
+    /// Identical to [`ReadIsotope::get`] but does not require a mutable receiver.
     fn get_ref<E: entity::Ref<Archetype = A>>(&self, entity: E, key: K) -> &C
     where
         C: comp::Must<A>,
@@ -279,12 +289,17 @@ where
     /// Returns an immutable reference to the component for the specified entity and discriminant,
     /// or the default value for isotopes with a default initializer or `None`
     /// if the component is not present in the entity.
+    ///
+    /// Identical to [`ReadIsotope::try_get`] but does not require a mutable receiver.
     fn try_get_ref<E: entity::Ref<Archetype = A>>(&self, entity: E, key: K) -> Option<&C>;
 
-    /// Return value of [`iter`](Self::iter).
+    /// Return value of [`iter_ref`](Self::iter_ref).
     type IterRef<'t>: Iterator<Item = (entity::TempRef<'t, A>, &'t C)>
     where
         Self: 't;
+    /// Iterates over all components of a specific discriminant.
+    ///
+    /// Identical to [`ReadIsotope::iter`] but does not require a mutable receiver.
     fn iter_ref(&self, key: K) -> Self::IterRef<'_>;
 }
 

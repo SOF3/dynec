@@ -23,6 +23,7 @@ impl world::Components {
         Some(storage.get_mut())
     }
 
+    /// Gets an isotope component for a specific entity and discriminant.
     pub fn get_isotope<A, C, E>(&mut self, entity: E, discrim: C::Discrim) -> Option<&mut C>
     where
         A: Archetype,

@@ -115,8 +115,6 @@ where
 
     type GetAll<'t> = impl Iterator<Item = (C::Discrim, &'t C)> + 't where Self: 't;
     fn get_all<E: entity::Ref<Archetype = A>>(&self, entity: E) -> Self::GetAll<'_> {
-        let id = entity.id();
-
         // workaround for https://github.com/rust-lang/rust/issues/65442
         fn without_e<A, C>(
             getter: &impl StorageGet<A, C>,

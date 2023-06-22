@@ -130,6 +130,7 @@ pub trait Mapped {
     /// Iterates over the values in this map with the discriminant.
     fn iter_mapped_mut(&mut self) -> Self::IterMut<'_>;
 
+    /// Return value of [`into_iter`](Self::into_iter_mapped).
     type IntoIter: Iterator<Item = (Self::Discrim, Self::Value)>;
     /// Iterates over the values in this map with the discriminant.
     fn into_iter_mapped(self) -> Self::IntoIter;
@@ -146,7 +147,10 @@ pub trait FullMap
 where
     Self: Mapped<Key = <Self as Mapped>::Discrim> + FromIterator<(Self::Discrim, Self::Value)>,
 {
+    /// Return value of [`map_ref`](Self::map_ref).
     type MapRef<U>: Mapped<Discrim = Self::Discrim, Key = Self::Key, Value = U>;
+    /// Maps all values in this map, taking self by shared reference,
+    /// preserving a similar data structure.
     fn map_ref<U, F>(&self, f: F) -> Self::MapRef<U>
     where
         F: FnMut(&Self::Value) -> U;
@@ -229,8 +233,11 @@ where
 mod sealed {
     pub trait Sealed {}
 }
+/// A shared reference or a mutable reference.
 pub trait RefToPtr: sealed::Sealed {
+    /// The referenced type.
     type Target: ?Sized;
+    /// Converts the reference to a pointer.
     fn as_ptr(&self) -> *const Self::Target;
 }
 impl<'t, T: ?Sized> sealed::Sealed for &'t T {}
@@ -703,7 +710,7 @@ impl<D: Discrim, T> Mapped for BoundedVecMap<D, T> {
                     _ => None,
                 },
                 indices,
-                |i, t| transform(t),
+                |_, t| transform(t),
                 |i| on_missing(keys[i]),
             )
         }
@@ -859,7 +866,7 @@ impl<D: Discrim, T, const N: usize> Mapped for ArrayMap<D, T, N> {
                     _ => None,
                 },
                 indices,
-                |i, t| transform(t),
+                |_, t| transform(t),
                 |i| on_missing(keys[i]),
             )
         }

@@ -6,6 +6,15 @@ use crate::world::rw::isotope;
 use crate::{comp, system, world, Archetype};
 
 impl world::Components {
+    /// Immutably access the requested discriminants of an isotope storage,
+    /// lazily initializing new isotopes in `discrims` immediately.
+    ///
+    /// The return value implements [`ReadIsotopeRef`],
+    /// allowing shared use of this accessor on multiple workers.
+    ///
+    /// # Panics
+    /// - if the archetyped component is not used in any systems.
+    /// - if another thread is exclusively accessing the same archetyped component.
     pub fn read_partial_isotope_storage<'t, A, C, DiscrimSet>(
         &'t self,
         discrims: &'t DiscrimSet,

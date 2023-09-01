@@ -156,7 +156,7 @@ impl<E: Raw, T: Recycler<E>, S: ShardAssigner> Recycling<E, T, S> {
 
     fn iter_allocated_chunks_offline(
         &mut self,
-    ) -> impl Iterator<Item = ops::Range<E>> + iter::FusedIterator + '_ {
+    ) -> impl iter::FusedIterator<Item = ops::Range<E>> + '_ {
         iter_gaps(self.global_gauge.load(), self.recyclable.iter().copied())
     }
 }
@@ -322,7 +322,7 @@ where
 fn iter_gaps<E: Raw>(
     gauge: E,
     breakpoints: impl Iterator<Item = E>,
-) -> impl Iterator<Item = ops::Range<E>> + iter::FusedIterator {
+) -> impl iter::FusedIterator<Item = ops::Range<E>> {
     enum Previous<E: Raw> {
         Initial,
         Breakpoint(E),
@@ -541,9 +541,7 @@ pub struct Snapshot<E> {
 
 impl<E: Raw> Snapshot<E> {
     /// Iterates over all chunks of allocated entities.
-    pub fn iter_allocated_chunks(
-        &self,
-    ) -> impl Iterator<Item = ops::Range<E>> + iter::FusedIterator + '_ {
+    pub fn iter_allocated_chunks(&self) -> impl iter::FusedIterator<Item = ops::Range<E>> + '_ {
         iter_gaps(self.gauge, self.recyclable.iter().copied())
     }
 }

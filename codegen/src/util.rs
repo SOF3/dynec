@@ -131,7 +131,7 @@ where
     Named<T>: Parse,
 {
     attrs
-        .drain_filter(|attr| attr.path().is_ident("dynec"))
+        .extract_if(|attr| attr.path().is_ident("dynec"))
         .map(|attr| attr.parse_args::<Attr<T>>())
         .collect()
 }

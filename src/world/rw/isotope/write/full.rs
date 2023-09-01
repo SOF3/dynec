@@ -28,7 +28,12 @@ impl world::Components {
 
         // Lock the entire map since no other systems can access it
         let Some(full_map) = storage_map.map.try_lock() else {
-            panic!("Cannot access full isotope storage of {}/{} mutably because another thread is locking it. Scheduler error?", type_name::<A>(), type_name::<C>(),)
+            panic!(
+                "Cannot access full isotope storage of {}/{} mutably because another thread is \
+                 locking it. Scheduler error?",
+                type_name::<A>(),
+                type_name::<C>(),
+            )
         };
         let accessor_storages: <C::Discrim as Discrim>::FullMap<_> = full_map
             .map()

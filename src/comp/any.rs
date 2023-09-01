@@ -93,7 +93,7 @@ pub struct DepGetter<'t, A: Archetype> {
 }
 
 impl<'t, A: Archetype> Clone for DepGetter<'t, A> {
-    fn clone(&self) -> Self { Self { inner: self.inner, entity: self.entity } }
+    fn clone(&self) -> Self { *self }
 }
 
 impl<'t, A: Archetype> Copy for DepGetter<'t, A> {}

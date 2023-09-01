@@ -61,7 +61,7 @@ impl<A: Archetype> AnyBuilder for Builder<A> {
                 Err(boxed) => panic!(
                     "Expected storage::Simple<{}>, got {:?}",
                     any::type_name::<A>(),
-                    boxed.type_id(),
+                    (*boxed).type_id(),
                 ),
             };
 
@@ -87,7 +87,7 @@ impl<A: Archetype> AnyBuilder for Builder<A> {
                 Err(boxed) => panic!(
                     "Expected storage::isotope::AnyMap<{}>, got {:?}",
                     any::type_name::<A>(),
-                    boxed.type_id(),
+                    (*boxed).type_id(),
                 ),
             }
         });

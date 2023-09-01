@@ -68,7 +68,7 @@ impl<'t, A: Archetype> Ref for TempRef<'t, A> {
 }
 
 impl<'t, A: Archetype> Clone for TempRef<'t, A> {
-    fn clone(&self) -> Self { Self { value: self.value, _ph: PhantomData } }
+    fn clone(&self) -> Self { *self }
 }
 
 impl<'t, A: Archetype> Copy for TempRef<'t, A> {}
@@ -93,7 +93,7 @@ impl<'t, A: Archetype> TempRefChunk<'t, A> {
 }
 
 impl<'t, A: Archetype> Clone for TempRefChunk<'t, A> {
-    fn clone(&self) -> Self { Self { start: self.start, end: self.end, _ph: PhantomData } }
+    fn clone(&self) -> Self { *self }
 }
 
 impl<'t, A: Archetype> Copy for TempRefChunk<'t, A> {}

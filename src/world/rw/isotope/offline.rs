@@ -9,7 +9,8 @@ impl world::Components {
         A: Archetype,
         C: comp::Isotope<A>,
     {
-        let Some(map) = self.archetype_mut::<A>().isotope_storage_maps.get_mut(&TypeId::of::<C>()) else {
+        let Some(map) = self.archetype_mut::<A>().isotope_storage_maps.get_mut(&TypeId::of::<C>())
+        else {
             panic!(
                 "The component {}/{} cannot be retrieved because it is not used in any systems",
                 type_name::<A>(),

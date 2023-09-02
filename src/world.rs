@@ -283,7 +283,7 @@ fn flag_delete_entity<A: Archetype>(
 }
 
 /// Deletes an entity immediately if there are no finalizers.
-#[allow(unused_variables)]
+#[allow(unused_variables, clippy::needless_pass_by_ref_mut)] // only conditionally used
 fn try_real_delete_entity<A: Archetype>(
     entity: <A as Archetype>::RawEntity,
     world: WorldMut<'_>,

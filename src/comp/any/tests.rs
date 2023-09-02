@@ -10,7 +10,7 @@ struct Comp2(i32);
 
 #[test]
 fn test_auto_init_fn() {
-    let auto_fn = (|comp1: &Comp1| Comp2(comp1.0 + 5)) as fn(&_) -> _;
+    let _auto_fn = (|comp1: &Comp1| Comp2(comp1.0 + 5)) as fn(&_) -> _;
     let mut map = Map::default();
     map.insert_simple(Comp1(2));
     // InitFn::<TestArch>::populate(&auto_fn, &mut map);

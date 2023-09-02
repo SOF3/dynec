@@ -13,6 +13,7 @@ description = "An opinionated ECS-like framework"
 license = "Apache-2.0"
 
 [dependencies]
+auto_enums = "0.8.1"
 bitvec = "1.0.0"
 cfg-if = "1.0.0"
 dynec-codegen = {version = "0.2.0-alpha.1", path = "codegen"}

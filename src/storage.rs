@@ -37,7 +37,7 @@ pub unsafe trait Storage: Default + Send + Sync + 'static {
     /// The type of entity ID used for identification.
     type RawEntity: entity::Raw;
     /// The component type stored.
-    type Comp;
+    type Comp: Send + Sync;
 
     /// Gets a shared reference to the component for a specific entity if it is present.
     fn get(&self, id: Self::RawEntity) -> Option<&Self::Comp>;

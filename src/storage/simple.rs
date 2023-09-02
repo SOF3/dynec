@@ -53,7 +53,7 @@ impl<A: Archetype> Simple<A> {
     #[cfg(test)]
     pub(crate) fn write_storage<C: comp::Simple<A>>(
         &self,
-    ) -> impl ops::Deref<Target = C::Storage> + ops::DerefMut + '_ {
+    ) -> impl ops::DerefMut<Target = C::Storage> + '_ {
         use parking_lot::RwLockWriteGuard;
         match self.storage.try_write() {
             Some(storage) => RwLockWriteGuard::map(storage, |storage| storage.downcast_mut::<C>()),

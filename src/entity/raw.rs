@@ -28,7 +28,14 @@ pub trait Raw: Sized + Send + Sync + Copy + fmt::Debug + UnsafeEqOrd + 'static {
     /// Equivalent to `self - other`, does not mutate any values. May panic when `self < other`.
     fn sub(self, other: Self) -> Primitive;
 
+    /// Returns the approximated midpoint between two numbers.
+    ///
+    /// It does not need to be strictly accurate
+    /// as it is only an approximation used in optimization algorithms.
+    fn approx_midpoint(self, other: Self) -> Self;
+
     /// Converts the primitive scalar to the ID.
+    ///
     /// The primitive scalar is guaranteed to be valid,
     /// returned from a previous [`to_primitive`](Self::to_primitive) call.
     fn from_primitive(i: Primitive) -> Self;
@@ -57,6 +64,11 @@ impl Raw for NonZeroU32 {
 
     fn sub(self, other: Self) -> usize {
         (self.get() - other.get()).try_into().expect("usize >= u32")
+    }
+
+    fn approx_midpoint(self, other: Self) -> Self {
+        NonZeroU32::new((self.get() + other.get()) / 2)
+            .expect("get() >= 1, get() + get() >= 2, half >= 1")
     }
 
     fn from_primitive(i: Primitive) -> Self {

@@ -83,6 +83,11 @@ pub struct TempRefChunk<'t, A: Archetype> {
 }
 
 impl<'t, A: Archetype> TempRefChunk<'t, A> {
+    /// Creates a new TemporaryRef with a lifetime.
+    pub(crate) fn new(start: A::RawEntity, end: A::RawEntity) -> Self {
+        Self { start, end, _ph: PhantomData }
+    }
+
     /// Iterates over all entities in the chunk.
     pub fn iter(&self) -> impl Iterator<Item = TempRef<'t, A>> + '_ {
         iter::successors(Some(self.start), |prev| {

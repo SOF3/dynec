@@ -4,7 +4,9 @@ use std::sync::Arc;
 
 use parking_lot::lock_api::ArcRwLockWriteGuard;
 use parking_lot::RwLock;
+use rayon::prelude::ParallelIterator;
 
+use crate::entity::ealloc;
 use crate::world::rw::{self, isotope};
 use crate::{comp, entity, system, Archetype, Storage as _};
 
@@ -131,6 +133,23 @@ where
             isotope::read::SplitReader { storage: self.storage, _ph: PhantomData },
             isotope::read::SplitReader { storage: self.storage, _ph: PhantomData },
         )
+    }
+
+    type ParIter<'t> = impl rayon::iter::ParallelIterator<Item = (entity::TempRef<'t, A>, &'t C)> where Self: 't, C: comp::Must<A>;
+    fn par_iter<'t>(
+        &'t self,
+        snapshot: &'t ealloc::Snapshot<<A as Archetype>::RawEntity>,
+    ) -> Self::ParIter<'t>
+    where
+        C: comp::Must<A>,
+    {
+        rayon::iter::split(snapshot.as_slice(), |slice| slice.split()).flat_map_iter(|slice| {
+            slice.iter_chunks().flat_map(<A::RawEntity as entity::Raw>::range).map(|id| {
+                let entity = entity::TempRef::new(id);
+                let data = self.get(entity);
+                (entity, data)
+            })
+        })
     }
 }
 

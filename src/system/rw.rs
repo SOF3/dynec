@@ -2,6 +2,7 @@ use std::marker::PhantomData;
 use std::{any, fmt};
 
 use super::accessor;
+use crate::entity::ealloc;
 use crate::{comp, entity, Archetype};
 
 /// Generalizes [`ReadSimple`] and [`ReadIsotope`] for a specific discriminant
@@ -55,6 +56,19 @@ pub trait Read<A: Archetype, C: 'static> {
     /// Duplicates the current reader,
     /// producing two new values that can only access the storage immutably.
     fn duplicate_immut(&self) -> (Self::DuplicateImmut<'_>, Self::DuplicateImmut<'_>);
+
+    /// Return value of [`par_iter`](Self::par_iter).
+    type ParIter<'t>: rayon::iter::ParallelIterator<Item = (entity::TempRef<'t, A>, &'t C)>
+    where
+        Self: 't,
+        C: comp::Must<A>;
+    /// Iterates over chunks of entities in parallel.
+    ///
+    /// This returns a [rayon `ParallelIterator`](rayon::iter::ParallelIterator)
+    /// that processes different chunks of entities
+    fn par_iter<'t>(&'t self, snapshot: &'t ealloc::Snapshot<A::RawEntity>) -> Self::ParIter<'t>
+    where
+        C: comp::Must<A>;
 }
 
 /// Extends [`Read`] with chunk reading ability
@@ -67,9 +81,22 @@ pub trait ReadChunk<A: Archetype, C: 'static> {
     /// In general, users should not get an [`entity::TempRefChunk`]
     /// that includes an uninitialized entity,
     /// so panic is basically impossible if [`comp::Must`] was implemented correctly.
-    fn get_chunk(&self, chunk: entity::TempRefChunk<'_, A>) -> &'_ [C]
+    fn get_chunk(&self, chunk: entity::TempRefChunk<'_, A>) -> &'_ [C];
+
+    /// Return value of [`par_iter_chunk`](Self::par_iter_chunk).
+    type ParIterChunk<'t>: rayon::iter::ParallelIterator<
+        Item = (entity::TempRefChunk<'t, A>, &'t [C]),
+    >
     where
-        C: comp::Must<A>;
+        Self: 't;
+    /// Iterates over chunks of entities in parallel.
+    ///
+    /// This returns a [rayon `ParallelIterator`](rayon::iter::ParallelIterator)
+    /// that processes different chunks of entities
+    fn par_iter_chunk<'t>(
+        &'t self,
+        snapshot: &'t ealloc::Snapshot<A::RawEntity>,
+    ) -> Self::ParIterChunk<'t>;
 }
 
 /// Generalizes [`WriteSimple`], [`WriteIsotope`] and their split storages.

@@ -127,11 +127,9 @@ impl<A: Archetype> EntityIterator<A> for EntityIteratorImpl<A> {
     where
         Self: 't;
     fn chunks(&self) -> Self::Chunks<'_> {
-        self.ealloc.iter_allocated_chunks().map(|range| entity::TempRefChunk {
-            start: range.start,
-            end:   range.end,
-            _ph:   PhantomData,
-        })
+        self.ealloc
+            .iter_allocated_chunks()
+            .map(|range| entity::TempRefChunk::new(range.start, range.end))
     }
 
     type EntitiesWith<'t, T: Accessor<A> + 't> = impl Iterator<Item = (entity::TempRef<'t, A>, T::Entity<'t>)>

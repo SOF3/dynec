@@ -7,6 +7,7 @@ use parking_lot::RwLock;
 use rayon::prelude::ParallelIterator;
 
 use crate::entity::ealloc;
+use crate::storage::Partition as _;
 use crate::world::rw::{self, isotope};
 use crate::{comp, entity, system, Archetype, Storage as _};
 
@@ -102,6 +103,7 @@ where
     }
 }
 
+/// Mutable accessor for a single discriminant.
 struct SplitWriter<'t, A, C>
 where
     A: Archetype,
@@ -191,5 +193,47 @@ where
 {
     fn set<E: entity::Ref<Archetype = A>>(&mut self, entity: E, value: Option<C>) -> Option<C> {
         self.storage.set(entity.id(), value)
+    }
+
+    type ParIterMut<'t> = impl rayon::iter::ParallelIterator<Item = (entity::TempRef<'t, A>, &'t mut C)>
+    where
+        Self: 't,
+        C: comp::Must<A>;
+    fn par_iter_mut<'t>(
+        &'t mut self,
+        snapshot: &'t ealloc::Snapshot<<A as Archetype>::RawEntity>,
+    ) -> Self::ParIterMut<'t>
+    where
+        C: comp::Must<A>,
+    {
+        let partition = self.storage.as_partition();
+        rayon::iter::split((partition, snapshot.as_slice()), |(partition, slice)| {
+            let Some(midpt) = slice.midpoint_for_split() else {
+                return ((partition, slice), None);
+            };
+
+            let (partition_left, partition_right) = partition.partition_at(midpt);
+            (
+                (
+                    partition_left,
+                    ealloc::snapshot::Slice {
+                        start:      slice.start,
+                        end:        midpt,
+                        recyclable: slice.recyclable,
+                    },
+                ),
+                Some((
+                    partition_right,
+                    ealloc::snapshot::Slice {
+                        start:      midpt,
+                        end:        slice.end,
+                        recyclable: slice.recyclable,
+                    },
+                )),
+            )
+        })
+        .flat_map_iter(|(partition, _)| {
+            partition.iter_mut().map(|(entity, data)| (entity::TempRef::new(entity), data))
+        })
     }
 }

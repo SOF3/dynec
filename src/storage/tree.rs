@@ -73,6 +73,11 @@ unsafe impl<E: entity::Raw, C: Send + Sync + 'static> Storage for Tree<E, C> {
     }
 
     type StoragePartition<'t> = StoragePartition<'t, E, C>;
+
+    fn as_partition(&mut self) -> Self::StoragePartition<'_> {
+        StoragePartition { data: &mut self.data, lower_bound: None, upper_bound: None }
+    }
+
     fn partition_at(
         &mut self,
         bound: Self::RawEntity,
@@ -105,7 +110,9 @@ impl<'t, E: entity::Raw, C> StoragePartition<'t, E, C> {
     }
 }
 
-impl<'t, E: entity::Raw, C: 'static> super::Partition<E, C> for StoragePartition<'t, E, C> {
+impl<'t, E: entity::Raw, C: Send + Sync + 'static> super::Partition<'t, E, C>
+    for StoragePartition<'t, E, C>
+{
     fn get_mut(&mut self, entity: E) -> Option<&mut C> {
         self.assert_bounds(entity);
 
@@ -118,8 +125,16 @@ impl<'t, E: entity::Raw, C: 'static> super::Partition<E, C> for StoragePartition
         }
     }
 
-    type IterMut<'u> = impl Iterator<Item = (E, &'u mut C)> + 'u where Self: 'u, C: 'u;
-    fn iter_mut(&mut self) -> Self::IterMut<'_> {
+    fn by_ref(&mut self) -> Self {
+        Self {
+            data:        self.data,
+            lower_bound: self.lower_bound,
+            upper_bound: self.upper_bound,
+        }
+    }
+
+    type IterMut = impl Iterator<Item = (E, &'t mut C)> + 't where Self: 't;
+    fn iter_mut(self) -> Self::IterMut {
         let iter = match (self.lower_bound, self.upper_bound) {
             (Some(lower), Some(upper)) => Box::new(self.data.range(lower..upper))
                 as Box<dyn Iterator<Item = (&E, &SyncUnsafeCell<C>)>>,
@@ -137,8 +152,7 @@ impl<'t, E: entity::Raw, C: 'static> super::Partition<E, C> for StoragePartition
         })
     }
 
-    type PartitionAt<'u> = StoragePartition<'u, E, C> where Self: 'u;
-    fn partition_at(&mut self, entity: E) -> (Self::PartitionAt<'_>, Self::PartitionAt<'_>) {
+    fn partition_at(self, entity: E) -> (Self, Self) {
         self.assert_bounds(entity);
 
         // Safety: `entity` is between lower_bound and upper_bound,

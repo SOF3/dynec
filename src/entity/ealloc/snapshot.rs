@@ -40,15 +40,20 @@ pub(crate) struct Slice<'t, E> {
 }
 
 impl<'t, E: Raw> Slice<'t, E> {
-    pub(crate) fn split(self) -> (Self, Option<Self>) {
+    pub(crate) fn midpoint_for_split(self) -> Option<E> {
         // TODO implement the algorithm in https://cs.stackexchange.com/q/155747/56834
         // when we find an implementation of BTreeSet that has order statistics.
         // For now, we just take the assumption that the holes are uniformly distributed.
 
         let midpt = self.start.approx_midpoint(self.end);
-        if self.end.sub(midpt) < 8 {
+        let far = self.end.sub(midpt) >= 8;
+        far.then(|| midpt)
+    }
+
+    pub(crate) fn split(self) -> (Self, Option<Self>) {
+        let Some(midpt) = self.midpoint_for_split() else {
             return (self, None);
-        }
+        };
 
         (
             Self { start: self.start, end: midpt, recyclable: self.recyclable },

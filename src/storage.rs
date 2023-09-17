@@ -82,10 +82,14 @@ pub unsafe trait Storage: Default + Send + Sync + 'static {
     /// `slice` is always nonempty.
     fn iter_chunks_mut(&mut self) -> Self::IterChunksMut<'_>;
 
-    /// Return value of [`partition_at`](Self::partition_at).
-    type StoragePartition<'t>: Partition<Self::RawEntity, Self::Comp>
+    /// Access a partition of this storage.
+    type StoragePartition<'t>: Partition<'t, Self::RawEntity, Self::Comp>
     where
         Self: 't;
+
+    /// Returns a [`Partition`] that includes the whole storage.
+    fn as_partition(&mut self) -> Self::StoragePartition<'_>;
+
     /// Splits the storage into two partitions for parallel iterable access.
     fn partition_at(
         &mut self,
@@ -97,27 +101,27 @@ pub unsafe trait Storage: Default + Send + Sync + 'static {
 ///
 /// This trait does not provide `set` because
 /// the partition point would drift as the cardinality of the storage changes.
-pub trait Partition<E: entity::Raw, C>: Sized {
+pub trait Partition<'t, E: entity::Raw, C: 'static>: Sized + Send + Sync {
     /// Gets a mutable reference to the component for a specific entity if it is present.
     fn get_mut(&mut self, entity: E) -> Option<&mut C>;
 
-    /// Return value of [`iter_mut`](Self::iter_mut).
-    type IterMut<'t>: Iterator<Item = (E, &'t mut C)> + 't
-    where
-        Self: 't,
-        C: 't;
-    /// Returns a mutable iterator over the storage, ordered by entity index order.
-    fn iter_mut(&mut self) -> Self::IterMut<'_>;
+    /// Borrows the partition, rather than consuming it.
+    ///
+    /// To be used with `iter_mut` or `partition_at` to avoid dropping the partition directly.
+    fn by_ref(&'t mut self) -> Self;
 
-    /// Return value of [`partition_at`](Self::partition_at).
-    type PartitionAt<'u>: Partition<E, C> + 'u
+    /// Return value of [`iter_mut`](Self::iter_mut).
+    type IterMut: Iterator<Item = (E, &'t mut C)> + 't
     where
-        Self: 'u;
+        Self: 't;
+    /// Returns a mutable iterator over the storage, ordered by entity index order.
+    fn iter_mut(self) -> Self::IterMut;
+
     /// Splits the partition further into two subpartitions.
     /// `entity` must be `> 0` and `< partition_length`,
     /// i.e. the expected key ranges of both partitions must be nonempty.
     /// (It is allowed to have a nonempty range which does not contain any existing keys)
-    fn partition_at(&mut self, entity: E) -> (Self::PartitionAt<'_>, Self::PartitionAt<'_>);
+    fn partition_at(self, entity: E) -> (Self, Self);
 }
 
 /// Provides chunked access capabilities,

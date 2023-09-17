@@ -43,23 +43,23 @@ impl Components {
     }
 }
 
-struct PartitionAccessor<A: Archetype, C, S: storage::Partition<A::RawEntity, C>> {
+struct PartitionAccessor<'t, A: Archetype, C: 'static, S: storage::Partition<'t, A::RawEntity, C>> {
     storage: S,
-    _ph:     PhantomData<(A, C)>,
+    _ph:     PhantomData<(&'t mut (), A, C)>,
 }
-impl<A, C, StorageParT> system::Mut<A, C> for PartitionAccessor<A, C, StorageParT>
+impl<'t, A, C, StorageParT> system::Mut<A, C> for PartitionAccessor<'t, A, C, StorageParT>
 where
     A: Archetype,
     C: 'static,
-    StorageParT: storage::Partition<A::RawEntity, C>,
+    StorageParT: storage::Partition<'t, A::RawEntity, C> + 't,
 {
     fn try_get_mut<E: entity::Ref<Archetype = A>>(&mut self, entity: E) -> Option<&mut C> {
         self.storage.get_mut(entity.id())
     }
 
     type IterMut<'u> = impl Iterator<Item = (entity::TempRef<'u, A>, &'u mut C)> + 'u where Self: 'u;
-    fn iter_mut(&mut self) -> Self::IterMut<'_> {
-        self.storage.iter_mut().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
+    fn iter_mut(&mut self) -> Self::IterMut<'u> {
+        self.storage.by_ref().iter_mut().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
     }
 
     type SplitEntitiesAt<'u> = impl system::Mut<A, C> + 'u where Self: 'u;
@@ -67,7 +67,7 @@ where
         &mut self,
         entity: E,
     ) -> (Self::SplitEntitiesAt<'_>, Self::SplitEntitiesAt<'_>) {
-        let (left, right) = self.storage.partition_at(entity.id());
+        let (left, right) = self.storage.by_ref().partition_at(entity.id());
         (
             PartitionAccessor { storage: left, _ph: PhantomData },
             PartitionAccessor { storage: right, _ph: PhantomData },

@@ -173,6 +173,22 @@ pub trait Write<A: Archetype, C: 'static>: Read<A, C> + Mut<A, C> {
     fn try_access_mut(&mut self) -> accessor::TryWrite<A, C, &mut Self> {
         accessor::TryWrite(self, PhantomData)
     }
+
+    /// Return value of [`par_iter_mut`](Self::par_iter_mut).
+    type ParIterMut<'t>: rayon::iter::ParallelIterator<Item = (entity::TempRef<'t, A>, &'t mut C)>
+    where
+        Self: 't,
+        C: comp::Must<A>;
+    /// Iterates over chunks of entities in parallel.
+    ///
+    /// This returns a [rayon `ParallelIterator`](rayon::iter::ParallelIterator)
+    /// that processes different chunks of entities
+    fn par_iter_mut<'t>(
+        &'t mut self,
+        snapshot: &'t ealloc::Snapshot<A::RawEntity>,
+    ) -> Self::ParIterMut<'t>
+    where
+        C: comp::Must<A>;
 }
 
 /// Extends [`Write`] with chunk writing ability

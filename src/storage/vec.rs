@@ -182,6 +182,14 @@ unsafe impl<E: entity::Raw, C: Send + Sync + 'static> Storage for VecStorage<E, 
     }
 
     type StoragePartition<'t> = StoragePartition<'t, E, C>;
+    fn as_partition(&mut self) -> Self::StoragePartition<'_> {
+        StoragePartition {
+            bits:   &self.bits,
+            data:   &mut self.data,
+            offset: 0,
+            _ph:    PhantomData,
+        }
+    }
     fn partition_at(
         &mut self,
         offset: Self::RawEntity,
@@ -220,7 +228,19 @@ pub struct StoragePartition<'t, E: entity::Raw, C> {
     _ph:    PhantomData<E>,
 }
 
-impl<'t, E: entity::Raw, C: 'static> super::Partition<E, C> for StoragePartition<'t, E, C> {
+impl<'t, E: entity::Raw, C: Send + Sync + 'static> super::Partition<'t, E, C>
+    for StoragePartition<'t, E, C>
+{
+    type ByRef<'u> = StoragePartition<'u, E, C> where Self: 'u;
+    fn by_ref(&mut self) -> Self::ByRef<'_> {
+        StoragePartition {
+            bits:   self.bits,
+            data:   &mut *self.data,
+            offset: self.offset,
+            _ph:    PhantomData,
+        }
+    }
+
     fn get_mut(&mut self, entity: E) -> Option<&mut C> {
         let index = match entity.to_primitive().checked_sub(self.offset) {
             Some(index) => index,
@@ -239,11 +259,10 @@ impl<'t, E: entity::Raw, C: 'static> super::Partition<E, C> for StoragePartition
         }
     }
 
-    type IterMut<'u> = impl Iterator<Item = (E, &'u mut C)> + 'u where Self: 'u, C: 'u;
-    fn iter_mut(&mut self) -> Self::IterMut<'_> { iter_mut(self.offset, self.bits, self.data) }
+    type IterMut = impl Iterator<Item = (E, &'t mut C)>;
+    fn iter_mut(self) -> Self::IterMut { iter_mut(self.offset, self.bits, self.data) }
 
-    type PartitionAt<'u> = StoragePartition<'u, E, C> where Self: 'u;
-    fn partition_at(&mut self, entity: E) -> (Self::PartitionAt<'_>, Self::PartitionAt<'_>) {
+    fn partition_at(self, entity: E) -> (Self, Self) {
         let index =
             entity.to_primitive().checked_sub(self.offset).expect("parameter out of bounds");
         assert!(index < self.bits.len());

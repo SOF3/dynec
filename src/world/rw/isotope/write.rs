@@ -8,7 +8,7 @@ use rayon::prelude::ParallelIterator;
 
 use crate::entity::ealloc;
 use crate::world::rw::{self, isotope};
-use crate::{comp, entity, system, Archetype, Storage as _};
+use crate::{comp, entity, system, Archetype, Storage};
 
 pub(super) mod full;
 pub(super) mod partial;
@@ -168,19 +168,28 @@ where
     fn iter_mut(&mut self) -> Self::IterMut<'_> {
         self.storage.iter_mut().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
     }
+}
 
-    type SplitEntitiesAt<'t> = impl system::Mut<A, C> + 't
+impl<'u, A, C> system::MutFull<A, C> for SplitWriter<'u, A, C>
+where
+    A: Archetype,
+    C: comp::Isotope<A>,
+{
+    type Partition<'t> =
+        rw::PartitionAccessor<'t, A, C, <C::Storage as Storage>::StoragePartition<'t>> where Self: 't;
+    fn as_partition(&mut self) -> Self::Partition<'_> {
+        rw::PartitionAccessor { partition: self.storage.as_partition(), _ph: PhantomData }
+    }
+
+    type ParIterMut<'t> = impl ParallelIterator<Item = (entity::TempRef<'t, A>, &'t mut C)> where Self: 't, C: comp::Must<A>;
+    fn par_iter_mut<'t>(
+        &'t mut self,
+        snapshot: &'t ealloc::Snapshot<A::RawEntity>,
+    ) -> Self::ParIterMut<'t>
     where
-        Self: 't;
-    fn split_entities_at<E: entity::Ref<Archetype = A>>(
-        &mut self,
-        entity: E,
-    ) -> (Self::SplitEntitiesAt<'_>, Self::SplitEntitiesAt<'_>) {
-        let (left, right) = self.storage.partition_at(entity.id());
-        (
-            rw::PartitionAccessor { storage: left, _ph: PhantomData },
-            rw::PartitionAccessor { storage: right, _ph: PhantomData },
-        )
+        C: comp::Must<A>,
+    {
+        rw::mut_owned_par_iter_mut(self, snapshot)
     }
 }
 

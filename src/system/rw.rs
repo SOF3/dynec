@@ -1,6 +1,8 @@
 use std::marker::PhantomData;
 use std::{any, fmt};
 
+use rayon::prelude::ParallelIterator;
+
 use super::accessor;
 use crate::entity::ealloc;
 use crate::{comp, entity, Archetype};
@@ -99,7 +101,9 @@ pub trait ReadChunk<A: Archetype, C: 'static> {
     ) -> Self::ParIterChunk<'t>;
 }
 
-/// Generalizes [`WriteSimple`], [`WriteIsotope`] and their split storages.
+/// Access components mutably by the entity.
+/// Generalizes [`WriteSimple`], fixed-discriminant [`WriteIsotope`],
+/// and their partitioned accessors.
 ///
 /// Only supports mutable access to an existing component,
 /// but does not support adding or removing components
@@ -119,19 +123,48 @@ pub trait Mut<A: Archetype, C: 'static> {
         Self: 't;
     /// Iterates over mutable references to all initialized components in this storage.
     fn iter_mut(&mut self) -> Self::IterMut<'_>;
+}
 
-    /// Return value of [`split_entities_at`](Self::split_entities_at).
-    type SplitEntitiesAt<'u>: Mut<A, C> + 'u
+/// A [`Mut`] accessor that supports all entities, in contrast to [`MutPartition`].
+pub trait MutFull<A: Archetype, C: 'static>: Mut<A, C> {
+    /// The partitioned type for this accessor.
+    type Partition<'t>: MutPartition<'t, A, C>
     where
-        Self: 'u;
-    /// Partitions the accessor into two disjoint halves of entities.
+        Self: 't;
+    /// Converts the accessor to a [`MutPartition`] that covers all entities.
     ///
-    /// This method is not required for [`Read`]
-    /// because shared references can be reused directly.
-    fn split_entities_at<E: entity::Ref<Archetype = A>>(
-        &mut self,
-        entity: E,
-    ) -> (Self::SplitEntitiesAt<'_>, Self::SplitEntitiesAt<'_>);
+    /// The actual splitting partitions can be obtained
+    /// by calling [`split_at`](MutPartition::split_at) on the returned value.
+    fn as_partition(&mut self) -> Self::Partition<'_>;
+
+    /// Return value of [`par_iter_mut`](Self::par_iter_mut).
+    type ParIterMut<'t>: ParallelIterator<Item = (entity::TempRef<'t, A>, &'t mut C)>
+    where
+        Self: 't,
+        C: comp::Must<A>;
+    /// Iterates over all entities in parallel.
+    ///
+    /// This returns a rayon [`ParallelIterator`] that processes different chunks of entities.
+    fn par_iter_mut<'t>(
+        &'t mut self,
+        snapshot: &'t ealloc::Snapshot<A::RawEntity>,
+    ) -> Self::ParIterMut<'t>
+    where
+        C: comp::Must<A>;
+}
+
+/// A [`Mut`] accessor that can be split into two halves.
+pub trait MutPartition<'t, A: Archetype, C: 'static>: Mut<A, C> + Send + Sized {
+    /// Splits the accessor into two partitions.
+    ///
+    /// The first partition accesses all entities less than `entity`;
+    /// the second partition accesses all entities greater than or equal to `entity`.
+    fn split_at<E: entity::Ref<Archetype = A>>(self, entity: E) -> (Self, Self);
+
+    /// Return value of [`iter_mut_move`](Self::iter_mut_move).
+    type IterMutMove: Iterator<Item = (entity::TempRef<'t, A>, &'t mut C)>;
+    /// Iterates over mutable references to all initialized components in this storage.
+    fn iter_mut_move(self) -> Self::IterMutMove;
 }
 
 /// Generalizes [`WriteSimple`] and [`WriteIsotope`] for a specific discriminant

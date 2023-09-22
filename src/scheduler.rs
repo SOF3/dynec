@@ -102,15 +102,15 @@ pub enum Node {
     Partition(PartitionIndex),
 }
 
-/// Uniquely identifies a [`system::Sendable`](crate::system::Sendable).
+/// Uniquely identifies a [`system::Sendable`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SendSystemIndex(usize);
 
-/// Uniquely identifies a [`system::Unsendable`](crate::system::Unsendable).
+/// Uniquely identifies a [`system::Unsendable`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct UnsendSystemIndex(usize);
 
-/// Uniquely identifies a [`system::Partition`](crate::system::Partition).
+/// Uniquely identifies a [`system::Partition`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PartitionIndex(usize);
 

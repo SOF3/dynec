@@ -22,10 +22,10 @@ mod std_impl;
 /// owned [`Entity`](super::Entity) and [`Weak`](super::Weak) fields.
 ///
 /// # Non-implementors
-/// ## [`UnclonableRef`](super::UnclonableRef)
-/// This trait is deliberately not implemented for `UnclonableRef`,
+/// ## [`TempRef`](super::TempRef)
+/// This trait is deliberately not implemented for `TempRef`,
 /// because this trait should only be used in global states and components,
-/// while `UnclonableRef` should only be used in temporary variables in systems.
+/// while `TempRef` should only be used in temporary variables in systems.
 ///
 /// ## [`Rc`](std::rc::Rc)/[`Arc`](std::sync::Arc)
 /// Each entity reference must be visited only exactly once.

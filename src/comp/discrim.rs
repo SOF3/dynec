@@ -116,21 +116,21 @@ pub trait Mapped {
         TransformFn: FnMut(&'t mut Self::Value) -> U,
         OnMissing: FnMut(Self::Key) -> !;
 
-    /// Return value of [`iter_values`](Self::iter_values).
+    /// Return value of [`iter_mapped`](Self::iter_mapped).
     type Iter<'t>: Iterator<Item = (Self::Key, Self::Discrim, &'t Self::Value)> + 't
     where
         Self: 't;
     /// Iterates over the values in this map with the discriminant.
     fn iter_mapped(&self) -> Self::Iter<'_>;
 
-    /// Return value of [`iter_values_mut`](Self::iter_values_mut).
+    /// Return value of [`iter_mapped_mut`](Self::iter_mapped_mut).
     type IterMut<'t>: Iterator<Item = (Self::Discrim, &'t mut Self::Value)> + 't
     where
         Self: 't;
     /// Iterates over the values in this map with the discriminant.
     fn iter_mapped_mut(&mut self) -> Self::IterMut<'_>;
 
-    /// Return value of [`into_iter`](Self::into_iter_mapped).
+    /// Return value of [`into_iter_mapped`](Self::into_iter_mapped).
     type IntoIter: Iterator<Item = (Self::Discrim, Self::Value)>;
     /// Iterates over the values in this map with the discriminant.
     fn into_iter_mapped(self) -> Self::IntoIter;

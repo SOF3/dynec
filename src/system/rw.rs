@@ -255,10 +255,10 @@ pub trait WriteSimple<A: Archetype, C: comp::Simple<A>>: ReadSimple<A, C> + Writ
 /// Consider [splitting](Self::split) accessors,
 /// which return [`Read`] with a shared receiver.
 /// If it can be asserted that no uninitialized discriminants will be encountered,
-/// use with [`known_discrims`].
+/// use with [`known_discrims`](Self::known_discrims).
 ///
 /// Since mutable receiver is only required for initializing new isotopes,
-/// functions that only work on known existing isotops such as [`known_discrims`]
+/// functions that only work on known existing isotops such as [`known_discrims`](Self::known_discrims)
 /// only require a shared receiver.
 pub trait ReadIsotope<A: Archetype, C: comp::Isotope<A>, K = <C as comp::Isotope<A>>::Discrim>
 where

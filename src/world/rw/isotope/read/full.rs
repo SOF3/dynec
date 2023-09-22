@@ -14,7 +14,7 @@ impl world::Components {
     /// in order to lazily initialize new isotopes,
     /// but multiple immutable accessors can still run concurrently
     /// with lock contention only occurring when new discriminants are encountered.
-    /// See the documentation of [`ReadIsotope`] for details.
+    /// See the documentation of [`ReadIsotope`](system::ReadIsotope) for details.
     ///
     /// # Panics
     /// - if the archetyped component is not used in any systems.

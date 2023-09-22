@@ -9,7 +9,7 @@ impl world::Components {
     /// Mutably access the requested discriminants of an isotope storage,
     /// lazily initializing new isotopes in `discrims` immediately.
     ///
-    /// The return value implements [`ReadIsotopeRef`],
+    /// The return value implements [`ReadIsotopeRef`](system::ReadIsotopeRef),
     /// allowing shared read-only use of this accessor on multiple workers.
     ///
     /// # Panics

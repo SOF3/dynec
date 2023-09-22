@@ -106,7 +106,8 @@ pub trait Partition<'t, E: entity::Raw, C: Send + Sync + 'static>: Send + Sync +
         Self: 'u;
     /// Re-borrows the partition with reduced lifetime.
     ///
-    /// This is useful for calling [`iter_mut`] and [`partition_at`],
+    /// This is useful for calling [`iter_mut`](Self::iter_mut)
+    /// and [`partition_at`](Self::partition_at),
     /// which take `self` as receiver to preserve the lifetime.
     fn by_ref(&mut self) -> Self::ByRef<'_>;
 

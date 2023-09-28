@@ -57,7 +57,7 @@ pub unsafe trait Storage: Default + Send + Sync + 'static {
     /// Returns an immutable iterator over the storage, ordered by entity index order.
     fn iter(&self) -> Self::Iter<'_>;
 
-    /// Return value of [`iter_chunk`](Self::iter_chunks).
+    /// Return value of [`iter_chunks`](Self::iter_chunks).
     type IterChunks<'t>: Iterator<Item = ChunkRef<'t, Self>> + 't;
     /// Returns an immutable iterator of slices over the storage, ordered by entity index order.
     ///
@@ -72,7 +72,7 @@ pub unsafe trait Storage: Default + Send + Sync + 'static {
     /// Returns a mutable iterator over the storage, ordered by entity index order.
     fn iter_mut(&mut self) -> Self::IterMut<'_>;
 
-    /// Return value of [`iter_chunk_mut`](Self::iter_chunks_mut).
+    /// Return value of [`iter_chunks_mut`](Self::iter_chunks_mut).
     type IterChunksMut<'t>: Iterator<Item = ChunkMut<'t, Self>> + 't;
     /// Returns a mutable iterator of slices over the storage, ordered by entity index order.
     ///
@@ -83,22 +83,25 @@ pub unsafe trait Storage: Default + Send + Sync + 'static {
     fn iter_chunks_mut(&mut self) -> Self::IterChunksMut<'_>;
 
     /// Return value of [`partition_at`](Self::partition_at).
-    type StoragePartition<'u>: Partition<'u, Self::RawEntity, Self::Comp>
+    type Partition<'u>: Partition<'u, Self::RawEntity, Self::Comp>
     where
         Self: 'u;
     /// Converts the storage to a [`Partition`] that covers the whole storage (similar to `slice[..]`).
-    fn as_partition(&mut self) -> Self::StoragePartition<'_>;
+    fn as_partition(&mut self) -> Self::Partition<'_>;
     /// Splits the storage into two partitions for parallel iterable access.
     fn partition_at(
         &mut self,
         offset: Self::RawEntity,
-    ) -> (Self::StoragePartition<'_>, Self::StoragePartition<'_>);
+    ) -> (Self::Partition<'_>, Self::Partition<'_>) {
+        self.as_partition().partition_at(offset)
+    }
 }
 
-/// Borrows a slice of a storage, analogously `&'t mut Storage`.
+/// Borrows a slice of a storage, analogously `&'t mut Storage[..]`.
 ///
 /// This trait does not provide `set` because
-/// the partition point would drift as the cardinality of the storage changes.
+/// adding/removing items may cause rebalances in the tree implementation
+/// and result in dangling references in other partitions that are not `&mut`-locked.
 pub trait Partition<'t, E: entity::Raw, C: Send + Sync + 'static>: Send + Sync + Sized {
     /// Return value of [`by_ref`](Self::by_ref).
     type ByRef<'u>: Partition<'u, E, C>
@@ -158,6 +161,32 @@ pub unsafe trait Chunked: Storage {
         start: Self::RawEntity,
         end: Self::RawEntity,
     ) -> Option<&mut [Self::Comp]>;
+
+    /// Return value of [`as_partition_chunk`](Self::as_partition_chunk).
+    type PartitionChunked<'u>: PartitionChunked<'u, Self::RawEntity, Self::Comp>;
+    /// Converts the storage to a [`PartitionChunked`] that covers the whole storage (similar to `slice[..]`).
+    fn as_partition_chunk(&mut self) -> Self::PartitionChunked<'_>;
+}
+
+/// Borrows a slice of a chunked storage, analogously `&'t mut Chunked[..]`.
+///
+/// This trait does not provide `set` because
+/// adding/removing items may cause rebalances in the tree implementation
+/// and result in dangling references in other partitions that are not `&mut`-locked.
+pub trait PartitionChunked<'t, E: entity::Raw, C: Send + Sync + 'static>:
+    Partition<'t, E, C>
+{
+    /// Gets a mutable reference to a slice of components.
+    ///
+    /// Returns `None` if any of the components in the range is missing.
+    ///
+    /// Panics if `start > end`.
+    fn get_chunk_mut(&mut self, start: E, end: E) -> Option<&mut [C]>;
+
+    /// Return value of [`into_iter_chunks_mut`](Self::into_iter_chunks_mut).
+    type IntoIterChunksMut: Iterator<Item = (E, &'t mut [C])>;
+    /// Returns a mutable iterator over the storage, ordered by entity index order.
+    fn into_iter_chunks_mut(self) -> Self::IntoIterChunksMut;
 }
 
 /// The iterator item of [`Storage::iter_chunks`].

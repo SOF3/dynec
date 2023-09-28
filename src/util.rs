@@ -5,7 +5,7 @@ use std::any;
 use std::any::TypeId;
 use std::borrow::Borrow;
 use std::num::NonZeroU32;
-use std::{cmp, fmt, hash, ops};
+use std::{cmp, fmt, hash, mem, ops};
 
 /// A generic mutable/immutable reference type.
 pub trait Ref {
@@ -122,3 +122,13 @@ unsafe impl UnsafeEqOrd for NonZeroU32 {}
 
 // Safety: `usize` is a regular primitive satisfying all equivalence and ordering invariants.
 unsafe impl UnsafeEqOrd for usize {}
+
+/// Transforms a value behind a mutable reference with a function that moves it.
+///
+/// The placeholder value will be left at the position of `ref_` if the transform function panics.
+pub fn transform_mut<T, R>(ref_: &mut T, placeholder: T, transform: impl FnOnce(T) -> (T, R)) -> R {
+    let old = mem::replace(ref_, placeholder);
+    let (new, ret) = transform(old);
+    *ref_ = new;
+    ret
+}

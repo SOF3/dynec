@@ -72,21 +72,9 @@ unsafe impl<E: entity::Raw, C: Send + Sync + 'static> Storage for Tree<E, C> {
             .map(|(entity, item)| ChunkMut { slice: slice::from_mut(item), start: entity })
     }
 
-    type StoragePartition<'t> = StoragePartition<'t, E, C>;
-    fn as_partition(&mut self) -> Self::StoragePartition<'_> {
+    type Partition<'t> = StoragePartition<'t, E, C>;
+    fn as_partition(&mut self) -> Self::Partition<'_> {
         StoragePartition { data: &self.data, lower_bound: None, upper_bound: None }
-    }
-    fn partition_at(
-        &mut self,
-        bound: Self::RawEntity,
-    ) -> (Self::StoragePartition<'_>, Self::StoragePartition<'_>) {
-        // Safety: `self` is locked exclusively,
-        // and we split this exclusive lock to disjoint key ranges with `BoundComparator`.
-        let data = &self.data;
-        (
-            StoragePartition { data, lower_bound: None, upper_bound: Some(bound) },
-            StoragePartition { data, lower_bound: Some(bound), upper_bound: None },
-        )
     }
 }
 

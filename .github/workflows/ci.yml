@@ -90,6 +90,12 @@ jobs:
           default: true
           components: miri
       - name: cargo miri test
-        run: "cargo miri test --all ${{matrix.profile}}"
+        run: |
+          UNSAFE_TESTS=(
+            storage::vec
+          )
+          for test in "${UNSAFE_TESTS[@]}"; do
+            cargo miri test $test ${{ matrix.profile }}
+          done
         env:
           CONCURRENT_TEST_REPETITIONS: "1"

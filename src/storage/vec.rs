@@ -4,10 +4,9 @@ use std::mem::{self, MaybeUninit};
 
 use bitvec::prelude::BitVec;
 use bitvec::slice::BitSlice;
-use itertools::Itertools;
 
 use super::{ChunkMut, ChunkRef, Chunked, Storage};
-use crate::entity;
+use crate::{entity, util};
 
 /// The basic storage indexed by entity IDs directly.
 pub struct VecStorage<E: entity::Raw, T> {
@@ -135,24 +134,10 @@ unsafe impl<E: entity::Raw, C: Send + Sync + 'static> Storage for VecStorage<E, 
 
     type IterChunks<'t> = impl Iterator<Item = ChunkRef<'t, Self>> + 't;
     fn iter_chunks(&self) -> Self::IterChunks<'_> {
-        let tail = self.bits.len(); // add tail to ensure trailing ones get included
-        let indices = self.bits.iter_zeros().chain(iter::once(tail));
-        let data = &self.data;
-
-        // the first bit is always zero, so no need to worry about the initila `0..from`
-
-        // TODO this unsafe function requires unit tests
-        indices
-            .tuple_windows()
-            .map(|(from, to)| (from + 1)..to)
-            .map(move |range| super::ChunkRef {
-                slice: unsafe {
-                    let slice = data.get(range.clone()).expect("bits mismatch");
-                    slice_assume_init_ref(slice)
-                },
-                start: E::from_primitive(range.start),
-            })
-            .filter(|chunk| !chunk.slice.is_empty())
+        new_iter_chunks_ref(&self.bits, &self.data[..]).map(|(start_index, chunk)| ChunkRef {
+            slice: unsafe { slice_assume_init_ref(chunk) },
+            start: E::from_primitive(start_index),
+        })
     }
 
     type IterMut<'t> = impl Iterator<Item = (Self::RawEntity, &'t mut Self::Comp)> + 't;
@@ -160,48 +145,14 @@ unsafe impl<E: entity::Raw, C: Send + Sync + 'static> Storage for VecStorage<E, 
 
     type IterChunksMut<'t> = impl Iterator<Item = ChunkMut<'t, Self>> + 't;
     fn iter_chunks_mut(&mut self) -> Self::IterChunksMut<'_> {
-        let tail = self.bits.len(); // add tail to ensure trailing ones get included
-        let indices = self.bits.iter_zeros().chain(iter::once(tail));
-        let data = &mut self.data;
-
-        // the first bit is always zero, so no need to worry about the initial `0..from`
-
-        // TODO this unsafe function requires unit tests
-        indices
-            .tuple_windows()
-            .map(|(from, to)| (from + 1)..to)
-            .map(move |range| ChunkMut {
-                slice: unsafe {
-                    let uninit = data.get_mut(range.clone()).expect("bits mismatch");
-                    let slice = slice_assume_init_mut(uninit);
-                    mem::transmute::<&mut [C], &mut [C]>(slice)
-                },
-                start: E::from_primitive(range.start),
-            })
-            .filter(|chunk| !chunk.slice.is_empty())
+        new_iter_chunks_mut(&self.bits, &mut self.data[..]).map(|(start_index, chunk)| ChunkMut {
+            slice: unsafe { slice_assume_init_mut(chunk) },
+            start: E::from_primitive(start_index),
+        })
     }
 
-    type StoragePartition<'t> = StoragePartition<'t, E, C>;
-    fn as_partition(&mut self) -> Self::StoragePartition<'_> {
-        StoragePartition {
-            bits:   &self.bits,
-            data:   &mut self.data,
-            offset: 0,
-            _ph:    PhantomData,
-        }
-    }
-    fn partition_at(
-        &mut self,
-        offset: Self::RawEntity,
-    ) -> (StoragePartition<'_, E, C>, StoragePartition<'_, E, C>) {
-        let offset = offset.to_primitive();
-        let bits = self.bits.split_at(offset);
-        let data = self.data.split_at_mut(offset);
-        (
-            StoragePartition { bits: bits.0, data: data.0, offset: 0, _ph: PhantomData },
-            StoragePartition { bits: bits.1, data: data.1, offset, _ph: PhantomData },
-        )
-    }
+    type Partition<'t> = StoragePartition<'t, E, C>;
+    fn as_partition(&mut self) -> Self::Partition<'_> { self.as_partition_chunk() }
 }
 
 fn iter_mut<'storage, E: entity::Raw, C: 'static>(
@@ -321,6 +272,145 @@ unsafe impl<E: entity::Raw, C: Send + Sync + 'static> Chunked for VecStorage<E, 
             .expect("range exists in self.bits implies existence in self.data");
         Some(unsafe { slice_assume_init_mut(data) })
     }
+
+    type PartitionChunked<'u> = Self::Partition<'u>;
+    fn as_partition_chunk(&mut self) -> Self::PartitionChunked<'_> {
+        StoragePartition {
+            bits:   &self.bits,
+            data:   &mut self.data,
+            offset: 0,
+            _ph:    PhantomData,
+        }
+    }
+}
+
+impl<'t, E: entity::Raw, C: Send + Sync + 'static> super::PartitionChunked<'t, E, C>
+    for StoragePartition<'t, E, C>
+{
+    fn get_chunk_mut(&mut self, start: E, end: E) -> Option<&mut [C]> {
+        let (start, end) = (start.to_primitive() - self.offset, end.to_primitive() - self.offset);
+        let range = start..end;
+
+        let bits = match self.bits.get(range.clone()) {
+            Some(bits) => bits,
+            None => return None,
+        };
+        if !bits.all() {
+            return None;
+        }
+
+        let data = self
+            .data
+            .get_mut(range)
+            .expect("range exists in self.bits implies existence in self.data");
+        Some(unsafe { slice_assume_init_mut(data) })
+    }
+
+    type IntoIterChunksMut = impl Iterator<Item = (E, &'t mut [C])>;
+    fn into_iter_chunks_mut(self) -> Self::IntoIterChunksMut {
+        // check correctness:
+        // `bits[i]` corresponds to `self.data[i]`, of which the index `i` matches `(last_zero ?? -1) + 1 + i`
+        let iter = new_iter_chunks_mut(self.bits, self.data);
+        let offset = self.offset;
+        iter.map(move |(start_index, chunk)| {
+            (E::from_primitive(start_index + offset), unsafe { slice_assume_init_mut(chunk) })
+        })
+    }
+}
+
+struct IterChunks<IterZerosT, DataT, TrisplitFn> {
+    /// The position of the last value yielded by `iter_zeros`.
+    /// Initially always None, which is semantically the same as `-1`.
+    last_zero:  Option<usize>,
+    /// Result of `bitslice.iter_zeros()`
+    iter_zeros: IterZerosT,
+    /// A mutable or shared slice containing data.
+    ///
+    /// `data[last_zero + 1 + i]` must be uninitialized if and only if `iter_zeros` yields `i`.
+    data:       DataT,
+    /// A function that splits a `data` slice into three parts at a given `index`,
+    /// with lengths `index`, `1`, `data.len() - 1 - index`.
+    trisplit:   TrisplitFn,
+}
+
+fn new_iter_chunks<'t, DataT, TrisplitFn>(
+    bits: &'t BitSlice,
+    data: DataT,
+    trisplit: TrisplitFn,
+) -> impl Iterator<Item = (usize, DataT)> + 't
+where
+    DataT: Default + 't,
+    TrisplitFn: Fn(DataT, usize) -> (DataT, DataT, DataT) + 'static,
+{
+    IterChunks {
+        last_zero: None,
+        iter_zeros: bits.iter_zeros().chain(iter::once(bits.len())),
+        data,
+        trisplit,
+    }
+}
+fn new_iter_chunks_ref<'iter, 'data: 'iter, C: 'static>(
+    bits: &'iter BitSlice,
+    data: &'data [C],
+) -> impl Iterator<Item = (usize, &'data [C])> + 'iter {
+    new_iter_chunks(bits, data, trisplit_fn_ref)
+}
+fn new_iter_chunks_mut<'iter, 'data: 'iter, C: 'static>(
+    bits: &'iter BitSlice,
+    data: &'data mut [C],
+) -> impl Iterator<Item = (usize, &'data mut [C])> + 'iter {
+    new_iter_chunks(bits, data, trisplit_fn_mut)
+}
+
+impl<IterZerosT, DataT, TrisplitFn> Iterator for IterChunks<IterZerosT, DataT, TrisplitFn>
+where
+    IterZerosT: Iterator<Item = usize>,
+    DataT: Default,
+    TrisplitFn: Fn(DataT, usize) -> (DataT, DataT, DataT),
+{
+    type Item = (usize, DataT);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // when next() is not executing, data[0] must correspond to (last_zero ?? -1) + 1, which
+        // must also align with `iter_zeros` indices.
+
+        loop {
+            let first_one = match self.last_zero {
+                Some(index) => index + 1,
+                None => 0,
+            };
+
+            let next_zero = self.iter_zeros.next()?;
+            self.last_zero = Some(next_zero);
+
+            if first_one == next_zero {
+                util::transform_mut(&mut self.data, DataT::default(), |data| {
+                    let (_empty, _current, rest) = (self.trisplit)(data, 0);
+                    (rest, ())
+                });
+                continue; // empty chunk, skip one item
+            }
+
+            let chunk = util::transform_mut(&mut self.data, DataT::default(), |data| {
+                let (chunk, _zero, rest) = (self.trisplit)(data, next_zero - first_one);
+                (rest, chunk)
+            });
+
+            break Some((first_one, chunk));
+        }
+    }
+}
+
+fn trisplit_fn_ref<T>(data: &[T], index: usize) -> (&[T], &[T], &[T]) {
+    let (left, rest) = data.split_at(index);
+    let (mid, right) = if rest.is_empty() { (&[][..], &[][..]) } else { rest.split_at(1) };
+    (left, mid, right)
+}
+fn trisplit_fn_mut<T>(data: &mut [T], index: usize) -> (&mut [T], &mut [T], &mut [T]) {
+    let (left, rest) = data.split_at_mut(index);
+    let (mid, right) =
+        if rest.is_empty() { (&mut [][..], &mut [][..]) } else { rest.split_at_mut(1) };
+    (left, mid, right)
 }
 
 unsafe fn slice_assume_init_ref<T>(slice: &[MaybeUninit<T>]) -> &[T] {

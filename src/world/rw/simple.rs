@@ -155,6 +155,7 @@ where
         })
     }
 }
+
 impl<A, C, StorageRef> system::ReadChunk<A, C> for SimpleRw<StorageRef>
 where
     A: Archetype,
@@ -166,11 +167,11 @@ where
         self.storage.get_chunk(chunk.start, chunk.end).expect("chunk is not completely filled")
     }
 
-    type ParIterChunk<'t> = impl rayon::iter::ParallelIterator<Item = (entity::TempRefChunk<'t, A>, &'t [C])> where Self: 't;
-    fn par_iter_chunk<'t>(
+    type ParIterChunks<'t> = impl rayon::iter::ParallelIterator<Item = (entity::TempRefChunk<'t, A>, &'t [C])> where Self: 't;
+    fn par_iter_chunks<'t>(
         &'t self,
         snapshot: &'t ealloc::Snapshot<A::RawEntity>,
-    ) -> Self::ParIterChunk<'t> {
+    ) -> Self::ParIterChunks<'t> {
         rayon::iter::split(snapshot.as_slice(), |slice| slice.split()).flat_map_iter(|slice| {
             // we don't need to split over the holes in parallel,
             // because splitting the total space is more important than splitting the holes
@@ -182,6 +183,7 @@ where
         })
     }
 }
+
 impl<A, C, StorageRef> system::ReadSimple<A, C> for SimpleRw<StorageRef>
 where
     A: Archetype,
@@ -215,7 +217,7 @@ where
     C: comp::Simple<A>,
     StorageRef: ops::DerefMut<Target = C::Storage>,
 {
-    type Partition<'t> = rw::PartitionAccessor<'t, A, C, <C::Storage as Storage>::StoragePartition<'t>> where Self: 't;
+    type Partition<'t> = rw::PartitionAccessor<'t, A, C, <C::Storage as Storage>::Partition<'t>> where Self: 't;
     fn as_partition(&mut self) -> Self::Partition<'_> {
         rw::PartitionAccessor { partition: self.storage.as_partition(), _ph: PhantomData }
     }
@@ -228,21 +230,11 @@ where
     where
         C: comp::Must<A>,
     {
-        rw::mut_owned_par_iter_mut(self, snapshot)
+        rw::mut_owned_par_iter_mut(self.as_partition(), snapshot)
     }
 }
 
-impl<A, C, StorageRef> system::Write<A, C> for SimpleRw<StorageRef>
-where
-    A: Archetype,
-    C: comp::Simple<A>,
-    StorageRef: ops::DerefMut<Target = C::Storage> + Sync,
-{
-    fn set<E: entity::Ref<Archetype = A>>(&mut self, entity: E, value: Option<C>) -> Option<C> {
-        self.storage.set(entity.id(), value)
-    }
-}
-impl<A, C, StorageRef> system::WriteChunk<A, C> for SimpleRw<StorageRef>
+impl<A, C, StorageRef> system::MutChunk<A, C> for SimpleRw<StorageRef>
 where
     A: Archetype,
     C: comp::Simple<A>,
@@ -256,6 +248,50 @@ where
         self.storage.get_chunk_mut(chunk.start, chunk.end).expect("chunk is not completely filled")
     }
 }
+
+impl<A, C, StorageRef> system::MutFullChunk<A, C> for SimpleRw<StorageRef>
+where
+    A: Archetype,
+    C: comp::Simple<A>,
+    StorageRef: ops::DerefMut<Target = C::Storage> + Sync,
+    C::Storage: storage::Chunked,
+{
+    type Partition<'t> = impl system::MutPartitionChunk<'t, A, C>
+    where
+        Self: 't;
+    fn as_partition_chunk(&mut self) -> Self::Partition<'_> {
+        rw::PartitionAccessor {
+            partition: self.storage.as_partition_chunk(),
+            _ph:       PhantomData,
+        }
+    }
+
+    type ParIterChunksMut<'t> = impl ParallelIterator<Item = (entity::TempRefChunk<'t, A>, &'t mut [C])>
+    where
+        Self: 't,
+        C: comp::Must<A>;
+    fn par_iter_chunks_mut<'t>(
+        &'t mut self,
+        snapshot: &'t ealloc::Snapshot<<A as Archetype>::RawEntity>,
+    ) -> Self::ParIterChunksMut<'t>
+    where
+        C: comp::Must<A>,
+    {
+        rw::mut_owned_par_iter_chunks_mut(self.as_partition_chunk(), snapshot)
+    }
+}
+
+impl<A, C, StorageRef> system::Write<A, C> for SimpleRw<StorageRef>
+where
+    A: Archetype,
+    C: comp::Simple<A>,
+    StorageRef: ops::DerefMut<Target = C::Storage> + Sync,
+{
+    fn set<E: entity::Ref<Archetype = A>>(&mut self, entity: E, value: Option<C>) -> Option<C> {
+        self.storage.set(entity.id(), value)
+    }
+}
+
 impl<A, C, StorageRef> system::WriteSimple<A, C> for SimpleRw<StorageRef>
 where
     A: Archetype,

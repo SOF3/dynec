@@ -94,7 +94,7 @@ pub(crate) trait AnySimpleStorage<A: Archetype>: Send + Sync {
     /// Clears the component data for an entity if any.
     fn clear_entry(&mut self, entity: A::RawEntity);
 
-    /// Returns a [`referrer::Dyn`] implementation that visits all components in this storage.
+    /// Returns a [`referrer::Object`] implementation that visits all components in this storage.
     fn referrer_dyn<'t>(&'t mut self) -> Box<dyn referrer::Object + 't>;
 
     /// Returns the value for an entity and return it as an [`Any`].

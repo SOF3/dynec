@@ -48,6 +48,7 @@ macro_rules! test_storage {
 
 pub(crate) use test_storage;
 
+/// Wraps the chunk capabilities of storage types if available.
 pub(super) trait Chunker<S> {
     fn to_chunks(s: &S) -> Option<Vec<(u32, Vec<i64>)>>;
     fn to_chunks_mut(s: &mut S) -> Option<Vec<(u32, Vec<i64>)>>;

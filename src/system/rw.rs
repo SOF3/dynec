@@ -85,8 +85,8 @@ pub trait ReadChunk<A: Archetype, C: 'static> {
     /// so panic is basically impossible if [`comp::Must`] was implemented correctly.
     fn get_chunk(&self, chunk: entity::TempRefChunk<'_, A>) -> &'_ [C];
 
-    /// Return value of [`par_iter_chunk`](Self::par_iter_chunk).
-    type ParIterChunk<'t>: rayon::iter::ParallelIterator<
+    /// Return value of [`par_iter_chunks`](Self::par_iter_chunks).
+    type ParIterChunks<'t>: rayon::iter::ParallelIterator<
         Item = (entity::TempRefChunk<'t, A>, &'t [C]),
     >
     where
@@ -95,10 +95,10 @@ pub trait ReadChunk<A: Archetype, C: 'static> {
     ///
     /// This returns a [rayon `ParallelIterator`](rayon::iter::ParallelIterator)
     /// that processes different chunks of entities
-    fn par_iter_chunk<'t>(
+    fn par_iter_chunks<'t>(
         &'t self,
         snapshot: &'t ealloc::Snapshot<A::RawEntity>,
-    ) -> Self::ParIterChunk<'t>;
+    ) -> Self::ParIterChunks<'t>;
 }
 
 /// Access components mutably by the entity.
@@ -144,7 +144,7 @@ pub trait MutFull<A: Archetype, C: 'static>: Mut<A, C> {
         C: comp::Must<A>;
     /// Iterates over all entities in parallel.
     ///
-    /// This returns a rayon [`ParallelIterator`] that processes different chunks of entities.
+    /// This returns a rayon [`ParallelIterator`] that processes different entities.
     fn par_iter_mut<'t>(
         &'t mut self,
         snapshot: &'t ealloc::Snapshot<A::RawEntity>,
@@ -161,10 +161,64 @@ pub trait MutPartition<'t, A: Archetype, C: 'static>: Mut<A, C> + Send + Sized {
     /// the second partition accesses all entities greater than or equal to `entity`.
     fn split_at<E: entity::Ref<Archetype = A>>(self, entity: E) -> (Self, Self);
 
-    /// Return value of [`iter_mut_move`](Self::iter_mut_move).
-    type IterMutMove: Iterator<Item = (entity::TempRef<'t, A>, &'t mut C)>;
+    /// Return value of [`into_iter_mut`](Self::into_iter_mut).
+    type IntoIterMut: Iterator<Item = (entity::TempRef<'t, A>, &'t mut C)>;
     /// Iterates over mutable references to all initialized components in this storage.
-    fn iter_mut_move(self) -> Self::IterMutMove;
+    fn into_iter_mut(self) -> Self::IntoIterMut;
+}
+
+/// Extends [`Mut`] with chunk writing ability
+/// for storages that support chunked access.
+pub trait MutChunk<A: Archetype, C: 'static> {
+    /// Returns the chunk of components as a mutable slice.
+    /// Typically called from an accessor.
+    ///
+    /// # Panics
+    /// This method panics if any component in the chunk is missing.
+    /// In general, if [`comp::Must`] is implemented correctly,
+    /// users should not obtain an [`entity::TempRefChunk`] that includes an uninitialized entity,
+    /// so panic is practically impossible.
+    fn get_chunk_mut(&mut self, chunk: entity::TempRefChunk<'_, A>) -> &'_ mut [C]
+    where
+        C: comp::Must<A>;
+}
+
+/// A [`MutChunk`] accessor that supports all entities, in contrast to [`MutPartitionChunk`].
+pub trait MutFullChunk<A: Archetype, C: 'static>: MutChunk<A, C> {
+    /// The partitioned type for this accessor.
+    type Partition<'t>: MutPartitionChunk<'t, A, C>
+    where
+        Self: 't;
+    /// Converts the accessor to a [`MutPartitionChunk`] that covers all entities.
+    ///
+    /// The actual splitting partitions can be obtained
+    /// by calling [`split_at`](MutPartition::split_at) on the returned value.
+    fn as_partition_chunk(&mut self) -> Self::Partition<'_>;
+
+    /// Return value of [`par_iter_chunks_mut`](Self::par_iter_chunks_mut).
+    type ParIterChunksMut<'t>: ParallelIterator<Item = (entity::TempRefChunk<'t, A>, &'t mut [C])>
+    where
+        Self: 't,
+        C: comp::Must<A>;
+    /// Iterates over all entity chunks in parallel.
+    ///
+    /// This returns a rayon [`ParallelIterator`] that processes different chunks of entities.
+    fn par_iter_chunks_mut<'t>(
+        &'t mut self,
+        snapshot: &'t ealloc::Snapshot<A::RawEntity>,
+    ) -> Self::ParIterChunksMut<'t>
+    where
+        C: comp::Must<A>;
+}
+
+/// A [`Mut`] accessor that can be split into two halves.
+pub trait MutPartitionChunk<'t, A: Archetype, C: 'static>:
+    MutChunk<A, C> + MutPartition<'t, A, C>
+{
+    /// Return value of [`into_iter_chunks_mut`](Self::into_iter_chunks_mut).
+    type IntoIterChunksMut: Iterator<Item = (entity::TempRefChunk<'t, A>, &'t mut [C])>;
+    /// Iterates over mutable references to all initialized components in this storage.
+    fn into_iter_chunks_mut(self) -> Self::IntoIterChunksMut;
 }
 
 /// Generalizes [`WriteSimple`] and [`WriteIsotope`] for a specific discriminant
@@ -206,22 +260,6 @@ pub trait Write<A: Archetype, C: 'static>: Read<A, C> + Mut<A, C> {
     fn try_access_mut(&mut self) -> accessor::TryWrite<A, C, &mut Self> {
         accessor::TryWrite(self, PhantomData)
     }
-}
-
-/// Extends [`Write`] with chunk writing ability
-/// for storages that support chunked access.
-pub trait WriteChunk<A: Archetype, C: 'static> {
-    /// Returns the chunk of components as a mutable slice.
-    /// Typically called from an accessor.
-    ///
-    /// # Panics
-    /// This method panics if any component in the chunk is missing.
-    /// In general, users should not get an [`entity::TempRefChunk`]
-    /// that includes an uninitialized entity,
-    /// so panic is basically impossible if [`comp::Must`] was implemented correctly.
-    fn get_chunk_mut(&mut self, chunk: entity::TempRefChunk<'_, A>) -> &'_ mut [C]
-    where
-        C: comp::Must<A>;
 }
 
 /// Provides access to a simple component in a specific archetype.

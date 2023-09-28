@@ -1,4 +1,4 @@
-//! Implement [`Referrer`](super::Referrer) for standard types.
+//! Implement [`Referrer`] for standard types.
 
 use std::{collections, hash};
 

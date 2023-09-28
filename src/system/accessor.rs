@@ -160,7 +160,7 @@ where
     }
 }
 
-/// Return value of [`Write::try_access_mut`].
+/// Return value of [`system::Write::try_access_mut`](crate::system::Write::try_access_mut).
 pub struct TryWrite<A, C, T>(pub(super) T, pub(super) PhantomData<(A, C)>);
 
 unsafe impl<'t, A: Archetype, C: 'static, T: rw::Write<A, C>> Accessor<A>
@@ -179,7 +179,7 @@ unsafe impl<'t, A: Archetype, C: 'static, T: rw::Write<A, C>> Accessor<A>
     }
 }
 
-/// Return value of [`Write::access_mut`].
+/// Return value of [`system::Write::access_mut`](crate::system::Write::access_mut).
 pub struct MustWrite<A, C, T>(pub(super) T, pub(super) PhantomData<(A, C)>);
 
 unsafe impl<'t, A: Archetype, C: comp::Must<A> + 'static, T: rw::Write<A, C>> Accessor<A>
@@ -198,7 +198,7 @@ unsafe impl<'t, A: Archetype, C: comp::Must<A> + 'static, T: rw::Write<A, C>> Ac
     }
 }
 
-unsafe impl<'t, A: Archetype, C: comp::Must<A> + 'static, T: rw::WriteChunk<A, C>> Chunked<A>
+unsafe impl<'t, A: Archetype, C: comp::Must<A> + 'static, T: rw::MutChunk<A, C>> Chunked<A>
     for MustWrite<A, C, &'t mut T>
 {
     type Chunk<'ret> = &'ret mut [C] where Self: 'ret;

@@ -7,8 +7,9 @@ use parking_lot::RwLock;
 use rayon::prelude::ParallelIterator;
 
 use crate::entity::ealloc;
+use crate::storage::Chunked;
 use crate::world::rw::{self, isotope};
-use crate::{comp, entity, system, Archetype, Storage};
+use crate::{comp, entity, storage, system, Archetype, Storage};
 
 pub(super) mod full;
 pub(super) mod partial;
@@ -153,6 +154,33 @@ where
     }
 }
 
+impl<'u, A, C> system::ReadChunk<A, C> for SplitWriter<'u, A, C>
+where
+    A: Archetype,
+    C: comp::Isotope<A> + comp::Must<A>,
+    C::Storage: storage::Chunked,
+{
+    fn get_chunk(&self, chunk: entity::TempRefChunk<'_, A>) -> &[C] {
+        self.storage.get_chunk(chunk.start, chunk.end).expect("chunk is not completely filled")
+    }
+
+    type ParIterChunks<'t> = impl rayon::iter::ParallelIterator<Item = (entity::TempRefChunk<'t, A>, &'t [C])> where Self: 't;
+    fn par_iter_chunks<'t>(
+        &'t self,
+        snapshot: &'t ealloc::Snapshot<A::RawEntity>,
+    ) -> Self::ParIterChunks<'t> {
+        rayon::iter::split(snapshot.as_slice(), |slice| slice.split()).flat_map_iter(|slice| {
+            // we don't need to split over the holes in parallel,
+            // because splitting the total space is more important than splitting the holes
+            slice.iter_chunks().map(|chunk| {
+                let chunk = entity::TempRefChunk::new(chunk.start, chunk.end);
+                let data = self.get_chunk(chunk);
+                (chunk, data)
+            })
+        })
+    }
+}
+
 impl<'u, A, C> system::Mut<A, C> for SplitWriter<'u, A, C>
 where
     A: Archetype,
@@ -176,7 +204,7 @@ where
     C: comp::Isotope<A>,
 {
     type Partition<'t> =
-        rw::PartitionAccessor<'t, A, C, <C::Storage as Storage>::StoragePartition<'t>> where Self: 't;
+        rw::PartitionAccessor<'t, A, C, <C::Storage as Storage>::Partition<'t>> where Self: 't;
     fn as_partition(&mut self) -> Self::Partition<'_> {
         rw::PartitionAccessor { partition: self.storage.as_partition(), _ph: PhantomData }
     }
@@ -189,7 +217,52 @@ where
     where
         C: comp::Must<A>,
     {
-        rw::mut_owned_par_iter_mut(self, snapshot)
+        rw::mut_owned_par_iter_mut(self.as_partition(), snapshot)
+    }
+}
+
+impl<'u, A, C> system::MutChunk<A, C> for SplitWriter<'u, A, C>
+where
+    A: Archetype,
+    C: comp::Isotope<A> + comp::Must<A>,
+    C::Storage: storage::Chunked,
+{
+    fn get_chunk_mut(&mut self, chunk: entity::TempRefChunk<'_, A>) -> &mut [C]
+    where
+        C: comp::Must<A>,
+    {
+        self.storage.get_chunk_mut(chunk.start, chunk.end).expect("chunk is not completely filled")
+    }
+}
+
+impl<'u, A, C> system::MutFullChunk<A, C> for SplitWriter<'u, A, C>
+where
+    A: Archetype,
+    C: comp::Isotope<A> + comp::Must<A>,
+    C::Storage: storage::Chunked,
+{
+    type Partition<'t> = impl system::MutPartitionChunk<'t, A, C>
+    where
+        Self: 't;
+    fn as_partition_chunk(&mut self) -> Self::Partition<'_> {
+        rw::PartitionAccessor {
+            partition: self.storage.as_partition_chunk(),
+            _ph:       PhantomData,
+        }
+    }
+
+    type ParIterChunksMut<'t> = impl ParallelIterator<Item = (entity::TempRefChunk<'t, A>, &'t mut [C])>
+    where
+        Self: 't,
+        C: comp::Must<A>;
+    fn par_iter_chunks_mut<'t>(
+        &'t mut self,
+        snapshot: &'t ealloc::Snapshot<<A as Archetype>::RawEntity>,
+    ) -> Self::ParIterChunksMut<'t>
+    where
+        C: comp::Must<A>,
+    {
+        rw::mut_owned_par_iter_chunks_mut(self.as_partition_chunk(), snapshot)
     }
 }
 

@@ -30,7 +30,7 @@ jobs:
         run: test ! -d bench-report/${{github.ref_type}}/${{github.ref_name}} || rm -r bench-report/${{github.ref_type}}/${{github.ref_name}}
         working-directory: ..site-repo
       - name: Copy artifact to site repo
-        run: mkdir -p ..site-repo/bench-report/${{github.ref_type}}; cp -r target/criterion ..site-repo/bench-report/${{github.ref_type}}/${{github.ref_name}}
+        run: mkdir -p ..site-repo/bench-report/${{github.ref_type}}/${{github.ref_name}}; cp -rT target/criterion ..site-repo/bench-report/${{github.ref_type}}/${{github.ref_name}}
       - name: Set Git author
         run: git config --global user.name "github-actions[bot]" && git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
       - name: Git commit

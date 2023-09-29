@@ -81,7 +81,6 @@ jobs:
         profile:
           - ""
           - "--release"
-    if: false
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1

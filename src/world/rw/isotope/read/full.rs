@@ -3,8 +3,18 @@ use std::marker::PhantomData;
 use crate::comp::discrim::{FullMap, Mapped as _};
 use crate::comp::Discrim;
 use crate::entity::ealloc;
+use crate::system::access::StorageMap;
 use crate::world::rw::isotope;
 use crate::{comp, storage, system, world, Archetype};
+
+/// Provides access to an isotope component in a specific archetype.
+///
+/// Getters require a mutable receiver to allow lazy initialization of new discriminants.
+/// Consider [splitting](system::AccessIsotope::split) accessors,
+/// which returns a [`system::AccessSingle`] with a shared receiver.
+/// If it can be asserted that no uninitialized discriminants will be encountered,
+/// use with [`known_discrims`](system::AccessIsotope::known_discrims).
+pub type ReadIsotopeFull<'t, A, C> = system::AccessIsotope<A, C, Storages<'t, A, C>>;
 
 impl world::Components {
     /// Immutably access all discriminants of an isotope storage,
@@ -14,7 +24,7 @@ impl world::Components {
     /// in order to lazily initialize new isotopes,
     /// but multiple immutable accessors can still run concurrently
     /// with lock contention only occurring when new discriminants are encountered.
-    /// See the documentation of [`ReadIsotope`](system::ReadIsotope) for details.
+    /// See the documentation of [`ReadIsotopeFull`](system::ReadIsotopeFull) for details.
     ///
     /// # Panics
     /// - if the archetyped component is not used in any systems.
@@ -22,7 +32,7 @@ impl world::Components {
     pub fn read_full_isotope_storage<A, C>(
         &self,
         snapshot: ealloc::Snapshot<A::RawEntity>,
-    ) -> impl system::ReadIsotope<A, C> + '_
+    ) -> ReadIsotopeFull<A, C>
     where
         A: Archetype,
         C: comp::Isotope<A>,
@@ -42,13 +52,16 @@ impl world::Components {
                 .collect()
         };
 
-        isotope::Base {
-            getter: Getter { full_map: storage_map, accessor_storages, snapshot, _ph: PhantomData },
-        }
+        system::AccessIsotope::new(Storages {
+            full_map: storage_map,
+            accessor_storages,
+            snapshot,
+            _ph: PhantomData,
+        })
     }
 }
 
-struct Getter<'u, A, C>
+pub struct Storages<'u, A, C>
 where
     A: Archetype,
     C: comp::Isotope<A>,
@@ -59,7 +72,7 @@ where
     _ph:               PhantomData<(A, C)>,
 }
 
-impl<'u, A, C> isotope::read::StorageGet<A, C> for Getter<'u, A, C>
+impl<'u, A, C> StorageMap<A, C> for Storages<'u, A, C>
 where
     A: Archetype,
     C: comp::Isotope<A>,

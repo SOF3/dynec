@@ -140,7 +140,7 @@ pub trait Mapped {
 ///
 /// This is only used when storages of all isotopes are read/written in the same accessor
 /// (through [`Components::read_full_isotope_storage`][read_full_isotope_storage],
-/// or `impl system::ReadIsotope` without `#[dynec(isotope(discrim = xxx))]`).
+/// or [`system::ReadIsotopeFull`](crate::system::ReadIsotopeFull)))]`).
 ///
 /// [read_full_isotope_storage]: crate::world::Components::read_full_isotope_storage
 pub trait FullMap

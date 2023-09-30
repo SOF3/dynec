@@ -48,6 +48,18 @@ where
     fn deref(&self) -> &Self::Target { &self.0 }
 }
 
+/// A container that implements [`ops::Deref`]/[`ops::DerefMut`]
+/// without any special logic.
+pub struct OwnedDeref<T>(pub T);
+
+impl<T> ops::Deref for OwnedDeref<T> {
+    type Target = T;
+    fn deref(&self) -> &T { &self.0 }
+}
+impl<T> ops::DerefMut for OwnedDeref<T> {
+    fn deref_mut(&mut self) -> &mut T { &mut self.0 }
+}
+
 /// A TypeId that may include type name for debugging.
 #[derive(Debug, Clone, Copy)]
 pub struct DbgTypeId {

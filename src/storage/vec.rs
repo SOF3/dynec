@@ -5,7 +5,9 @@ use std::mem::{self, MaybeUninit};
 use bitvec::prelude::BitVec;
 use bitvec::slice::BitSlice;
 
-use super::{ChunkMut, ChunkRef, Chunked, Storage};
+use super::{
+    Access, AccessChunked, ChunkMut, ChunkRef, Chunked, Partition, PartitionChunked, Storage,
+};
 use crate::{entity, util};
 
 /// The basic storage indexed by entity IDs directly.
@@ -56,24 +58,9 @@ impl<E: entity::Raw, T> Default for VecStorage<E, T> {
     }
 }
 
-// Safety: the backend of `get`/`get_mut` is a slice.
-// Assuming `E` implements Eq + Ord correctly,
-// slices are injective because they are simply memory mapping.
-unsafe impl<E: entity::Raw, C: Send + Sync + 'static> Storage for VecStorage<E, C> {
+impl<E: entity::Raw, C: Send + Sync + 'static> Access for VecStorage<E, C> {
     type RawEntity = E;
     type Comp = C;
-
-    fn get(&self, id: E) -> Option<&C> {
-        let index = id.to_primitive();
-
-        if self.bit(index) {
-            let value = self.data.get(index).expect("bits mismatch");
-            let value = unsafe { value.assume_init_ref() };
-            Some(value)
-        } else {
-            None
-        }
-    }
 
     fn get_mut(&mut self, id: E) -> Option<&mut C> {
         let index = id.to_primitive();
@@ -81,6 +68,23 @@ unsafe impl<E: entity::Raw, C: Send + Sync + 'static> Storage for VecStorage<E, 
         if self.bit(index) {
             let value = self.data.get_mut(index).expect("bits mismatch");
             let value = unsafe { value.assume_init_mut() };
+            Some(value)
+        } else {
+            None
+        }
+    }
+
+    type IterMut<'t> = impl Iterator<Item = (Self::RawEntity, &'t mut Self::Comp)> + 't;
+    fn iter_mut(&mut self) -> Self::IterMut<'_> { iter_mut(0, &self.bits, &mut self.data) }
+}
+
+impl<E: entity::Raw, C: Send + Sync + 'static> Storage for VecStorage<E, C> {
+    fn get(&self, id: E) -> Option<&C> {
+        let index = id.to_primitive();
+
+        if self.bit(index) {
+            let value = self.data.get(index).expect("bits mismatch");
+            let value = unsafe { value.assume_init_ref() };
             Some(value)
         } else {
             None
@@ -140,9 +144,6 @@ unsafe impl<E: entity::Raw, C: Send + Sync + 'static> Storage for VecStorage<E, 
         })
     }
 
-    type IterMut<'t> = impl Iterator<Item = (Self::RawEntity, &'t mut Self::Comp)> + 't;
-    fn iter_mut(&mut self) -> Self::IterMut<'_> { iter_mut(0, &self.bits, &mut self.data) }
-
     type IterChunksMut<'t> = impl Iterator<Item = ChunkMut<'t, Self>> + 't;
     fn iter_chunks_mut(&mut self) -> Self::IterChunksMut<'_> {
         new_iter_chunks_mut(&self.bits, &mut self.data[..]).map(|(start_index, chunk)| ChunkMut {
@@ -179,18 +180,9 @@ pub struct StoragePartition<'t, E: entity::Raw, C> {
     _ph:    PhantomData<E>,
 }
 
-impl<'t, E: entity::Raw, C: Send + Sync + 'static> super::Partition<'t, E, C>
-    for StoragePartition<'t, E, C>
-{
-    type ByRef<'u> = StoragePartition<'u, E, C> where Self: 'u;
-    fn by_ref(&mut self) -> Self::ByRef<'_> {
-        StoragePartition {
-            bits:   self.bits,
-            data:   &mut *self.data,
-            offset: self.offset,
-            _ph:    PhantomData,
-        }
-    }
+impl<'t, E: entity::Raw, C: Send + Sync + 'static> Access for StoragePartition<'t, E, C> {
+    type RawEntity = E;
+    type Comp = C;
 
     fn get_mut(&mut self, entity: E) -> Option<&mut C> {
         let index = match entity.to_primitive().checked_sub(self.offset) {
@@ -210,8 +202,23 @@ impl<'t, E: entity::Raw, C: Send + Sync + 'static> super::Partition<'t, E, C>
         }
     }
 
-    type IterMut = impl Iterator<Item = (E, &'t mut C)>;
-    fn iter_mut(self) -> Self::IterMut { iter_mut(self.offset, self.bits, self.data) }
+    type IterMut<'u> = impl Iterator<Item = (Self::RawEntity, &'u mut Self::Comp)> + 'u where Self: 'u;
+    fn iter_mut(&mut self) -> Self::IterMut<'_> { self.by_ref().into_iter_mut() }
+}
+
+impl<'t, E: entity::Raw, C: Send + Sync + 'static> Partition<'t> for StoragePartition<'t, E, C> {
+    type ByRef<'u> = StoragePartition<'u, E, C> where Self: 'u;
+    fn by_ref(&mut self) -> Self::ByRef<'_> {
+        StoragePartition {
+            bits:   self.bits,
+            data:   &mut *self.data,
+            offset: self.offset,
+            _ph:    PhantomData,
+        }
+    }
+
+    type IntoIterMut = impl Iterator<Item = (E, &'t mut C)>;
+    fn into_iter_mut(self) -> Self::IntoIterMut { iter_mut(self.offset, self.bits, self.data) }
 
     fn partition_at(self, entity: E) -> (Self, Self) {
         let index =
@@ -236,22 +243,7 @@ impl<'t, E: entity::Raw, C: Send + Sync + 'static> super::Partition<'t, E, C>
     }
 }
 
-unsafe impl<E: entity::Raw, C: Send + Sync + 'static> Chunked for VecStorage<E, C> {
-    fn get_chunk(&self, start: Self::RawEntity, end: Self::RawEntity) -> Option<&[Self::Comp]> {
-        let range = start.to_primitive()..end.to_primitive();
-        let bits = match self.bits.get(range.clone()) {
-            Some(bits) => bits,
-            None => return None,
-        };
-        if !bits.all() {
-            return None;
-        }
-
-        let data =
-            self.data.get(range).expect("range exists in self.bits implies existence in self.data");
-        Some(unsafe { slice_assume_init_ref(data) })
-    }
-
+impl<E: entity::Raw, C: Send + Sync + 'static> AccessChunked for VecStorage<E, C> {
     fn get_chunk_mut(
         &mut self,
         start: Self::RawEntity,
@@ -272,6 +264,23 @@ unsafe impl<E: entity::Raw, C: Send + Sync + 'static> Chunked for VecStorage<E, 
             .expect("range exists in self.bits implies existence in self.data");
         Some(unsafe { slice_assume_init_mut(data) })
     }
+}
+
+impl<E: entity::Raw, C: Send + Sync + 'static> Chunked for VecStorage<E, C> {
+    fn get_chunk(&self, start: Self::RawEntity, end: Self::RawEntity) -> Option<&[Self::Comp]> {
+        let range = start.to_primitive()..end.to_primitive();
+        let bits = match self.bits.get(range.clone()) {
+            Some(bits) => bits,
+            None => return None,
+        };
+        if !bits.all() {
+            return None;
+        }
+
+        let data =
+            self.data.get(range).expect("range exists in self.bits implies existence in self.data");
+        Some(unsafe { slice_assume_init_ref(data) })
+    }
 
     type PartitionChunked<'u> = Self::Partition<'u>;
     fn as_partition_chunk(&mut self) -> Self::PartitionChunked<'_> {
@@ -284,9 +293,7 @@ unsafe impl<E: entity::Raw, C: Send + Sync + 'static> Chunked for VecStorage<E, 
     }
 }
 
-impl<'t, E: entity::Raw, C: Send + Sync + 'static> super::PartitionChunked<'t, E, C>
-    for StoragePartition<'t, E, C>
-{
+impl<'t, E: entity::Raw, C: Send + Sync + 'static> AccessChunked for StoragePartition<'t, E, C> {
     fn get_chunk_mut(&mut self, start: E, end: E) -> Option<&mut [C]> {
         let (start, end) = (start.to_primitive() - self.offset, end.to_primitive() - self.offset);
         let range = start..end;
@@ -305,7 +312,11 @@ impl<'t, E: entity::Raw, C: Send + Sync + 'static> super::PartitionChunked<'t, E
             .expect("range exists in self.bits implies existence in self.data");
         Some(unsafe { slice_assume_init_mut(data) })
     }
+}
 
+impl<'t, E: entity::Raw, C: Send + Sync + 'static> PartitionChunked<'t>
+    for StoragePartition<'t, E, C>
+{
     type IntoIterChunksMut = impl Iterator<Item = (E, &'t mut [C])>;
     fn into_iter_chunks_mut(self) -> Self::IntoIterChunksMut {
         // check correctness:

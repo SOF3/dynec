@@ -2,14 +2,29 @@ use std::marker::PhantomData;
 
 use crate::comp::discrim::{self, Mapped as _};
 use crate::entity::ealloc;
+use crate::system::access::{PartialStorageMap, StorageMap, StorageMapMut};
 use crate::world::rw::isotope;
 use crate::{comp, system, world, Archetype};
+
+/// Provides access to an isotope component in a specific archetype.
+///
+/// `DiscrimSetKey` is the type used to index the discriminant,
+/// depending on the type of discriminant set given.
+/// For vec and array discriminant sets, this should be `usize`.
+/// For partial isotope access, `K` is usually `usize`.
+/// For full isotope access, `K` is the discriminant type.
+///
+/// To share the same API as [`ReadIsotopeFull`](system::ReadIsotopeFull),
+/// immutable getters still require `&mut self`,
+/// but there are `*_ref` variants for [`ReadIsotopeFull`] that just require `&self`.
+pub type WriteIsotopePartial<A, C, DiscrimSet = Vec<<C as comp::Isotope<A>>::Discrim>> =
+    system::AccessIsotope<A, C, Storages<A, C, DiscrimSet>>;
 
 impl world::Components {
     /// Mutably access the requested discriminants of an isotope storage,
     /// lazily initializing new isotopes in `discrims` immediately.
     ///
-    /// The return value implements [`ReadIsotopeRef`](system::ReadIsotopeRef),
+    /// The return value provides `*_ref` getters,
     /// allowing shared read-only use of this accessor on multiple workers.
     ///
     /// # Panics
@@ -19,9 +34,7 @@ impl world::Components {
         &'t self,
         discrims: &'t DiscrimSet,
         snapshot: ealloc::Snapshot<A::RawEntity>,
-    ) -> impl system::ReadIsotopeRef<A, C, DiscrimSet::Key>
-           + system::WriteIsotope<A, C, DiscrimSet::Key>
-           + 't
+    ) -> WriteIsotopePartial<A, C, DiscrimSet>
     where
         A: Archetype,
         C: comp::Isotope<A>,
@@ -38,11 +51,11 @@ impl world::Components {
             })
         };
 
-        isotope::Base { getter: Getter::<A, C, DiscrimSet> { storages, _ph: PhantomData } }
+        system::AccessIsotope::new(Storages::<A, C, DiscrimSet> { storages, _ph: PhantomData })
     }
 }
 
-struct Getter<A, C, DiscrimSet>
+pub struct Storages<A, C, DiscrimSet>
 where
     A: Archetype,
     C: comp::Isotope<A>,
@@ -52,7 +65,7 @@ where
     _ph:      PhantomData<(A, C)>,
 }
 
-impl<A, C, DiscrimSet> isotope::read::StorageGet<A, C> for Getter<A, C, DiscrimSet>
+impl<A, C, DiscrimSet> StorageMap<A, C> for Storages<A, C, DiscrimSet>
 where
     A: Archetype,
     C: comp::Isotope<A>,
@@ -89,7 +102,7 @@ where
     }
 }
 
-impl<A, C, DiscrimSet> isotope::read::StorageGetRef<A, C> for Getter<A, C, DiscrimSet>
+impl<A, C, DiscrimSet> PartialStorageMap<A, C> for Storages<A, C, DiscrimSet>
 where
     A: Archetype,
     C: comp::Isotope<A>,
@@ -103,7 +116,7 @@ where
     }
 }
 
-impl<A, C, DiscrimSet> isotope::write::StorageGetMut<A, C> for Getter<A, C, DiscrimSet>
+impl<A, C, DiscrimSet> StorageMapMut<A, C> for Storages<A, C, DiscrimSet>
 where
     A: Archetype,
     C: comp::Isotope<A>,

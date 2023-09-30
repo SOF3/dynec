@@ -13,22 +13,19 @@ use std::any::TypeId;
 use crate::entity::{ealloc, referrer};
 use crate::world;
 use crate::world::offline;
+pub use crate::world::rw::isotope::read::full::ReadIsotopeFull;
+pub use crate::world::rw::isotope::read::partial::ReadIsotopePartial;
+pub use crate::world::rw::isotope::write::full::WriteIsotopeFull;
+pub use crate::world::rw::isotope::write::partial::WriteIsotopePartial;
+pub use crate::world::rw::simple::{ReadSimple, WriteSimple};
 
-mod rw;
-pub use rw::{
-    Mut, MutChunk, MutFull, MutFullChunk, MutPartition, MutPartitionChunk, Read, ReadChunk,
-    ReadIsotope, ReadIsotopeRef, ReadSimple, Write, WriteIsotope, WriteSimple,
-};
-
-pub(crate) mod accessor;
-pub use accessor::{Accessor, Chunked as ChunkedAccessor};
+pub(crate) mod access;
+pub use access::{AccessIsotope, AccessSingle};
 
 pub mod partition;
 pub use partition::{EntityCreationPartition, Partition};
 
 mod entity;
-#[doc(hidden)]
-pub use entity::{entity_iterator, EntityCreatorImpl, EntityDeleterImpl};
 pub use entity::{EntityCreator, EntityDeleter, EntityIterator};
 
 pub mod spec;

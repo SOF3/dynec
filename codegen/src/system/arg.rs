@@ -26,7 +26,7 @@ pub(super) enum ArgType {
         arch:         Box<syn::Type>,
         comp:         Box<syn::Type>,
         discrim:      Option<Box<syn::Expr>>,
-        discrim_key:  Result<Box<syn::Type>, Span>,
+        discrim_set:  Result<Box<syn::Type>, Span>,
         maybe_uninit: Vec<syn::Type>,
     },
     EntityCreator {
@@ -53,8 +53,8 @@ fn simple_partial_builder(mutable: bool, maybe_uninit: Vec<syn::Type>) -> Partia
             Error::new(
                 args_span,
                 "Cannot infer archetype and component for component access. Specify explicitly \
-                 with `#[dynec(simple(arch = X, comp = Y))]`, or use `impl ReadSimple<X, \
-                 Y>`/`impl WriteSimple<X, Y>`.",
+                 with `#[dynec(simple(arch = X, comp = Y))]`, or use `ReadSimple<X, \
+                 Y>`/`WriteSimple<X, Y>`.",
             )
         })?;
 
@@ -77,8 +77,8 @@ fn isotope_partial_builder(
             return Err(Error::new(
                 args_span,
                 "Cannot infer archetype and component for component access. Specify explicitly \
-                 with `#[dynec(isotope(arch = X, comp = Y))]`, or use `impl ReadIsotope<X, \
-                 Y>`/`impl WriteIsotope<X, Y>`.",
+                 with `#[dynec(isotope(arch = X, comp = Y))]`, or use \
+                 `(Read|Write)Isotope(Full|Isotope)<X, Y>`.",
             ));
         }
 
@@ -87,11 +87,11 @@ fn isotope_partial_builder(
         let discrim_key = args.get(2).map(|&ty| Box::new(ty.clone())).ok_or(args_span);
 
         Ok(ArgType::Isotope {
-            mutable: mutable || ident == "WriteIsotope",
+            mutable: mutable || ident.starts_with("WriteIsotope"),
             arch: Box::new(arch.clone()),
             comp: Box::new(comp.clone()),
             discrim,
-            discrim_key,
+            discrim_set: discrim_key,
             maybe_uninit,
         })
     })
@@ -165,30 +165,21 @@ pub(super) fn infer_arg_type(param: &mut syn::PatType) -> Result<ArgType> {
     let arg_type = match maybe_partial {
         Some(MaybePartial::Full(arg_type)) => arg_type,
         arg_type => {
-            let impl_ty = match &*param.ty {
-                syn::Type::ImplTrait(ty) => ty,
-                _ => return Err(Error::new_spanned(&param, USAGE_INFERENCE_ERROR)),
+            let syn::Type::Path(ty) = &*param.ty else {
+                return Err(Error::new_spanned(&*param.ty, USAGE_INFERENCE_ERROR));
             };
 
-            if impl_ty.bounds.len() != 1 {
-                return Err(Error::new_spanned(&impl_ty.bounds, USAGE_INFERENCE_ERROR));
-            }
-
-            let bound = match impl_ty.bounds.first().expect("bounds.len() == 1") {
-                syn::TypeParamBound::Trait(bound) => bound,
-                bound => return Err(Error::new_spanned(bound, USAGE_INFERENCE_ERROR)),
-            };
-
-            let trait_name = bound.path.segments.last().expect("path should not be empty");
+            let trait_name = ty.path.segments.last().expect("path should not be empty");
             let trait_name_string = trait_name.ident.to_string();
 
             let builder = match arg_type {
                 Some(MaybePartial::Partial(builder)) => builder,
                 None => match trait_name_string.as_str() {
                     "ReadSimple" | "WriteSimple" => simple_partial_builder(false, Vec::new()),
-                    "ReadIsotope" | "WriteIsotope" => {
-                        isotope_partial_builder(false, None, Vec::new())
-                    }
+                    "ReadIsotopePartial"
+                    | "WriteIsotopePartial"
+                    | "ReadIsotopeFull"
+                    | "WriteIsotopeFull" => isotope_partial_builder(false, None, Vec::new()),
                     "EntityCreator" => entity_creator_partial_builder(false),
                     "EntityDeleter" => entity_deleter_partial_builder(),
                     "EntityIterator" => entity_iterator_partial_builder(),
@@ -309,7 +300,7 @@ fn try_attr_to_arg_type(arg: opt::Arg, attr_span: Span, param_span: Span) -> Res
                         arch: arch.clone(),
                         comp: comp.clone(),
                         discrim: discrim.map(|(_, discrim)| discrim.clone()),
-                        discrim_key: discrim_key.map(|(_, ty)| ty.clone()),
+                        discrim_set: discrim_key.map(|(_, ty)| ty.clone()),
                         maybe_uninit,
                     })
                 }

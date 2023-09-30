@@ -4,12 +4,8 @@ use std::fmt;
 use crate::{comp, storage, world, Archetype};
 
 mod offline;
-mod read;
-mod write;
-
-struct Base<T> {
-    getter: T,
-}
+pub(crate) mod read;
+pub(crate) mod write;
 
 fn storage_map<A: Archetype, C: comp::Isotope<A>>(
     comps: &world::Components,

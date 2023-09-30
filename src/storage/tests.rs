@@ -3,7 +3,7 @@
 use std::marker::PhantomData;
 use std::num::NonZeroU32;
 
-use crate::storage::Partition;
+use crate::storage::{Access, Partition};
 use crate::Storage;
 
 macro_rules! test_storage {

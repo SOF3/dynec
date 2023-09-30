@@ -8,9 +8,7 @@ use crate::util::DbgTypeId;
 use crate::Archetype;
 
 pub(crate) mod isotope;
-mod partition;
 pub(crate) mod simple;
-use partition::{mut_owned_par_iter_chunks_mut, mut_owned_par_iter_mut, PartitionAccessor};
 
 /// Stores the component states in a world.
 pub struct Components {

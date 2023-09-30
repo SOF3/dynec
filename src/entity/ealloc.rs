@@ -195,6 +195,10 @@ pub struct ShardMap {
     map: HashMap<DbgTypeId, ShardMapEntry>,
 }
 
+/// Return value of [`ShardMap::borrow`].
+pub type BorrowedShard<'t, A: Archetype> = impl ops::DerefMut<Target = impl Shard<Raw = A::RawEntity, Hint = <A::Ealloc as Ealloc>::AllocHint>>
+    + 't;
+
 impl ShardMap {
     /// Gets the mutable shard reference.
     pub fn get<A: Archetype>(
@@ -213,11 +217,7 @@ impl ShardMap {
     }
 
     /// Borrows the shard for an archetype through a [`RefCell`].
-    pub fn borrow<A: Archetype>(
-        &self,
-    ) -> impl ops::DerefMut<
-        Target = impl Shard<Raw = A::RawEntity, Hint = <A::Ealloc as Ealloc>::AllocHint>,
-    > + '_ {
+    pub fn borrow<A: Archetype>(&self) -> BorrowedShard<A> {
         let shard = self.map.get(&TypeId::of::<A>()).expect("Use of unregistered archetype");
         let shard = shard
             .cell

@@ -164,6 +164,7 @@
 )]
 #![cfg_attr(doc, warn(missing_docs))]
 #![feature(impl_trait_in_assoc_type)]
+#![feature(type_alias_impl_trait)]
 #![feature(maybe_uninit_uninit_array, maybe_uninit_array_assume_init)]
 #![feature(never_type)]
 #![feature(sync_unsafe_cell)]

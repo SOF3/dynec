@@ -1,7 +1,8 @@
 use std::any::{type_name, TypeId};
 use std::sync::Arc;
 
-use crate::{comp, entity, world, Archetype, Storage as _};
+use crate::storage::Access as _;
+use crate::{comp, entity, world, Archetype};
 
 impl world::Components {
     fn offline_isotope_storage<A, C>(&mut self, discrim: C::Discrim) -> Option<&mut C::Storage>

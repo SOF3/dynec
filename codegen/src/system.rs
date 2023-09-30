@@ -40,8 +40,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
     let mut initial_state_field_defaults: Vec<Box<syn::Expr>> = Vec::new();
 
     let mut isotope_discrim_idents: Vec<syn::Ident> = Vec::new();
-    let mut isotope_discrim_ty_params: Vec<syn::Ident> = Vec::new();
-    let mut isotope_discrim_type_bounds: Vec<TokenStream> = Vec::new();
+    let mut isotope_discrim_tys: Vec<Box<syn::Type>> = Vec::new();
     let mut isotope_discrim_values: Vec<Box<syn::Expr>> = Vec::new();
 
     let mut input_types: Vec<syn::Type> = Vec::new();
@@ -157,31 +156,21 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                     false => quote!(components.read_simple_storage::<#arch, #comp>()),
                 }
             }
-            ArgType::Isotope { mutable, arch, comp, discrim, discrim_key, maybe_uninit } => {
+            ArgType::Isotope { mutable, arch, comp, discrim, discrim_set, maybe_uninit } => {
                 let discrim_field = if let Some(discrim) = discrim {
-                    let discrim_key = match discrim_key {
+                    let discrim_set = match discrim_set {
                         Ok(ty) => ty,
                         Err(span) => {
-                            return Err(Error::new(
-                                span,
-                                "Type parameter `K` must be specified for \
-                                 `ReadIsotope`/`WriteIsotope` if partial isotope access is used",
-                            ))
+                            let discrim_ty =
+                                quote!(<#comp as #crate_name::comp::Isotope<#arch>>::Discrim);
+                            syn::parse_quote_spanned! { span => ::std::vec::Vec<#discrim_ty> }
                         }
                     };
 
                     let discrim_ident =
                         quote::format_ident!("__dynec_isotope_discrim_{}", param_index);
                     isotope_discrim_idents.push(discrim_ident.clone());
-                    isotope_discrim_ty_params.push(quote::format_ident!(
-                        "__DynecDiscrimType{}",
-                        isotope_discrim_ty_params.len()
-                    ));
-                    isotope_discrim_type_bounds.push(quote!(
-                        #crate_name::comp::discrim::Set<
-                            <#comp as #crate_name::comp::Isotope<#arch>>::Discrim,
-                            Key = #discrim_key,
-                        >));
+                    isotope_discrim_tys.push(discrim_set);
                     isotope_discrim_values.push(discrim);
 
                     Some(quote!(self.__dynec_isotope_discrim_idents.#discrim_ident))
@@ -228,19 +217,15 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
                         #no_partition_call
                 });
 
-                quote!(#crate_name::system::EntityCreatorImpl {
-                    buffer: &offline_buffer,
-                    ealloc: ealloc_shard_map.borrow::<#arch>(),
-                })
+                quote!(#crate_name::system::EntityCreator::<#arch>::new(&offline_buffer, ealloc_shard_map.borrow::<#arch>()))
             }
             ArgType::EntityDeleter { arch } => {
-                quote!(#crate_name::system::EntityDeleterImpl::<#arch> {
-                    buffer: &offline_buffer,
-                    _ph: ::std::marker::PhantomData,
-                })
+                quote!(#crate_name::system::EntityDeleter::<#arch>::new (
+                    &offline_buffer,
+                ))
             }
             ArgType::EntityIterator { arch } => {
-                quote!(#crate_name::system::entity_iterator::<#arch>(ealloc_shard_map.snapshot::<#arch>().clone()))
+                quote!(#crate_name::system::EntityIterator::<#arch>::new(ealloc_shard_map.snapshot::<#arch>().clone()))
             }
         };
         system_run_args.push(run_arg);
@@ -269,20 +254,16 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
 
     let isotope_discrim_idents_struct = quote! {
         #[allow(non_camel_case_types)]
-        struct __dynec_isotope_discrim_idents<#(
-            #isotope_discrim_ty_params: #isotope_discrim_type_bounds,
-        )*> {
-            #(#isotope_discrim_idents: #isotope_discrim_ty_params,)*
+        struct __dynec_isotope_discrim_idents {
+            #(#isotope_discrim_idents: #isotope_discrim_tys,)*
         }
     };
     let mut local_state_struct = syn::parse2(quote! {
         #[allow(non_camel_case_types)]
-        struct __dynec_local_state<#(
-            #isotope_discrim_ty_params: #isotope_discrim_type_bounds,
-        )*> {
+        struct __dynec_local_state {
             #(#local_state_entity_attrs #local_state_field_idents: #local_state_field_tys,)*
             #[not_entity = "no entities can be assigned in discriminants because the world is not created yet."]
-            __dynec_isotope_discrim_idents: __dynec_isotope_discrim_idents<#(#isotope_discrim_ty_params,)*>,
+            __dynec_isotope_discrim_idents: __dynec_isotope_discrim_idents,
         }
     }).expect("invalid struct expression");
     let impl_referrer_for_local_state = entity_ref::entity_ref(
@@ -349,9 +330,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
 
     let impl_descriptor = quote! {
         #[automatically_derived]
-        impl<#(
-            #isotope_discrim_ty_params: #isotope_discrim_type_bounds,
-        )*> #crate_name::system::Descriptor for __dynec_local_state<#(#isotope_discrim_ty_params,)*> {
+        impl #crate_name::system::Descriptor for __dynec_local_state {
             fn get_spec(&self) -> #crate_name::system::Spec {
                 #destructure_local_states
 
@@ -382,9 +361,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
     };
     let impl_system = quote! {
         #[automatically_derived]
-        impl<#(
-            #isotope_discrim_ty_params: #isotope_discrim_type_bounds,
-        )*> #crate_name::system::#system_trait for __dynec_local_state<#(#isotope_discrim_ty_params,)*> {
+        impl #crate_name::system::#system_trait for __dynec_local_state {
             fn run(&mut self, #system_run_params) {
                 let offline_buffer = ::std::cell::RefCell::new(offline_buffer);
 

@@ -346,15 +346,15 @@ pub struct InitialEntities {
 /// A dummy system used for registering all non-entity-referencing test components.
 #[system(dynec_as(crate))]
 pub fn use_all_bare(
-    _comp1: impl system::ReadSimple<TestArch, Simple1OptionalNoDepNoInit>,
-    _comp2: impl system::ReadSimple<TestArch, Simple2OptionalDepends1>,
-    _comp3: impl system::ReadSimple<TestArch, Simple3OptionalDepends12>,
-    _comp4: impl system::ReadSimple<TestArch, Simple4Depends12>,
-    _comp5: impl system::ReadSimple<TestArch, Simple5RequiredNoInit>,
-    _comp6: impl system::ReadSimple<TestArch, Simple6RequiredWithInitNoDeps>,
-    _comp_final: impl system::ReadSimple<TestArch, Simple7WithFinalizerNoinit>,
-    _iso1: impl system::ReadIsotope<TestArch, IsoNoInit>,
-    _iso2: impl system::ReadIsotope<TestArch, IsoWithInit>,
+    _comp1: system::ReadSimple<TestArch, Simple1OptionalNoDepNoInit>,
+    _comp2: system::ReadSimple<TestArch, Simple2OptionalDepends1>,
+    _comp3: system::ReadSimple<TestArch, Simple3OptionalDepends12>,
+    _comp4: system::ReadSimple<TestArch, Simple4Depends12>,
+    _comp5: system::ReadSimple<TestArch, Simple5RequiredNoInit>,
+    _comp6: system::ReadSimple<TestArch, Simple6RequiredWithInitNoDeps>,
+    _comp_final: system::ReadSimple<TestArch, Simple7WithFinalizerNoinit>,
+    _iso1: system::ReadIsotopeFull<TestArch, IsoNoInit>,
+    _iso2: system::ReadIsotopeFull<TestArch, IsoWithInit>,
     #[dynec(global)] _agg: &Aggregator,
 ) {
 }
@@ -362,21 +362,21 @@ pub fn use_all_bare(
 /// A dummy system with minimally simple dependencies.
 #[system(dynec_as(crate))]
 pub fn use_comp_n(
-    _comp0: impl system::ReadSimple<TestArch, SimpleN<0>>,
-    _comp1: impl system::ReadSimple<TestArch, SimpleN<1>>,
-    _comp2: impl system::ReadSimple<TestArch, SimpleN<2>>,
-    _comp3: impl system::ReadSimple<TestArch, SimpleN<3>>,
-    _comp4: impl system::ReadSimple<TestArch, SimpleN<4>>,
-    _comp5: impl system::ReadSimple<TestArch, SimpleN<5>>,
-    _comp6: impl system::ReadSimple<TestArch, SimpleN<6>>,
-    _comp7: impl system::ReadSimple<TestArch, SimpleN<7>>,
-    _comp8: impl system::ReadSimple<TestArch, SimpleN<8>>,
-    _comp9: impl system::ReadSimple<TestArch, SimpleN<9>>,
-    _comp10: impl system::ReadSimple<TestArch, SimpleN<10>>,
-    _comp11: impl system::ReadSimple<TestArch, SimpleN<11>>,
-    _comp12: impl system::ReadSimple<TestArch, SimpleN<12>>,
-    _comp13: impl system::ReadSimple<TestArch, SimpleN<13>>,
-    _comp14: impl system::ReadSimple<TestArch, SimpleN<14>>,
-    _comp15: impl system::ReadSimple<TestArch, SimpleN<15>>,
+    _comp0: system::ReadSimple<TestArch, SimpleN<0>>,
+    _comp1: system::ReadSimple<TestArch, SimpleN<1>>,
+    _comp2: system::ReadSimple<TestArch, SimpleN<2>>,
+    _comp3: system::ReadSimple<TestArch, SimpleN<3>>,
+    _comp4: system::ReadSimple<TestArch, SimpleN<4>>,
+    _comp5: system::ReadSimple<TestArch, SimpleN<5>>,
+    _comp6: system::ReadSimple<TestArch, SimpleN<6>>,
+    _comp7: system::ReadSimple<TestArch, SimpleN<7>>,
+    _comp8: system::ReadSimple<TestArch, SimpleN<8>>,
+    _comp9: system::ReadSimple<TestArch, SimpleN<9>>,
+    _comp10: system::ReadSimple<TestArch, SimpleN<10>>,
+    _comp11: system::ReadSimple<TestArch, SimpleN<11>>,
+    _comp12: system::ReadSimple<TestArch, SimpleN<12>>,
+    _comp13: system::ReadSimple<TestArch, SimpleN<13>>,
+    _comp14: system::ReadSimple<TestArch, SimpleN<14>>,
+    _comp15: system::ReadSimple<TestArch, SimpleN<15>>,
 ) {
 }

@@ -1,27 +1,25 @@
 #![allow(clippy::ptr_arg)]
 
-use crate::entity::{deletion, generation, Raw, Ref};
-use crate::system::{Read as _, Write as _};
+use crate::entity::{deletion, generation, Ref};
 use crate::test_util::*;
 use crate::{global, system, system_test, tracer, world, Entity};
 
 #[system(dynec_as(crate))]
 fn common_test_system(
-    _comp3: impl system::ReadSimple<TestArch, Simple3OptionalDepends12>,
-    _comp4: impl system::WriteSimple<TestArch, Simple4Depends12>,
-    _comp5: impl system::ReadSimple<TestArch, Simple5RequiredNoInit>,
-    _comp6: impl system::ReadSimple<TestArch, Simple6RequiredWithInitNoDeps>,
-    #[dynec(isotope(discrim = [TestDiscrim1(11), TestDiscrim1(17)]))] _iso1: impl system::ReadIsotope<
-        TestArch,
-        IsoNoInit,
-        usize,
-    >,
+    _comp3: system::ReadSimple<TestArch, Simple3OptionalDepends12>,
+    _comp4: system::WriteSimple<TestArch, Simple4Depends12>,
+    _comp5: system::ReadSimple<TestArch, Simple5RequiredNoInit>,
+    _comp6: system::ReadSimple<TestArch, Simple6RequiredWithInitNoDeps>,
+    #[dynec(isotope(discrim = [TestDiscrim1(11), TestDiscrim1(17)]))]
+    _iso1: system::ReadIsotopePartial<TestArch, IsoNoInit, [TestDiscrim1; 2]>,
     #[dynec(global)] _aggregator: &mut Aggregator,
     #[dynec(global)] _initials: &InitialEntities,
 ) {
 }
 
 #[test]
+#[should_panic = "The component TestArch/Simple2OptionalDepends1 cannot be used because it is not \
+                  used in any systems"]
 fn test_dependencies_successful() {
     let mut world = system_test!(common_test_system.build(););
     let entity = world.create::<TestArch>(crate::comps![ @(crate) TestArch =>
@@ -31,15 +29,15 @@ fn test_dependencies_successful() {
         @(TestDiscrim1(17), IsoNoInit(3)),
     ]);
 
-    match world.components.get_simple::<TestArch, Simple4Depends12, _>(&entity) {
-        Some(&mut Simple4Depends12(c40, c41)) => {
+    match world.components.get_simple_storage::<TestArch, Simple4Depends12>().try_get(&entity) {
+        Some(&Simple4Depends12(c40, c41)) => {
             assert_eq!(c40, 7);
             assert_eq!(c41, (1 + 2) * 8);
         }
         None => panic!("Simple4Depends12 is used in system_with_comp3_comp4_comp5"),
     }
 
-    world.components.get_simple::<TestArch, Simple2OptionalDepends1, _>(&entity);
+    world.components.get_simple_storage::<TestArch, Simple2OptionalDepends1>();
     // panic here
 }
 
@@ -90,7 +88,7 @@ fn test_global_uninit() {
 fn test_simple_fetch() {
     #[system(dynec_as(crate))]
     fn test_system(
-        mut comp5: impl system::WriteSimple<TestArch, Simple5RequiredNoInit>,
+        mut comp5: system::WriteSimple<TestArch, Simple5RequiredNoInit>,
         #[dynec(global)] initials: &InitialEntities,
     ) {
         let ent = initials.strong.as_ref().expect("initials.strong is None");
@@ -107,13 +105,22 @@ fn test_simple_fetch() {
 
     world.execute(&tracer::Log(log::Level::Trace));
 
-    let comp = world.components.get_simple::<TestArch, Simple5RequiredNoInit, _>(ent);
-    assert_eq!(comp, Some(&mut Simple5RequiredNoInit(20)));
+    let comp =
+        world.components.get_simple_storage::<TestArch, Simple5RequiredNoInit>().try_get(ent);
+    assert_eq!(comp, Some(&Simple5RequiredNoInit(20)));
 }
 
 fn isotope_discrim_read_test_system(
-    mut iso1: impl system::ReadIsotope<TestArch, IsoNoInit>,
-    mut iso2: impl system::ReadIsotope<TestArch, IsoWithInit>,
+    mut iso1: system::AccessIsotope<
+        TestArch,
+        IsoNoInit,
+        impl system::access::StorageMap<TestArch, IsoNoInit, Key = TestDiscrim1>,
+    >,
+    mut iso2: system::AccessIsotope<
+        TestArch,
+        IsoWithInit,
+        impl system::access::StorageMap<TestArch, IsoWithInit, Key = TestDiscrim2>,
+    >,
     initials: &InitialEntities,
 ) {
     let ent = initials.strong.as_ref().expect("initials.strong is None");
@@ -157,8 +164,8 @@ fn isotope_discrim_test_world(system: impl system::Sendable + 'static) -> world:
 fn test_full_isotope_discrim_write() {
     #[system(dynec_as(crate))]
     fn test_sys(
-        iso1: impl system::WriteIsotope<TestArch, IsoNoInit>,
-        iso2: impl system::WriteIsotope<TestArch, IsoWithInit>,
+        iso1: system::WriteIsotopeFull<TestArch, IsoNoInit>,
+        iso2: system::WriteIsotopeFull<TestArch, IsoWithInit>,
         #[dynec(global)] initials: &InitialEntities,
     ) {
         isotope_discrim_read_test_system(iso1, iso2, initials);
@@ -173,8 +180,8 @@ fn test_full_isotope_discrim_write() {
 fn test_full_isotope_discrim_read() {
     #[system(dynec_as(crate))]
     fn test_system(
-        iso1: impl system::ReadIsotope<TestArch, IsoNoInit>,
-        iso2: impl system::ReadIsotope<TestArch, IsoWithInit>,
+        iso1: system::ReadIsotopeFull<TestArch, IsoNoInit>,
+        iso2: system::ReadIsotopeFull<TestArch, IsoWithInit>,
         #[dynec(global)] initials: &InitialEntities,
     ) {
         isotope_discrim_read_test_system(iso1, iso2, initials)
@@ -224,10 +231,9 @@ fn partial_isotope_discrim_read(
         #[dynec(param)] _req_discrims: &Vec<TestDiscrim1>,
         #[dynec(param)] single_expects: &Vec<(usize, Option<IsoNoInit>)>,
         #[dynec(param)] expect_all: &Vec<(TestDiscrim1, IsoNoInit)>,
-        #[dynec(isotope(discrim = _req_discrims))] mut iso1: impl system::ReadIsotope<
+        #[dynec(isotope(discrim = _req_discrims))] mut iso1: system::ReadIsotopePartial<
             TestArch,
             IsoNoInit,
-            usize,
         >,
         #[dynec(global)] initials: &InitialEntities,
     ) {
@@ -279,10 +285,9 @@ fn partial_isotope_discrim_write(
         #[dynec(param)] _req_discrims: &Vec<TestDiscrim1>,
         #[dynec(param)] single_expect_updates: &mut Vec<SingleExpectUpdate>,
         #[dynec(param)] expect_all: &Vec<(TestDiscrim1, IsoNoInit)>,
-        #[dynec(isotope(discrim = _req_discrims))] mut iso1: impl system::WriteIsotope<
+        #[dynec(isotope(discrim = _req_discrims))] mut iso1: system::WriteIsotopePartial<
             TestArch,
             IsoNoInit,
-            usize,
         >,
         #[dynec(global)] initials: &InitialEntities,
     ) {
@@ -330,7 +335,7 @@ fn test_offline_create() {
 
     #[system(dynec_as(crate), before(LatePartition))]
     fn entity_creator_system(
-        mut entity_creator: impl system::EntityCreator<TestArch>,
+        mut entity_creator: system::EntityCreator<TestArch>,
         #[dynec(global(maybe_uninit(TestArch)))] initials: &mut InitialEntities,
         #[dynec(global)] step: &Step,
     ) {
@@ -347,7 +352,7 @@ fn test_offline_create() {
 
     #[system(dynec_as(crate))]
     fn comp_access_system(
-        comp1: impl system::ReadSimple<TestArch, Simple1OptionalNoDepNoInit>,
+        comp1: system::ReadSimple<TestArch, Simple1OptionalNoDepNoInit>,
         #[dynec(global)] initials: &InitialEntities,
         #[dynec(global)] step: &Step,
     ) {
@@ -365,7 +370,7 @@ fn test_offline_create() {
     #[system(dynec_as(crate), after(LatePartition))]
     fn late_comp_access_system(
         // component storage does not require maybe_uninit unless the component has something like `Option<Box<Self>>`
-        comp1: impl system::ReadSimple<TestArch, Simple1OptionalNoDepNoInit>,
+        comp1: system::ReadSimple<TestArch, Simple1OptionalNoDepNoInit>,
         #[dynec(global(maybe_uninit(TestArch)))] initials: &InitialEntities,
         #[dynec(global)] step: &Step,
     ) {
@@ -392,8 +397,9 @@ fn test_offline_create() {
         let ent = initials.strong.as_ref().expect("initials.strong missing");
         ent.clone()
     };
-    let comp1 = world.components.get_simple::<TestArch, Simple1OptionalNoDepNoInit, _>(&ent);
-    assert_eq!(comp1, Some(&mut Simple1OptionalNoDepNoInit(5)));
+    let comp1 =
+        world.components.get_simple_storage::<TestArch, Simple1OptionalNoDepNoInit>().try_get(&ent);
+    assert_eq!(comp1, Some(&Simple1OptionalNoDepNoInit(5)));
 }
 
 #[test]
@@ -401,9 +407,9 @@ fn test_offline_create() {
 fn test_offline_create_conflict() {
     #[system(dynec_as(crate))]
     fn test_system(
-        mut entity_creator: impl system::EntityCreator<TestArch>,
+        mut entity_creator: system::EntityCreator<TestArch>,
         #[dynec(global)] initials: &mut InitialEntities,
-        _comp1: impl system::ReadSimple<TestArch, Simple1OptionalNoDepNoInit>,
+        _comp1: system::ReadSimple<TestArch, Simple1OptionalNoDepNoInit>,
     ) {
         initials.strong = Some(
             entity_creator
@@ -420,17 +426,18 @@ fn test_offline_create_conflict() {
         let ent = initials.strong.as_ref().expect("initials.strong missing");
         ent.clone()
     };
-    let comp1 = world.components.get_simple::<TestArch, Simple1OptionalNoDepNoInit, _>(&ent);
-    assert_eq!(comp1, Some(&mut Simple1OptionalNoDepNoInit(5)));
+    let comp1 =
+        world.components.get_simple_storage::<TestArch, Simple1OptionalNoDepNoInit>().try_get(&ent);
+    assert_eq!(comp1, Some(&Simple1OptionalNoDepNoInit(5)));
 }
 
 #[test]
 fn test_offline_delete() {
     #[system(dynec_as(crate))]
     fn test_system(
-        mut entity_deleter: impl system::EntityDeleter<TestArch>,
+        mut entity_deleter: system::EntityDeleter<TestArch>,
         #[dynec(global)] initials: &mut InitialEntities,
-        _comp1: impl system::ReadSimple<TestArch, Simple1OptionalNoDepNoInit>,
+        _comp1: system::ReadSimple<TestArch, Simple1OptionalNoDepNoInit>,
     ) {
         entity_deleter.queue(initials.strong.take().expect("initials.strong missing"));
     }
@@ -442,7 +449,10 @@ fn test_offline_delete() {
 
     world.execute(&tracer::Log(log::Level::Trace));
 
-    let comp1 = world.components.get_simple::<TestArch, Simple1OptionalNoDepNoInit, _>(&weak);
+    let comp1 = world
+        .components
+        .get_simple_storage::<TestArch, Simple1OptionalNoDepNoInit>()
+        .try_get(&weak);
     assert_eq!(comp1, None);
 }
 
@@ -460,9 +470,9 @@ fn test_offline_delete_send_system_leak() {
     #[system(dynec_as(crate))]
     fn test_system(
         #[dynec(local(initial = None, entity))] entity: &mut Option<Entity<TestArch>>,
-        mut entity_deleter: impl system::EntityDeleter<TestArch>,
+        mut entity_deleter: system::EntityDeleter<TestArch>,
         #[dynec(global)] initials: &mut InitialEntities,
-        _comp1: impl system::ReadSimple<TestArch, Simple1OptionalNoDepNoInit>,
+        _comp1: system::ReadSimple<TestArch, Simple1OptionalNoDepNoInit>,
     ) {
         if let Some(ent) = initials.strong.take() {
             *entity = Some(ent);
@@ -484,7 +494,10 @@ fn test_offline_delete_send_system_leak() {
 
     world.execute(&tracer::Log(log::Level::Trace));
 
-    let comp1 = world.components.get_simple::<TestArch, Simple1OptionalNoDepNoInit, _>(&weak);
+    let comp1 = world
+        .components
+        .get_simple_storage::<TestArch, Simple1OptionalNoDepNoInit>()
+        .try_get(&weak);
     assert_eq!(comp1, None);
 }
 
@@ -502,9 +515,9 @@ fn test_offline_delete_unsend_system_leak() {
     #[system(dynec_as(crate), thread_local)]
     fn test_system(
         #[dynec(local(initial = None, entity))] entity: &mut Option<Entity<TestArch>>,
-        mut entity_deleter: impl system::EntityDeleter<TestArch>,
+        mut entity_deleter: system::EntityDeleter<TestArch>,
         #[dynec(global)] initials: &mut InitialEntities,
-        _comp1: impl system::ReadSimple<TestArch, Simple1OptionalNoDepNoInit>,
+        _comp1: system::ReadSimple<TestArch, Simple1OptionalNoDepNoInit>,
     ) {
         if let Some(ent) = initials.strong.take() {
             *entity = Some(ent);
@@ -526,7 +539,10 @@ fn test_offline_delete_unsend_system_leak() {
 
     world.execute(&tracer::Log(log::Level::Trace));
 
-    let comp1 = world.components.get_simple::<TestArch, Simple1OptionalNoDepNoInit, _>(&weak);
+    let comp1 = world
+        .components
+        .get_simple_storage::<TestArch, Simple1OptionalNoDepNoInit>()
+        .try_get(&weak);
     assert_eq!(comp1, None);
 }
 
@@ -544,9 +560,9 @@ fn test_offline_delete_unsend_system_leak() {
 fn test_offline_delete_sync_global_leak() {
     #[system(dynec_as(crate))]
     fn test_system(
-        mut entity_deleter: impl system::EntityDeleter<TestArch>,
+        mut entity_deleter: system::EntityDeleter<TestArch>,
         #[dynec(global)] initials: &mut InitialEntities,
-        _comp1: impl system::ReadSimple<TestArch, Simple1OptionalNoDepNoInit>,
+        _comp1: system::ReadSimple<TestArch, Simple1OptionalNoDepNoInit>,
     ) {
         entity_deleter.queue(initials.strong.as_ref().expect("initials.strong missing"));
     }
@@ -572,9 +588,9 @@ fn test_offline_delete_sync_global_leak() {
 fn test_offline_delete_unsync_global_leak() {
     #[system(dynec_as(crate), thread_local)]
     fn test_system(
-        mut entity_deleter: impl system::EntityDeleter<TestArch>,
+        mut entity_deleter: system::EntityDeleter<TestArch>,
         #[dynec(global(thread_local))] initials: &mut InitialEntities,
-        _comp1: impl system::ReadSimple<TestArch, Simple1OptionalNoDepNoInit>,
+        _comp1: system::ReadSimple<TestArch, Simple1OptionalNoDepNoInit>,
     ) {
         entity_deleter.queue(initials.strong.as_ref().expect("initials.strong missing"));
     }
@@ -604,9 +620,9 @@ fn test_offline_delete_unsync_global_leak() {
 fn test_offline_delete_simple_leak() {
     #[system(dynec_as(crate))]
     fn test_system(
-        mut entity_deleter: impl system::EntityDeleter<TestArch>,
+        mut entity_deleter: system::EntityDeleter<TestArch>,
         #[dynec(global)] initials: &mut InitialEntities,
-        _srs: impl system::ReadSimple<TestArch, StrongRefSimple>,
+        _srs: system::ReadSimple<TestArch, StrongRefSimple>,
     ) {
         let entity = initials.weak.as_ref().expect("initials.strong missing");
         entity_deleter.queue(entity);
@@ -640,9 +656,9 @@ fn test_offline_delete_simple_leak() {
 fn test_offline_delete_isotope_leak() {
     #[system(dynec_as(crate))]
     fn test_system(
-        mut entity_deleter: impl system::EntityDeleter<TestArch>,
+        mut entity_deleter: system::EntityDeleter<TestArch>,
         #[dynec(global)] initials: &mut InitialEntities,
-        _sri: impl system::ReadIsotope<TestArch, StrongRefIsotope>,
+        _sri: system::ReadIsotopeFull<TestArch, StrongRefIsotope>,
     ) {
         let entity = initials.weak.as_ref().expect("initials.strong missing");
         entity_deleter.queue(entity);
@@ -666,11 +682,11 @@ fn test_offline_delete_isotope_leak() {
 fn test_offline_finalizer_delete() {
     #[system(dynec_as(crate))]
     fn test_system(
-        mut entity_deleter: impl system::EntityDeleter<TestArch>,
+        mut entity_deleter: system::EntityDeleter<TestArch>,
         #[dynec(global)] initials: &mut InitialEntities,
-        deletion_flags: impl system::ReadSimple<TestArch, deletion::Flag>,
-        mut comp_final: impl system::WriteSimple<TestArch, Simple7WithFinalizerNoinit>,
-        _comp1: impl system::ReadSimple<TestArch, Simple1OptionalNoDepNoInit>,
+        deletion_flags: system::ReadSimple<TestArch, deletion::Flag>,
+        mut comp_final: system::WriteSimple<TestArch, Simple7WithFinalizerNoinit>,
+        _comp1: system::ReadSimple<TestArch, Simple1OptionalNoDepNoInit>,
     ) {
         let ent = initials.strong.as_ref().expect("initials.strong missing");
         if deletion_flags.try_get(ent).is_some() {
@@ -691,13 +707,19 @@ fn test_offline_finalizer_delete() {
         // first iteration
         world.execute(&tracer::Log(log::Level::Trace));
 
-        let comp1 = world.components.get_simple::<TestArch, Simple1OptionalNoDepNoInit, _>(&weak);
-        assert_eq!(comp1, Some(&mut Simple1OptionalNoDepNoInit(13)));
+        let comp1 = world
+            .components
+            .get_simple_storage::<TestArch, Simple1OptionalNoDepNoInit>()
+            .try_get(&weak);
+        assert_eq!(comp1, Some(&Simple1OptionalNoDepNoInit(13)));
 
         // second iteration
         world.execute(&tracer::Log(log::Level::Trace));
 
-        let comp1 = world.components.get_simple::<TestArch, Simple1OptionalNoDepNoInit, _>(&weak);
+        let comp1 = world
+            .components
+            .get_simple_storage::<TestArch, Simple1OptionalNoDepNoInit>()
+            .try_get(&weak);
         assert_eq!(comp1, None);
     }
 }
@@ -706,14 +728,14 @@ fn test_offline_finalizer_delete() {
 fn test_entity_iter_partial_mut() {
     #[system(dynec_as(crate))]
     fn test_system(
-        iter: impl system::EntityIterator<TestArch>,
-        comp1_acc: impl system::ReadSimple<TestArch, Simple1OptionalNoDepNoInit>,
+        iter: system::EntityIterator<TestArch>,
+        comp1_acc: system::ReadSimple<TestArch, Simple1OptionalNoDepNoInit>,
         #[dynec(isotope(discrim = [TestDiscrim1(7), TestDiscrim1(13)]))]
-        mut iso1_acc: impl system::WriteIsotope<TestArch, IsoNoInit, usize>,
-        #[dynec(isotope(discrim = [TestDiscrim1(31)]))] mut iso1_acc_31: impl system::ReadIsotope<
+        mut iso1_acc: system::WriteIsotopePartial<TestArch, IsoNoInit, [TestDiscrim1; 2]>,
+        #[dynec(isotope(discrim = [TestDiscrim1(31)]))] mut iso1_acc_31: system::ReadIsotopePartial<
             TestArch,
             IsoNoInit,
-            usize,
+            [TestDiscrim1; 1],
         >,
     ) {
         let [mut iso1_acc_0, mut iso1_acc_1] = iso1_acc.split_isotopes([0, 1]);
@@ -773,9 +795,9 @@ fn test_entity_iter_partial_mut() {
 fn test_entity_iter_full_mut() {
     #[system(dynec_as(crate))]
     fn test_system(
-        iter: impl system::EntityIterator<TestArch>,
-        comp1_acc: impl system::ReadSimple<TestArch, Simple1OptionalNoDepNoInit>,
-        mut iso1_acc: impl system::WriteIsotope<TestArch, IsoNoInit>,
+        iter: system::EntityIterator<TestArch>,
+        comp1_acc: system::ReadSimple<TestArch, Simple1OptionalNoDepNoInit>,
+        mut iso1_acc: system::WriteIsotopeFull<TestArch, IsoNoInit>,
     ) {
         let [mut iso1_acc_0, mut iso1_acc_1] =
             iso1_acc.split_isotopes([TestDiscrim1(7), TestDiscrim1(13)]);
@@ -829,9 +851,9 @@ fn test_entity_iter_full_mut() {
 fn test_entity_create_and_delete() {
     #[system(dynec_as(crate))]
     fn test_system(
-        mut entity_creator: impl system::EntityCreator<TestArch>,
-        _entity_deleter: impl system::EntityDeleter<TestArch>,
-        entity_iter: impl system::EntityIterator<TestArch>,
+        mut entity_creator: system::EntityCreator<TestArch>,
+        _entity_deleter: system::EntityDeleter<TestArch>,
+        entity_iter: system::EntityIterator<TestArch>,
     ) {
         let entity = entity_creator
             .create(crate::comps![ @(crate) TestArch => Simple1OptionalNoDepNoInit(1) ]);
@@ -841,7 +863,7 @@ fn test_entity_create_and_delete() {
     }
 
     #[system(dynec_as(crate))]
-    fn dummy_reader_system(_: impl system::ReadSimple<TestArch, Simple1OptionalNoDepNoInit>) {}
+    fn dummy_reader_system(_: system::ReadSimple<TestArch, Simple1OptionalNoDepNoInit>) {}
 
     let mut world = system_test! {
         test_system.build(), dummy_reader_system.build();

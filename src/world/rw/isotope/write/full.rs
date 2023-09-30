@@ -6,8 +6,18 @@ use parking_lot::MutexGuard;
 use crate::comp::discrim::{FullMap as _, Mapped as _};
 use crate::comp::{self, Discrim};
 use crate::entity::ealloc;
+use crate::system::access::{StorageMap, StorageMapMut};
 use crate::world::rw::isotope;
 use crate::{storage, system, world, Archetype};
+
+/// Provides access to an isotope component in a specific archetype.
+///
+/// Getters require a mutable receiver to allow lazy initialization of new discriminants.
+/// Consider [splitting](system::AccessIsotope::split) accessors,
+/// which returns a [`system::AccessSingle`] with a shared receiver.
+/// If it can be asserted that no uninitialized discriminants will be encountered,
+/// use with [`known_discrims`](system::AccessIsotope::known_discrims).
+pub type WriteIsotopeFull<'t, A, C> = system::AccessIsotope<A, C, Storages<'t, A, C>>;
 
 impl world::Components {
     /// Mutably access all discriminants of an isotope storage,
@@ -19,7 +29,7 @@ impl world::Components {
     pub fn write_full_isotope_storage<A, C>(
         &self,
         snapshot: ealloc::Snapshot<A::RawEntity>,
-    ) -> impl system::WriteIsotope<A, C> + '_
+    ) -> WriteIsotopeFull<A, C>
     where
         A: Archetype,
         C: comp::Isotope<A>,
@@ -43,11 +53,16 @@ impl world::Components {
             })
             .collect();
 
-        isotope::Base { getter: Getter { full_map, accessor_storages, snapshot, _ph: PhantomData } }
+        system::AccessIsotope::new(Storages {
+            full_map,
+            accessor_storages,
+            snapshot,
+            _ph: PhantomData,
+        })
     }
 }
 
-struct Getter<'u, A, C>
+pub struct Storages<'u, A, C>
 where
     A: Archetype,
     C: comp::Isotope<A>,
@@ -58,7 +73,7 @@ where
     _ph:               PhantomData<(A, C)>,
 }
 
-impl<'u, A, C> isotope::read::StorageGet<A, C> for Getter<'u, A, C>
+impl<'u, A, C> StorageMap<A, C> for Storages<'u, A, C>
 where
     A: Archetype,
     C: comp::Isotope<A>,
@@ -106,7 +121,7 @@ where
     }
 }
 
-impl<'u, A, C> isotope::write::StorageGetMut<A, C> for Getter<'u, A, C>
+impl<'u, A, C> StorageMapMut<A, C> for Storages<'u, A, C>
 where
     A: Archetype,
     C: comp::Isotope<A>,

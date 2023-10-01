@@ -34,41 +34,67 @@ pub(crate) fn imp(input: TokenStream) -> Result<TokenStream> {
                 #(#field_meta #field_vis #field_ident: #field_ty,)*
             }
 
-            unsafe impl<__Arch: #crate_name::Archetype, #(#field_ty),*>
-                #crate_name::system::Accessor<__Arch>
+            impl<__Arch: #crate_name::Archetype, #(#field_ty),*>
+                #crate_name::system::IntoZip<__Arch>
                 for #ident<#(#field_ty,)*>
             where
-                #(#field_ty: #crate_name::system::Accessor<__Arch>,)*
+                #(#field_ty: #crate_name::system::IntoZip<__Arch>,)*
             {
-                type Entity<'t> = #ident<
-                    #(<#field_ty as #crate_name::system::Accessor<__Arch>>::Entity<'t>,)*
-                > where Self: 't;
-                unsafe fn entity<'this, 'e, 'ret>(this: &'this mut Self, entity: #crate_name::entity::TempRef<'e, __Arch>) -> Self::Entity<'ret> {
-                    #ident {
-                        #(#field_ident: <#field_ty as #crate_name::system::Accessor<__Arch>>::entity(
-                            &mut this.#field_ident,
-                            entity,
-                        ),)*
-                    }
+                type IntoZip = #ident<#(<#field_ty as #crate_name::system::IntoZip<__Arch>>::IntoZip,)*>;
+
+                fn into_zip(self) -> Self::IntoZip {
+                    let #ident{#(#field_ident,)*} = self;
+                    #ident { #(
+                        IntoZip::<A>::into_zip(#field_ident),
+                    )* }
                 }
             }
 
-            unsafe impl<__Arch: #crate_name::Archetype, #(#field_ty),*>
-                #crate_name::system::ChunkedAccessor<__Arch>
+            impl<__Arch: #crate_name::Archetype, #(#field_ty),*>
+                #crate_name::system::Zip<__Arch>
                 for #ident<#(#field_ty,)*>
             where
-                #(#field_ty: #crate_name::system::ChunkedAccessor<__Arch>,)*
+                #(#field_ty: #crate_name::system::Zip<__Arch>,)*
             {
-                type Chunk<'t> = #ident<
-                    #(<#field_ty as #crate_name::system::ChunkedAccessor<__Arch>>::Chunk<'t>,)*
-                > where Self: 't;
-                unsafe fn chunk<'this, 'e, 'ret>(this: &'this mut Self, chunk: #crate_name::entity::TempRefChunk<'e, __Arch>) -> Self::Chunk<'ret> {
-                    #ident {
-                        #(#field_ident: <#field_ty as #crate_name::system::ChunkedAccessor<__Arch>>::chunk(
-                            &mut this.#field_ident,
-                            chunk,
-                        ),)*
-                    }
+                fn split(&mut self, offset: __Arch::RawEntity) -> Self {
+                    let (#(#field_ident,)*) = self;
+                    #ident { #(
+                        #field_ident: <#field_ty as #crate_name::system::access::Zip<__Arch>>::split(#field_ident, offset),
+                    )* }
+                }
+
+                type Item = #ident<
+                    #(<#field_ty as #crate_name::system::access::Zip<__Arch>>::Item,)*
+                >;
+                fn get_chunk<E: #crate_name::entity::TempRef<__Arch>>(self, __dynec_entity: E) -> Self::Item {
+                    let Self { #(#field_ident,)* } = self;
+                    let __dynec_entity = entity::TempRef::<A>::new(__dynec_entity.id());
+                    #ident { #(
+                        #field_ident: <#field_ty as #crate_name::system::access::Zip<__Arch>>::get(
+                            #field_ident,
+                            __dynec_entity,
+                        ),
+                    )* }
+                }
+            }
+
+            impl<__Arch: #crate_name::Archetype, #(#field_ty),*>
+                #crate_name::system::access::ZipChunked<__Arch>
+                for #ident<#(#field_ty,)*>
+            where
+                #(#field_ty: #crate_name::system::access::ZipChunked<__Arch>,)*
+            {
+                type Chunk = #ident<
+                    #(<#field_ty as #crate_name::system::access::ZipChunked<__Arch>>::Chunk,)*
+                >;
+                fn get_chunk(self, __dynec_chunk: #crate_name::entity::TempRefChunk<__Arch>) -> Self::Chunk {
+                    let Self { #(#field_ident,)* } = self;
+                    #ident { #(
+                        #field_ident: <#field_ty as #crate_name::system::access::ZipChunked<__Arch>>::get_chunk(
+                            #field_ident,
+                            __dynec_chunk,
+                        ),
+                    )* }
                 }
             }
         };

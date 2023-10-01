@@ -4,33 +4,47 @@ use std::{any, ops};
 use super::AccessSingle;
 use crate::{comp, entity, storage, util, Archetype, Storage};
 
-/// Multiple single accessors zipped together.
-pub trait Zip: Sized {
-    type Archetype: Archetype;
+/// Multiple single accessors zipped together,
+/// to be used with [`EntityIterator::entities_with`](crate::system::EntityIterator::entities_with).
+///
+/// All accessors must target the same archetype `A`.
+///
+/// See [`IntoZip`] for what values can be passed for `Zip`.
+pub trait Zip<A: Archetype>: Sized {
+    /// Vertically splits each underlying storage vertically (by entities) at `offset`.
+    fn split(&mut self, offset: A::RawEntity) -> Self;
 
-    fn split(&mut self, offset: <Self::Archetype as Archetype>::RawEntity) -> Self;
-
+    /// The type of values available for a single entity.
     type Item;
-    fn get<E: entity::Ref<Archetype = Self::Archetype>>(self, entity: E) -> Self::Item;
+    /// Returns the requested components for the specified entity.
+    fn get<E: entity::Ref<Archetype = A>>(self, entity: E) -> Self::Item;
 }
 
-pub trait ZipChunked: Zip {
+/// [`Zip`] accessors with the additional condition that
+/// all underlying storages support chunked access,
+/// to be used with [`EntityIterator::chunks_with`](crate::system::EntityIterator::chunks_with).
+pub trait ZipChunked<A: Archetype>: Zip<A> {
+    /// The type of values available for a single chunk.
     type Chunk;
-    fn get_chunk(self, entity: entity::TempRefChunk<Self::Archetype>) -> Self::Chunk;
+    /// Returns the requested components as chunks for the specified entities.
+    fn get_chunk(self, chunk: entity::TempRefChunk<A>) -> Self::Chunk;
 }
 
-pub trait IntoZip {
-    type Archetype: Archetype;
-
-    type IntoZip: Zip<Archetype = Self::Archetype>;
+/// Values that can be used as a [`Zip`] in [`EntityIterator`],
+/// similar to [`IntoIterator`] for iterators.
+///
+/// This trait is intended to map storages to components of a single entity,
+/// so it is implemented by:
+/// - [`&ReadSimple`](crate::system::ReadSimple) and [`&mut WriteSimple`](crate::system::WriteSimple)
+/// - Shared/mutable references to [split](super::AccessIsotope::split) isotope accessors
+/// - Any of the above wrapped with [`Try`] for [optional](comp::Presence::Optional) components.
+/// - Tuples of `Zip` implementors, including other tuples.
+/// - Structs of `Zip` fields that use the [`Zip`](crate::Zip) derive macro.
+pub trait IntoZip<A: Archetype> {
+    /// The [`Zip`] type that this is converted into.
+    type IntoZip: Zip<A>;
+    /// Converts into a [`Zip`] object.
     fn into_zip(self) -> Self::IntoZip;
-}
-
-impl<T: Zip> IntoZip for T {
-    type Archetype = <Self as Zip>::Archetype;
-
-    type IntoZip = Self;
-    fn into_zip(self) -> Self { self }
 }
 
 /// Either returns Option or unwraps it.
@@ -65,28 +79,24 @@ impl MissingResln for TryMissingResln {
 /// Wrap accessor references with `Try` to indicate that the result should be an `Option`.
 pub struct Try<T>(pub T);
 
-impl<'t, A, C, StorageRef> IntoZip for Try<&'t AccessSingle<A, C, StorageRef>>
+impl<'t, A, C, StorageRef> IntoZip<A> for Try<&'t AccessSingle<A, C, StorageRef>>
 where
     A: Archetype,
     C: comp::SimpleOrIsotope<A>,
     StorageRef: ops::Deref + Sync,
     StorageRef::Target: Storage<RawEntity = A::RawEntity, Comp = C>,
 {
-    type Archetype = A;
-
     type IntoZip = Read<'t, A, C, StorageRef, TryMissingResln>;
     fn into_zip(self) -> Self::IntoZip { Read { accessor: self.0, _ph: PhantomData } }
 }
 
-impl<'t, A, C, StorageRef> IntoZip for &'t AccessSingle<A, C, StorageRef>
+impl<'t, A, C, StorageRef> IntoZip<A> for &'t AccessSingle<A, C, StorageRef>
 where
     A: Archetype,
     C: comp::SimpleOrIsotope<A> + comp::Must<A>,
     StorageRef: ops::Deref + Sync,
     StorageRef::Target: Storage<RawEntity = A::RawEntity, Comp = C>,
 {
-    type Archetype = A;
-
     type IntoZip = Read<'t, A, C, StorageRef, MustMissingResln<A, C>>;
     fn into_zip(self) -> Self::IntoZip { Read { accessor: self, _ph: PhantomData } }
 }
@@ -101,7 +111,7 @@ impl<'t, A, C, StorageRef, Resln> Clone for Read<'t, A, C, StorageRef, Resln> {
     fn clone(&self) -> Self { *self }
 }
 
-impl<'t, A, C, StorageRef, Resln> Zip for Read<'t, A, C, StorageRef, Resln>
+impl<'t, A, C, StorageRef, Resln> Zip<A> for Read<'t, A, C, StorageRef, Resln>
 where
     A: Archetype,
     C: comp::SimpleOrIsotope<A>,
@@ -109,38 +119,53 @@ where
     StorageRef::Target: Storage<RawEntity = A::RawEntity, Comp = C>,
     Resln: MissingResln,
 {
-    type Archetype = A;
-
     fn split(&mut self, _offset: A::RawEntity) -> Self { *self }
 
     type Item = Resln::Result<&'t C>;
-    fn get<E: entity::Ref<Archetype = Self::Archetype>>(self, entity: E) -> Resln::Result<&'t C> {
+    fn get<E: entity::Ref<Archetype = A>>(self, entity: E) -> Resln::Result<&'t C> {
         Resln::must_or_try(self.accessor.try_get(entity))
     }
 }
 
-impl<'t, A, C, StorageRef> IntoZip for Try<&'t mut AccessSingle<A, C, StorageRef>>
+impl<'t, A, C, StorageRef> ZipChunked<A> for Read<'t, A, C, StorageRef, MustMissingResln<A, C>>
+where
+    A: Archetype,
+    C: comp::SimpleOrIsotope<A> + comp::Must<A>,
+    StorageRef: ops::Deref + Sync,
+    StorageRef::Target: storage::Chunked<RawEntity = A::RawEntity, Comp = C>,
+{
+    type Chunk = &'t [C];
+    fn get_chunk(self, chunk: entity::TempRefChunk<A>) -> Self::Chunk {
+        self.accessor.get_chunk(chunk)
+    }
+}
+
+impl<'t, A, C, StorageRef> IntoZip<A> for Try<&'t mut AccessSingle<A, C, StorageRef>>
 where
     A: Archetype,
     C: comp::SimpleOrIsotope<A>,
-    StorageRef: ops::Deref + Sync,
+    StorageRef: ops::DerefMut + Sync,
     StorageRef::Target: Storage<RawEntity = A::RawEntity, Comp = C>,
 {
-    type Archetype = A;
-
-    type IntoZip = Read<'t, A, C, StorageRef, TryMissingResln>;
-    fn into_zip(self) -> Self::IntoZip { Read { accessor: self.0, _ph: PhantomData } }
+    type IntoZip = Write<
+        't,
+        A,
+        C,
+        util::OwnedDeref<<StorageRef::Target as Storage>::Partition<'t>>,
+        TryMissingResln,
+    >;
+    fn into_zip(self) -> Self::IntoZip {
+        Write { accessor: self.0.as_partition(), _ph: PhantomData }
+    }
 }
 
-impl<'t, A, C, StorageRef> IntoZip for &'t mut AccessSingle<A, C, StorageRef>
+impl<'t, A, C, StorageRef> IntoZip<A> for &'t mut AccessSingle<A, C, StorageRef>
 where
     A: Archetype,
     C: comp::SimpleOrIsotope<A> + comp::Must<A>,
     StorageRef: ops::DerefMut + Sync,
     StorageRef::Target: Storage<RawEntity = A::RawEntity, Comp = C>,
 {
-    type Archetype = A;
-
     type IntoZip = Write<
         't,
         A,
@@ -156,30 +181,25 @@ pub struct Write<'t, A, C, PartitionT, Resln> {
     _ph:      PhantomData<(&'t mut C, Resln)>,
 }
 
-impl<'t, A, C, PartitionT, Resln> Zip for Write<'t, A, C, util::OwnedDeref<PartitionT>, Resln>
+impl<'t, A, C, PartitionT, Resln> Zip<A> for Write<'t, A, C, util::OwnedDeref<PartitionT>, Resln>
 where
     A: Archetype,
     C: comp::SimpleOrIsotope<A>,
     PartitionT: storage::Partition<'t, RawEntity = A::RawEntity, Comp = C>,
     Resln: MissingResln,
 {
-    type Archetype = A;
-
     fn split(&mut self, offset: A::RawEntity) -> Self {
         let right = self.accessor.split_out(offset);
         Self { accessor: right, _ph: PhantomData }
     }
 
     type Item = Resln::Result<&'t mut C>;
-    fn get<E: entity::Ref<Archetype = Self::Archetype>>(
-        self,
-        entity: E,
-    ) -> Resln::Result<&'t mut C> {
+    fn get<E: entity::Ref<Archetype = A>>(self, entity: E) -> Resln::Result<&'t mut C> {
         Resln::must_or_try(self.accessor.try_into_mut(entity))
     }
 }
 
-impl<'t, A, C, PartitionT> ZipChunked
+impl<'t, A, C, PartitionT> ZipChunked<A>
     for Write<'t, A, C, util::OwnedDeref<PartitionT>, MustMissingResln<A, C>>
 where
     A: Archetype,
@@ -187,7 +207,9 @@ where
     PartitionT: storage::PartitionChunked<'t, RawEntity = A::RawEntity, Comp = C>,
 {
     type Chunk = &'t mut [C];
-    fn get_chunk(self, chunk: entity::TempRefChunk<Self::Archetype>) -> Self::Chunk {
+    fn get_chunk(self, chunk: entity::TempRefChunk<A>) -> Self::Chunk {
         self.accessor.into_chunk_mut(chunk)
     }
 }
+
+mod tuple_impls;

@@ -1,26 +1,3 @@
-/// Declares a composite struct that implements
-/// [`Accessor`](crate::system::Accessor) and [`Chunked`](crate::system::ChunkedAccessor)
-/// by delegation to all fields and reconstructing the same struct with different types.
-///
-/// # Example
-/// ```
-/// dynec::accessors! {
-///     /// This is an example accessor set struct.
-///     /// We can document it and apply attributes on it.
-///     #[allow(dead_code)]
-///     pub Foo {
-///         /// This documents the field.
-///         pub(crate) bar,
-///         qux,
-///     }
-/// }
-/// ```
-#[doc(inline)]
-pub use dynec_codegen::accessors;
-
-#[cfg(test)]
-mod accessors_tests {}
-
 /// Declares archetypes.
 ///
 /// # Example
@@ -823,3 +800,30 @@ macro_rules! assert_partition {
         };
     };
 }
+
+/// Declares a composite struct that implements
+/// [`IntoZip`](crate::system::access:IntoZip), [`Zip`](crate::system::access::Zip)
+/// and [`ZipChunked`](crate::system::access::ZipChunked)
+/// by delegation to all fields and reconstructing the same struct with different types.
+///
+/// All fields accept arbitrary types, similar to a tuple,
+/// and are projected to the corresponding storages upon entity iteration.
+///
+/// # Example
+/// ```
+/// dynec::zip! {
+///     /// This is an example zip struct.
+///     /// We can document it and apply attributes on it.
+///     #[allow(dead_code)]
+///     pub Foo {
+///         /// This documents the field.
+///         pub(crate) bar,
+///         qux,
+///     }
+/// }
+/// ```
+#[doc(inline)]
+pub use dynec_codegen::zip;
+
+#[cfg(test)]
+mod zip_tests {}

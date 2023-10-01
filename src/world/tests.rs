@@ -1,6 +1,6 @@
 #![allow(clippy::ptr_arg)]
 
-use crate::entity::{deletion, generation, Ref};
+use crate::entity::{deletion, generation, Raw as _, Ref};
 use crate::test_util::*;
 use crate::{global, system, system_test, tracer, world, Entity};
 
@@ -18,8 +18,6 @@ fn common_test_system(
 }
 
 #[test]
-#[should_panic = "The component TestArch/Simple2OptionalDepends1 cannot be used because it is not \
-                  used in any systems"]
 fn test_dependencies_successful() {
     let mut world = system_test!(common_test_system.build(););
     let entity = world.create::<TestArch>(crate::comps![ @(crate) TestArch =>
@@ -37,8 +35,7 @@ fn test_dependencies_successful() {
         None => panic!("Simple4Depends12 is used in system_with_comp3_comp4_comp5"),
     }
 
-    world.components.get_simple_storage::<TestArch, Simple2OptionalDepends1>();
-    // panic here
+    world.components.get_simple_storage::<TestArch, Simple2OptionalDepends1>(); // should not panic
 }
 
 #[test]
@@ -105,8 +102,8 @@ fn test_simple_fetch() {
 
     world.execute(&tracer::Log(log::Level::Trace));
 
-    let comp =
-        world.components.get_simple_storage::<TestArch, Simple5RequiredNoInit>().try_get(ent);
+    let storage = world.components.get_simple_storage::<TestArch, Simple5RequiredNoInit>();
+    let comp = storage.try_get(ent);
     assert_eq!(comp, Some(&Simple5RequiredNoInit(20)));
 }
 
@@ -397,8 +394,8 @@ fn test_offline_create() {
         let ent = initials.strong.as_ref().expect("initials.strong missing");
         ent.clone()
     };
-    let comp1 =
-        world.components.get_simple_storage::<TestArch, Simple1OptionalNoDepNoInit>().try_get(&ent);
+    let storage = world.components.get_simple_storage::<TestArch, Simple1OptionalNoDepNoInit>();
+    let comp1 = storage.try_get(&ent);
     assert_eq!(comp1, Some(&Simple1OptionalNoDepNoInit(5)));
 }
 
@@ -426,8 +423,8 @@ fn test_offline_create_conflict() {
         let ent = initials.strong.as_ref().expect("initials.strong missing");
         ent.clone()
     };
-    let comp1 =
-        world.components.get_simple_storage::<TestArch, Simple1OptionalNoDepNoInit>().try_get(&ent);
+    let storage = world.components.get_simple_storage::<TestArch, Simple1OptionalNoDepNoInit>();
+    let comp1 = storage.try_get(&ent);
     assert_eq!(comp1, Some(&Simple1OptionalNoDepNoInit(5)));
 }
 
@@ -449,10 +446,8 @@ fn test_offline_delete() {
 
     world.execute(&tracer::Log(log::Level::Trace));
 
-    let comp1 = world
-        .components
-        .get_simple_storage::<TestArch, Simple1OptionalNoDepNoInit>()
-        .try_get(&weak);
+    let storage = world.components.get_simple_storage::<TestArch, Simple1OptionalNoDepNoInit>();
+    let comp1 = storage.try_get(&weak);
     assert_eq!(comp1, None);
 }
 
@@ -494,10 +489,8 @@ fn test_offline_delete_send_system_leak() {
 
     world.execute(&tracer::Log(log::Level::Trace));
 
-    let comp1 = world
-        .components
-        .get_simple_storage::<TestArch, Simple1OptionalNoDepNoInit>()
-        .try_get(&weak);
+    let storage = world.components.get_simple_storage::<TestArch, Simple1OptionalNoDepNoInit>();
+    let comp1 = storage.try_get(&weak);
     assert_eq!(comp1, None);
 }
 
@@ -539,10 +532,8 @@ fn test_offline_delete_unsend_system_leak() {
 
     world.execute(&tracer::Log(log::Level::Trace));
 
-    let comp1 = world
-        .components
-        .get_simple_storage::<TestArch, Simple1OptionalNoDepNoInit>()
-        .try_get(&weak);
+    let storage = world.components.get_simple_storage::<TestArch, Simple1OptionalNoDepNoInit>();
+    let comp1 = storage.try_get(&weak);
     assert_eq!(comp1, None);
 }
 
@@ -707,19 +698,15 @@ fn test_offline_finalizer_delete() {
         // first iteration
         world.execute(&tracer::Log(log::Level::Trace));
 
-        let comp1 = world
-            .components
-            .get_simple_storage::<TestArch, Simple1OptionalNoDepNoInit>()
-            .try_get(&weak);
+        let storage = world.components.get_simple_storage::<TestArch, Simple1OptionalNoDepNoInit>();
+        let comp1 = storage.try_get(&weak);
         assert_eq!(comp1, Some(&Simple1OptionalNoDepNoInit(13)));
 
         // second iteration
         world.execute(&tracer::Log(log::Level::Trace));
 
-        let comp1 = world
-            .components
-            .get_simple_storage::<TestArch, Simple1OptionalNoDepNoInit>()
-            .try_get(&weak);
+        let storage = world.components.get_simple_storage::<TestArch, Simple1OptionalNoDepNoInit>();
+        let comp1 = storage.try_get(&weak);
         assert_eq!(comp1, None);
     }
 }
@@ -742,10 +729,10 @@ fn test_entity_iter_partial_mut() {
         let [iso1_acc_31] = iso1_acc_31.split([0]);
 
         for (entity, (comp1, iso10, iso11, iso131)) in iter.entities_with((
-            comp1_acc.try_access(),
-            iso1_acc_0.try_access_mut(),
-            iso1_acc_1.try_access_mut(),
-            iso1_acc_31.try_access(),
+            system::Try(&comp1_acc),
+            system::Try(&mut iso1_acc_0),
+            system::Try(&mut iso1_acc_1),
+            system::Try(&iso1_acc_31),
         )) {
             match entity.id().to_primitive() {
                 1 => {
@@ -803,9 +790,9 @@ fn test_entity_iter_full_mut() {
             iso1_acc.split_isotopes([TestDiscrim1(7), TestDiscrim1(13)]);
 
         for (entity, (comp1, iso10, iso11)) in iter.entities_with((
-            comp1_acc.try_access(),
-            iso1_acc_0.try_access_mut(),
-            iso1_acc_1.try_access_mut(),
+            system::Try(&comp1_acc),
+            system::Try(&mut iso1_acc_0),
+            system::Try(&mut iso1_acc_1),
         )) {
             match entity.id().to_primitive() {
                 1 => {

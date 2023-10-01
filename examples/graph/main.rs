@@ -28,11 +28,9 @@ fn main() {
     // because we cannot iterate and get at the same time.
     // This limitation only applies to offline mode;
     // in an online system, use the EntityIterator API.
-    let nodes: HashMap<_, _> = world
-        .components
-        .iter_simple::<Node, WhichNode>()
-        .map(|(entity, which)| (*which, world.rctrack.to_strong(entity)))
-        .collect();
+    let storage = world.components.get_simple_storage::<Node, WhichNode>();
+    let nodes: HashMap<_, _> =
+        storage.iter().map(|(entity, which)| (*which, world.rctrack.to_strong(entity))).collect();
 
     let crops_in_farm = world
         .components

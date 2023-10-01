@@ -40,7 +40,6 @@ impl<'t, A: Archetype> EntityCreator<'t, A> {
 }
 
 /// Allows deleting entities of an archetype.
-#[doc(hidden)]
 pub struct EntityDeleter<'t, A: Archetype> {
     buffer: &'t RefCell<&'t mut offline::BufferShard>,
     _ph:    PhantomData<A>,
@@ -59,6 +58,7 @@ impl<'t, A: Archetype> EntityDeleter<'t, A> {
     }
 }
 
+/// Allows iterating all entities of an archetype.
 pub struct EntityIterator<A: Archetype> {
     ealloc: ealloc::Snapshot<A::RawEntity>,
 }
@@ -97,11 +97,11 @@ impl<A: Archetype> EntityIterator<A> {
     }
 
     /// Iterates over all entities, yielding the components requested.
-    pub fn entities_with<IntoZ: access::IntoZip<Archetype = A>>(
+    pub fn entities_with<IntoZ: access::IntoZip<A>>(
         &self,
         zip: IntoZ,
-    ) -> impl Iterator<Item = (entity::TempRef<A>, <IntoZ::IntoZip as access::Zip>::Item)> {
-        let mut zip = ZipIter(zip.into_zip());
+    ) -> impl Iterator<Item = (entity::TempRef<A>, <IntoZ::IntoZip as access::Zip<A>>::Item)> {
+        let mut zip = ZipIter(zip.into_zip(), PhantomData);
         self.ealloc
             .iter_allocated_chunks()
             .flat_map(<A::RawEntity as entity::Raw>::range)
@@ -109,14 +109,14 @@ impl<A: Archetype> EntityIterator<A> {
     }
 
     /// Iterates over all entities, yielding the components requested in contiguous chunks.
-    pub fn chunks_with<IntoZ: access::IntoZip<Archetype = A>>(
+    pub fn chunks_with<IntoZ: access::IntoZip<A>>(
         &self,
         zip: IntoZ,
-    ) -> impl Iterator<Item = (entity::TempRefChunk<A>, <IntoZ::IntoZip as access::ZipChunked>::Chunk)>
+    ) -> impl Iterator<Item = (entity::TempRefChunk<A>, <IntoZ::IntoZip as access::ZipChunked<A>>::Chunk)>
     where
-        IntoZ::IntoZip: access::ZipChunked,
+        IntoZ::IntoZip: access::ZipChunked<A>,
     {
-        let mut zip = ZipIter(zip.into_zip());
+        let mut zip = ZipIter(zip.into_zip(), PhantomData);
         self.ealloc.iter_allocated_chunks().map(move |chunk| {
             (
                 entity::TempRefChunk::new(chunk.start, chunk.end),
@@ -126,22 +126,18 @@ impl<A: Archetype> EntityIterator<A> {
     }
 }
 
-struct ZipIter<Z: access::Zip>(Z);
+struct ZipIter<A: Archetype, Z: access::Zip<A>>(Z, PhantomData<A>);
 
-impl<Z: access::Zip> ZipIter<Z> {
-    fn take_serial(&mut self, entity: <Z::Archetype as Archetype>::RawEntity) -> Z::Item {
+impl<A: Archetype, Z: access::Zip<A>> ZipIter<A, Z> {
+    fn take_serial(&mut self, entity: A::RawEntity) -> Z::Item {
         let right = self.0.split(entity.add(1));
         let left = mem::replace(&mut self.0, right);
         left.get(entity::TempRef::new(entity))
     }
 }
 
-impl<Z: access::ZipChunked> ZipIter<Z> {
-    fn take_serial_chunk(
-        &mut self,
-        start: <Z::Archetype as Archetype>::RawEntity,
-        end: <Z::Archetype as Archetype>::RawEntity,
-    ) -> Z::Chunk {
+impl<A: Archetype, Z: access::ZipChunked<A>> ZipIter<A, Z> {
+    fn take_serial_chunk(&mut self, start: A::RawEntity, end: A::RawEntity) -> Z::Chunk {
         let right = self.0.split(end.add(1));
         let left = mem::replace(&mut self.0, right);
         left.get_chunk(entity::TempRefChunk::new(start, end))

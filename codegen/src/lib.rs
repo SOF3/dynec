@@ -2,7 +2,8 @@
 
 use proc_macro::TokenStream;
 
-mod accessors;
+mod util;
+
 mod archetype;
 mod comp;
 mod comps;
@@ -12,11 +13,11 @@ mod global;
 mod system;
 mod tracer;
 mod tracer_def;
-mod util;
+mod zip;
 
 #[proc_macro]
-pub fn accessors(input: TokenStream) -> TokenStream {
-    accessors::imp(input.into()).unwrap_or_else(|err| err.to_compile_error()).into()
+pub fn zip(input: TokenStream) -> TokenStream {
+    zip::imp(input.into()).unwrap_or_else(|err| err.to_compile_error()).into()
 }
 
 #[proc_macro]

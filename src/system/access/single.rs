@@ -45,8 +45,11 @@ where
 {
     /// Returns an immutable reference to the component for the specified entity.
     ///
+    /// This function is infallible, assuming [`comp::Must`] is only implemented
+    /// for components with [`Required`](comp::Presence::Required) presence.
+    ///
     /// # Panics
-    /// This method panics if the entity is not fully initialized yet.
+    /// This function panics if the entity is not fully initialized yet.
     /// This happens when an entity is newly created and the cycle hasn't joined yet.
     pub fn get(&self, entity: impl entity::Ref<Archetype = A>) -> &C {
         match self.try_get(entity) {
@@ -89,7 +92,7 @@ where
     /// Returns the chunk of components as a slice.
     ///
     /// # Panics
-    /// This method panics if any component in the chunk is missing.
+    /// This function panics if any component in the chunk is missing.
     /// In general, users should not get an [`entity::TempRefChunk`]
     /// that includes an uninitialized entity,
     /// so panic is basically impossible if [`comp::Must`] was implemented correctly.
@@ -134,7 +137,7 @@ where
     /// Returns a mutable reference to the component for the specified entity,
     /// or `None` if the component is not present in the entity.
     ///
-    /// Note that this method returns `Option<&mut C>`, not `&mut Option<C>`.
+    /// Note that this function returns `Option<&mut C>`, not `&mut Option<C>`.
     /// This means setting the Option itself to `Some`/`None` will not modify any stored value.
     /// Use [`Write::set`] to add/remove a component.
     pub fn try_get_mut(&mut self, entity: impl entity::Ref<Archetype = A>) -> Option<&mut C> {
@@ -156,8 +159,12 @@ where
 {
     /// Returns a mutable reference to the component for the specified entity.
     ///
-    /// This method is infallible, assuming [`comp::Must`] is only implemented
+    /// This function is infallible, assuming [`comp::Must`] is only implemented
     /// for components with [`Required`](comp::Presence::Required) presence.
+    ///
+    /// # Panics
+    /// This function panics if the entity is not fully initialized yet.
+    /// This happens when an entity is newly created and the cycle hasn't joined yet.
     pub fn get_mut(&mut self, entity: impl entity::Ref<Archetype = A>) -> &mut C {
         match self.try_get_mut(entity) {
             Some(comp) => comp,
@@ -178,7 +185,7 @@ where
 {
     /// Overwrites the component for the specified entity.
     ///
-    /// Passing `None` to this method removes the component from the entity.
+    /// Passing `None` to this function removes the component from the entity.
     /// This leads to a panic for components with [`comp::Presence::Required`] presence.
     pub fn set(&mut self, entity: impl entity::Ref<Archetype = A>, value: Option<C>) -> Option<C> {
         self.storage.set(entity.id(), value)
@@ -231,19 +238,23 @@ where
     ///
     /// The first partition accesses all entities less than `entity`;
     /// the second partition accesses all entities greater than or equal to `entity`.
-    pub fn split_at(self, entity: A::RawEntity) -> (Self, Self) {
-        let (left, right) = self.storage.0.split_at(entity);
-        (
-            Self { storage: util::OwnedDeref(left), _ph: PhantomData },
-            Self { storage: util::OwnedDeref(right), _ph: PhantomData },
-        )
+    pub fn split_at(mut self, entity: A::RawEntity) -> (Self, Self) {
+        let right = self.split_out(entity);
+        (self, right)
     }
 
+    /// Splits the accessor into two partitions without moving ownership.
+    ///
+    /// Entities less than `entity` are retained in `self`,
+    /// while entities greater than or equal to `entity`
+    /// are accessible through the returned partition.
     pub fn split_out(&mut self, entity: A::RawEntity) -> Self {
         let right = self.storage.0.split_out(entity);
         Self { storage: util::OwnedDeref(right), _ph: PhantomData }
     }
 
+    /// Gets the component value of an entity accessible by this partition,
+    /// preserving the lifetime `'t` of this partition object.
     pub fn try_into_mut(self, entity: impl entity::Ref<Archetype = A>) -> Option<&'t mut C> {
         self.storage.0.into_mut(entity.id())
     }
@@ -255,6 +266,15 @@ where
     C: comp::Must<A>,
     StorageT: storage::Partition<'t, RawEntity = A::RawEntity, Comp = C>,
 {
+    /// Gets the component value of an entity accessible by this partition,
+    /// preserving the lifetime `'t` of this partition object.
+    ///
+    /// This function is infallible, assuming [`comp::Must`] is only implemented
+    /// for components with [`Required`](comp::Presence::Required) presence.
+    ///
+    /// # Panics
+    /// This function panics if the entity is not fully initialized yet.
+    /// This happens when an entity is newly created and the cycle hasn't joined yet.
     pub fn into_mut(self, entity: impl entity::Ref<Archetype = A>) -> &'t mut C {
         match self.try_into_mut(entity) {
             Some(comp) => comp,
@@ -281,10 +301,9 @@ where
     for<'u> <StorageRef::Target as Storage>::Partition<'u>: storage::PartitionChunked<'u>,
 {
     /// Returns the chunk of components as a mutable slice.
-    /// Typically called from an accessor.
     ///
     /// # Panics
-    /// This method panics if any component in the chunk is missing.
+    /// This function panics if any component in the chunk is missing.
     /// In general, if [`comp::Must`] is implemented correctly,
     /// users should not obtain an [`entity::TempRefChunk`] that includes an uninitialized entity,
     /// so panic is practically impossible.
@@ -315,6 +334,14 @@ where
     C: comp::Must<A>,
     StorageT: storage::PartitionChunked<'t, RawEntity = A::RawEntity, Comp = C>,
 {
+    /// Returns the chunk of components as a mutable slice,
+    /// preserving the lifetime `'t` of this partition object.
+    ///
+    /// # Panics
+    /// This function panics if any component in the chunk is missing.
+    /// In general, if [`comp::Must`] is implemented correctly,
+    /// users should not obtain an [`entity::TempRefChunk`] that includes an uninitialized entity,
+    /// so panic is practically impossible.
     pub fn into_chunk_mut(self, chunk: entity::TempRefChunk<A>) -> &'t mut [C] {
         match self.storage.0.into_chunk_mut(chunk.start, chunk.end) {
             Some(comp) => comp,

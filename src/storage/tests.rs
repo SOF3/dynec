@@ -232,10 +232,10 @@ macro_rules! repartition_panic_test {
         {
             let mut storage: S = setup_partition_storage();
 
-            let first_pair = storage.partition_at(NonZeroU32::new($first_cut).unwrap());
+            let first_pair = storage.as_partition().split_at(NonZeroU32::new($first_cut).unwrap());
             let first = repartition_panic_test!(@take $first_half of first_pair);
 
-            let second_pair = first.partition_at(NonZeroU32::new($second_cut).unwrap());
+            let second_pair = first.split_at(NonZeroU32::new($second_cut).unwrap());
             let mut second = repartition_panic_test!(@take $second_half of second_pair);
 
             second.get_mut(NonZeroU32::new($probe).unwrap());

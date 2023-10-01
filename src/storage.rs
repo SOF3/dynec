@@ -162,6 +162,8 @@ pub trait AccessChunked: Access {
 /// adding/removing items may cause rebalances in the tree implementation
 /// and result in dangling references in other partitions that are not `&mut`-locked.
 pub trait PartitionChunked<'t>: Partition<'t> + AccessChunked {
+    /// Gets a mutable reference to a slice of components,
+    /// preserving the lifetime `'t` of this partition object.
     fn into_chunk_mut(
         self,
         start: Self::RawEntity,

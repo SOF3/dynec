@@ -1,7 +1,9 @@
 use std::cell::RefCell;
 use std::marker::PhantomData;
+use std::mem;
 
-use crate::entity::{self, ealloc};
+use super::access;
+use crate::entity::{self, ealloc, Raw as _};
 use crate::world::offline;
 use crate::{comp, Archetype};
 
@@ -79,6 +81,7 @@ impl<A: Archetype> EntityIterator<A> {
     /// [`#[system]`](macro@crate::system).
     pub fn new(ealloc: ealloc::Snapshot<A::RawEntity>) -> Self { Self { ealloc } }
 
+    /// Iterates over all entity IDs in this archetype.
     pub fn entities(&self) -> impl Iterator<Item = entity::TempRef<A>> {
         self.ealloc
             .iter_allocated_chunks()
@@ -86,11 +89,61 @@ impl<A: Archetype> EntityIterator<A> {
             .map(entity::TempRef::new)
     }
 
-    fn chunks(&self) -> impl Iterator<Item = entity::TempRefChunk<A>> + '_ {
+    /// Iterates over all contiguous chunks of entity IDs.
+    pub fn chunks(&self) -> impl Iterator<Item = entity::TempRefChunk<A>> + '_ {
         self.ealloc
             .iter_allocated_chunks()
             .map(|range| entity::TempRefChunk::new(range.start, range.end))
     }
 
-    // TODO add entities_with(Tuple<system::Access>)
+    /// Iterates over all entities, yielding the components requested.
+    pub fn entities_with<IntoZ: access::IntoZip<Archetype = A>>(
+        &self,
+        zip: IntoZ,
+    ) -> impl Iterator<Item = (entity::TempRef<A>, <IntoZ::IntoZip as access::Zip>::Item)> {
+        let mut zip = ZipIter(zip.into_zip());
+        self.ealloc
+            .iter_allocated_chunks()
+            .flat_map(<A::RawEntity as entity::Raw>::range)
+            .map(move |entity| (entity::TempRef::new(entity), zip.take_serial(entity)))
+    }
+
+    /// Iterates over all entities, yielding the components requested in contiguous chunks.
+    pub fn chunks_with<IntoZ: access::IntoZip<Archetype = A>>(
+        &self,
+        zip: IntoZ,
+    ) -> impl Iterator<Item = (entity::TempRefChunk<A>, <IntoZ::IntoZip as access::ZipChunked>::Chunk)>
+    where
+        IntoZ::IntoZip: access::ZipChunked,
+    {
+        let mut zip = ZipIter(zip.into_zip());
+        self.ealloc.iter_allocated_chunks().map(move |chunk| {
+            (
+                entity::TempRefChunk::new(chunk.start, chunk.end),
+                zip.take_serial_chunk(chunk.start, chunk.end),
+            )
+        })
+    }
+}
+
+struct ZipIter<Z: access::Zip>(Z);
+
+impl<Z: access::Zip> ZipIter<Z> {
+    fn take_serial(&mut self, entity: <Z::Archetype as Archetype>::RawEntity) -> Z::Item {
+        let right = self.0.split(entity.add(1));
+        let left = mem::replace(&mut self.0, right);
+        left.get(entity::TempRef::new(entity))
+    }
+}
+
+impl<Z: access::ZipChunked> ZipIter<Z> {
+    fn take_serial_chunk(
+        &mut self,
+        start: <Z::Archetype as Archetype>::RawEntity,
+        end: <Z::Archetype as Archetype>::RawEntity,
+    ) -> Z::Chunk {
+        let right = self.0.split(end.add(1));
+        let left = mem::replace(&mut self.0, right);
+        left.get_chunk(entity::TempRefChunk::new(start, end))
+    }
 }

@@ -57,19 +57,12 @@ pub trait Storage: Access + Default + Send + Sync + 'static {
     /// Non-chunked storages should implement this function by returning a chunk for each entity.
     fn iter_chunks_mut(&mut self) -> Self::IterChunksMut<'_>;
 
-    /// Return value of [`partition_at`](Self::partition_at).
+    /// Return value of [`split_at`](Self::split_at).
     type Partition<'u>: Partition<'u, RawEntity = Self::RawEntity, Comp = Self::Comp>
     where
         Self: 'u;
     /// Converts the storage to a [`Partition`] that covers the whole storage (similar to `slice[..]`).
     fn as_partition(&mut self) -> Self::Partition<'_>;
-    /// Splits the storage into two partitions for parallel iterable access.
-    fn partition_at(
-        &mut self,
-        offset: Self::RawEntity,
-    ) -> (Self::Partition<'_>, Self::Partition<'_>) {
-        self.as_partition().partition_at(offset)
-    }
 }
 
 /// Borrows a slice of a storage, analogously `&'t mut Storage[..]`.
@@ -77,7 +70,7 @@ pub trait Storage: Access + Default + Send + Sync + 'static {
 /// This trait does not provide `set` because
 /// adding/removing items may cause rebalances in the tree implementation
 /// and result in dangling references in other partitions that are not `&mut`-locked.
-pub trait Partition<'t>: Access + Send + Sync + Sized {
+pub trait Partition<'t>: Access + Send + Sync + Sized + 't {
     /// Return value of [`by_ref`](Self::by_ref).
     type ByRef<'u>: Partition<'u, RawEntity = Self::RawEntity, Comp = Self::Comp>
     where
@@ -85,7 +78,7 @@ pub trait Partition<'t>: Access + Send + Sync + Sized {
     /// Re-borrows the partition with reduced lifetime.
     ///
     /// This is useful for calling [`iter_mut`](Self::iter_mut)
-    /// and [`partition_at`](Self::partition_at),
+    /// and [`split_at`](Self::split_at),
     /// which take `self` as receiver to preserve the lifetime.
     fn by_ref(&mut self) -> Self::ByRef<'_>;
 
@@ -93,12 +86,26 @@ pub trait Partition<'t>: Access + Send + Sync + Sized {
     /// `entity` must be `> 0` and `< partition_length`,
     /// i.e. the expected key ranges of both partitions must be nonempty.
     /// (It is allowed to have a nonempty range which does not contain any existing keys)
-    fn partition_at(self, entity: Self::RawEntity) -> (Self, Self);
+    fn split_at(mut self, entity: Self::RawEntity) -> (Self, Self) {
+        let right = self.split_out(entity);
+        (self, right)
+    }
+
+    /// Splits the partition further into two subpartitions,
+    /// replacing `self` with the left partition.
+    ///
+    /// `entity` must be `> 0` and `< partition_length`,
+    /// i.e. the expected key ranges of both partitions must be nonempty.
+    /// (It is allowed to have a nonempty range which does not contain any existing keys)
+    fn split_out(&mut self, entity: Self::RawEntity) -> Self;
 
     /// Return value of [`into_iter_mut`](Self::into_iter_mut).
     type IntoIterMut: Iterator<Item = (Self::RawEntity, &'t mut Self::Comp)>;
     /// Same as [`iter_mut`](Access:iter_mut), but moves the partition object into the iterator.
     fn into_iter_mut(self) -> Self::IntoIterMut;
+
+    /// Same as [`try_get_mut`](Access::try_get_mut), but returns a reference with lifetime `'t`.
+    fn into_mut(self, entity: Self::RawEntity) -> Option<&'t mut Self::Comp>;
 }
 
 /// Mutable access functions for a storage, generalizing [`Storage`] and [`Partition`].
@@ -155,6 +162,12 @@ pub trait AccessChunked: Access {
 /// adding/removing items may cause rebalances in the tree implementation
 /// and result in dangling references in other partitions that are not `&mut`-locked.
 pub trait PartitionChunked<'t>: Partition<'t> + AccessChunked {
+    fn into_chunk_mut(
+        self,
+        start: Self::RawEntity,
+        end: Self::RawEntity,
+    ) -> Option<&'t mut [Self::Comp]>;
+
     /// Return value of [`into_iter_chunks_mut`](Self::into_iter_chunks_mut).
     type IntoIterChunksMut: Iterator<Item = (Self::RawEntity, &'t mut [Self::Comp])>;
     /// Returns a mutable iterator over the storage, ordered by entity index order.

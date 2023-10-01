@@ -163,7 +163,7 @@ where
 {
     let mut storage: S = setup_partition_storage();
     {
-        let (mut left, mut right) = storage.partition_at(NonZeroU32::new(4).unwrap());
+        let (mut left, mut right) = storage.as_partition().split_at(NonZeroU32::new(4).unwrap());
         assert_eq!(left.get_mut(NonZeroU32::new(1).unwrap()), Some(&mut 1));
         assert_eq!(left.get_mut(NonZeroU32::new(3).unwrap()), Some(&mut 3));
         assert_eq!(right.get_mut(NonZeroU32::new(4).unwrap()), None);
@@ -171,7 +171,7 @@ where
         assert_eq!(right.get_mut(NonZeroU32::new(9).unwrap()), Some(&mut 9));
     }
     {
-        let (mut left, mut right) = storage.partition_at(NonZeroU32::new(5).unwrap());
+        let (mut left, mut right) = storage.as_partition().split_at(NonZeroU32::new(5).unwrap());
         assert_eq!(left.get_mut(NonZeroU32::new(1).unwrap()), Some(&mut 1));
         assert_eq!(left.get_mut(NonZeroU32::new(3).unwrap()), Some(&mut 3));
         assert_eq!(left.get_mut(NonZeroU32::new(4).unwrap()), None);
@@ -185,7 +185,7 @@ where
     S: Storage<RawEntity = NonZeroU32, Comp = i64>,
 {
     let mut storage: S = setup_partition_storage();
-    let (mut left, _) = storage.partition_at(NonZeroU32::new(4).unwrap());
+    let (mut left, _) = storage.as_partition().split_at(NonZeroU32::new(4).unwrap());
     left.get_mut(NonZeroU32::new(5).unwrap());
 }
 
@@ -194,7 +194,7 @@ where
     S: Storage<RawEntity = NonZeroU32, Comp = i64>,
 {
     let mut storage: S = setup_partition_storage();
-    let (mut left, _) = storage.partition_at(NonZeroU32::new(4).unwrap());
+    let (mut left, _) = storage.as_partition().split_at(NonZeroU32::new(4).unwrap());
     left.get_mut(NonZeroU32::new(4).unwrap());
 }
 
@@ -203,7 +203,7 @@ where
     S: Storage<RawEntity = NonZeroU32, Comp = i64>,
 {
     let mut storage: S = setup_partition_storage();
-    let (_, mut right) = storage.partition_at(NonZeroU32::new(5).unwrap());
+    let (_, mut right) = storage.as_partition().split_at(NonZeroU32::new(5).unwrap());
     right.get_mut(NonZeroU32::new(3).unwrap());
 }
 
@@ -212,7 +212,7 @@ where
     S: Storage<RawEntity = NonZeroU32, Comp = i64>,
 {
     let mut storage: S = setup_partition_storage();
-    let (_, mut right) = storage.partition_at(NonZeroU32::new(5).unwrap());
+    let (_, mut right) = storage.as_partition().split_at(NonZeroU32::new(5).unwrap());
     right.get_mut(NonZeroU32::new(4).unwrap());
 }
 

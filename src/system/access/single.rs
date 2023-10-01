@@ -63,6 +63,9 @@ where
     ///
     /// This returns a [rayon `ParallelIterator`](rayon::iter::ParallelIterator)
     /// that processes different chunks of entities
+    ///
+    /// Requires [`comp::Must<A>`] because this iterator assumes that
+    /// existence in `snapshot` implies existence in storage.
     pub fn par_iter<'t>(
         &'t self,
         snapshot: &'t ealloc::Snapshot<A::RawEntity>,
@@ -147,24 +150,9 @@ where
 impl<A, C, StorageRef> AccessSingle<A, C, StorageRef>
 where
     A: Archetype,
-    StorageRef: ops::DerefMut + Sync,
-    StorageRef::Target: Storage<RawEntity = A::RawEntity, Comp = C>,
-{
-    /// Overwrites the component for the specified entity.
-    ///
-    /// Passing `None` to this method removes the component from the entity.
-    /// This leads to a panic for components with [`comp::Presence::Required`] presence.
-    pub fn set(&mut self, entity: impl entity::Ref<Archetype = A>, value: Option<C>) -> Option<C> {
-        self.storage.set(entity.id(), value)
-    }
-}
-
-impl<A, C, StorageRef> AccessSingle<A, C, StorageRef>
-where
-    A: Archetype,
     C: comp::Must<A>,
     StorageRef: ops::DerefMut + Sync,
-    StorageRef::Target: Storage<RawEntity = A::RawEntity, Comp = C>,
+    StorageRef::Target: storage::Access<RawEntity = A::RawEntity, Comp = C>,
 {
     /// Returns a mutable reference to the component for the specified entity.
     ///
@@ -180,21 +168,20 @@ where
             ),
         }
     }
+}
 
-    /// Iterates over all entities in parallel.
+impl<A, C, StorageRef> AccessSingle<A, C, StorageRef>
+where
+    A: Archetype,
+    StorageRef: ops::DerefMut + Sync,
+    StorageRef::Target: Storage<RawEntity = A::RawEntity, Comp = C>,
+{
+    /// Overwrites the component for the specified entity.
     ///
-    /// This returns a rayon [`ParallelIterator`] that processes different entities.
-    pub fn par_iter_mut<'t>(
-        &'t mut self,
-        snapshot: &'t ealloc::Snapshot<A::RawEntity>,
-    ) -> impl ParallelIterator<Item = (entity::TempRef<'t, A>, &'t mut C)> {
-        rayon::iter::split((self.as_partition(), snapshot.as_slice()), |(partition, slice)| {
-            let Some(midpt) = slice.midpoint_for_split() else { return ((partition, slice), None) };
-            let (slice_left, slice_right) = slice.split_at(midpt);
-            let (partition_left, partition_right) = partition.split_at(entity::TempRef::new(midpt));
-            ((partition_left, slice_left), Some((partition_right, slice_right)))
-        })
-        .flat_map_iter(|(partition, _slice)| partition.into_iter_mut())
+    /// Passing `None` to this method removes the component from the entity.
+    /// This leads to a panic for components with [`comp::Presence::Required`] presence.
+    pub fn set(&mut self, entity: impl entity::Ref<Archetype = A>, value: Option<C>) -> Option<C> {
+        self.storage.set(entity.id(), value)
     }
 
     /// Converts the accessor to a [`MutPartition`] that covers all entities.
@@ -211,22 +198,72 @@ where
     }
 }
 
-impl<'t, A, C, StorageT> AccessSingle<A, C, util::OwnedDeref<StorageT>>
+impl<A, C, StorageRef> AccessSingle<A, C, StorageRef>
 where
     A: Archetype,
     C: comp::Must<A>,
+    StorageRef: ops::DerefMut + Sync,
+    StorageRef::Target: Storage<RawEntity = A::RawEntity, Comp = C>,
+{
+    /// Iterates over all entities in parallel.
+    ///
+    /// This returns a rayon [`ParallelIterator`] that processes different entities.
+    pub fn par_iter_mut<'t>(
+        &'t mut self,
+        snapshot: &'t ealloc::Snapshot<A::RawEntity>,
+    ) -> impl ParallelIterator<Item = (entity::TempRef<'t, A>, &'t mut C)> {
+        rayon::iter::split((self.as_partition(), snapshot.as_slice()), |(partition, slice)| {
+            let Some(midpt) = slice.midpoint_for_split() else { return ((partition, slice), None) };
+            let (slice_left, slice_right) = slice.split_at(midpt);
+            let (partition_left, partition_right) = partition.split_at(midpt);
+            ((partition_left, slice_left), Some((partition_right, slice_right)))
+        })
+        .flat_map_iter(|(partition, _slice)| partition.into_iter_mut())
+    }
+}
+
+impl<'t, A, C, StorageT> AccessSingle<A, C, util::OwnedDeref<StorageT>>
+where
+    A: Archetype,
     StorageT: storage::Partition<'t, RawEntity = A::RawEntity, Comp = C>,
 {
     /// Splits the accessor into two partitions.
     ///
     /// The first partition accesses all entities less than `entity`;
     /// the second partition accesses all entities greater than or equal to `entity`.
-    pub fn split_at(self, entity: impl entity::Ref<Archetype = A>) -> (Self, Self) {
-        let (left, right) = self.storage.0.partition_at(entity.id());
+    pub fn split_at(self, entity: A::RawEntity) -> (Self, Self) {
+        let (left, right) = self.storage.0.split_at(entity);
         (
             Self { storage: util::OwnedDeref(left), _ph: PhantomData },
             Self { storage: util::OwnedDeref(right), _ph: PhantomData },
         )
+    }
+
+    pub fn split_out(&mut self, entity: A::RawEntity) -> Self {
+        let right = self.storage.0.split_out(entity);
+        Self { storage: util::OwnedDeref(right), _ph: PhantomData }
+    }
+
+    pub fn try_into_mut(self, entity: impl entity::Ref<Archetype = A>) -> Option<&'t mut C> {
+        self.storage.0.into_mut(entity.id())
+    }
+}
+
+impl<'t, A, C, StorageT> AccessSingle<A, C, util::OwnedDeref<StorageT>>
+where
+    A: Archetype,
+    C: comp::Must<A>,
+    StorageT: storage::Partition<'t, RawEntity = A::RawEntity, Comp = C>,
+{
+    pub fn into_mut(self, entity: impl entity::Ref<Archetype = A>) -> &'t mut C {
+        match self.try_into_mut(entity) {
+            Some(comp) => comp,
+            None => panic!(
+                "Component {}/{} implements comp::Must but is not present",
+                any::type_name::<A>(),
+                any::type_name::<C>(),
+            ),
+        }
     }
 
     /// Iterates over mutable references to all initialized components in this partition.
@@ -265,7 +302,7 @@ where
         rayon::iter::split((self.as_partition(), snapshot.as_slice()), |(partition, slice)| {
             let Some(midpt) = slice.midpoint_for_split() else { return ((partition, slice), None) };
             let (slice_left, slice_right) = slice.split_at(midpt);
-            let (partition_left, partition_right) = partition.split_at(entity::TempRef::new(midpt));
+            let (partition_left, partition_right) = partition.split_at(midpt);
             ((partition_left, slice_left), Some((partition_right, slice_right)))
         })
         .flat_map_iter(|(partition, _slice)| partition.into_iter_chunks_mut())
@@ -278,6 +315,17 @@ where
     C: comp::Must<A>,
     StorageT: storage::PartitionChunked<'t, RawEntity = A::RawEntity, Comp = C>,
 {
+    pub fn into_chunk_mut(self, chunk: entity::TempRefChunk<A>) -> &'t mut [C] {
+        match self.storage.0.into_chunk_mut(chunk.start, chunk.end) {
+            Some(comp) => comp,
+            None => panic!(
+                "Component {}/{} implements comp::Must but is not present",
+                any::type_name::<A>(),
+                any::type_name::<C>()
+            ),
+        }
+    }
+
     /// Iterates over mutable references to all initialized components in this storage.
     pub fn into_iter_chunks_mut(
         self,

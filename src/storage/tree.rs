@@ -77,7 +77,7 @@ impl<E: entity::Raw, C: Send + Sync + 'static> Storage for Tree<E, C> {
     }
 }
 
-/// Return value of [`Tree::partition_at`].
+/// Return value of [`Tree::split_at`].
 pub struct StoragePartition<'t, E: entity::Raw, C> {
     data:        &'t BTreeMap<E, SyncUnsafeCell<C>>,
     lower_bound: Option<E>,
@@ -144,25 +144,33 @@ impl<'t, E: entity::Raw, C: Send + Sync + 'static> Partition<'t> for StoragePart
         })
     }
 
-    fn partition_at(self, entity: E) -> (Self, Self) {
+    fn into_mut(self, entity: Self::RawEntity) -> Option<&'t mut Self::Comp> {
         self.assert_bounds(entity);
+
+        let cell = self.data.get(&entity)?;
+        unsafe {
+            // Safety: StoragePartition locks all keys under `self.cmp` exclusively,
+            // and our key is under `self.cmp`.
+            // We already have `&mut self`, so no other threads are accessing this range.
+            Some(&mut *cell.get())
+        }
+    }
+
+    fn split_out(&mut self, entity: E) -> Self {
+        self.assert_bounds(entity);
+
+        let right = Self {
+            data:        self.data,
+            lower_bound: Some(entity),
+            upper_bound: self.upper_bound,
+        };
+        self.upper_bound = Some(entity);
 
         // Safety: `entity` is between lower_bound and upper_bound,
         // so the resultant bound will be non-overlapping.
         // We already have `&mut self`, so this range cannot be used until the partitions are
         // dropped.
-        (
-            Self {
-                data:        self.data,
-                lower_bound: self.lower_bound,
-                upper_bound: Some(entity),
-            },
-            Self {
-                data:        self.data,
-                lower_bound: Some(entity),
-                upper_bound: self.upper_bound,
-            },
-        )
+        right
     }
 }
 

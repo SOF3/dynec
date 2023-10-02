@@ -10,9 +10,11 @@ pub(crate) fn imp(input: TokenStream) -> Result<TokenStream> {
 
     let mut output = TokenStream::new();
 
-    for Input { crate_name, meta, vis, ident, fields, .. } in inputs {
+    for Input { debug_print, crate_name, meta, vis, ident, fields, .. } in inputs {
+        let debug_print = debug_print.is_some();
+
         let crate_name = match crate_name {
-            Some((_, crate_name)) => crate_name,
+            Some((_, _, _, crate_name)) => crate_name,
             None => quote!(::dynec),
         };
 
@@ -35,29 +37,29 @@ pub(crate) fn imp(input: TokenStream) -> Result<TokenStream> {
             }
 
             impl<__Arch: #crate_name::Archetype, #(#field_ty),*>
-                #crate_name::system::IntoZip<__Arch>
+                #crate_name::system::access::IntoZip<__Arch>
                 for #ident<#(#field_ty,)*>
             where
-                #(#field_ty: #crate_name::system::IntoZip<__Arch>,)*
+                #(#field_ty: #crate_name::system::access::IntoZip<__Arch>,)*
             {
-                type IntoZip = #ident<#(<#field_ty as #crate_name::system::IntoZip<__Arch>>::IntoZip,)*>;
+                type IntoZip = #ident<#(<#field_ty as #crate_name::system::access::IntoZip<__Arch>>::IntoZip,)*>;
 
                 fn into_zip(self) -> Self::IntoZip {
-                    let #ident{#(#field_ident,)*} = self;
+                    let Self { #(#field_ident,)* } = self;
                     #ident { #(
-                        IntoZip::<A>::into_zip(#field_ident),
+                        #field_ident: <#field_ty as #crate_name::system::access::IntoZip<__Arch>>::into_zip(#field_ident),
                     )* }
                 }
             }
 
             impl<__Arch: #crate_name::Archetype, #(#field_ty),*>
-                #crate_name::system::Zip<__Arch>
+                #crate_name::system::access::Zip<__Arch>
                 for #ident<#(#field_ty,)*>
             where
-                #(#field_ty: #crate_name::system::Zip<__Arch>,)*
+                #(#field_ty: #crate_name::system::access::Zip<__Arch>,)*
             {
                 fn split(&mut self, offset: __Arch::RawEntity) -> Self {
-                    let (#(#field_ident,)*) = self;
+                    let Self { #(#field_ident,)* } = self;
                     #ident { #(
                         #field_ident: <#field_ty as #crate_name::system::access::Zip<__Arch>>::split(#field_ident, offset),
                     )* }
@@ -66,9 +68,9 @@ pub(crate) fn imp(input: TokenStream) -> Result<TokenStream> {
                 type Item = #ident<
                     #(<#field_ty as #crate_name::system::access::Zip<__Arch>>::Item,)*
                 >;
-                fn get_chunk<E: #crate_name::entity::TempRef<__Arch>>(self, __dynec_entity: E) -> Self::Item {
+                fn get<E: #crate_name::entity::Ref<Archetype = __Arch>>(self, __dynec_entity: E) -> Self::Item {
                     let Self { #(#field_ident,)* } = self;
-                    let __dynec_entity = entity::TempRef::<A>::new(__dynec_entity.id());
+                    let __dynec_entity = #crate_name::entity::TempRef::<__Arch>::new(__dynec_entity.id());
                     #ident { #(
                         #field_ident: <#field_ty as #crate_name::system::access::Zip<__Arch>>::get(
                             #field_ident,
@@ -98,6 +100,10 @@ pub(crate) fn imp(input: TokenStream) -> Result<TokenStream> {
                 }
             }
         };
+
+        if debug_print {
+            println!("{item}");
+        }
         output.extend(item);
     }
 
@@ -117,23 +123,35 @@ impl Parse for Inputs {
 }
 
 struct Input {
-    crate_name: Option<(syn::Token![@], TokenStream)>,
-    meta:       Vec<syn::Attribute>,
-    vis:        syn::Visibility,
-    ident:      syn::Ident,
-    _braces:    syn::token::Brace,
-    fields:     Punctuated<Field, syn::Token![,]>,
+    debug_print: Option<(syn::Token![@], kw::__debug_print)>,
+    crate_name:  Option<(syn::Token![@], kw::dynec_as, syn::token::Paren, TokenStream)>,
+    meta:        Vec<syn::Attribute>,
+    vis:         syn::Visibility,
+    ident:       syn::Ident,
+    _braces:     syn::token::Brace,
+    fields:      Punctuated<Field, syn::Token![,]>,
 }
 
 impl Parse for Input {
     fn parse(input: ParseStream) -> Result<Self> {
-        let crate_name = if input.peek(syn::Token![@]) {
+        let mut debug_print = None;
+        let mut crate_name = None;
+
+        while input.peek(syn::Token![@]) {
             let at = input.parse()?;
-            let crate_name = input.parse()?;
-            Some((at, crate_name))
-        } else {
-            None
-        };
+            let lh = input.lookahead1();
+            if lh.peek(kw::__debug_print) {
+                debug_print = Some((at, input.parse()?));
+            } else if lh.peek(kw::dynec_as) {
+                let kw = input.parse()?;
+                let inner;
+                let paren = syn::parenthesized!(inner in input);
+                let crate_name_ts = inner.parse()?;
+                crate_name = Some((at, kw, paren, crate_name_ts));
+            } else {
+                return Err(lh.error());
+            }
+        }
 
         let meta = input.call(syn::Attribute::parse_outer)?;
         let vis = input.parse()?;
@@ -143,7 +161,7 @@ impl Parse for Input {
         let braces = syn::braced!(inner in input);
         let fields = Punctuated::parse_terminated(&inner)?;
 
-        Ok(Self { crate_name, meta, vis, ident, _braces: braces, fields })
+        Ok(Self { debug_print, crate_name, meta, vis, ident, _braces: braces, fields })
     }
 }
 
@@ -161,4 +179,9 @@ impl Parse for Field {
 
         Ok(Self { meta, vis, ident })
     }
+}
+
+mod kw {
+    syn::custom_keyword!(dynec_as);
+    syn::custom_keyword!(__debug_print);
 }

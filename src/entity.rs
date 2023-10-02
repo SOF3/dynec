@@ -57,8 +57,8 @@ pub struct TempRef<'t, A: Archetype> {
 }
 
 impl<'t, A: Archetype> TempRef<'t, A> {
-    /// Creates a new TemporaryRef with a lifetime.
-    pub(crate) fn new(value: A::RawEntity) -> Self { Self { value, _ph: PhantomData } }
+    /// Creates a new temporary reference with a lifetime.
+    pub fn new(value: A::RawEntity) -> Self { Self { value, _ph: PhantomData } }
 }
 
 impl<'t, A: Archetype> sealed::Sealed for TempRef<'t, A> {}

@@ -537,13 +537,13 @@ mod global_tests {}
 ///     #[dynec(local(initial = 0))] counter: &mut u16,
 ///     #[dynec(param)] &skill_id: &SkillType,
 ///     #[dynec(global)] title: &mut Title,
-///     x: impl system::WriteSimple<Player, PositionX>,
-///     y: impl system::WriteSimple<Player, PositionY>,
-///     dir: impl system::ReadSimple<Player, Direction>,
-///     #[dynec(isotope(discrim = [skill_id]))] skill: impl system::ReadIsotope<
+///     x: system::WriteSimple<Player, PositionX>,
+///     y: system::WriteSimple<Player, PositionY>,
+///     dir: system::ReadSimple<Player, Direction>,
+///     #[dynec(isotope(discrim = [skill_id]))] skill: system::ReadIsotopePartial<
 ///         Player,
 ///         SkillLevel,
-///         usize,
+///         [SkillType; 1],
 ///     >,
 /// ) {
 ///     *counter += 1;

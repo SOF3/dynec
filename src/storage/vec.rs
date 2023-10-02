@@ -225,7 +225,12 @@ impl<'t, E: entity::Raw, C: Send + Sync + 'static> Partition<'t> for StoragePart
     fn split_out(&mut self, entity: E) -> Self {
         let index =
             entity.to_primitive().checked_sub(self.offset).expect("parameter out of bounds");
-        assert!(index < self.bits.len());
+        assert!(
+            index <= self.bits.len(),
+            "split at {index} for partition {}..{}",
+            self.offset,
+            self.offset + self.bits.len()
+        );
 
         let (bits_left, bits_right) = self.bits.split_at(index);
         self.bits = bits_left;

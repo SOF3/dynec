@@ -7,7 +7,7 @@ use crate::entity;
 
 /// A storage based on [`BTreeMap`].
 pub struct Tree<E: entity::Raw, C> {
-    // `SyncUnsafeCell<C>` here must be treaeted as a normal `C`
+    // `SyncUnsafeCell<C>` here must be treated as a normal `C`
     // unless the whole storage is mutably locked,
     // which means the current function exclusively manages this map.
     // `&Tree` must not be used to access the cells mutably.

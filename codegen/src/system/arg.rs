@@ -77,21 +77,21 @@ fn isotope_partial_builder(
             return Err(Error::new(
                 args_span,
                 "Cannot infer archetype and component for component access. Specify explicitly \
-                 with `#[dynec(isotope(arch = X, comp = Y))]`, or use \
-                 `(Read|Write)Isotope(Full|Isotope)<X, Y>`.",
+                 with `#[dynec(isotope(arch = X, comp = Y, [discrim_set = Z]))]`, or use \
+                 `(Read|Write)Isotope(Full|Isotope)<X, Y, [Z]>`.",
             ));
         }
 
         let &arch = args.get(0).expect("args.len() >= 2");
         let &comp = args.get(1).expect("args.len() >= 2");
-        let discrim_key = args.get(2).map(|&ty| Box::new(ty.clone())).ok_or(args_span);
+        let discrim_set = args.get(2).map(|&ty| Box::new(ty.clone())).ok_or(args_span);
 
         Ok(ArgType::Isotope {
             mutable: mutable || ident.starts_with("WriteIsotope"),
             arch: Box::new(arch.clone()),
             comp: Box::new(comp.clone()),
             discrim,
-            discrim_set: discrim_key,
+            discrim_set,
             maybe_uninit,
         })
     })
@@ -288,8 +288,8 @@ fn try_attr_to_arg_type(arg: opt::Arg, attr_span: Span, param_span: Span) -> Res
             let discrim = opts.find_one(
                 |opt| option_match!(opt, opt::IsotopeArg::Discrim(_, discrim) => discrim),
             )?;
-            let discrim_key = opts
-                .find_one(|opt| option_match!(opt, opt::IsotopeArg::DiscrimKey(_, ty) => ty))?
+            let discrim_set = opts
+                .find_one(|opt| option_match!(opt, opt::IsotopeArg::DiscrimSet(_, ty) => ty))?
                 .ok_or(param_span);
             let maybe_uninit = opts.merge_all(|opt| option_match!(opt, opt::IsotopeArg::MaybeUninit(_, tys) => tys.iter().cloned()));
 
@@ -300,7 +300,7 @@ fn try_attr_to_arg_type(arg: opt::Arg, attr_span: Span, param_span: Span) -> Res
                         arch: arch.clone(),
                         comp: comp.clone(),
                         discrim: discrim.map(|(_, discrim)| discrim.clone()),
-                        discrim_set: discrim_key.map(|(_, ty)| ty.clone()),
+                        discrim_set: discrim_set.map(|(_, ty)| ty.clone()),
                         maybe_uninit,
                     })
                 }

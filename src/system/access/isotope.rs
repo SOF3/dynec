@@ -180,7 +180,7 @@ where
         storage.iter().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
     }
 
-    /// Splits the accessor into multiple [`Read`] implementors
+    /// Splits the accessor into multiple mmutable [`AccessSingle`] accessors
     /// so that they can be used independently.
     pub fn split<const N: usize>(
         &mut self,
@@ -306,7 +306,7 @@ where
         storage.iter_mut().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
     }
 
-    /// Splits the accessor into multiple [`Write`] implementors
+    /// Splits the accessor into multiple mutable [`AccessSingle`] accessors
     /// so that they can be used in entity iteration independently.
     pub fn split_isotopes<const N: usize>(
         &mut self,

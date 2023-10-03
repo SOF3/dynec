@@ -139,7 +139,7 @@ where
     ///
     /// Note that this function returns `Option<&mut C>`, not `&mut Option<C>`.
     /// This means setting the Option itself to `Some`/`None` will not modify any stored value.
-    /// Use [`Write::set`] to add/remove a component.
+    /// Use [`set`](AccessSingle::set) to add/remove a component.
     pub fn try_get_mut(&mut self, entity: impl entity::Ref<Archetype = A>) -> Option<&mut C> {
         self.storage.get_mut(entity.id())
     }
@@ -191,10 +191,10 @@ where
         self.storage.set(entity.id(), value)
     }
 
-    /// Converts the accessor to a [`MutPartition`] that covers all entities.
+    /// Converts the accessor to a mutably borrowed partition that covers all entities.
     ///
     /// The actual splitting partitions can be obtained
-    /// by calling [`split_at`](Access::split_at) on the returned value.
+    /// by calling [`split_at`](AccessSingle::split_at) on the returned value.
     pub fn as_partition(
         &mut self,
     ) -> AccessSingle<A, C, util::OwnedDeref<<StorageRef::Target as Storage>::Partition<'_>>> {

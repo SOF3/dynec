@@ -30,7 +30,7 @@ pub trait ZipChunked<A: Archetype>: Zip<A> {
     fn get_chunk(self, chunk: entity::TempRefChunk<A>) -> Self::Chunk;
 }
 
-/// Values that can be used as a [`Zip`] in [`EntityIterator`],
+/// Values that can be used as a [`Zip`] in [`EntityIterator`](crate::system::EntityIterator),
 /// similar to [`IntoIterator`] for iterators.
 ///
 /// This trait is intended to map storages to components of a single entity,
@@ -39,7 +39,7 @@ pub trait ZipChunked<A: Archetype>: Zip<A> {
 /// - Shared/mutable references to [split](super::AccessIsotope::split) isotope accessors
 /// - Any of the above wrapped with [`Try`] for [optional](comp::Presence::Optional) components.
 /// - Tuples of `Zip` implementors, including other tuples.
-/// - Structs of `Zip` fields that use the [`Zip`](crate::Zip) derive macro.
+/// - Structs of `Zip` fields that use the [`Zip`](crate::zip) derive macro.
 pub trait IntoZip<A: Archetype> {
     /// The [`Zip`] type that this is converted into.
     type IntoZip: Zip<A>;

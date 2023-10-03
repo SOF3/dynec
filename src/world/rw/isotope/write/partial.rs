@@ -16,7 +16,7 @@ use crate::{comp, system, world, Archetype};
 ///
 /// To share the same API as [`ReadIsotopeFull`](system::ReadIsotopeFull),
 /// immutable getters still require `&mut self`,
-/// but there are `*_ref` variants for [`ReadIsotopeFull`] that just require `&self`.
+/// but there are `*_ref` variants for these functions that just require `&self`.
 pub type WriteIsotopePartial<A, C, DiscrimSet = Vec<<C as comp::Isotope<A>>::Discrim>> =
     system::AccessIsotope<A, C, Storages<A, C, DiscrimSet>>;
 

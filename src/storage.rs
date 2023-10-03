@@ -57,7 +57,7 @@ pub trait Storage: Access + Default + Send + Sync + 'static {
     /// Non-chunked storages should implement this function by returning a chunk for each entity.
     fn iter_chunks_mut(&mut self) -> Self::IterChunksMut<'_>;
 
-    /// Return value of [`split_at`](Self::split_at).
+    /// Return value of [`as_partition`](Self::as_partition).
     type Partition<'u>: Partition<'u, RawEntity = Self::RawEntity, Comp = Self::Comp>
     where
         Self: 'u;
@@ -77,7 +77,7 @@ pub trait Partition<'t>: Access + Send + Sync + Sized + 't {
         Self: 'u;
     /// Re-borrows the partition with reduced lifetime.
     ///
-    /// This is useful for calling [`iter_mut`](Self::iter_mut)
+    /// This is useful for calling [`into_iter_mut`](Self::into_iter_mut)
     /// and [`split_at`](Self::split_at),
     /// which take `self` as receiver to preserve the lifetime.
     fn by_ref(&mut self) -> Self::ByRef<'_>;
@@ -101,10 +101,10 @@ pub trait Partition<'t>: Access + Send + Sync + Sized + 't {
 
     /// Return value of [`into_iter_mut`](Self::into_iter_mut).
     type IntoIterMut: Iterator<Item = (Self::RawEntity, &'t mut Self::Comp)>;
-    /// Same as [`iter_mut`](Access:iter_mut), but moves the partition object into the iterator.
+    /// Same as [`iter_mut`](Access::iter_mut), but moves the partition object into the iterator.
     fn into_iter_mut(self) -> Self::IntoIterMut;
 
-    /// Same as [`try_get_mut`](Access::try_get_mut), but returns a reference with lifetime `'t`.
+    /// Same as [`get_mut`](Access::get_mut), but returns a reference with lifetime `'t`.
     fn into_mut(self, entity: Self::RawEntity) -> Option<&'t mut Self::Comp>;
 }
 

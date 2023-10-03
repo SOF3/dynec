@@ -154,7 +154,7 @@ pub(super) enum IsotopeArg {
     Arch(syn::Token![=], Box<syn::Type>),
     Comp(syn::Token![=], Box<syn::Type>),
     Discrim(syn::Token![=], Box<syn::Expr>),
-    DiscrimKey(syn::Token![=], Box<syn::Type>),
+    DiscrimSet(syn::Token![=], Box<syn::Type>),
     MaybeUninit(syn::token::Paren, Punctuated<syn::Type, syn::Token![,]>),
 }
 
@@ -180,10 +180,10 @@ impl Parse for Named<IsotopeArg> {
                 let discrim = input.parse::<syn::Expr>()?;
                 IsotopeArg::Discrim(eq, Box::new(discrim))
             }
-            "discrim_key" => {
+            "discrim_set" => {
                 let eq = input.parse::<syn::Token![=]>()?;
                 let ty = input.parse::<syn::Type>()?;
-                IsotopeArg::DiscrimKey(eq, Box::new(ty))
+                IsotopeArg::DiscrimSet(eq, Box::new(ty))
             }
             "maybe_uninit" => parse_maybe_uninit(input, IsotopeArg::MaybeUninit)?,
             _ => return Err(Error::new_spanned(&name, "Unknown option for #[dynec(isotope)]")),

@@ -341,22 +341,24 @@ mod global_tests {}
 /// ```
 ///
 /// ## Simple components
-/// Parameters in the form `impl ReadSimple<A, C>` or `impl WriteSimple<A, C>`,
+/// Parameters of type `ReadSimple<A, C>` or `WriteSimple<A, C>`,
 /// request access to a [simple component](crate::comp::Simple) of type `C`
-/// from entities of the [archetype](crate::Archetype) `A`,
-/// exposed through a type that implements [`system::ReadSimple`](crate::system::ReadSimple)
-/// or [`system::WriteSimple`](crate::system::WriteSimple).
+/// from entities of the [archetype](crate::Archetype) `A`.
 /// The latter provides mutable and exclusive access to the component storages.
 ///
-/// ### Using other bounds
-/// Other trait bounds for the parameter are also allowed,
-/// but the macro would not be able to infer type parameters and mutability.
+/// ### Using other aliases
+/// Using type aliases/renamed imports for the types is also allowed,
+/// but the macro would be unable to infer type parameters and mutability.
 /// In such cases, they must be indicated explicitly in the attribute.
 /// See the syntax reference below for details.
 ///
-/// ### Uninitialized entity references.
-/// Entity creation ordering is automatically enforced if `C` contains entity references,
-/// Use the `maybe_uninit` attribute to remove this ordering.
+/// ### Uninitialized entity references
+/// If `C` contains [references](crate::entity::Referrer) to entities of some archetype `T`,
+/// the scheduler automatically enforces that the system runs before
+/// any systems that create entities of archetype `T`,
+/// because components for entities created through [`EntityCreator`](crate::system::EntityCreator)
+/// are uninitialized until the current cycle completes.
+/// Use the `maybe_uninit` attribute to remove this ordering limitation.
 ///
 /// See [`EntityCreationPartition`](crate::system::partition::EntityCreationPartition#component-accessors)
 /// for more information.
@@ -366,10 +368,10 @@ mod global_tests {}
 /// # /*
 /// #[dynec(simple(
 ///     // Optional, specifies the archetype and component explicitly.
-///     // Only required when the parameter type is not `impl ReadSimple`/`impl WriteSimple`.
+///     // Only required when the parameter type is not `ReadSimple`/`WriteSimple`.
 ///     arch = $ty, comp = $ty,
 ///     // Optional, indicates that the component access is exclusive explicitly.
-///     // Only required when the parameter type is not `impl WriteSimple`.
+///     // Only required when the parameter type is not `WriteSimple`.
 ///     mut,
 ///     // Optional, acknowledges that the entities of the specified archetypes
 ///     // contained in the simple components may be uninitialized.
@@ -379,17 +381,16 @@ mod global_tests {}
 /// ```
 ///
 /// ## Isotope components
-/// Parameters in the form `impl ReadIsotope<A, C>` or `impl WriteIsotope<A, C>`,
+/// Parameters of type [`(Read|Write)Isotope(Full|Partial)`](mod@crate::system#types)
 /// request access to an [isotope component](crate::comp::Isotope) of type `C`
-/// from entities of the [archetype](crate::Archetype) `A`,
-/// exposed through a type that implements [`system::ReadIsotope`](crate::system::ReadIsotope)
-/// or [`system::WriteIsotope`](crate::system::WriteIsotope).
-/// The latter provides mutable and exclusive access to the component storages.
+/// from entities of the [archetype](crate::Archetype) `A`.
+/// The `Write` variants provide mutable and exclusive access to the component storages.
 ///
 /// ### Partial isotope access
-/// By default, all discriminants of the isotope component are requested,
-/// such that writes are exclusive with all systems that read any part of the discriminants.
-/// The accessor can be made partial instead:
+/// If [`ReadIsotopePartial`](crate::system::ReadIsotopePartial) or
+/// [`WriteIsotopePartial`](crate::system::WriteIsotopePartial) is used,
+/// the system only requests access to specific discriminants of the isotope component.
+/// The actual discriminants are specified with an attribute:
 ///
 /// ```
 /// # /*
@@ -397,26 +398,31 @@ mod global_tests {}
 /// # */
 /// ```
 ///
-/// The expression `discrim_set` implements
-/// <code>[discrim::Set](crate::comp::discrim::Set)<C::[Discrim](crate::comp::Discrim)></code>,
-/// which is the set of discriminants that this system uses.
-/// The expression can reference local and param states directly.
-/// However, since it is only evaluated once before the first run of the system,
-/// subsequent writes to the states have no effect on the resolved discriminant set.
+/// The expression `discrim_set` contains the set of discriminants requested by this system
+/// contained in an implementation of
+/// <code>[discrim::Set](crate::comp::discrim::Set)&lt;C::[Discrim](crate::comp::Discrim)&gt;</code>,
+/// which is typically an array or a [`Vec`].
+/// The expression may reference param states directly.
+/// The expression is only evaluated once before the first run of the system,
+/// so it will not react to subsequent changes to the param states.
 ///
 /// `K` is the type of the [key](crate::comp::discrim::Set::Key) to index the discriminant set.
 ///
 /// See the documentation of [`discrim::Set`](crate::comp::discrim::Set) for more information.
 ///
-/// ### Using other bounds
-/// Other trait bounds for the parameter are also allowed,
-/// but the macro would not be able to infer type parameters and mutability.
+/// ### Using other aliases
+/// Using type aliases/renamed imports for the types is also allowed,
+/// but the macro would be unable to infer type parameters and mutability.
 /// In such cases, they must be indicated explicitly in the attribute.
 /// See the syntax reference below for details.
 ///
-/// ### Uninitialized entity references.
-/// Entity creation ordering is automatically enforced if `C` contains entity references,
-/// Use the `maybe_uninit` attribute to remove this ordering.
+/// ### Uninitialized entity references
+/// If `C` contains [references](crate::entity::Referrer) to entities of some archetype `T`,
+/// the scheduler automatically enforces that the system runs before
+/// any systems that create entities of archetype `T`,
+/// because components for entities created through [`EntityCreator`](crate::system::EntityCreator)
+/// are uninitialized until the current cycle completes.
+/// Use the `maybe_uninit` attribute to remove this ordering limitation.
 ///
 /// See [`EntityCreationPartition`](crate::system::partition::EntityCreationPartition#component-accessors)
 /// for more information.
@@ -425,13 +431,16 @@ mod global_tests {}
 /// ```
 /// # /*
 /// #[dynec(isotope(
-///     // Optional, indicates that this accessor only uses the given subset of discriminants.
+///     // Required if and only if the type is ReadIsotopePartial or WriteIsotopePartial.
 ///     discrim = $expr,
-///     // Optional, must be the same as the `Key` associated type of the `discrim` expression.
-///     // Only required when the parameter type is not `impl ReadIsotope`/`impl WriteIsotope`.
-///     discrim_key = $ty,
+///     // Optional, must be the same as the type of the `discrim` expression.
+///     // Only required when the parameter type is not `ReadIsotopePartial`/`WriteIsotopePartial`.
+///     // Note that `ReadIsotopePartial`/`WriteIsotopePartial` have an optional third type parameter
+///     // that expects the same type as `discrim_set`,
+///     // which is `Vec<C::Discrim>` by default.
+///     discrim_set = $ty,
 ///     // Optional, specifies the archetype and component explicitly.
-///     // Only required when the parameter type is not `impl ReadIsotope`/`impl WriteIsotope`.
+///     // Only required when the parameter type is not `(Read|Write)Isotope(Full|Partial)`.
 ///     arch = $ty, comp = $ty,
 ///     // Optional, indicates that the component access is exclusive explicitly.
 ///     // Only required when the parameter type is not `impl WriteSimple`.
@@ -444,7 +453,7 @@ mod global_tests {}
 /// ```
 ///
 /// ## Entity creation
-/// Parameters that require an implementation of [`EntityCreator`](crate::system::EntityCreator)
+/// Parameters that require an [`EntityCreator`](crate::system::EntityCreator)
 /// can be used to create entities.
 /// The archetype of created entities is specified in the type bounds.
 /// Note that entity creation is asynchronous to ensure synchronization,
@@ -478,7 +487,7 @@ mod global_tests {}
 /// ```
 ///
 /// ## Entity deletion
-/// Parameters that require an implementation of [`EntityDeleter`](crate::system::EntityDeleter)
+/// Parameters that require an [`EntityDeleter`](crate::system::EntityDeleter)
 /// can be used to delete entities.
 /// The archetype of deleted entities is specified in the type bounds.
 /// Note that `EntityDeleter` can only be used to mark entities as "deleting";
@@ -488,9 +497,11 @@ mod global_tests {}
 /// It is advisable to execute finalizer-removing systems
 /// after systems that mark entities for deletion finish executing.
 /// This allows deletion to happen in the same cycle,
-/// thus slightly improving entity deletion performance
+/// thus slightly reducing entity deletion latency
 /// (but this is not supposed to be critical anyway).
-/// Nevertheless, unlike entity creation, entity deletion does not have an automatic partition.
+/// Nevertheless, unlike entity creation,
+/// the scheduler does not automatically enforce ordering between
+/// finalizer-manipulating systems and entity-deleting systems.
 ///
 /// ### Syntax reference
 /// ```
@@ -498,6 +509,22 @@ mod global_tests {}
 /// /// This attribute is not required unless `EntityDeleter` is aliased.
 /// #[dynec(entity_deleter(
 ///     // Optional, specifies the archetype if `EntityDeleter` is aliased.
+///     arch = $ty,
+/// ))]
+/// # */
+/// ```
+///
+/// ## Entity iterator
+/// Parameters that require an [`EntityIterator`](crate::system::EntityIterator)
+/// can be used to iterate over entities and zip multiple component iterators.
+/// See the documentation for `EntityIterator` for details.
+///
+/// ### Syntax reference
+/// ```
+/// # /*
+/// /// This attribute is not required unless `EntityIterator` is aliased.
+/// #[dynec(entity_iterator(
+///     // Optional, specifies the archetype if `EntityIterator` is aliased.
 ///     arch = $ty,
 /// ))]
 /// # */
@@ -802,7 +829,7 @@ macro_rules! assert_partition {
 }
 
 /// Declares a composite struct that implements
-/// [`IntoZip`](crate::system::access:IntoZip), [`Zip`](crate::system::access::Zip)
+/// [`IntoZip`](crate::system::access::IntoZip), [`Zip`](crate::system::access::Zip)
 /// and [`ZipChunked`](crate::system::access::ZipChunked)
 /// by delegation to all fields and reconstructing the same struct with different types.
 ///

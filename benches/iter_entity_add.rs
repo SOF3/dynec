@@ -96,7 +96,7 @@ fn iter_entity_add_individual_chunked(group: &mut BenchmarkGroup<'_, measurement
         let num_entities = 1 << log_entities;
         group.throughput(Throughput::Elements(num_entities));
         group.bench_with_input(
-            BenchmarkId::new("chunked (x,y,z)", format!("{num_entities} entities")),
+            BenchmarkId::new("chunked (x, y, z)", format!("{num_entities} entities")),
             &num_entities,
             |b, &num_entities| {
                 let mut world = dynec::system_test!(system_individual_add_system_chunked.build(););

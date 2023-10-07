@@ -4,16 +4,8 @@ use crate::test_util::*;
 use crate::{system, system_test, tracer, world};
 
 fn isotope_discrim_read_test_system(
-    mut iso1: system::AccessIsotope<
-        TestArch,
-        IsoNoInit,
-        impl system::access::StorageMap<TestArch, IsoNoInit, Key = TestDiscrim1>,
-    >,
-    mut iso2: system::AccessIsotope<
-        TestArch,
-        IsoWithInit,
-        impl system::access::StorageMap<TestArch, IsoWithInit, Key = TestDiscrim2>,
-    >,
+    mut iso1: impl system::access::isotope::Get<TestArch, IsoNoInit, TestDiscrim1>,
+    mut iso2: impl system::access::isotope::Get<TestArch, IsoWithInit, TestDiscrim2>,
     initials: &InitialEntities,
 ) {
     let ent = initials.strong.as_ref().expect("initials.strong is None");

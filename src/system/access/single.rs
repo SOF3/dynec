@@ -389,3 +389,6 @@ where
             .map(|(entity, data)| (entity::TempRefChunk::new(entity, entity.add(data.len())), data))
     }
 }
+
+#[cfg(test)]
+mod tests;

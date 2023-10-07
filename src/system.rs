@@ -20,13 +20,16 @@ pub use crate::world::rw::isotope::write::partial::WriteIsotopePartial;
 pub use crate::world::rw::simple::{ReadSimple, WriteSimple};
 
 pub mod access;
-pub use access::{Isotope as AccessIsotope, Single as AccessSingle, Try};
+pub use access::{Isotope as AccessIsotope, Single as AccessSingle};
+
+pub mod iter;
+pub use iter::{EntityIterator, IntoZip, Try, Zip, ZipChunked};
 
 pub mod partition;
 pub use partition::{EntityCreationPartition, Partition};
 
-mod entity;
-pub use entity::{EntityCreator, EntityDeleter, EntityIterator};
+mod offline_buffer;
+pub use offline_buffer::{EntityCreator, EntityDeleter};
 
 pub mod spec;
 #[doc(inline)]

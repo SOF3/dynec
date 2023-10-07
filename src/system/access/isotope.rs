@@ -320,3 +320,6 @@ where
         storages.map(|storage| AccessSingle::new(storage))
     }
 }
+
+#[cfg(test)]
+mod tests;

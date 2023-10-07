@@ -143,7 +143,7 @@ fn test_entity_delete() {
         all(not(debug_assertions), feature = "release-entity-rc"),
     ),
     should_panic = "Detected dangling strong reference to entity dynec::test_util::TestArch#1 in \
-                    system dynec::world::tests::offline_buffer::test_system. All strong \
+                    system dynec::system::offline_buffer::tests::test_system. All strong \
                     references to an entity must be dropped before queuing for deletion and \
                     removing all finalizers."
 )]
@@ -187,7 +187,7 @@ fn test_entity_delete_send_system_leak() {
         all(not(debug_assertions), feature = "release-entity-rc"),
     ),
     should_panic = "Detected dangling strong reference to entity dynec::test_util::TestArch#1 in \
-                    system dynec::world::tests::offline_buffer::test_system. All strong \
+                    system dynec::system::offline_buffer::tests::test_system. All strong \
                     references to an entity must be dropped before queuing for deletion and \
                     removing all finalizers."
 )]

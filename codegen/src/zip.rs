@@ -37,42 +37,42 @@ pub(crate) fn imp(input: TokenStream) -> Result<TokenStream> {
             }
 
             impl<__Arch: #crate_name::Archetype, #(#field_ty),*>
-                #crate_name::system::access::IntoZip<__Arch>
+                #crate_name::system::IntoZip<__Arch>
                 for #ident<#(#field_ty,)*>
             where
-                #(#field_ty: #crate_name::system::access::IntoZip<__Arch>,)*
+                #(#field_ty: #crate_name::system::IntoZip<__Arch>,)*
             {
-                type IntoZip = #ident<#(<#field_ty as #crate_name::system::access::IntoZip<__Arch>>::IntoZip,)*>;
+                type IntoZip = #ident<#(<#field_ty as #crate_name::system::IntoZip<__Arch>>::IntoZip,)*>;
 
                 fn into_zip(self) -> Self::IntoZip {
                     let Self { #(#field_ident,)* } = self;
                     #ident { #(
-                        #field_ident: <#field_ty as #crate_name::system::access::IntoZip<__Arch>>::into_zip(#field_ident),
+                        #field_ident: <#field_ty as #crate_name::system::IntoZip<__Arch>>::into_zip(#field_ident),
                     )* }
                 }
             }
 
             impl<__Arch: #crate_name::Archetype, #(#field_ty),*>
-                #crate_name::system::access::Zip<__Arch>
+                #crate_name::system::Zip<__Arch>
                 for #ident<#(#field_ty,)*>
             where
-                #(#field_ty: #crate_name::system::access::Zip<__Arch>,)*
+                #(#field_ty: #crate_name::system::Zip<__Arch>,)*
             {
                 fn split(&mut self, offset: __Arch::RawEntity) -> Self {
                     let Self { #(#field_ident,)* } = self;
                     #ident { #(
-                        #field_ident: <#field_ty as #crate_name::system::access::Zip<__Arch>>::split(#field_ident, offset),
+                        #field_ident: <#field_ty as #crate_name::system::Zip<__Arch>>::split(#field_ident, offset),
                     )* }
                 }
 
                 type Item = #ident<
-                    #(<#field_ty as #crate_name::system::access::Zip<__Arch>>::Item,)*
+                    #(<#field_ty as #crate_name::system::Zip<__Arch>>::Item,)*
                 >;
                 fn get<E: #crate_name::entity::Ref<Archetype = __Arch>>(self, __dynec_entity: E) -> Self::Item {
                     let Self { #(#field_ident,)* } = self;
                     let __dynec_entity = #crate_name::entity::TempRef::<__Arch>::new(__dynec_entity.id());
                     #ident { #(
-                        #field_ident: <#field_ty as #crate_name::system::access::Zip<__Arch>>::get(
+                        #field_ident: <#field_ty as #crate_name::system::Zip<__Arch>>::get(
                             #field_ident,
                             __dynec_entity,
                         ),
@@ -81,18 +81,18 @@ pub(crate) fn imp(input: TokenStream) -> Result<TokenStream> {
             }
 
             impl<__Arch: #crate_name::Archetype, #(#field_ty),*>
-                #crate_name::system::access::ZipChunked<__Arch>
+                #crate_name::system::ZipChunked<__Arch>
                 for #ident<#(#field_ty,)*>
             where
-                #(#field_ty: #crate_name::system::access::ZipChunked<__Arch>,)*
+                #(#field_ty: #crate_name::system::ZipChunked<__Arch>,)*
             {
                 type Chunk = #ident<
-                    #(<#field_ty as #crate_name::system::access::ZipChunked<__Arch>>::Chunk,)*
+                    #(<#field_ty as #crate_name::system::ZipChunked<__Arch>>::Chunk,)*
                 >;
                 fn get_chunk(self, __dynec_chunk: #crate_name::entity::TempRefChunk<__Arch>) -> Self::Chunk {
                     let Self { #(#field_ident,)* } = self;
                     #ident { #(
-                        #field_ident: <#field_ty as #crate_name::system::access::ZipChunked<__Arch>>::get_chunk(
+                        #field_ident: <#field_ty as #crate_name::system::ZipChunked<__Arch>>::get_chunk(
                             #field_ident,
                             __dynec_chunk,
                         ),

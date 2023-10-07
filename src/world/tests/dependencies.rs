@@ -1,8 +1,20 @@
 //! Tests autoinit dependencies.
 
-use super::common_test_system;
-use crate::system_test;
 use crate::test_util::*;
+use crate::{system, system_test};
+
+#[system(dynec_as(crate))]
+fn common_test_system(
+    _comp3: system::ReadSimple<TestArch, Simple3OptionalDepends12>,
+    _comp4: system::WriteSimple<TestArch, Simple4Depends12>,
+    _comp5: system::ReadSimple<TestArch, Simple5RequiredNoInit>,
+    _comp6: system::ReadSimple<TestArch, Simple6RequiredWithInitNoDeps>,
+    #[dynec(isotope(discrim = [TestDiscrim1(11), TestDiscrim1(17)]))]
+    _iso1: system::ReadIsotopePartial<TestArch, IsoNoInit, [TestDiscrim1; 2]>,
+    #[dynec(global)] _aggregator: &mut Aggregator,
+    #[dynec(global)] _initials: &InitialEntities,
+) {
+}
 
 #[test]
 fn test_dependencies_successful() {

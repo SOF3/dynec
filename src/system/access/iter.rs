@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 use std::{any, ops};
 
-use super::AccessSingle;
+use crate::system::access;
 use crate::{comp, entity, storage, util, Archetype, Storage};
 
 /// Multiple single accessors zipped together,
@@ -36,7 +36,7 @@ pub trait ZipChunked<A: Archetype>: Zip<A> {
 /// This trait is intended to map storages to components of a single entity,
 /// so it is implemented by:
 /// - [`&ReadSimple`](crate::system::ReadSimple) and [`&mut WriteSimple`](crate::system::WriteSimple)
-/// - Shared/mutable references to [split](super::AccessIsotope::split) isotope accessors
+/// - Shared/mutable references to [split](access::Isotope::split) isotope accessors
 /// - Any of the above wrapped with [`Try`] for [optional](comp::Presence::Optional) components.
 /// - Tuples of `Zip` implementors, including other tuples.
 /// - Structs of `Zip` fields that use the [`Zip`](crate::zip) derive macro.
@@ -84,7 +84,7 @@ impl MissingResln for TryMissingResln {
 /// Wrap accessor references with `Try` to indicate that the result should be an `Option`.
 pub struct Try<T>(pub T);
 
-impl<'t, A, C, StorageRef> IntoZip<A> for Try<&'t AccessSingle<A, C, StorageRef>>
+impl<'t, A, C, StorageRef> IntoZip<A> for Try<&'t access::Single<A, C, StorageRef>>
 where
     A: Archetype,
     C: comp::SimpleOrIsotope<A>,
@@ -95,7 +95,7 @@ where
     fn into_zip(self) -> Self::IntoZip { Read { accessor: self.0, _ph: PhantomData } }
 }
 
-impl<'t, A, C, StorageRef> IntoZip<A> for &'t AccessSingle<A, C, StorageRef>
+impl<'t, A, C, StorageRef> IntoZip<A> for &'t access::Single<A, C, StorageRef>
 where
     A: Archetype,
     C: comp::SimpleOrIsotope<A> + comp::Must<A>,
@@ -107,7 +107,7 @@ where
 }
 
 pub struct Read<'t, A, C, StorageRef, Resln> {
-    accessor: &'t AccessSingle<A, C, StorageRef>,
+    accessor: &'t access::Single<A, C, StorageRef>,
     _ph:      PhantomData<Resln>,
 }
 
@@ -145,7 +145,7 @@ where
     }
 }
 
-impl<'t, A, C, StorageRef> IntoZip<A> for Try<&'t mut AccessSingle<A, C, StorageRef>>
+impl<'t, A, C, StorageRef> IntoZip<A> for Try<&'t mut access::Single<A, C, StorageRef>>
 where
     A: Archetype,
     C: comp::SimpleOrIsotope<A>,
@@ -164,7 +164,7 @@ where
     }
 }
 
-impl<'t, A, C, StorageRef> IntoZip<A> for &'t mut AccessSingle<A, C, StorageRef>
+impl<'t, A, C, StorageRef> IntoZip<A> for &'t mut access::Single<A, C, StorageRef>
 where
     A: Archetype,
     C: comp::SimpleOrIsotope<A> + comp::Must<A>,
@@ -182,7 +182,7 @@ where
 }
 
 pub struct Write<'t, A, C, PartitionT, Resln> {
-    accessor: AccessSingle<A, C, PartitionT>,
+    accessor: access::Single<A, C, PartitionT>,
     _ph:      PhantomData<(&'t mut C, Resln)>,
 }
 

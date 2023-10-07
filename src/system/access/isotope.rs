@@ -1,17 +1,23 @@
+//! Traits for accessing a single component storage.
+//!
+//! See [`AccessIsotope`](Isotope) for documentation.
+
 use std::marker::PhantomData;
 use std::{any, fmt, ops};
+
+use derive_trait::derive_trait;
 
 use crate::storage::Access as _;
 use crate::system::AccessSingle;
 use crate::{comp, entity, Archetype, Storage as _};
 
 /// Accesses multiple storages for the same isotope.
-pub struct AccessIsotope<A, C, StorageMapT> {
+pub struct Isotope<A, C, StorageMapT> {
     storages: StorageMapT,
     _ph:      PhantomData<(A, C)>,
 }
 
-impl<A, C, StorageMapT> AccessIsotope<A, C, StorageMapT> {
+impl<A, C, StorageMapT> Isotope<A, C, StorageMapT> {
     pub(crate) fn new(storages: StorageMapT) -> Self { Self { storages, _ph: PhantomData } }
 }
 
@@ -66,7 +72,7 @@ where
     fn iter_values(&self) -> Self::IterValues<'_>;
 }
 
-/// Like [`StorageGet`] but can access a storage without `&mut self`.
+/// Like [`StorageMap`] but can access a storage without `&mut self`.
 ///
 /// Only available for partial accessors,
 /// because a full accessor needs to mutate its local copy of storage map.
@@ -75,6 +81,8 @@ where
     A: Archetype,
     C: comp::Isotope<A>,
 {
+    /// Retrieves a storage by key like [`get_storage`](StorageMap::get_storage),
+    /// but without exclusively borrowing the accessor.
     fn get_storage_ref(&self, key: Self::Key) -> &C::Storage;
 }
 
@@ -103,17 +111,19 @@ where
     ) -> [&mut C::Storage; N];
 }
 
-impl<A, C, StorageMapT> AccessIsotope<A, C, StorageMapT>
+#[derive_trait(pub Get<A: Archetype, C: comp::Isotope<A>, KeyT: fmt::Debug + Copy + 'static>)]
+impl<A, C, KeyT, StorageMapT> Isotope<A, C, StorageMapT>
 where
     A: Archetype,
     C: comp::Isotope<A>,
-    StorageMapT: StorageMap<A, C>,
+    KeyT: fmt::Debug + Copy + 'static,
+    StorageMapT: StorageMap<A, C, Key = KeyT>,
 {
     /// Retrieves the component for the given entity and discriminant.
     ///
     /// This method is infallible for correctly implemented `comp::Must`,
     /// which returns the auto-initialized value for missing components.
-    pub fn get(&mut self, entity: impl entity::Ref<Archetype = A>, discrim: StorageMapT::Key) -> &C
+    pub fn get(&mut self, entity: impl entity::Ref<Archetype = A>, discrim: KeyT) -> &C
     where
         C: comp::Must<A>,
     {
@@ -130,11 +140,7 @@ where
     /// Returns an immutable reference to the component for the specified entity and discriminant,
     /// or the default value for isotopes with a default initializer or `None`
     /// if the component is not present in the entity.
-    pub fn try_get(
-        &mut self,
-        entity: impl entity::Ref<Archetype = A>,
-        key: StorageMapT::Key,
-    ) -> Option<&C> {
+    pub fn try_get(&mut self, entity: impl entity::Ref<Archetype = A>, key: KeyT) -> Option<&C> {
         let storage = self.storages.get_storage(key);
         storage.get(entity.id())
     }
@@ -142,15 +148,17 @@ where
     /// Iterates over all known discriminants of the component type.
     ///
     /// The yielded discriminants are not in any guaranteed order.
-    pub fn known_discrims(&self) -> impl Iterator<Item = <C as comp::Isotope<A>>::Discrim> + '_ {
+    pub fn known_discrims<'t>(
+        &'t self,
+    ) -> impl Iterator<Item = <C as comp::Isotope<A>>::Discrim> + 't {
         self.storages.iter_keys().map(|(_key, discrim)| discrim)
     }
 
     /// Iterates over all known isotopes for a specific entity.
-    pub fn get_all<E: entity::Ref<Archetype = A>>(
-        &self,
+    pub fn get_all<'t, E: entity::Ref<Archetype = A>>(
+        &'t self,
         entity: E,
-    ) -> impl Iterator<Item = (C::Discrim, &C)> + '_ {
+    ) -> impl Iterator<Item = (C::Discrim, &'t C)> + 't {
         // workaround for https://github.com/rust-lang/rust/issues/65442
         fn without_e<A, C>(
             getter: &impl StorageMap<A, C>,
@@ -172,35 +180,37 @@ where
     ///
     /// Note that the initializer is not called for lazy-initialized isotope components.
     /// To avoid confusing behavior, do not use this function if [`C: comp::Must<A>`](comp::Must).
-    pub fn iter(
-        &mut self,
-        key: StorageMapT::Key,
-    ) -> impl Iterator<Item = (entity::TempRef<A>, &C)> {
+    pub fn iter<'t>(
+        &'t mut self,
+        key: KeyT,
+    ) -> impl Iterator<Item = (entity::TempRef<'t, A>, &'t C)> {
         let storage = self.storages.get_storage(key);
         storage.iter().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
     }
 
     /// Splits the accessor into multiple mmutable [`AccessSingle`] accessors
     /// so that they can be used independently.
-    pub fn split<const N: usize>(
-        &mut self,
-        keys: [StorageMapT::Key; N],
-    ) -> [AccessSingle<A, C, impl ops::Deref<Target = C::Storage> + '_>; N] {
+    pub fn split<'t, const N: usize>(
+        &'t mut self,
+        keys: [KeyT; N],
+    ) -> [AccessSingle<A, C, impl ops::Deref<Target = C::Storage> + 't>; N] {
         let storages = self.storages.get_storage_many(keys);
         storages.map(|storage| AccessSingle::new(storage))
     }
 }
 
-impl<A, C, StorageMapT> AccessIsotope<A, C, StorageMapT>
+#[derive_trait(pub GetRef<A: Archetype, C: comp::Isotope<A>, KeyT: fmt::Debug + Copy + 'static>)]
+impl<A, C, KeyT, StorageMapT> Isotope<A, C, StorageMapT>
 where
     A: Archetype,
     C: comp::Isotope<A>,
-    StorageMapT: PartialStorageMap<A, C>,
+    KeyT: fmt::Debug + Copy + 'static,
+    StorageMapT: PartialStorageMap<A, C, Key = KeyT>,
 {
     /// Retrieves the component for the given entity and discriminant.
     ///
-    /// Identical to [`get`](Self::get) but does not require a mutable receiver.
-    pub fn get_ref(&self, entity: impl entity::Ref<Archetype = A>, key: StorageMapT::Key) -> &C
+    /// Identical to [`get`](Isotope::get) but does not require a mutable receiver.
+    pub fn get_ref(&self, entity: impl entity::Ref<Archetype = A>, key: KeyT) -> &C
     where
         C: comp::Must<A>,
     {
@@ -218,43 +228,37 @@ where
     /// or the default value for isotopes with a default initializer or `None`
     /// if the component is not present in the entity.
     ///
-    /// Identical to [`try_get`](Self::try_get) but does not require a mutable receiver.
-    pub fn try_get_ref<E: entity::Ref<Archetype = A>>(
-        &self,
-        entity: E,
-        key: StorageMapT::Key,
-    ) -> Option<&C> {
+    /// Identical to [`try_get`](Isotope::try_get) but does not require a mutable receiver.
+    pub fn try_get_ref<E: entity::Ref<Archetype = A>>(&self, entity: E, key: KeyT) -> Option<&C> {
         let storage = self.storages.get_storage_ref(key);
         storage.get(entity.id())
     }
 
     /// Iterates over all components of a specific discriminant.
     ///
-    /// Identical to [`iter`](Self::iter) but does not require a mutable receiver.
-    pub fn iter_ref(
-        &self,
-        key: StorageMapT::Key,
-    ) -> impl Iterator<Item = (entity::TempRef<A>, &C)> {
+    /// Identical to [`iter`](Isotope::iter) but does not require a mutable receiver.
+    pub fn iter_ref<'t>(
+        &'t self,
+        key: KeyT,
+    ) -> impl Iterator<Item = (entity::TempRef<'t, A>, &'t C)> {
         let storage = self.storages.get_storage_ref(key);
         storage.iter().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
     }
 }
 
-impl<A, C, StorageMapT> AccessIsotope<A, C, StorageMapT>
+#[derive_trait(pub GetMut<A: Archetype, C: comp::Isotope<A>, KeyT: fmt::Debug + Copy + 'static>)]
+impl<A, C, KeyT, StorageMapT> Isotope<A, C, StorageMapT>
 where
     A: Archetype,
     C: comp::Isotope<A>,
-    StorageMapT: StorageMapMut<A, C>,
+    KeyT: fmt::Debug + Copy + 'static,
+    StorageMapT: StorageMapMut<A, C, Key = KeyT>,
 {
     /// Retrieves the component for the given entity and discriminant.
     ///
     /// This method is infallible for correctly implemented `comp::Must`,
     /// which returns the auto-initialized value for missing components.
-    pub fn get_mut(
-        &mut self,
-        entity: impl entity::Ref<Archetype = A>,
-        discrim: StorageMapT::Key,
-    ) -> &mut C
+    pub fn get_mut(&mut self, entity: impl entity::Ref<Archetype = A>, discrim: KeyT) -> &mut C
     where
         C: comp::Must<A>,
     {
@@ -274,11 +278,11 @@ where
     ///
     /// Note that this method returns `Option<&mut C>`, not `&mut Option<C>`.
     /// This means setting the Option itself to `Some`/`None` will not modify any stored value.
-    /// Use [`set`](Self::set) to add/remove a component.
+    /// Use [`set`](Isotope::set) to add/remove a component.
     pub fn try_get_mut(
         &mut self,
         entity: impl entity::Ref<Archetype = A>,
-        key: StorageMapT::Key,
+        key: KeyT,
     ) -> Option<&mut C> {
         let storage = self.storages.get_storage_mut(key);
         storage.get_mut(entity.id())
@@ -290,7 +294,7 @@ where
     pub fn set<E: entity::Ref<Archetype = A>>(
         &mut self,
         entity: E,
-        key: StorageMapT::Key,
+        key: KeyT,
         value: Option<C>,
     ) -> Option<C> {
         let storage = self.storages.get_storage_mut(key);
@@ -298,20 +302,20 @@ where
     }
 
     /// Iterates over mutable references to all components of a specific discriminant.
-    pub fn iter_mut(
-        &mut self,
-        key: StorageMapT::Key,
-    ) -> impl Iterator<Item = (entity::TempRef<A>, &mut C)> {
+    pub fn iter_mut<'t>(
+        &'t mut self,
+        key: KeyT,
+    ) -> impl Iterator<Item = (entity::TempRef<'t, A>, &'t mut C)> {
         let storage = self.storages.get_storage_mut(key);
         storage.iter_mut().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
     }
 
     /// Splits the accessor into multiple mutable [`AccessSingle`] accessors
     /// so that they can be used in entity iteration independently.
-    pub fn split_isotopes<const N: usize>(
-        &mut self,
-        keys: [StorageMapT::Key; N],
-    ) -> [AccessSingle<A, C, impl ops::DerefMut<Target = C::Storage> + '_>; N] {
+    pub fn split_isotopes<'t, const N: usize>(
+        &'t mut self,
+        keys: [KeyT; N],
+    ) -> [AccessSingle<A, C, impl ops::DerefMut<Target = C::Storage> + 't>; N] {
         let storages = self.storages.get_storage_mut_many(keys);
         storages.map(|storage| AccessSingle::new(storage))
     }

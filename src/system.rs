@@ -20,7 +20,7 @@ pub use crate::world::rw::isotope::write::partial::WriteIsotopePartial;
 pub use crate::world::rw::simple::{ReadSimple, WriteSimple};
 
 pub mod access;
-pub use access::{AccessIsotope, AccessSingle, Try};
+pub use access::{Isotope as AccessIsotope, Single as AccessSingle, Try};
 
 pub mod partition;
 pub use partition::{EntityCreationPartition, Partition};

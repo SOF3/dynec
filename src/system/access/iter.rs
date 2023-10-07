@@ -40,6 +40,11 @@ pub trait ZipChunked<A: Archetype>: Zip<A> {
 /// - Any of the above wrapped with [`Try`] for [optional](comp::Presence::Optional) components.
 /// - Tuples of `Zip` implementors, including other tuples.
 /// - Structs of `Zip` fields that use the [`Zip`](crate::zip) derive macro.
+///
+/// The default configuration only implements for tuples of up to 4 elements.
+/// To use larger tuples at the cost of slower compile time,
+/// use the feature `"tuple-impl-{n}-zip"`,
+/// where `{n}` is `8`, `16`, `24` or `32`.
 pub trait IntoZip<A: Archetype> {
     /// The [`Zip`] type that this is converted into.
     type IntoZip: Zip<A>;

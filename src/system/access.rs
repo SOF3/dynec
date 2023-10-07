@@ -1,7 +1,7 @@
 //! Access component storages in the world.
 
-mod single;
-pub use single::AccessSingle;
+pub mod single;
+pub use single::Single as AccessSingle;
 
 mod isotope;
 pub use isotope::AccessIsotope;

@@ -27,11 +27,20 @@ rayon = "1.5.2"
 static_assertions = "1.1.0"
 strum = {version = "0.24.0", optional = true}
 xias = "0.3.0"
+derive-trait = "0.0.1"
 
 [features]
 default = ["debug-entity-rc"]
 debug-entity-rc = [] # Enable entity refcounting in debug mode.
 release-entity-rc = [] # Enable entity refcounting in debug mode.
+tuple-impl-32-zip = ["tuple-impl-24-zip"]
+tuple-impl-24-zip = ["tuple-impl-16-zip"]
+tuple-impl-16-zip = ["tuple-impl-8-zip"]
+tuple-impl-8-zip = []
+tuple-impl-32-init-fn = ["tuple-impl-24-init-fn"]
+tuple-impl-24-init-fn = ["tuple-impl-16-init-fn"]
+tuple-impl-16-init-fn = ["tuple-impl-8-init-fn"]
+tuple-impl-8-init-fn = []
 internal-bench = ["env_logger", "strum"] # Internal feature: enable benchmarking utils.
 
 [dev-dependencies]

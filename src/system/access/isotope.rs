@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 use std::{any, fmt, ops};
 
 use crate::storage::Access as _;
-use crate::system::access::AccessSingle;
+use crate::system::AccessSingle;
 use crate::{comp, entity, Archetype, Storage as _};
 
 /// Accesses multiple storages for the same isotope.

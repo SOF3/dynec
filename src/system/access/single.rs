@@ -1,6 +1,11 @@
+//! Traits for accessing a single component storage.
+//!
+//! See [`AccessSingle`](Single) for documentation.
+
 use std::marker::PhantomData;
 use std::{any, ops};
 
+use derive_trait::derive_trait;
 use rayon::prelude::ParallelIterator;
 
 use crate::entity::{self, ealloc, Raw as _};
@@ -9,18 +14,20 @@ use crate::{comp, util, Archetype, Storage};
 
 /// Access a single component storage, i.e. a simple archetyped component
 /// or an isotope archetyped component for a single discriminant.
-pub struct AccessSingle<A, C, StorageRef> {
+pub struct Single<A, C, StorageRef> {
     storage: StorageRef,
     _ph:     PhantomData<(A, C)>,
 }
 
-impl<A, C, StorageRef> AccessSingle<A, C, StorageRef> {
+impl<A, C, StorageRef> Single<A, C, StorageRef> {
     pub(crate) fn new(storage: StorageRef) -> Self { Self { storage, _ph: PhantomData } }
 }
 
-impl<A, C, StorageRef> AccessSingle<A, C, StorageRef>
+#[derive_trait(pub Get<A: Archetype, C: comp::SimpleOrIsotope<A>>)]
+impl<A, C, StorageRef> Single<A, C, StorageRef>
 where
     A: Archetype,
+    C: comp::SimpleOrIsotope<A>,
     StorageRef: ops::Deref + Sync,
     StorageRef::Target: Storage<RawEntity = A::RawEntity, Comp = C>,
 {
@@ -31,15 +38,16 @@ where
     }
 
     /// Iterates over all initialized components in this storage.
-    pub fn iter(&self) -> impl Iterator<Item = (entity::TempRef<A>, &C)> {
+    pub fn iter<'t>(&'t self) -> impl Iterator<Item = (entity::TempRef<'t, A>, &'t C)> + 't {
         self.storage.iter().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
     }
 }
 
-impl<A, C, StorageRef> AccessSingle<A, C, StorageRef>
+#[derive_trait(pub MustGet<A: Archetype, C: comp::SimpleOrIsotope<A> + comp::Must<A>>)]
+impl<A, C, StorageRef> Single<A, C, StorageRef>
 where
     A: Archetype,
-    C: comp::Must<A>,
+    C: comp::SimpleOrIsotope<A> + comp::Must<A>,
     StorageRef: ops::Deref + Sync,
     StorageRef::Target: Storage<RawEntity = A::RawEntity, Comp = C>,
 {
@@ -83,9 +91,11 @@ where
     }
 }
 
-impl<A, C, StorageRef> AccessSingle<A, C, StorageRef>
+#[derive_trait(pub GetChunked<A: Archetype, C: comp::SimpleOrIsotope<A>>)]
+impl<A, C, StorageRef> Single<A, C, StorageRef>
 where
     A: Archetype,
+    C: comp::SimpleOrIsotope<A>,
     StorageRef: ops::Deref + Sync,
     StorageRef::Target: storage::Chunked<RawEntity = A::RawEntity, Comp = C>,
 {
@@ -101,10 +111,11 @@ where
     }
 }
 
-impl<A, C, StorageRef> AccessSingle<A, C, StorageRef>
+#[derive_trait(pub MustGetChunked<A: Archetype, C: comp::SimpleOrIsotope<A> + comp::Must<A>>)]
+impl<A, C, StorageRef> Single<A, C, StorageRef>
 where
     A: Archetype,
-    C: comp::Must<A>,
+    C: comp::SimpleOrIsotope<A> + comp::Must<A>,
     StorageRef: ops::Deref + Sync,
     StorageRef::Target: storage::Chunked<RawEntity = A::RawEntity, Comp = C>,
 {
@@ -128,9 +139,11 @@ where
     }
 }
 
-impl<A, C, StorageRef> AccessSingle<A, C, StorageRef>
+#[derive_trait(pub GetMut<A: Archetype, C: comp::SimpleOrIsotope<A>>)]
+impl<A, C, StorageRef> Single<A, C, StorageRef>
 where
     A: Archetype,
+    C: comp::SimpleOrIsotope<A>,
     StorageRef: ops::DerefMut + Sync,
     StorageRef::Target: storage::Access<RawEntity = A::RawEntity, Comp = C>,
 {
@@ -139,21 +152,24 @@ where
     ///
     /// Note that this function returns `Option<&mut C>`, not `&mut Option<C>`.
     /// This means setting the Option itself to `Some`/`None` will not modify any stored value.
-    /// Use [`set`](AccessSingle::set) to add/remove a component.
+    /// Use [`set`](Single::set) to add/remove a component.
     pub fn try_get_mut(&mut self, entity: impl entity::Ref<Archetype = A>) -> Option<&mut C> {
         self.storage.get_mut(entity.id())
     }
 
     /// Iterates over mutable references to all initialized components in this storage.
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = (entity::TempRef<A>, &mut C)> {
+    pub fn iter_mut<'t>(
+        &'t mut self,
+    ) -> impl Iterator<Item = (entity::TempRef<'t, A>, &'t mut C)> + 't {
         self.storage.iter_mut().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
     }
 }
 
-impl<A, C, StorageRef> AccessSingle<A, C, StorageRef>
+#[derive_trait(pub MustGetMut<A: Archetype, C: comp::SimpleOrIsotope<A> + comp::Must<A>>)]
+impl<A, C, StorageRef> Single<A, C, StorageRef>
 where
     A: Archetype,
-    C: comp::Must<A>,
+    C: comp::SimpleOrIsotope<A> + comp::Must<A>,
     StorageRef: ops::DerefMut + Sync,
     StorageRef::Target: storage::Access<RawEntity = A::RawEntity, Comp = C>,
 {
@@ -177,9 +193,11 @@ where
     }
 }
 
-impl<A, C, StorageRef> AccessSingle<A, C, StorageRef>
+#[derive_trait(pub Set<A: Archetype, C: comp::SimpleOrIsotope<A>>)]
+impl<A, C, StorageRef> Single<A, C, StorageRef>
 where
     A: Archetype,
+    C: comp::SimpleOrIsotope<A>,
     StorageRef: ops::DerefMut + Sync,
     StorageRef::Target: Storage<RawEntity = A::RawEntity, Comp = C>,
 {
@@ -190,25 +208,31 @@ where
     pub fn set(&mut self, entity: impl entity::Ref<Archetype = A>, value: Option<C>) -> Option<C> {
         self.storage.set(entity.id(), value)
     }
+}
 
+impl<A, C, StorageRef> Single<A, C, StorageRef>
+where
+    A: Archetype,
+    C: comp::SimpleOrIsotope<A>,
+    StorageRef: ops::DerefMut + Sync,
+    StorageRef::Target: Storage<RawEntity = A::RawEntity, Comp = C>,
+{
     /// Converts the accessor to a mutably borrowed partition that covers all entities.
     ///
     /// The actual splitting partitions can be obtained
-    /// by calling [`split_at`](AccessSingle::split_at) on the returned value.
+    /// by calling [`split_at`](Single::split_at) on the returned value.
     pub fn as_partition(
         &mut self,
-    ) -> AccessSingle<A, C, util::OwnedDeref<<StorageRef::Target as Storage>::Partition<'_>>> {
-        AccessSingle {
-            storage: util::OwnedDeref(self.storage.as_partition()),
-            _ph:     PhantomData,
-        }
+    ) -> Single<A, C, util::OwnedDeref<<StorageRef::Target as Storage>::Partition<'_>>> {
+        Single { storage: util::OwnedDeref(self.storage.as_partition()), _ph: PhantomData }
     }
 }
 
-impl<A, C, StorageRef> AccessSingle<A, C, StorageRef>
+#[derive_trait(pub MustSet<A: Archetype, C: comp::SimpleOrIsotope<A> + comp::Must<A>>)]
+impl<A, C, StorageRef> Single<A, C, StorageRef>
 where
     A: Archetype,
-    C: comp::Must<A>,
+    C: comp::SimpleOrIsotope<A> + comp::Must<A>,
     StorageRef: ops::DerefMut + Sync,
     StorageRef::Target: Storage<RawEntity = A::RawEntity, Comp = C>,
 {
@@ -229,9 +253,10 @@ where
     }
 }
 
-impl<'t, A, C, StorageT> AccessSingle<A, C, util::OwnedDeref<StorageT>>
+impl<'t, A, C, StorageT> Single<A, C, util::OwnedDeref<StorageT>>
 where
     A: Archetype,
+    C: comp::SimpleOrIsotope<A>,
     StorageT: storage::Partition<'t, RawEntity = A::RawEntity, Comp = C>,
 {
     /// Splits the accessor into two partitions.
@@ -260,10 +285,10 @@ where
     }
 }
 
-impl<'t, A, C, StorageT> AccessSingle<A, C, util::OwnedDeref<StorageT>>
+impl<'t, A, C, StorageT> Single<A, C, util::OwnedDeref<StorageT>>
 where
     A: Archetype,
-    C: comp::Must<A>,
+    C: comp::SimpleOrIsotope<A> + comp::Must<A>,
     StorageT: storage::Partition<'t, RawEntity = A::RawEntity, Comp = C>,
 {
     /// Gets the component value of an entity accessible by this partition,
@@ -292,10 +317,11 @@ where
     }
 }
 
-impl<A, C, StorageRef> AccessSingle<A, C, StorageRef>
+#[derive_trait(pub GetMutChunked<A: Archetype, C: comp::SimpleOrIsotope<A> + comp::Must<A>>)]
+impl<A, C, StorageRef> Single<A, C, StorageRef>
 where
     A: Archetype,
-    C: comp::Must<A>,
+    C: comp::SimpleOrIsotope<A> + comp::Must<A>,
     StorageRef: ops::DerefMut + Sync,
     StorageRef::Target: storage::Chunked<RawEntity = A::RawEntity, Comp = C>,
     for<'u> <StorageRef::Target as Storage>::Partition<'u>: storage::PartitionChunked<'u>,
@@ -328,10 +354,10 @@ where
     }
 }
 
-impl<'t, A, C, StorageT> AccessSingle<A, C, util::OwnedDeref<StorageT>>
+impl<'t, A, C, StorageT> Single<A, C, util::OwnedDeref<StorageT>>
 where
     A: Archetype,
-    C: comp::Must<A>,
+    C: comp::SimpleOrIsotope<A> + comp::Must<A>,
     StorageT: storage::PartitionChunked<'t, RawEntity = A::RawEntity, Comp = C>,
 {
     /// Returns the chunk of components as a mutable slice,

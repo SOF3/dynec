@@ -24,7 +24,7 @@ jobs:
       - name: Build documentation without private items
         run: cargo doc && mv target/doc ..staging
       - name: Build documentation with private items
-        run: cargo doc --document-private-items --all --all-features && mv target/doc ..staging/private
+        run: cargo doc --document-private-items --all --all-features --no-deps && mv target/doc ..staging/private
 
       - name: Build book
         run: ./mdbook build -d $PWD/..staging/book book

@@ -23,13 +23,16 @@ impl<A, C, StorageRef> Single<A, C, StorageRef> {
     pub(crate) fn new(storage: StorageRef) -> Self { Self { storage, _ph: PhantomData } }
 }
 
-#[derive_trait(pub Get<A: Archetype, C: comp::SimpleOrIsotope<A>>)]
+#[derive_trait(pub Get{
+    type Arch: Archetype = A;
+    type Comp: comp::SimpleOrIsotope<Self::Arch> = C;
+})]
 impl<A, C, StorageRef> Single<A, C, StorageRef>
 where
     A: Archetype,
     C: comp::SimpleOrIsotope<A>,
     StorageRef: ops::Deref + Sync,
-    StorageRef::Target: Storage<RawEntity = A::RawEntity, Comp = C>,
+    StorageRef::Target: Storage<RawEntity = <A as Archetype>::RawEntity, Comp = C>,
 {
     /// Returns an immutable reference to the component for the specified entity,
     /// or `None` if the component is not present in the entity.
@@ -43,13 +46,16 @@ where
     }
 }
 
-#[derive_trait(pub MustGet<A: Archetype, C: comp::SimpleOrIsotope<A> + comp::Must<A>>)]
+#[derive_trait(pub MustGet{
+    type Arch: Archetype = A;
+    type Comp: comp::SimpleOrIsotope<Self::Arch> + comp::Must<Self::Arch> = C;
+})]
 impl<A, C, StorageRef> Single<A, C, StorageRef>
 where
     A: Archetype,
     C: comp::SimpleOrIsotope<A> + comp::Must<A>,
     StorageRef: ops::Deref + Sync,
-    StorageRef::Target: Storage<RawEntity = A::RawEntity, Comp = C>,
+    StorageRef::Target: Storage<RawEntity = <A as Archetype>::RawEntity, Comp = C>,
 {
     /// Returns an immutable reference to the component for the specified entity.
     ///
@@ -79,25 +85,30 @@ where
     /// existence in `snapshot` implies existence in storage.
     pub fn par_iter<'t>(
         &'t self,
-        snapshot: &'t ealloc::Snapshot<A::RawEntity>,
+        snapshot: &'t ealloc::Snapshot<<A as Archetype>::RawEntity>,
     ) -> impl ParallelIterator<Item = (entity::TempRef<'t, A>, &'t C)> {
         rayon::iter::split(snapshot.as_slice(), |slice| slice.split()).flat_map_iter(|slice| {
-            slice.iter_chunks().flat_map(<A::RawEntity as entity::Raw>::range).map(|id| {
-                let entity = entity::TempRef::new(id);
-                let data = self.get(entity);
-                (entity, data)
-            })
+            slice.iter_chunks().flat_map(<<A as Archetype>::RawEntity as entity::Raw>::range).map(
+                |id| {
+                    let entity = entity::TempRef::new(id);
+                    let data = self.get(entity);
+                    (entity, data)
+                },
+            )
         })
     }
 }
 
-#[derive_trait(pub GetChunked<A: Archetype, C: comp::SimpleOrIsotope<A>>)]
+#[derive_trait(pub GetChunked {
+    type Arch: Archetype = A;
+    type Comp: comp::SimpleOrIsotope<Self::Arch> = C;
+})]
 impl<A, C, StorageRef> Single<A, C, StorageRef>
 where
     A: Archetype,
     C: comp::SimpleOrIsotope<A>,
     StorageRef: ops::Deref + Sync,
-    StorageRef::Target: storage::Chunked<RawEntity = A::RawEntity, Comp = C>,
+    StorageRef::Target: storage::Chunked<RawEntity = <A as Archetype>::RawEntity, Comp = C>,
 {
     /// Returns the chunk of components as a slice.
     ///
@@ -111,13 +122,16 @@ where
     }
 }
 
-#[derive_trait(pub MustGetChunked<A: Archetype, C: comp::SimpleOrIsotope<A> + comp::Must<A>>)]
+#[derive_trait(pub MustGetChunked{
+    type Arch: Archetype = A;
+    type Comp: comp::SimpleOrIsotope<Self::Arch> + comp::Must<Self::Arch> = C;
+})]
 impl<A, C, StorageRef> Single<A, C, StorageRef>
 where
     A: Archetype,
     C: comp::SimpleOrIsotope<A> + comp::Must<A>,
     StorageRef: ops::Deref + Sync,
-    StorageRef::Target: storage::Chunked<RawEntity = A::RawEntity, Comp = C>,
+    StorageRef::Target: storage::Chunked<RawEntity = <A as Archetype>::RawEntity, Comp = C>,
 {
     /// Iterates over chunks of entities in parallel.
     ///
@@ -125,7 +139,7 @@ where
     /// that processes different chunks of entities
     pub fn par_iter_chunks<'t>(
         &'t self,
-        snapshot: &'t ealloc::Snapshot<A::RawEntity>,
+        snapshot: &'t ealloc::Snapshot<<A as Archetype>::RawEntity>,
     ) -> impl ParallelIterator<Item = (entity::TempRefChunk<'t, A>, &'t [C])> {
         rayon::iter::split(snapshot.as_slice(), |slice| slice.split()).flat_map_iter(|slice| {
             // we don't need to split over the holes in parallel,
@@ -139,13 +153,16 @@ where
     }
 }
 
-#[derive_trait(pub GetMut<A: Archetype, C: comp::SimpleOrIsotope<A>>)]
+#[derive_trait(pub GetMut{
+    type Arch: Archetype = A;
+    type Comp: comp::SimpleOrIsotope<Self::Arch> = C;
+})]
 impl<A, C, StorageRef> Single<A, C, StorageRef>
 where
     A: Archetype,
     C: comp::SimpleOrIsotope<A>,
     StorageRef: ops::DerefMut + Sync,
-    StorageRef::Target: storage::Access<RawEntity = A::RawEntity, Comp = C>,
+    StorageRef::Target: storage::Access<RawEntity = <A as Archetype>::RawEntity, Comp = C>,
 {
     /// Returns a mutable reference to the component for the specified entity,
     /// or `None` if the component is not present in the entity.
@@ -165,13 +182,16 @@ where
     }
 }
 
-#[derive_trait(pub MustGetMut<A: Archetype, C: comp::SimpleOrIsotope<A> + comp::Must<A>>)]
+#[derive_trait(pub MustGetMut{
+    type Arch: Archetype = A;
+    type Comp: comp::SimpleOrIsotope<Self::Arch> + comp::Must<Self::Arch> = C;
+})]
 impl<A, C, StorageRef> Single<A, C, StorageRef>
 where
     A: Archetype,
     C: comp::SimpleOrIsotope<A> + comp::Must<A>,
     StorageRef: ops::DerefMut + Sync,
-    StorageRef::Target: storage::Access<RawEntity = A::RawEntity, Comp = C>,
+    StorageRef::Target: storage::Access<RawEntity = <A as Archetype>::RawEntity, Comp = C>,
 {
     /// Returns a mutable reference to the component for the specified entity.
     ///
@@ -193,13 +213,16 @@ where
     }
 }
 
-#[derive_trait(pub Set<A: Archetype, C: comp::SimpleOrIsotope<A>>)]
+#[derive_trait(pub Set{
+    type Arch: Archetype = A;
+    type Comp: comp::SimpleOrIsotope<Self::Arch> = C;
+})]
 impl<A, C, StorageRef> Single<A, C, StorageRef>
 where
     A: Archetype,
     C: comp::SimpleOrIsotope<A>,
     StorageRef: ops::DerefMut + Sync,
-    StorageRef::Target: Storage<RawEntity = A::RawEntity, Comp = C>,
+    StorageRef::Target: Storage<RawEntity = <A as Archetype>::RawEntity, Comp = C>,
 {
     /// Overwrites the component for the specified entity.
     ///
@@ -228,20 +251,23 @@ where
     }
 }
 
-#[derive_trait(pub MustSet<A: Archetype, C: comp::SimpleOrIsotope<A> + comp::Must<A>>)]
+#[derive_trait(pub MustSet{
+    type Arch: Archetype = A;
+    type Comp: comp::SimpleOrIsotope<Self::Arch> + comp::Must<Self::Arch> = C;
+})]
 impl<A, C, StorageRef> Single<A, C, StorageRef>
 where
     A: Archetype,
     C: comp::SimpleOrIsotope<A> + comp::Must<A>,
     StorageRef: ops::DerefMut + Sync,
-    StorageRef::Target: Storage<RawEntity = A::RawEntity, Comp = C>,
+    StorageRef::Target: Storage<RawEntity = <A as Archetype>::RawEntity, Comp = C>,
 {
     /// Iterates over all entities in parallel.
     ///
     /// This returns a rayon [`ParallelIterator`] that processes different entities.
     pub fn par_iter_mut<'t>(
         &'t mut self,
-        snapshot: &'t ealloc::Snapshot<A::RawEntity>,
+        snapshot: &'t ealloc::Snapshot<<A as Archetype>::RawEntity>,
     ) -> impl ParallelIterator<Item = (entity::TempRef<'t, A>, &'t mut C)> {
         rayon::iter::split((self.as_partition(), snapshot.as_slice()), |(partition, slice)| {
             let Some(midpt) = slice.midpoint_for_split() else { return ((partition, slice), None) };
@@ -317,13 +343,16 @@ where
     }
 }
 
-#[derive_trait(pub GetMutChunked<A: Archetype, C: comp::SimpleOrIsotope<A> + comp::Must<A>>)]
+#[derive_trait(pub GetMutChunked{
+    type Arch: Archetype = A;
+    type Comp: comp::SimpleOrIsotope<Self::Arch> + comp::Must<Self::Arch> = C;
+})]
 impl<A, C, StorageRef> Single<A, C, StorageRef>
 where
     A: Archetype,
     C: comp::SimpleOrIsotope<A> + comp::Must<A>,
     StorageRef: ops::DerefMut + Sync,
-    StorageRef::Target: storage::Chunked<RawEntity = A::RawEntity, Comp = C>,
+    StorageRef::Target: storage::Chunked<RawEntity = <A as Archetype>::RawEntity, Comp = C>,
     for<'u> <StorageRef::Target as Storage>::Partition<'u>: storage::PartitionChunked<'u>,
 {
     /// Returns the chunk of components as a mutable slice.
@@ -342,7 +371,7 @@ where
     /// This returns a rayon [`ParallelIterator`] that processes different chunks of entities.
     pub fn par_iter_chunks_mut<'t>(
         &'t mut self,
-        snapshot: &'t ealloc::Snapshot<A::RawEntity>,
+        snapshot: &'t ealloc::Snapshot<<A as Archetype>::RawEntity>,
     ) -> impl ParallelIterator<Item = (entity::TempRefChunk<'t, A>, &'t mut [C])> {
         rayon::iter::split((self.as_partition(), snapshot.as_slice()), |(partition, slice)| {
             let Some(midpt) = slice.midpoint_for_split() else { return ((partition, slice), None) };

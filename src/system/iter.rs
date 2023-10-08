@@ -9,6 +9,7 @@
 use std::marker::PhantomData;
 use std::{any, mem, ops};
 
+use super::access::single;
 use crate::entity::{ealloc, Raw as _};
 use crate::system::access;
 use crate::{comp, entity, storage, util, Archetype, Storage};
@@ -181,45 +182,42 @@ impl MissingResln for TryMissingResln {
 /// Wrap accessor references with `Try` to indicate that the result should be an `Option`.
 pub struct Try<T>(pub T);
 
-impl<'t, A, C, StorageRef> IntoZip<A> for Try<&'t access::Single<A, C, StorageRef>>
+impl<'t, A, C, AccessorT> IntoZip<A> for Try<&'t AccessorT>
 where
     A: Archetype,
     C: comp::SimpleOrIsotope<A>,
-    StorageRef: ops::Deref + Sync,
-    StorageRef::Target: Storage<RawEntity = A::RawEntity, Comp = C>,
+    AccessorT: single::Get<Arch = A, Comp = C>,
 {
-    type IntoZip = Read<'t, A, C, StorageRef, TryMissingResln>;
+    type IntoZip = Read<'t, A, C, AccessorT, TryMissingResln>;
     fn into_zip(self) -> Self::IntoZip { Read { accessor: self.0, _ph: PhantomData } }
 }
 
-impl<'t, A, C, StorageRef> IntoZip<A> for &'t access::Single<A, C, StorageRef>
+impl<'t, A, C, AccessorT> IntoZip<A> for &'t AccessorT
 where
     A: Archetype,
     C: comp::SimpleOrIsotope<A> + comp::Must<A>,
-    StorageRef: ops::Deref + Sync,
-    StorageRef::Target: Storage<RawEntity = A::RawEntity, Comp = C>,
+    AccessorT: single::Get<Arch = A, Comp = C>,
 {
-    type IntoZip = Read<'t, A, C, StorageRef, MustMissingResln<A, C>>;
+    type IntoZip = Read<'t, A, C, AccessorT, MustMissingResln<A, C>>;
     fn into_zip(self) -> Self::IntoZip { Read { accessor: self, _ph: PhantomData } }
 }
 
 /// [`IntoZip::IntoZip`] for read-only accessors.
-pub struct Read<'t, A, C, StorageRef, Resln> {
-    accessor: &'t access::Single<A, C, StorageRef>,
-    _ph:      PhantomData<Resln>,
+pub struct Read<'t, A, C, AccessorT, Resln> {
+    accessor: &'t AccessorT,
+    _ph:      PhantomData<(A, C, Resln)>,
 }
 
-impl<'t, A, C, StorageRef, Resln> Copy for Read<'t, A, C, StorageRef, Resln> {}
-impl<'t, A, C, StorageRef, Resln> Clone for Read<'t, A, C, StorageRef, Resln> {
+impl<'t, A, C, AccessorT, Resln> Copy for Read<'t, A, C, AccessorT, Resln> {}
+impl<'t, A, C, AccessorT, Resln> Clone for Read<'t, A, C, AccessorT, Resln> {
     fn clone(&self) -> Self { *self }
 }
 
-impl<'t, A, C, StorageRef, Resln> Zip<A> for Read<'t, A, C, StorageRef, Resln>
+impl<'t, A, C, AccessorT, Resln> Zip<A> for Read<'t, A, C, AccessorT, Resln>
 where
     A: Archetype,
     C: comp::SimpleOrIsotope<A>,
-    StorageRef: ops::Deref + Sync,
-    StorageRef::Target: Storage<RawEntity = A::RawEntity, Comp = C>,
+    AccessorT: single::Get<Arch = A, Comp = C>,
     Resln: MissingResln,
 {
     fn split(&mut self, _offset: A::RawEntity) -> Self { *self }
@@ -230,12 +228,11 @@ where
     }
 }
 
-impl<'t, A, C, StorageRef> ZipChunked<A> for Read<'t, A, C, StorageRef, MustMissingResln<A, C>>
+impl<'t, A, C, AccessorT> ZipChunked<A> for Read<'t, A, C, AccessorT, MustMissingResln<A, C>>
 where
     A: Archetype,
     C: comp::SimpleOrIsotope<A> + comp::Must<A>,
-    StorageRef: ops::Deref + Sync,
-    StorageRef::Target: storage::Chunked<RawEntity = A::RawEntity, Comp = C>,
+    AccessorT: single::Get<Arch = A, Comp = C> + single::GetChunked<Arch = A, Comp = C>,
 {
     type Chunk = &'t [C];
     fn get_chunk(self, chunk: entity::TempRefChunk<A>) -> Self::Chunk {

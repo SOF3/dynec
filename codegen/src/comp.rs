@@ -40,12 +40,6 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
         };
 
     let presence = args.find_one(|arg| option_match!(arg, ItemOpt::Required => &()))?;
-    if let (Some((isotope_span, _)), Some((presence_span, _))) = (isotope, presence) {
-        return Err(Error::new(
-            isotope_span.join(presence_span).unwrap_or(presence_span),
-            "isotope components cannot be required because new isotopes may be created dynamically",
-        ));
-    }
     let presence_enum = match presence {
         Some(_) => quote!(#crate_name::comp::Presence::Required),
         None => quote!(#crate_name::comp::Presence::Optional),
@@ -61,6 +55,13 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
     let finalizer = finalizer.is_some();
 
     let init = args.find_one(|arg| option_match!(arg, ItemOpt::Init(_, func) => func))?;
+    if let (Some((isotope_span, _)), Some((presence_span, _)), None) = (isotope, presence, init) {
+        return Err(Error::new(
+            isotope_span.join(presence_span).unwrap_or(presence_span),
+            "isotope components without an auto-initializer cannot be required because new \
+             isotopes may be created dynamically",
+        ));
+    }
 
     let input: syn::DeriveInput = syn::parse2(input)?;
     let generics = util::parse_generics(&input);

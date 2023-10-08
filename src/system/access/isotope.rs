@@ -111,7 +111,11 @@ where
     ) -> [&mut C::Storage; N];
 }
 
-#[derive_trait(pub Get<A: Archetype, C: comp::Isotope<A>, KeyT: fmt::Debug + Copy + 'static>)]
+#[derive_trait(pub Get{
+    type Arch: Archetype = A;
+    type Comp: comp::Isotope<Self::Arch> = C;
+    type Key: fmt::Debug + Copy + 'static = KeyT;
+})]
 impl<A, C, KeyT, StorageMapT> Isotope<A, C, StorageMapT>
 where
     A: Archetype,
@@ -158,11 +162,11 @@ where
     pub fn get_all<'t, E: entity::Ref<Archetype = A>>(
         &'t self,
         entity: E,
-    ) -> impl Iterator<Item = (C::Discrim, &'t C)> + 't {
+    ) -> impl Iterator<Item = (<C as comp::Isotope<A>>::Discrim, &'t C)> + 't {
         // workaround for https://github.com/rust-lang/rust/issues/65442
         fn without_e<A, C>(
             getter: &impl StorageMap<A, C>,
-            id: A::RawEntity,
+            id: <A as Archetype>::RawEntity,
         ) -> impl Iterator<Item = (C::Discrim, &'_ C)> + '_
         where
             A: Archetype,
@@ -193,13 +197,18 @@ where
     pub fn split<'t, const N: usize>(
         &'t mut self,
         keys: [KeyT; N],
-    ) -> [AccessSingle<A, C, impl ops::Deref<Target = C::Storage> + 't>; N] {
+    ) -> [AccessSingle<A, C, impl ops::Deref<Target = <C as comp::SimpleOrIsotope<A>>::Storage> + 't>;
+           N] {
         let storages = self.storages.get_storage_many(keys);
         storages.map(|storage| AccessSingle::new(storage))
     }
 }
 
-#[derive_trait(pub GetRef<A: Archetype, C: comp::Isotope<A>, KeyT: fmt::Debug + Copy + 'static>)]
+#[derive_trait(pub GetRef{
+    type Arch: Archetype = A;
+    type Comp: comp::Isotope<Self::Arch> = C;
+    type Key: fmt::Debug + Copy + 'static = KeyT;
+})]
 impl<A, C, KeyT, StorageMapT> Isotope<A, C, StorageMapT>
 where
     A: Archetype,
@@ -246,7 +255,11 @@ where
     }
 }
 
-#[derive_trait(pub GetMut<A: Archetype, C: comp::Isotope<A>, KeyT: fmt::Debug + Copy + 'static>)]
+#[derive_trait(pub GetMut{
+    type Arch: Archetype = A;
+    type Comp: comp::Isotope<Self::Arch> = C;
+    type Key: fmt::Debug + Copy + 'static = KeyT;
+})]
 impl<A, C, KeyT, StorageMapT> Isotope<A, C, StorageMapT>
 where
     A: Archetype,
@@ -315,7 +328,11 @@ where
     pub fn split_isotopes<'t, const N: usize>(
         &'t mut self,
         keys: [KeyT; N],
-    ) -> [AccessSingle<A, C, impl ops::DerefMut<Target = C::Storage> + 't>; N] {
+    ) -> [AccessSingle<
+        A,
+        C,
+        impl ops::DerefMut<Target = <C as comp::SimpleOrIsotope<A>>::Storage> + 't,
+    >; N] {
         let storages = self.storages.get_storage_mut_many(keys);
         storages.map(|storage| AccessSingle::new(storage))
     }

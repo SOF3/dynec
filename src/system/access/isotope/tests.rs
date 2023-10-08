@@ -4,8 +4,8 @@ use crate::test_util::*;
 use crate::{system, system_test, tracer, world};
 
 fn isotope_discrim_read_test_system(
-    mut iso1: impl system::access::isotope::Get<TestArch, IsoNoInit, TestDiscrim1>,
-    mut iso2: impl system::access::isotope::Get<TestArch, IsoWithInit, TestDiscrim2>,
+    mut iso1: impl system::access::isotope::Get<Arch = TestArch, Comp = IsoNoInit, Key = TestDiscrim1>,
+    mut iso2: impl system::access::isotope::Get<Arch = TestArch, Comp = IsoWithInit, Key = TestDiscrim2>,
     initials: &InitialEntities,
 ) {
     let ent = initials.strong.as_ref().expect("initials.strong is None");
@@ -101,7 +101,7 @@ fn test_partial_isotope_discrim_read() {
 
 #[test]
 #[should_panic = "The index 42 is not available in the isotope request for \
-                  dynec::test_util::TestArch/dynec::test_util::IsoNoInit"]
+                  dynec::test_util::TestArch/dynec::test_util::isotope_comps::IsoNoInit"]
 fn test_partial_isotope_discrim_read_panic() {
     partial_isotope_discrim_read(vec![TestDiscrim1(11)], vec![(42, None)], vec![]);
 }
@@ -153,7 +153,7 @@ fn partial_isotope_discrim_read(
 
 #[test]
 #[should_panic = "The index 42 is not available in the isotope request for \
-                  dynec::test_util::TestArch/dynec::test_util::IsoNoInit"]
+                  dynec::test_util::TestArch/dynec::test_util::isotope_comps::IsoNoInit"]
 fn test_partial_isotope_discrim_write_panic() {
     partial_isotope_discrim_write(vec![TestDiscrim1(11)], vec![(42, None, None)], vec![]);
 }

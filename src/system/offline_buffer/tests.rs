@@ -231,9 +231,9 @@ fn test_entity_delete_unsend_system_leak() {
         all(not(debug_assertions), feature = "release-entity-rc"),
     ),
     should_panic = "Detected dangling strong reference to entity dynec::test_util::TestArch#1 in \
-                    global state dynec::test_util::InitialEntities. All strong references to an \
-                    entity must be dropped before queuing for deletion and removing all \
-                    finalizers."
+                    global state dynec::test_util::globals::InitialEntities. All strong \
+                    references to an entity must be dropped before queuing for deletion and \
+                    removing all finalizers."
 )]
 fn test_entity_delete_sync_global_leak() {
     #[system(dynec_as(crate))]
@@ -259,9 +259,9 @@ fn test_entity_delete_sync_global_leak() {
         all(not(debug_assertions), feature = "release-entity-rc"),
     ),
     should_panic = "Detected dangling strong reference to entity dynec::test_util::TestArch#1 in \
-                    global state dynec::test_util::InitialEntities. All strong references to an \
-                    entity must be dropped before queuing for deletion and removing all \
-                    finalizers."
+                    global state dynec::test_util::globals::InitialEntities. All strong \
+                    references to an entity must be dropped before queuing for deletion and \
+                    removing all finalizers."
 )]
 fn test_entity_delete_unsync_global_leak() {
     #[system(dynec_as(crate), thread_local)]
@@ -291,9 +291,9 @@ fn test_entity_delete_unsync_global_leak() {
         all(not(debug_assertions), feature = "release-entity-rc"),
     ),
     should_panic = "Detected dangling strong reference to entity dynec::test_util::TestArch#1 in \
-                    dynec::test_util::TestArch / dynec::test_util::StrongRefSimple. All strong \
-                    references to an entity must be dropped before queuing for deletion and \
-                    removing all finalizers."
+                    dynec::test_util::TestArch / dynec::test_util::simple_comps::StrongRefSimple. \
+                    All strong references to an entity must be dropped before queuing for \
+                    deletion and removing all finalizers."
 )]
 fn test_entity_delete_simple_leak() {
     #[system(dynec_as(crate))]
@@ -327,9 +327,10 @@ fn test_entity_delete_simple_leak() {
         all(not(debug_assertions), feature = "release-entity-rc"),
     ),
     should_panic = "Detected dangling strong reference to entity dynec::test_util::TestArch#1 in \
-                    dynec::test_util::TestArch / dynec::test_util::StrongRefIsotope # \
-                    TestDiscrim1(29). All strong references to an entity must be dropped before \
-                    queuing for deletion and removing all finalizers."
+                    dynec::test_util::TestArch / \
+                    dynec::test_util::isotope_comps::StrongRefIsotope # TestDiscrim1(29). All \
+                    strong references to an entity must be dropped before queuing for deletion \
+                    and removing all finalizers."
 )]
 fn test_entity_delete_isotope_leak() {
     #[system(dynec_as(crate))]

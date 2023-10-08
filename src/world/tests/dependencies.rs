@@ -39,7 +39,8 @@ fn test_dependencies_successful() {
 
 #[test]
 #[should_panic = "Cannot create an entity of type `dynec::test_util::TestArch` without explicitly \
-                  passing a component of type `dynec::test_util::Simple5RequiredNoInit`"]
+                  passing a component of type \
+                  `dynec::test_util::simple_comps::Simple5RequiredNoInit`"]
 fn test_dependencies_missing_required_simple() {
     let mut world = system_test!(common_test_system.build(););
     world.create::<TestArch>(crate::comps![@(crate) TestArch => Simple1OptionalNoDepNoInit(1)]);
@@ -47,8 +48,10 @@ fn test_dependencies_missing_required_simple() {
 
 #[test]
 #[should_panic = "Cannot create an entity of type `dynec::test_util::TestArch` without explicitly \
-                  passing a component of type `dynec::test_util::Simple2OptionalDepends1`, or \
-                  `dynec::test_util::Simple1OptionalNoDepNoInit` to invoke its auto-initializer"]
+                  passing a component of type \
+                  `dynec::test_util::simple_comps::Simple2OptionalDepends1`, or \
+                  `dynec::test_util::simple_comps::Simple1OptionalNoDepNoInit` to invoke its \
+                  auto-initializer"]
 fn test_dependencies_missing_required_dep() {
     let mut world = system_test!(common_test_system.build(););
     world.create::<TestArch>(crate::comps![@(crate) TestArch => Simple5RequiredNoInit(1)]);

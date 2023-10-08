@@ -1,214 +1,22 @@
 #![allow(missing_docs)]
 #![allow(clippy::too_many_arguments)]
 
-use std::collections::{BTreeMap, BTreeSet, HashMap};
-use std::fmt;
-use std::hash::Hash;
+use std::collections::BTreeSet;
 use std::num::NonZeroU32;
-use std::sync::Arc;
-use std::time::{Duration, Instant};
 
-use indexmap::IndexSet;
-use parking_lot::{Condvar, Mutex, Once};
+use parking_lot::Once;
 
-use crate::entity::{self, ealloc};
-use crate::{comp, global, storage, system, Archetype, Entity};
+use crate::entity::ealloc;
+use crate::{system, Archetype};
 
-/// Records event and ensures that they are in the correct order.
-pub struct EventTracer<T: fmt::Debug + Eq + Hash> {
-    dependencies: HashMap<T, Vec<T>>,
-    seen:         Mutex<IndexSet<T>>,
-}
+mod event_tracer;
+pub use event_tracer::EventTracer;
 
-impl<T: fmt::Debug + Eq + Hash> EventTracer<T> {
-    /// Creates a new event tracer that ensures `a` executes after `b` for each `(a, b)` input.
-    pub fn new(orders: impl IntoIterator<Item = (T, T)>) -> Self {
-        let mut dependencies: HashMap<T, Vec<T>> = HashMap::new();
-        for (before, after) in orders {
-            dependencies.entry(after).or_default().push(before);
-        }
-        let seen = Mutex::new(IndexSet::new());
+mod clock;
+pub use clock::{Clock, Tick};
 
-        Self { dependencies, seen }
-    }
-
-    /// Records that `event` has happened.
-    ///
-    /// # Panics
-    /// Panics if the same `event` was sent twice or a dependency is not satisfied.
-    pub fn trace(&self, event: T) {
-        let mut seen = self.seen.lock();
-
-        if let Some(deps) = self.dependencies.get(&event) {
-            for dep in deps {
-                assert!(seen.contains(dep), "{:?} should happen after {:?}", event, dep);
-            }
-        }
-
-        let (index, new) = seen.insert_full(event);
-        assert!(
-            !new,
-            "{:?} is inserted twice",
-            seen.get_index(index).expect("insert_full should return valid index")
-        );
-    }
-
-    /// Returns the events observed in this tracer.
-    pub fn get_events(self) -> Vec<T> {
-        let seen = self.seen.into_inner();
-        seen.into_iter().collect()
-    }
-}
-
-/// An emulated clock that supports ticking.
-pub struct Clock<T: Tick> {
-    inner:              Mutex<Inner<T>>,
-    check_completeness: Condvar,
-}
-
-struct Inner<T: Tick> {
-    iter: T::Iterator,
-    now:  T,
-    map:  BTreeMap<T, Arc<Condvar>>,
-}
-
-impl<T: Tick> Default for Clock<T> {
-    fn default() -> Self {
-        let mut iter = T::iter();
-        let now = iter.next().expect("Tick enum must not be empty");
-        Self {
-            inner:              Mutex::new(Inner { iter, now, map: BTreeMap::new() }),
-            check_completeness: Condvar::new(),
-        }
-    }
-}
-
-impl<T: Tick> Clock<T>
-where
-    T::Iterator: Send + Sync,
-{
-    /// Blocks the thread until the clock ticks `until`.
-    ///
-    /// Asserts the current tick is `now`.
-    pub fn wait(&self, now: T, until: T) {
-        let mut inner = self.inner.lock();
-
-        assert!(now < until);
-        assert!(now == inner.now);
-
-        let cv = Arc::clone(inner.map.entry(until).or_default());
-        cv.wait(&mut inner);
-
-        self.check_completeness.notify_one();
-    }
-
-    /// Sets the clock to the next tick.
-    ///
-    /// Asserts the current tick is `expect`.
-    pub(crate) fn tick(&self, expect: T) {
-        let mut inner = self.inner.lock();
-
-        let next = inner.iter.next().expect("Tick enum has been exhausted");
-        assert!(next == expect);
-
-        inner.now = next;
-
-        if let Some(cv) = inner.map.get(&next) {
-            cv.notify_all();
-        }
-    }
-
-    /// Orchestrates a test with this clock.
-    pub(crate) fn orchestrate(&self, mut can_tick_complete: impl FnMut(T) -> bool + Send) {
-        rayon::scope(|scope| {
-            scope.spawn(|_| {
-                let mut inner = self.inner.lock();
-
-                for (i, tick) in T::iter().enumerate() {
-                    if i > 0 {
-                        self.tick(tick);
-                    }
-
-                    let timeout = Instant::now() + Duration::from_secs(5);
-
-                    loop {
-                        if can_tick_complete(tick) {
-                            break;
-                        } else {
-                            if timeout < Instant::now() {
-                                panic!(
-                                    "Timeout exceeded without fulfilling completeness \
-                                     requirements of {:?}",
-                                    tick
-                                );
-                            }
-
-                            self.check_completeness.wait_until(&mut inner, timeout);
-                        }
-                    }
-                }
-            });
-        });
-    }
-}
-
-pub trait Tick:
-    fmt::Debug + Copy + Eq + Ord + strum::IntoEnumIterator + Send + Sync + Sized
-{
-}
-impl<T: fmt::Debug + Copy + Eq + Ord + strum::IntoEnumIterator + Send + Sync + Sized> Tick for T {}
-
-/// A synchronization util that blocks until sufficiently many threads are waiting concurrently.
-///
-/// This is used for testing that multiple threads can run concurrently
-/// (in contrast to one blocking the other).
-#[derive(Debug)]
-pub struct AntiSemaphore {
-    saturation: usize,
-    lock:       Mutex<AntiSemaphoreInner>,
-    condvar:    Condvar,
-}
-
-#[derive(Debug)]
-struct AntiSemaphoreInner {
-    current: usize,
-}
-
-impl AntiSemaphore {
-    /// Creates a new semaphore.
-    /// `saturation` is the number of threads that can wait on the lock.
-    pub fn new(saturation: usize) -> Self {
-        Self {
-            saturation,
-            lock: Mutex::new(AntiSemaphoreInner { current: 0 }),
-            condvar: Condvar::new(),
-        }
-    }
-
-    /// Blocks until the semaphore is saturated.
-    pub fn wait(&self) {
-        let mut lock = self.lock.lock();
-        log::trace!(
-            "AntiSemaphore(current: {}, saturation: {}).wait()",
-            lock.current,
-            self.saturation
-        );
-        lock.current += 1;
-        if lock.current > self.saturation {
-            panic!("AntiSemaphore exceeded saturation");
-        }
-
-        if lock.current == self.saturation {
-            lock.current = 0;
-            self.condvar.notify_all();
-        } else {
-            let result = self.condvar.wait_for(&mut lock, Duration::from_secs(5));
-            if result.timed_out() {
-                panic!("Deadlock: AntiSemaphore not saturated for more than 5 seconds");
-            }
-        }
-    }
-}
+mod anti_semaphore;
+pub use anti_semaphore::AntiSemaphore;
 
 pub(crate) fn init() {
     static SET_LOGGER_ONCE: Once = Once::new();
@@ -224,124 +32,14 @@ impl Archetype for TestArch {
         ealloc::Recycling<NonZeroU32, BTreeSet<NonZeroU32>, ealloc::ThreadRngShardAssigner>;
 }
 
-/// A test discriminant.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, dynec_codegen::Discrim)]
-#[dynec(dynec_as(crate))]
-pub struct TestDiscrim1(pub(crate) usize);
+mod simple_comps;
+pub use simple_comps::*;
 
-/// An alternative test discriminant.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, dynec_codegen::Discrim)]
-#[dynec(dynec_as(crate))]
-pub struct TestDiscrim2(pub(crate) usize);
+mod isotope_comps;
+pub use isotope_comps::*;
 
-// Test component summary:
-// Simple1: optional, depends []
-// Simple2: optional, depends on Simple2
-// Simple3: optional, depends on Simple1 and Simple2
-// Simple4: optional, depends on Simple1 and Simple2
-// Simple5: required, no init
-// Simple6: required, depends []
-
-/// optional, non-init, depless
-#[comp(dynec_as(crate), of = TestArch)]
-#[derive(Debug, PartialEq)]
-pub struct Simple1OptionalNoDepNoInit(pub i32);
-
-/// optional, depends on Simple1
-#[comp(dynec_as(crate), of = TestArch, init = init_comp2/1)]
-#[derive(Debug)]
-pub struct Simple2OptionalDepends1(pub i32);
-fn init_comp2(c1: &Simple1OptionalNoDepNoInit) -> Simple2OptionalDepends1 {
-    Simple2OptionalDepends1(c1.0 + 2)
-}
-
-/// optional, depends on Simple1 + Simple2
-#[comp(
-    dynec_as(crate),
-    of = TestArch,
-    init = |c1: &Simple1OptionalNoDepNoInit, c2: &Simple2OptionalDepends1| Simple3OptionalDepends12(c1.0 * 3, c2.0 * 5),
-)]
-#[derive(Debug)]
-pub struct Simple3OptionalDepends12(pub i32, pub i32);
-
-/// optional, depends on Simple1 + Simple2
-#[comp(
-    dynec_as(crate),
-    of = TestArch,
-    init = |c1: &Simple1OptionalNoDepNoInit, c2: &Simple2OptionalDepends1| Simple4Depends12(c1.0 * 7, c2.0 * 8),
-)]
-#[derive(Debug, PartialEq)]
-pub struct Simple4Depends12(pub i32, pub i32);
-
-/// required, non-init
-#[comp(dynec_as(crate), of = TestArch, required)]
-#[derive(Debug, PartialEq)]
-pub struct Simple5RequiredNoInit(pub i32);
-
-/// required, auto-init, depless
-#[comp(dynec_as(crate), of = TestArch, required, init = || Simple6RequiredWithInitNoDeps(9))]
-#[derive(Debug)]
-pub struct Simple6RequiredWithInitNoDeps(pub i32);
-
-/// non-init, has finalizers
-#[comp(dynec_as(crate), of = TestArch, finalizer)]
-pub struct Simple7WithFinalizerNoinit;
-
-/// a generic component
-pub struct SimpleN<const N: usize>(pub i32);
-
-impl<const N: usize> entity::Referrer for SimpleN<N> {
-    fn visit_type(arg: &mut entity::referrer::VisitTypeArg) { arg.mark::<Self>(); }
-    fn visit_mut<V: entity::referrer::VisitMutArg>(&mut self, _: &mut V) {}
-}
-
-impl<const N: usize> comp::SimpleOrIsotope<TestArch> for SimpleN<N> {
-    const PRESENCE: comp::Presence = comp::Presence::Optional;
-    const INIT_STRATEGY: comp::InitStrategy<TestArch, Self> = comp::InitStrategy::None;
-
-    type Storage = storage::Vec<NonZeroU32, Self>;
-}
-impl<const N: usize> comp::Simple<TestArch> for SimpleN<N> {
-    const IS_FINALIZER: bool = false;
-}
-
-/// Does not have auto init
-#[comp(dynec_as(crate), of = TestArch, isotope = TestDiscrim1)]
-#[derive(Debug, Clone, PartialEq)]
-pub struct IsoNoInit(pub i32);
-
-/// Has auto init
-#[comp(dynec_as(crate), of = TestArch, isotope = TestDiscrim2, init = || IsoWithInit(73))]
-#[derive(Debug, Clone, PartialEq)]
-pub struct IsoWithInit(pub i32);
-
-/// A simple component with a strong reference to [`TestArch`].
-#[comp(dynec_as(crate), of = TestArch)]
-pub struct StrongRefSimple(#[entity] pub Entity<TestArch>);
-
-/// An isotope component with a strong reference to [`TestArch`].
-#[comp(dynec_as(crate), of = TestArch, isotope = TestDiscrim1)]
-pub struct StrongRefIsotope(#[entity] pub Entity<TestArch>);
-
-/// A generic global state with an initializer.
-#[global(dynec_as(crate), initial)]
-#[derive(Default)]
-pub struct Aggregator {
-    pub comp30_sum:     i32,
-    pub comp41_product: i32,
-}
-
-/// An entity-referencing global state.
-#[global(dynec_as(crate), initial)]
-#[derive(Default)]
-pub struct InitialEntities {
-    /// A strong reference.
-    #[entity]
-    pub strong: Option<Entity<TestArch>>,
-    /// A weak reference.
-    #[entity]
-    pub weak:   Option<entity::Weak<TestArch>>,
-}
+mod globals;
+pub use globals::*;
 
 /// A dummy system used for registering all non-entity-referencing test components.
 #[system(dynec_as(crate))]

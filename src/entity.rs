@@ -74,6 +74,8 @@ impl<'t, A: Archetype> Clone for TempRef<'t, A> {
 impl<'t, A: Archetype> Copy for TempRef<'t, A> {}
 
 /// A chunk of continuous [`TempRef`]s.
+///
+/// Methods on this type imitate the API of a [`&[TempRef]`] slice.
 // Instantiations of this struct must guarantee that all entities in `start..end`
 // satisfy the presence invariants for the duration of the lifetime `'t`.
 pub struct TempRefChunk<'t, A: Archetype> {
@@ -86,6 +88,17 @@ impl<'t, A: Archetype> TempRefChunk<'t, A> {
     /// Creates a new TemporaryRef with a lifetime.
     pub(crate) fn new(start: A::RawEntity, end: A::RawEntity) -> Self {
         Self { start, end, _ph: PhantomData }
+    }
+
+    /// Gets the entity by a 0-based offset in the chunk.
+    ///
+    /// Returns `None` if the offset is out of bounds.
+    pub fn get(&self, offset: usize) -> Option<TempRef<'t, A>> {
+        if self.start.add(offset) < self.end {
+            Some(TempRef::new(self.start.add(offset)))
+        } else {
+            None
+        }
     }
 
     /// Iterates over all entities in the chunk.

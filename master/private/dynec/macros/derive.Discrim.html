@@ -8,7 +8,7 @@
 single-field structs (both tuple structs and named structs)
 and enums with only unit fields.</p>
 <p>For structs, the only field must be an integer type
-(one that is convertible from and to <code>usize</code> through <a href="../../xias/trait.SmallInt.html" title="trait xias::SmallInt"><code>xias::SmallInt</code></a>).
+(one that is convertible from and to <code>usize</code> through [<code>xias::SmallInt</code>]).
 Note that dynec mostly uses <code>usize</code> to identify isotopes,
 so using <code>u8</code> instead of <code>usize</code> as the backing type does not provide notable benefit;
 custom discriminant types are only available for ergonomic reasons.</p>

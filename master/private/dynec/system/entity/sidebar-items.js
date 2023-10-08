@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["entity_iterator"],"opaque":[""],"struct":["EntityIteratorImpl"],"trait":["EntityCreator","EntityDeleter","EntityIterator"]};

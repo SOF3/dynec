@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["parse_generics",""]],"struct":[["Attr",""],["Named",""],["ParsedGenerics",""]],"type":[["Result",""]]};

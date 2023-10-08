@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":[["inner",""]],"struct":[["MaybeStoreMap","A map of rctrack stores for each archetype."]]};

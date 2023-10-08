@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["transform_mut"],"struct":["DbgTypeId","DoubleDeref"],"trait":["Ref","UnsafeEqOrd"]};

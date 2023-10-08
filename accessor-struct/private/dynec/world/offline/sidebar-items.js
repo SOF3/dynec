@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["OperationResult"],"struct":["Buffer","BufferShard","CreateEntity","DeleteEntity"],"trait":["Operation"]};

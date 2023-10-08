@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["Store","Stores reference counters of entities for a specific archetype."],["StoreMap","A map of generation stores for each archetype."]]};

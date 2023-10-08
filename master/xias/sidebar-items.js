@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"trait":["Homosign","LossyFloat","SmallFloat","SmallInt","TruncInt","Xias"]};

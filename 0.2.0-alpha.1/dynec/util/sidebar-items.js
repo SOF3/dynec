@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["DbgTypeId","A TypeId that may include type name for debugging."],["DoubleDeref","Wraps a double-deref type so that `*self` is equivalent to `**self.0`"]],"trait":[["Ref","A generic mutable/immutable reference type."],["UnsafeEqOrd","Same as [`Eq`] and [`Ord`], but with a stronger guarantee."]]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["SimpleInitStrategy","Describes how a simple component is auto-initialized."],["SimplePresence","Describes whether a simple component must be present."]],"trait":[["Simple","A simple component has only one instance per entity."]]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"trait":[["Archetype","An archetype is a kind of entity with a fixed set of (optional) components."]]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["entity_iterator","Constructs an instance of [`EntityIterator`] that reads from the given allocator."]],"struct":[["EntityIteratorImpl",""]],"trait":[["EntityCreator","Allows creating entities of an archetype."],["EntityDeleter","Allows deleting entities of an archetype."],["EntityIterator","Allows iterating all entities of an archetype."]]};

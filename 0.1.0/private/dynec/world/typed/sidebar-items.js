@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["builder",""],["populate_default_component",""],["toposort_populators",""]],"struct":[["Builder",""],["Typed","Stores everything related to a specific archetype."]],"trait":[["AnyBuilder",""],["AnyTyped",""]],"type":[["Populator",""]]};

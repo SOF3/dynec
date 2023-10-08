@@ -1,0 +1,1634 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/macros.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>macros.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../dynec/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../dynec/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../dynec/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
+<span id="2">2</span>
+<span id="3">3</span>
+<span id="4">4</span>
+<span id="5">5</span>
+<span id="6">6</span>
+<span id="7">7</span>
+<span id="8">8</span>
+<span id="9">9</span>
+<span id="10">10</span>
+<span id="11">11</span>
+<span id="12">12</span>
+<span id="13">13</span>
+<span id="14">14</span>
+<span id="15">15</span>
+<span id="16">16</span>
+<span id="17">17</span>
+<span id="18">18</span>
+<span id="19">19</span>
+<span id="20">20</span>
+<span id="21">21</span>
+<span id="22">22</span>
+<span id="23">23</span>
+<span id="24">24</span>
+<span id="25">25</span>
+<span id="26">26</span>
+<span id="27">27</span>
+<span id="28">28</span>
+<span id="29">29</span>
+<span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
+<span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
+<span id="37">37</span>
+<span id="38">38</span>
+<span id="39">39</span>
+<span id="40">40</span>
+<span id="41">41</span>
+<span id="42">42</span>
+<span id="43">43</span>
+<span id="44">44</span>
+<span id="45">45</span>
+<span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
+<span id="49">49</span>
+<span id="50">50</span>
+<span id="51">51</span>
+<span id="52">52</span>
+<span id="53">53</span>
+<span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
+<span id="57">57</span>
+<span id="58">58</span>
+<span id="59">59</span>
+<span id="60">60</span>
+<span id="61">61</span>
+<span id="62">62</span>
+<span id="63">63</span>
+<span id="64">64</span>
+<span id="65">65</span>
+<span id="66">66</span>
+<span id="67">67</span>
+<span id="68">68</span>
+<span id="69">69</span>
+<span id="70">70</span>
+<span id="71">71</span>
+<span id="72">72</span>
+<span id="73">73</span>
+<span id="74">74</span>
+<span id="75">75</span>
+<span id="76">76</span>
+<span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
+<span id="80">80</span>
+<span id="81">81</span>
+<span id="82">82</span>
+<span id="83">83</span>
+<span id="84">84</span>
+<span id="85">85</span>
+<span id="86">86</span>
+<span id="87">87</span>
+<span id="88">88</span>
+<span id="89">89</span>
+<span id="90">90</span>
+<span id="91">91</span>
+<span id="92">92</span>
+<span id="93">93</span>
+<span id="94">94</span>
+<span id="95">95</span>
+<span id="96">96</span>
+<span id="97">97</span>
+<span id="98">98</span>
+<span id="99">99</span>
+<span id="100">100</span>
+<span id="101">101</span>
+<span id="102">102</span>
+<span id="103">103</span>
+<span id="104">104</span>
+<span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
+<span id="129">129</span>
+<span id="130">130</span>
+<span id="131">131</span>
+<span id="132">132</span>
+<span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
+<span id="180">180</span>
+<span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
+<span id="232">232</span>
+<span id="233">233</span>
+<span id="234">234</span>
+<span id="235">235</span>
+<span id="236">236</span>
+<span id="237">237</span>
+<span id="238">238</span>
+<span id="239">239</span>
+<span id="240">240</span>
+<span id="241">241</span>
+<span id="242">242</span>
+<span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
+<span id="246">246</span>
+<span id="247">247</span>
+<span id="248">248</span>
+<span id="249">249</span>
+<span id="250">250</span>
+<span id="251">251</span>
+<span id="252">252</span>
+<span id="253">253</span>
+<span id="254">254</span>
+<span id="255">255</span>
+<span id="256">256</span>
+<span id="257">257</span>
+<span id="258">258</span>
+<span id="259">259</span>
+<span id="260">260</span>
+<span id="261">261</span>
+<span id="262">262</span>
+<span id="263">263</span>
+<span id="264">264</span>
+<span id="265">265</span>
+<span id="266">266</span>
+<span id="267">267</span>
+<span id="268">268</span>
+<span id="269">269</span>
+<span id="270">270</span>
+<span id="271">271</span>
+<span id="272">272</span>
+<span id="273">273</span>
+<span id="274">274</span>
+<span id="275">275</span>
+<span id="276">276</span>
+<span id="277">277</span>
+<span id="278">278</span>
+<span id="279">279</span>
+<span id="280">280</span>
+<span id="281">281</span>
+<span id="282">282</span>
+<span id="283">283</span>
+<span id="284">284</span>
+<span id="285">285</span>
+<span id="286">286</span>
+<span id="287">287</span>
+<span id="288">288</span>
+<span id="289">289</span>
+<span id="290">290</span>
+<span id="291">291</span>
+<span id="292">292</span>
+<span id="293">293</span>
+<span id="294">294</span>
+<span id="295">295</span>
+<span id="296">296</span>
+<span id="297">297</span>
+<span id="298">298</span>
+<span id="299">299</span>
+<span id="300">300</span>
+<span id="301">301</span>
+<span id="302">302</span>
+<span id="303">303</span>
+<span id="304">304</span>
+<span id="305">305</span>
+<span id="306">306</span>
+<span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
+<span id="314">314</span>
+<span id="315">315</span>
+<span id="316">316</span>
+<span id="317">317</span>
+<span id="318">318</span>
+<span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
+<span id="322">322</span>
+<span id="323">323</span>
+<span id="324">324</span>
+<span id="325">325</span>
+<span id="326">326</span>
+<span id="327">327</span>
+<span id="328">328</span>
+<span id="329">329</span>
+<span id="330">330</span>
+<span id="331">331</span>
+<span id="332">332</span>
+<span id="333">333</span>
+<span id="334">334</span>
+<span id="335">335</span>
+<span id="336">336</span>
+<span id="337">337</span>
+<span id="338">338</span>
+<span id="339">339</span>
+<span id="340">340</span>
+<span id="341">341</span>
+<span id="342">342</span>
+<span id="343">343</span>
+<span id="344">344</span>
+<span id="345">345</span>
+<span id="346">346</span>
+<span id="347">347</span>
+<span id="348">348</span>
+<span id="349">349</span>
+<span id="350">350</span>
+<span id="351">351</span>
+<span id="352">352</span>
+<span id="353">353</span>
+<span id="354">354</span>
+<span id="355">355</span>
+<span id="356">356</span>
+<span id="357">357</span>
+<span id="358">358</span>
+<span id="359">359</span>
+<span id="360">360</span>
+<span id="361">361</span>
+<span id="362">362</span>
+<span id="363">363</span>
+<span id="364">364</span>
+<span id="365">365</span>
+<span id="366">366</span>
+<span id="367">367</span>
+<span id="368">368</span>
+<span id="369">369</span>
+<span id="370">370</span>
+<span id="371">371</span>
+<span id="372">372</span>
+<span id="373">373</span>
+<span id="374">374</span>
+<span id="375">375</span>
+<span id="376">376</span>
+<span id="377">377</span>
+<span id="378">378</span>
+<span id="379">379</span>
+<span id="380">380</span>
+<span id="381">381</span>
+<span id="382">382</span>
+<span id="383">383</span>
+<span id="384">384</span>
+<span id="385">385</span>
+<span id="386">386</span>
+<span id="387">387</span>
+<span id="388">388</span>
+<span id="389">389</span>
+<span id="390">390</span>
+<span id="391">391</span>
+<span id="392">392</span>
+<span id="393">393</span>
+<span id="394">394</span>
+<span id="395">395</span>
+<span id="396">396</span>
+<span id="397">397</span>
+<span id="398">398</span>
+<span id="399">399</span>
+<span id="400">400</span>
+<span id="401">401</span>
+<span id="402">402</span>
+<span id="403">403</span>
+<span id="404">404</span>
+<span id="405">405</span>
+<span id="406">406</span>
+<span id="407">407</span>
+<span id="408">408</span>
+<span id="409">409</span>
+<span id="410">410</span>
+<span id="411">411</span>
+<span id="412">412</span>
+<span id="413">413</span>
+<span id="414">414</span>
+<span id="415">415</span>
+<span id="416">416</span>
+<span id="417">417</span>
+<span id="418">418</span>
+<span id="419">419</span>
+<span id="420">420</span>
+<span id="421">421</span>
+<span id="422">422</span>
+<span id="423">423</span>
+<span id="424">424</span>
+<span id="425">425</span>
+<span id="426">426</span>
+<span id="427">427</span>
+<span id="428">428</span>
+<span id="429">429</span>
+<span id="430">430</span>
+<span id="431">431</span>
+<span id="432">432</span>
+<span id="433">433</span>
+<span id="434">434</span>
+<span id="435">435</span>
+<span id="436">436</span>
+<span id="437">437</span>
+<span id="438">438</span>
+<span id="439">439</span>
+<span id="440">440</span>
+<span id="441">441</span>
+<span id="442">442</span>
+<span id="443">443</span>
+<span id="444">444</span>
+<span id="445">445</span>
+<span id="446">446</span>
+<span id="447">447</span>
+<span id="448">448</span>
+<span id="449">449</span>
+<span id="450">450</span>
+<span id="451">451</span>
+<span id="452">452</span>
+<span id="453">453</span>
+<span id="454">454</span>
+<span id="455">455</span>
+<span id="456">456</span>
+<span id="457">457</span>
+<span id="458">458</span>
+<span id="459">459</span>
+<span id="460">460</span>
+<span id="461">461</span>
+<span id="462">462</span>
+<span id="463">463</span>
+<span id="464">464</span>
+<span id="465">465</span>
+<span id="466">466</span>
+<span id="467">467</span>
+<span id="468">468</span>
+<span id="469">469</span>
+<span id="470">470</span>
+<span id="471">471</span>
+<span id="472">472</span>
+<span id="473">473</span>
+<span id="474">474</span>
+<span id="475">475</span>
+<span id="476">476</span>
+<span id="477">477</span>
+<span id="478">478</span>
+<span id="479">479</span>
+<span id="480">480</span>
+<span id="481">481</span>
+<span id="482">482</span>
+<span id="483">483</span>
+<span id="484">484</span>
+<span id="485">485</span>
+<span id="486">486</span>
+<span id="487">487</span>
+<span id="488">488</span>
+<span id="489">489</span>
+<span id="490">490</span>
+<span id="491">491</span>
+<span id="492">492</span>
+<span id="493">493</span>
+<span id="494">494</span>
+<span id="495">495</span>
+<span id="496">496</span>
+<span id="497">497</span>
+<span id="498">498</span>
+<span id="499">499</span>
+<span id="500">500</span>
+<span id="501">501</span>
+<span id="502">502</span>
+<span id="503">503</span>
+<span id="504">504</span>
+<span id="505">505</span>
+<span id="506">506</span>
+<span id="507">507</span>
+<span id="508">508</span>
+<span id="509">509</span>
+<span id="510">510</span>
+<span id="511">511</span>
+<span id="512">512</span>
+<span id="513">513</span>
+<span id="514">514</span>
+<span id="515">515</span>
+<span id="516">516</span>
+<span id="517">517</span>
+<span id="518">518</span>
+<span id="519">519</span>
+<span id="520">520</span>
+<span id="521">521</span>
+<span id="522">522</span>
+<span id="523">523</span>
+<span id="524">524</span>
+<span id="525">525</span>
+<span id="526">526</span>
+<span id="527">527</span>
+<span id="528">528</span>
+<span id="529">529</span>
+<span id="530">530</span>
+<span id="531">531</span>
+<span id="532">532</span>
+<span id="533">533</span>
+<span id="534">534</span>
+<span id="535">535</span>
+<span id="536">536</span>
+<span id="537">537</span>
+<span id="538">538</span>
+<span id="539">539</span>
+<span id="540">540</span>
+<span id="541">541</span>
+<span id="542">542</span>
+<span id="543">543</span>
+<span id="544">544</span>
+<span id="545">545</span>
+<span id="546">546</span>
+<span id="547">547</span>
+<span id="548">548</span>
+<span id="549">549</span>
+<span id="550">550</span>
+<span id="551">551</span>
+<span id="552">552</span>
+<span id="553">553</span>
+<span id="554">554</span>
+<span id="555">555</span>
+<span id="556">556</span>
+<span id="557">557</span>
+<span id="558">558</span>
+<span id="559">559</span>
+<span id="560">560</span>
+<span id="561">561</span>
+<span id="562">562</span>
+<span id="563">563</span>
+<span id="564">564</span>
+<span id="565">565</span>
+<span id="566">566</span>
+<span id="567">567</span>
+<span id="568">568</span>
+<span id="569">569</span>
+<span id="570">570</span>
+<span id="571">571</span>
+<span id="572">572</span>
+<span id="573">573</span>
+<span id="574">574</span>
+<span id="575">575</span>
+<span id="576">576</span>
+<span id="577">577</span>
+<span id="578">578</span>
+<span id="579">579</span>
+<span id="580">580</span>
+<span id="581">581</span>
+<span id="582">582</span>
+<span id="583">583</span>
+<span id="584">584</span>
+<span id="585">585</span>
+<span id="586">586</span>
+<span id="587">587</span>
+<span id="588">588</span>
+<span id="589">589</span>
+<span id="590">590</span>
+<span id="591">591</span>
+<span id="592">592</span>
+<span id="593">593</span>
+<span id="594">594</span>
+<span id="595">595</span>
+<span id="596">596</span>
+<span id="597">597</span>
+<span id="598">598</span>
+<span id="599">599</span>
+<span id="600">600</span>
+<span id="601">601</span>
+<span id="602">602</span>
+<span id="603">603</span>
+<span id="604">604</span>
+<span id="605">605</span>
+<span id="606">606</span>
+<span id="607">607</span>
+<span id="608">608</span>
+<span id="609">609</span>
+<span id="610">610</span>
+<span id="611">611</span>
+<span id="612">612</span>
+<span id="613">613</span>
+<span id="614">614</span>
+<span id="615">615</span>
+<span id="616">616</span>
+<span id="617">617</span>
+<span id="618">618</span>
+<span id="619">619</span>
+<span id="620">620</span>
+<span id="621">621</span>
+<span id="622">622</span>
+<span id="623">623</span>
+<span id="624">624</span>
+<span id="625">625</span>
+<span id="626">626</span>
+<span id="627">627</span>
+<span id="628">628</span>
+<span id="629">629</span>
+<span id="630">630</span>
+<span id="631">631</span>
+<span id="632">632</span>
+<span id="633">633</span>
+<span id="634">634</span>
+<span id="635">635</span>
+<span id="636">636</span>
+<span id="637">637</span>
+<span id="638">638</span>
+<span id="639">639</span>
+<span id="640">640</span>
+<span id="641">641</span>
+<span id="642">642</span>
+<span id="643">643</span>
+<span id="644">644</span>
+<span id="645">645</span>
+<span id="646">646</span>
+<span id="647">647</span>
+<span id="648">648</span>
+<span id="649">649</span>
+<span id="650">650</span>
+<span id="651">651</span>
+<span id="652">652</span>
+<span id="653">653</span>
+<span id="654">654</span>
+<span id="655">655</span>
+<span id="656">656</span>
+<span id="657">657</span>
+<span id="658">658</span>
+<span id="659">659</span>
+<span id="660">660</span>
+<span id="661">661</span>
+<span id="662">662</span>
+<span id="663">663</span>
+<span id="664">664</span>
+<span id="665">665</span>
+<span id="666">666</span>
+<span id="667">667</span>
+<span id="668">668</span>
+<span id="669">669</span>
+<span id="670">670</span>
+<span id="671">671</span>
+<span id="672">672</span>
+<span id="673">673</span>
+<span id="674">674</span>
+<span id="675">675</span>
+<span id="676">676</span>
+<span id="677">677</span>
+<span id="678">678</span>
+<span id="679">679</span>
+<span id="680">680</span>
+<span id="681">681</span>
+<span id="682">682</span>
+<span id="683">683</span>
+<span id="684">684</span>
+<span id="685">685</span>
+<span id="686">686</span>
+<span id="687">687</span>
+<span id="688">688</span>
+<span id="689">689</span>
+<span id="690">690</span>
+<span id="691">691</span>
+<span id="692">692</span>
+<span id="693">693</span>
+<span id="694">694</span>
+<span id="695">695</span>
+<span id="696">696</span>
+<span id="697">697</span>
+<span id="698">698</span>
+<span id="699">699</span>
+<span id="700">700</span>
+<span id="701">701</span>
+<span id="702">702</span>
+<span id="703">703</span>
+<span id="704">704</span>
+<span id="705">705</span>
+<span id="706">706</span>
+<span id="707">707</span>
+<span id="708">708</span>
+<span id="709">709</span>
+<span id="710">710</span>
+<span id="711">711</span>
+<span id="712">712</span>
+<span id="713">713</span>
+<span id="714">714</span>
+<span id="715">715</span>
+<span id="716">716</span>
+<span id="717">717</span>
+<span id="718">718</span>
+<span id="719">719</span>
+<span id="720">720</span>
+<span id="721">721</span>
+<span id="722">722</span>
+<span id="723">723</span>
+<span id="724">724</span>
+<span id="725">725</span>
+<span id="726">726</span>
+<span id="727">727</span>
+<span id="728">728</span>
+<span id="729">729</span>
+<span id="730">730</span>
+<span id="731">731</span>
+<span id="732">732</span>
+<span id="733">733</span>
+<span id="734">734</span>
+<span id="735">735</span>
+<span id="736">736</span>
+<span id="737">737</span>
+<span id="738">738</span>
+<span id="739">739</span>
+<span id="740">740</span>
+<span id="741">741</span>
+<span id="742">742</span>
+<span id="743">743</span>
+<span id="744">744</span>
+<span id="745">745</span>
+<span id="746">746</span>
+<span id="747">747</span>
+<span id="748">748</span>
+<span id="749">749</span>
+<span id="750">750</span>
+<span id="751">751</span>
+<span id="752">752</span>
+<span id="753">753</span>
+<span id="754">754</span>
+<span id="755">755</span>
+<span id="756">756</span>
+<span id="757">757</span>
+<span id="758">758</span>
+<span id="759">759</span>
+<span id="760">760</span>
+<span id="761">761</span>
+<span id="762">762</span>
+<span id="763">763</span>
+<span id="764">764</span>
+<span id="765">765</span>
+<span id="766">766</span>
+<span id="767">767</span>
+<span id="768">768</span>
+<span id="769">769</span>
+<span id="770">770</span>
+<span id="771">771</span>
+<span id="772">772</span>
+<span id="773">773</span>
+<span id="774">774</span>
+<span id="775">775</span>
+<span id="776">776</span>
+<span id="777">777</span>
+<span id="778">778</span>
+<span id="779">779</span>
+<span id="780">780</span>
+<span id="781">781</span>
+<span id="782">782</span>
+<span id="783">783</span>
+<span id="784">784</span>
+<span id="785">785</span>
+<span id="786">786</span>
+<span id="787">787</span>
+<span id="788">788</span>
+<span id="789">789</span>
+<span id="790">790</span>
+<span id="791">791</span>
+<span id="792">792</span>
+<span id="793">793</span>
+<span id="794">794</span>
+<span id="795">795</span>
+<span id="796">796</span>
+<span id="797">797</span>
+<span id="798">798</span>
+<span id="799">799</span>
+<span id="800">800</span>
+<span id="801">801</span>
+<span id="802">802</span>
+<span id="803">803</span>
+<span id="804">804</span>
+<span id="805">805</span>
+<span id="806">806</span>
+<span id="807">807</span>
+<span id="808">808</span>
+<span id="809">809</span>
+<span id="810">810</span>
+<span id="811">811</span>
+<span id="812">812</span>
+<span id="813">813</span>
+<span id="814">814</span>
+<span id="815">815</span>
+<span id="816">816</span>
+</pre><pre class="rust"><code><span class="doccomment">/// Declares a composite struct that implements
+/// [`Accessor`](crate::system::Accessor) and [`Chunked`](crate::system::ChunkedAccessor)
+/// by delegation to all fields and reconstructing the same struct with different types.
+///
+/// # Example
+/// ```
+/// dynec::accessors! {
+///     /// This is an example accessor set struct.
+///     /// We can document it and apply attributes on it.
+///     #[allow(dead_code)]
+///     pub Foo {
+///         /// This documents the field.
+///         pub(crate) bar,
+///         qux,
+///     }
+/// }
+/// ```
+</span><span class="attribute">#[doc(inline)]
+</span><span class="kw">pub use </span>dynec_codegen::accessors;
+
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>accessors_tests {}
+
+<span class="doccomment">/// Declares archetypes.
+///
+/// # Example
+/// ```
+/// dynec::archetype! {
+///     /// This is an example archetype.
+///     /// We can document it and apply attributes on it.
+///     #[allow(dead_code)]
+///     pub Foo;
+///
+///     /// Multiple archetypes can be declared in the same block
+///     /// separated by semicolons.
+///     /// The trailing semicolon is optional.
+///     pub(crate) Bar;
+/// }
+///
+/// static_assertions::assert_impl_all!(Foo: dynec::Archetype);
+/// static_assertions::assert_impl_all!(Bar: dynec::Archetype);
+/// ```
+///
+/// Since documentation, attributes, visibility and the trailing semicolon are optional,
+/// private undocumented archetypes can be declared in a single line as well:
+/// ```
+/// dynec::archetype!(Foo);
+/// static_assertions::assert_impl_all!(Foo: dynec::Archetype);
+/// ```
+</span><span class="attribute">#[doc(inline)]
+</span><span class="kw">pub use </span>dynec_codegen::archetype;
+
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>archetype_tests {}
+
+<span class="doccomment">/// Derives a [`comp::Simple`](crate::comp::Simple)
+/// or [`comp::Isotope`](crate::comp::Isotope) implementation for the applied type.
+/// This macro does not modify the input other than stripping attributes.
+///
+/// This macro calls [`EntityRef`] implicitly.
+/// Fields that reference entities should be annotated with `#[entity]`.
+///
+/// # Options
+/// Options are applied behind the attribute name in the form `#[system(...)]`.
+/// Multiple options are separated by commas.
+///
+/// ## `of = $ty`
+/// Implements the applied type as a component of the archetype `$ty`.
+/// Can be applied multiple times in the same attribute.
+///
+/// ## `isotope = $ty`
+/// Indicates that the applied type is an [isotope component](crate::comp::Isotope)
+/// with [discriminant](crate::comp::Isotope::Discrim) of type `$ty`.
+/// Indicates that the type is an isotope component (with discriminant type
+/// `$ty`) instead of a simple component.
+///
+/// ## `required`
+/// Indicates that the component must be [present](crate::comp::SimplePresence)
+/// for an entity of its archetype any time as long as the entity is created andnot destroyed.
+///
+/// This argument is exclusive with `isotope`,
+/// because isotopes are always unset for an unknown discriminant.
+///
+/// ## `finalizer`
+/// Indicates that the component is a [finalizer](crate::comp::Simple::IS_FINALIZER).
+///
+/// ## `init`
+/// Provides an initializer for the component
+/// that gets called when the entity was created without this component.
+/// This initializer should be either a closure with explicit parameter types,
+/// or a function reference with arity in the form `path/arity` (e.g. `count/1`).
+///
+/// For isotope components, the initializer should return an iterator of `(C::Discrim, C)` tuples,
+/// which is similar to the iterator from a HashMap when values of `C` are indexed by the
+/// discriminant.
+///
+/// ## `storage`
+/// Specify the [storage](crate::world::storage) type for the component.
+/// The argument should be a path that specifies the target type.
+/// If the all segments of the path does not have type parameters,
+/// it is automatically filled with `&lt;Arch::RawEntity, Self&gt;`,
+/// which is the format automatically compatible with all default storage types.
+///
+/// # Example
+/// ```
+/// use dynec::comp;
+///
+/// dynec::archetype!(Foo; Bar);
+///
+/// #[comp(of = Foo, of = Bar, init = || Qux(1), finalizer)]
+/// struct Qux(i32);
+///
+/// static_assertions::assert_impl_all!(Qux: comp::Simple&lt;Foo&gt;, comp::Simple&lt;Bar&gt;);
+/// assert!(matches!(&lt;Qux as comp::Simple&lt;Foo&gt;&gt;::PRESENCE, comp::SimplePresence::Optional));
+/// assert!(&lt;Qux as comp::Simple&lt;Bar&gt;&gt;::IS_FINALIZER);
+///
+/// #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, dynec::Discrim)]
+/// #[dynec(map = discrim::SortedVecMap)]
+/// struct Id(usize);
+///
+/// #[comp(of = Foo, isotope = Id, init = Self::make/0)]
+/// struct Corge(i32);
+///
+/// impl Corge {
+///     fn make() -&gt; [(Id, Self); 2] { [
+///         (Id(3), Self(7)),
+///         (Id(13), Self(17)),
+///     ] }
+/// }
+/// ```
+</span><span class="attribute">#[doc(inline)]
+</span><span class="kw">pub use </span>dynec_codegen::comp;
+
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>comp_tests {}
+
+<span class="doccomment">/// Creates a map of components for a given archetype.
+///
+/// # Syntax
+/// The macro starts with the archetype, followed by `=&gt;`,
+/// then a comma-delimited list of simple and isotope components.
+///
+/// ## Simple components
+/// Simple components can be passed in the list directly.
+///
+/// If it is not known whether a component should be added to the list at compile time,
+/// start with `@?`, followed by a value of type `Option&lt;Simple&gt;`, e.g.
+/// `@?flag.then_with(|| value)`.
+///
+/// ## Isotope components
+/// For each isotope component, start with a `@`,
+/// followed by a tuple of type `(Discrim, Isotope)`,
+/// e.g. `@(discrim, value)`.
+///
+/// Since there can be multiple isotope components for the same entity,
+/// an iterator of isotope tuples is also allowed.
+/// Start with `@?`, followed by a value that implements
+/// &lt;code&gt;[IntoIterator]&amp;lt;Item = (Discrim, Isotope)&amp;gt;&lt;/code&gt;.
+/// &lt;code&gt;[HashMap](std::collections::HashMap)&amp;lt;Discrim, Isotope&amp;gt;&lt;/code&gt; and
+/// &lt;code&gt;[BTreeMap](std::collections::BTreeMap)&amp;lt;Discrim, Isotope&amp;gt;&lt;/code&gt;
+/// satisfy this requirement automatically.
+///
+/// # Example
+/// ```
+/// dynec::archetype!(Foo);
+/// let empty = dynec::comps![Foo =&gt;];
+/// assert_eq!(empty.len(), 0);
+///
+/// #[dynec::comp(of = Foo)]
+/// struct Comp1;
+/// #[dynec::comp(of = Foo)]
+/// struct Comp2(i32);
+/// #[dynec::comp(of = Foo)]
+/// struct Comp3 { value: i32 }
+/// #[dynec::comp(of = Foo)]
+/// struct Comp4 { value: i32 }
+///
+/// #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, dynec::Discrim)]
+/// struct MyDiscrim(usize);
+///
+/// #[dynec::comp(of = Foo, isotope = MyDiscrim)]
+/// struct Iso(&amp;&#39;static str);
+///
+/// #[dynec::comp(of = Foo, isotope = MyDiscrim)]
+/// struct Carbon { neutrons: i32 };
+///
+/// let mut hashed = std::collections::HashMap::new();
+/// hashed.insert(MyDiscrim(10), Carbon { neutrons: 4 });
+/// hashed.insert(MyDiscrim(11), Carbon { neutrons: 5 });
+/// hashed.insert(MyDiscrim(12), Carbon { neutrons: 6 });
+///
+/// let map = dynec::comps![Foo =&gt;
+///     Comp1,
+///     Comp2(2),
+///     ?Some(Comp3{ value: 3 }),
+///     ?None::&lt;Comp4&gt;,
+///     @(MyDiscrim(4), Iso(&quot;xxx&quot;)),
+///     @?hashed,
+/// ];
+/// assert_eq!(map.len(), 7);
+/// ```
+</span><span class="attribute">#[doc(inline)]
+</span><span class="kw">pub use </span>dynec_codegen::comps;
+
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>comps_tests {}
+
+<span class="doccomment">/// Derives a [`Global`](crate::Global) implementation for the applied type.
+/// This macro does not modify the input other than stripping attributes.
+///
+/// The `initial` argument can be used to specify an initial value for the global.
+/// If `initial` is given without a value, the global will be initialized to `Default::default()`.
+///
+/// This macro calls [`EntityRef`] implicitly.
+/// Fields that reference entities should be annotated with `#[entity]`.
+///
+/// # Example
+/// ```
+/// #[dynec::global(initial = Foo(5))]
+/// struct Foo(i32);
+///
+/// #[dynec::global(initial)]
+/// #[derive(Default)]
+/// struct Bar(i32);
+/// ```
+///
+/// If a required global state has no initial value
+/// and it is not set in the builder,
+/// building the world would panic.
+///
+/// ```should_panic
+/// #[dynec::global]
+/// struct Qux(i32);
+///
+/// #[dynec::system]
+/// fn test_system(#[dynec(global)] _qux: &amp;Qux) {}
+///
+/// let mut builder = dynec::world::Builder::new(1);
+/// builder.schedule(Box::new(test_system.build()));
+/// builder.build();
+/// ```
+</span><span class="attribute">#[doc(inline)]
+</span><span class="kw">pub use </span>dynec_codegen::global;
+
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>global_tests {}
+
+<span class="doccomment">/// Converts a function into a system.
+///
+/// This macro converts the function into a unit struct with the same name
+/// that implements [`system::Spec`](crate::system::Spec).
+/// The unit struct also derefs to a function pointer,
+/// so it is still possible to call the function directly (mainly useful in unit tests)
+/// without any change in the signature.
+/// However it is not recommended to call this function directly in production code.
+///
+/// # Options
+/// Options are applied behind the attribute name in the form `#[system(...)]`.
+/// Multiple options are separated by commas.
+///
+/// ## `name = $expr`
+/// Sets the [name](crate::system::Spec::debug_name) of the system to `$expr`.
+/// By default, the name is `concat!(module_path!(), &quot;::&quot;, $function_identifier)`.
+///
+/// The `$expr` can read the local and param states of the system directly.
+/// Since the debug name is only used for display purposes,
+/// it is allowed (although confusing to the programmer) to use mutable states in the name.
+/// It is unspecified whether debug messages use the initial debug name or the updated state.
+///
+/// ## `before($expr1, $expr2, ...)` and `after($expr1, $expr2, ...)`
+/// Indicates that the system must be executed
+/// before/after all [partitions](crate::system::Partition) given in the expressions.
+///
+/// Similar to `name`, the expressions can read local and param states directly.
+/// However, only the expressions are only resolved once before the first run of the system,
+/// so mutating states has no effect on the system schedule.
+///
+/// # Parameters
+/// Each parameter of a system function has a special meaning:
+///
+/// ## Local states
+/// Parameters with the attribute `#[dynec(local(initial = xxx))]` are &quot;local states&quot;,
+/// where `xxx` is an expression that evaluates to the initial value of the state.
+///
+/// Local states must take the type `&amp;T` or `&amp;mut T`,
+/// where `T` is the actual stored state.
+/// The mutated state persists for each instance of the system.
+///
+/// Use global states instead if the local state needs to be accessed from multiple systems.
+///
+/// Since entity references can be stored in local states,
+/// the struct used to store local states also implements
+/// [`entity::Referrer`](crate::entity::Referrer).
+/// The corresponding `entity` and `not_entity` attributes can be inside the `local()` instead.
+///
+/// Unlike global states, local states do not need to specify thread safety.
+/// Thread safety of local states is checked at compile time
+/// when the system is passed to the scheduler.
+///
+/// ### Syntax reference
+/// ```
+/// # /*
+/// #[dynec(local(
+///     // Required, the initial value of the local state.
+///     initial = $expr,
+///     // Optional, equivalent to #[entity] in #[derive(EntityRef)].
+///     entity,
+///     // Optional, equivalent to #[not_entity] in #[derive(EntityRef)].
+///     not_entity,
+/// ))]
+/// # */
+/// ```
+///
+/// ## Param states
+/// Parameters with the attribute `#[dynec(param)]` are &quot;param states&quot;.
+/// The user has to pass initial values for param states in the `.build()` method.
+/// Param states behave identically to local states
+/// except for different definition location of the initial value.
+///
+/// It is typically used to initialize systems with resources that cannot be created statically
+/// (e.g. system canvas resources),
+/// or to schedule multiple systems declared from the same function
+/// (e.g. working on multiple discriminants of an isotope component).
+///
+/// Similar to local states, param states can also use `entity` and `not_entity`.
+///
+/// ### Syntax reference
+/// ```
+/// # /*
+/// #[dynec(param(
+///     // Optional, equivalent to #[entity] in #[derive(EntityRef)].
+///     entity,
+///     // Optional, equivalent to #[not_entity] in #[derive(EntityRef)].
+///     not_entity,
+/// ))]
+/// # */
+/// ```
+///
+/// ## Global states
+/// Parameters with the attribute `#[dynec(global)]` are &quot;global states&quot;.
+/// Global states are shared scalar data between multiple systems.
+/// See [`Global`](crate::Global) for more information.
+///
+/// Thread-unsafe (non-`Send + Sync`) global states must be declared as
+/// `#[dynec(global(thread_local))]` to indicate that
+/// the global state can only be accessed from the main thread.
+/// As a result, systems that request thread-local global states
+/// will only be scheduled on the main thread.
+///
+/// ### Syntax reference
+/// ```
+/// # /*
+/// #[dynec(global(
+///     // Optional, indicates that the global state is not thread-safe.
+///     // Forgetting to mark `thread_local` will result in compile error.
+///     thread_local,
+///     // Optional, acknowledges that the entities of the specified archetypes
+///     // contained in the global state may be uninitialized.
+///     maybe_uninit($ty, $ty, ...),
+/// ))]
+/// # */
+/// ```
+///
+/// ## Simple components
+/// Parameters in the form `impl ReadSimple&lt;A, C&gt;` or `impl WriteSimple&lt;A, C&gt;`,
+/// request access to a [simple component](crate::comp::Simple) of type `C`
+/// from entities of the [archetype](crate::Archetype) `A`,
+/// exposed through a type that implements [`system::ReadSimple`](crate::system::ReadSimple)
+/// or [`system::WriteSimple`](crate::system::WriteSimple).
+/// The latter provides mutable and exclusive access to the component storages.
+///
+/// ### Using other bounds
+/// Other trait bounds for the parameter are also allowed,
+/// but the macro would not be able to infer type parameters and mutability.
+/// In such cases, they must be indicated explicitly in the attribute.
+/// See the syntax reference below for details.
+///
+/// ### Uninitialized entity references.
+/// Entity creation ordering is automatically enforced if `C` contains entity references,
+/// Use the `maybe_uninit` attribute to remove this ordering.
+///
+/// See [`EntityCreationPartition`](crate::system::partition::EntityCreationPartition#component-accessors)
+/// for more information.
+///
+/// ### Syntax reference
+/// ```
+/// # /*
+/// #[dynec(simple(
+///     // Optional, specifies the archetype and component explicitly.
+///     // Only required when the parameter type is not `impl ReadSimple`/`impl WriteSimple`.
+///     arch = $ty, comp = $ty,
+///     // Optional, indicates that the component access is exclusive explicitly.
+///     // Only required when the parameter type is not `impl WriteSimple`.
+///     mut,
+///     // Optional, acknowledges that the entities of the specified archetypes
+///     // contained in the simple components may be uninitialized.
+///     maybe_uninit($ty, $ty, ...),
+/// ))]
+/// # */
+/// ```
+///
+/// ## Isotope components
+/// Parameters in the form `impl ReadIsotope&lt;A, C&gt;` or `impl WriteIsotope&lt;A, C&gt;`,
+/// request access to an [isotope component](crate::comp::Isotope) of type `C`
+/// from entities of the [archetype](crate::Archetype) `A`,
+/// exposed through a type that implements [`system::ReadIsotope`](crate::system::ReadIsotope)
+/// or [`system::WriteIsotope`](crate::system::WriteIsotope).
+/// The latter provides mutable and exclusive access to the component storages.
+///
+/// ### Partial isotope access
+/// By default, all discriminants of the isotope component are requested,
+/// such that writes are exclusive with all systems that read any part of the discriminants.
+/// The accessor can be made partial instead:
+///
+/// ```
+/// # /*
+/// #[dynec(isotope(discrim = discrim_set))] param_name: impl ReadIsotope&lt;A, C, K&gt;,
+/// # */
+/// ```
+///
+/// The expression `discrim_set` implements
+/// &lt;code&gt;[discrim::Set](crate::comp::discrim::Set)&lt;C::[Discrim](crate::comp::Discrim)&gt;&lt;/code&gt;,
+/// which is the set of discriminants that this system uses.
+/// The expression can reference local and param states directly.
+/// However, since it is only evaluated once before the first run of the system,
+/// subsequent writes to the states have no effect on the resolved discriminant set.
+///
+/// `K` is the type of the [key](crate::comp::discrim::Set::Key) to index the discriminant set.
+///
+/// See the documentation of [`discrim::Set`](crate::comp::discrim::Set) for more information.
+///
+/// ### Using other bounds
+/// Other trait bounds for the parameter are also allowed,
+/// but the macro would not be able to infer type parameters and mutability.
+/// In such cases, they must be indicated explicitly in the attribute.
+/// See the syntax reference below for details.
+///
+/// ### Uninitialized entity references.
+/// Entity creation ordering is automatically enforced if `C` contains entity references,
+/// Use the `maybe_uninit` attribute to remove this ordering.
+///
+/// See [`EntityCreationPartition`](crate::system::partition::EntityCreationPartition#component-accessors)
+/// for more information.
+///
+/// ### Syntax reference
+/// ```
+/// # /*
+/// #[dynec(isotope(
+///     // Optional, indicates that this accessor only uses the given subset of discriminants.
+///     discrim = $expr,
+///     // Optional, must be the same as the `Key` associated type of the `discrim` expression.
+///     // Only required when the parameter type is not `impl ReadIsotope`/`impl WriteIsotope`.
+///     discrim_key = $ty,
+///     // Optional, specifies the archetype and component explicitly.
+///     // Only required when the parameter type is not `impl ReadIsotope`/`impl WriteIsotope`.
+///     arch = $ty, comp = $ty,
+///     // Optional, indicates that the component access is exclusive explicitly.
+///     // Only required when the parameter type is not `impl WriteSimple`.
+///     mut,
+///     // Optional, acknowledges that the entities of the specified archetypes
+///     // contained in the simple components may be uninitialized.
+///     maybe_uninit($ty, $ty, ...),
+/// ))]
+/// # */
+/// ```
+///
+/// ## Entity creation
+/// Parameters that require an implementation of [`EntityCreator`](crate::system::EntityCreator)
+/// can be used to create entities.
+/// The archetype of created entities is specified in the type bounds.
+/// Note that entity creation is asynchronous to ensure synchronization,
+/// i.e. components of the created entity are deferred until the current cycle completes.
+///
+/// Systems that create entities of an archetype `A` should be scheduled to execute
+/// after all systems that may read entity references of archetype `A`
+/// (through strong or weak references stored in
+/// local states, global states, simple components or isotope components).
+/// See [`EntityCreationPartition`](crate::system::partition::EntityCreationPartition#entity-creators)
+/// for more information.
+///
+/// If it can be ensured that the new uninitialized entities cannot be leaked to other systems,
+/// e.g. if the created entity ID is not stored into any states,
+/// the attribute `#[dynec(entity_creator(no_partition))]`
+/// can be applied on the entity-creating parameter
+/// to avoid registering the automatic dependency to run after `EntityCreationPartition&lt;A&gt;`.
+///
+/// ### Syntax reference
+/// ```
+/// # /*
+/// /// This attribute is not required unless `EntityCreator` is aliased.
+/// #[dynec(entity_creator(
+///     // Optional, specifies the archetype if `EntityCreator` is aliased.
+///     arch = $ty,
+///     // Optional, allows the derived system to execute before
+///     // the EntityCreationPartition of this archetype.
+///     no_partition,
+/// ))]
+/// # */
+/// ```
+///
+/// ## Entity deletion
+/// Parameters that require an implementation of [`EntityDeleter`](crate::system::EntityDeleter)
+/// can be used to delete entities.
+/// The archetype of deleted entities is specified in the type bounds.
+/// Note that `EntityDeleter` can only be used to mark entities as &quot;deleting&quot;;
+/// the entity is only deleted after
+/// all [finalizer](crate::comp::Simple::IS_FINALIZER) components are unset.
+///
+/// It is advisable to execute finalizer-removing systems
+/// after systems that mark entities for deletion finish executing.
+/// This allows deletion to happen in the same cycle,
+/// thus slightly improving entity deletion performance
+/// (but this is not supposed to be critical anyway).
+/// Nevertheless, unlike entity creation, entity deletion does not have an automatic partition.
+///
+/// ### Syntax reference
+/// ```
+/// # /*
+/// /// This attribute is not required unless `EntityDeleter` is aliased.
+/// #[dynec(entity_deleter(
+///     // Optional, specifies the archetype if `EntityDeleter` is aliased.
+///     arch = $ty,
+/// ))]
+/// # */
+/// ```
+///
+/// # Example
+/// ```
+/// use dynec::system;
+///
+/// #[dynec::global(initial = Title(&quot;hello world&quot;))]
+/// struct Title(&amp;&#39;static str);
+///
+/// #[derive(Debug, PartialEq, Eq, Hash)]
+/// struct Foo;
+///
+/// dynec::archetype!(Player);
+///
+/// #[dynec::comp(of = Player)]
+/// struct PositionX(f32);
+/// #[dynec::comp(of = Player)]
+/// struct PositionY(f32);
+///
+/// #[dynec::comp(of = Player)]
+/// struct Direction(f32, f32);
+///
+/// #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, dynec::Discrim)]
+/// struct SkillType(usize);
+///
+/// #[dynec::comp(of = Player, isotope = SkillType, init = || [(SkillType(0), SkillLevel(1))])]
+/// struct SkillLevel(u8);
+///
+/// #[system(
+///     name = format!(&quot;simulate[counter = {}, skill_id = {:?}]&quot;, counter, skill_id),
+///     before(Foo),
+/// )]
+/// fn simulate(
+///     #[dynec(local(initial = 0))] counter: &amp;mut u16,
+///     #[dynec(param)] &amp;skill_id: &amp;SkillType,
+///     #[dynec(global)] title: &amp;mut Title,
+///     x: impl system::WriteSimple&lt;Player, PositionX&gt;,
+///     y: impl system::WriteSimple&lt;Player, PositionY&gt;,
+///     dir: impl system::ReadSimple&lt;Player, Direction&gt;,
+///     #[dynec(isotope(discrim = [skill_id]))] skill: impl system::ReadIsotope&lt;
+///         Player,
+///         SkillLevel,
+///         usize,
+///     &gt;,
+/// ) {
+///     *counter += 1;
+///
+///     if *counter == 1 {
+///         title.0 = &quot;changed&quot;;
+///     }
+/// }
+///
+/// let system = simulate.build(SkillType(3));
+/// assert_eq!(
+///     system::Descriptor::get_spec(&amp;system).debug_name.as_str(),
+///     &quot;simulate[counter = 0, skill_id = SkillType(3)]&quot;
+/// );
+///
+/// {
+///     // We can also call the function directly in unit tests.
+///
+///     let mut counter = 0;
+///     let mut title = Title(&quot;original&quot;);
+///
+///     let mut world = dynec::system_test! {
+///         simulate.build(SkillType(2));
+///         _: Player = (
+///             PositionX(0.0),
+///             PositionY(0.0),
+///             Direction(0.5, 0.5),
+///         );
+///         _: Player = (
+///             PositionX(0.5),
+///             PositionY(0.5),
+///             Direction(0.5, 0.5),
+///         );
+///     };
+///
+///     simulate::call(
+///         &amp;mut counter,
+///         &amp;SkillType(2),
+///         &amp;mut title,
+///         world.components.write_simple_storage(),
+///         world.components.write_simple_storage(),
+///         world.components.read_simple_storage(),
+///         world.components.read_partial_isotope_storage(&amp;[SkillType(3)]),
+///     );
+///
+///     assert_eq!(counter, 1);
+///     assert_eq!(title.0, &quot;changed&quot;);
+/// }
+/// ```
+</span><span class="attribute">#[doc(inline)]
+</span><span class="kw">pub use </span>dynec_codegen::system;
+
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>system_tests {
+    <span class="attribute">#[test]
+    </span><span class="kw">fn </span>test_system_name() {
+        <span class="attribute">#[<span class="kw">super</span>::system(dynec_as(<span class="kw">crate</span>))]
+        </span><span class="kw">fn </span>simulate(
+            <span class="attribute">#[dynec(local(initial = <span class="number">0</span>))] </span>counter_one: <span class="kw-2">&amp;mut </span>u16,
+            <span class="attribute">#[dynec(param)] </span>counter_two: <span class="kw-2">&amp;mut </span>i64,
+        ) {
+            <span class="kw-2">*</span>counter_one += <span class="number">1u16</span>;
+            <span class="kw-2">*</span>counter_two += <span class="number">3i64</span>;
+        }
+
+        <span class="kw">let </span>system = simulate.build(<span class="number">2i64</span>);
+        {
+            <span class="kw">use </span><span class="kw">crate</span>::system::Descriptor;
+            <span class="macro">assert_eq!</span>(
+                system.get_spec().debug_name.as_str(),
+                <span class="string">&quot;dynec::macros::system_tests::simulate&quot;
+            </span>);
+        }
+    }
+}
+
+<span class="doccomment">/// Derives a [`Discrim`](crate::comp::Discrim) implementation for the type.
+///
+/// This derive macro is only applicable to
+/// single-field structs (both tuple structs and named structs)
+/// and enums with only unit fields.
+///
+/// For structs, the only field must be an integer type
+/// (one that is convertible from and to `usize` through [`xias::SmallInt`]).
+/// Note that dynec mostly uses `usize` to identify isotopes,
+/// so using `u8` instead of `usize` as the backing type does not provide notable benefit;
+/// custom discriminant types are only available for ergonomic reasons.
+///
+/// # Customizing the discriminant map
+/// Implementations for structs use
+/// [`discrim::BoundedVecMap`](crate::comp::discrim::BoundedVecMap) by default,
+/// which is optimized for small discriminants.
+/// This can be customized by adding `#[dynec(map = path::to::another::Impl)]` on the struct.
+/// [`dynec::comp::discrim`](crate::comp::discrim)
+/// is automatically imported for the map reference,
+/// so users only need to specify e.g. `#[dynec(map = discrim::LinearVecMap)]`.
+///
+/// Since maps are generic over `T`,
+/// the passed type actually can depend on the type parameter `T`,
+/// e.g. `#[dynec(map = discrim::ArrayMap&lt;Self, T, 16&gt;)]`.
+/// Inputs without trailing type parameters are appended with `&lt;Self, T&gt;` automatically,
+/// where `Self` is the derived type.
+///
+/// Enums do not require customization because they always use
+/// [`ArrayMap`](crate::comp::discrim::ArrayMap).
+///
+/// # Example
+/// ```
+/// #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, dynec::Discrim)]
+/// struct Tuple(u16);
+///
+/// #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, dynec::Discrim)]
+/// #[dynec(map = discrim::SortedVecMap)]
+/// struct Named {
+///     field: u32,
+/// }
+///
+/// #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, dynec::Discrim)]
+/// #[dynec(map = discrim::ArrayMap&lt;Self, T, 16&gt;)]
+/// struct UsesArray {
+///     field: u8,
+/// }
+///
+/// #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, dynec::Discrim)]
+/// enum Enum {
+///     Foo,
+///     Bar,
+/// }
+/// ```
+</span><span class="attribute">#[doc(inline)]
+</span><span class="kw">pub use </span>dynec_codegen::Discrim;
+
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>discrim_tests {}
+
+<span class="doccomment">/// Derives a [`Referrer`](crate::entity::Referrer) implementation for the type.
+///
+/// The generated implementation does not visit any fields by default.
+/// Add the `#[entity]` attribute to fields that implement [`crate::entity::Referrer`],
+/// then the generated implementation will delegate to these fields.
+///
+/// This derive macro is automatically called in [`comp`] and [`global`].
+/// It should only be called explicitly if the type is not a component or global,
+/// e.g. if it is a type included in a component field.
+///
+/// # Example
+/// ```
+/// dynec::archetype!(Foo);
+///
+/// #[derive(dynec::EntityRef)]
+/// struct Bar {
+///     #[entity]
+///     entity: dynec::Entity&lt;Foo&gt;,
+/// }
+/// ```
+///
+/// A compile error would be triggered if a field is an entity reference but is not `#[entity]`:
+///
+/// ```compile_fail
+/// dynec::archetype!(Foo);
+///
+/// #[derive(dynec::EntityRef)]
+/// struct Bar {
+///     entity: dynec::Entity&lt;Foo&gt;,
+/// }
+/// ```
+///
+/// The above code will fail to compile with an error that contains
+/// `this_field_references_an_entity_so_it_should_have_the_entity_attribute`.
+///
+/// In the case where a field references a type parameter,
+/// dynec cannot check whether it correctly does not implement `Referrer`.
+/// In that case, apply the `#[not_entity]` attribute to assert its safety:
+///
+/// ```
+/// # dynec::archetype!(Foo);
+/// #
+/// #[derive(dynec::EntityRef)]
+/// struct Bar&lt;T: &#39;static&gt; {
+///     #[not_entity]
+///     value: T,
+/// }
+/// ```
+///
+/// It is the user&#39;s responsibility not to set `T` as a `Referrer` implementation.
+///
+/// Note that this compile error is best-effort and not comprehensive &amp;mdash;
+/// if the actual entity reference is hidden behind a complex type
+/// that does not implement [`Referrer`](crate::entity::Referrer),
+/// e.g. as an element in a tuple, this error will not happen,
+/// which would lead to a runtime panic instead during ref counting.
+</span><span class="attribute">#[doc(inline)]
+</span><span class="kw">pub use </span>dynec_codegen::EntityRef;
+
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>entity_ref_tests {}
+
+<span class="comment">// The rest are macros for testing.
+
+</span><span class="doccomment">/// Convenience macro that constructs a new world for testing a small number of systems.
+///
+/// See [`system`] for example usage.
+</span><span class="attribute">#[macro_export]
+</span><span class="macro">macro_rules! </span>system_test {
+    (
+        $(<span class="macro-nonterminal">$systems</span>:expr),* ;
+        $(
+            <span class="macro-nonterminal">$var</span>:tt : <span class="macro-nonterminal">$arch</span>:ty = ($(<span class="macro-nonterminal">$components</span>:tt)<span class="kw-2">*</span>);
+        )*
+    ) =&gt; {{
+        <span class="kw">let </span><span class="kw-2">mut </span>builder = <span class="macro-nonterminal">$crate::world::Builder::new</span>(<span class="number">0</span>);
+        $(
+            builder.schedule(Box::new(<span class="macro-nonterminal">$systems</span>));
+        )*
+
+        <span class="attribute">#[allow(unused_mut)]
+        </span><span class="kw">let </span><span class="kw-2">mut </span>world = builder.build();
+
+        $(
+            <span class="kw">let </span><span class="macro-nonterminal">$var </span>= world.create::&lt;<span class="macro-nonterminal">$arch</span>&gt;(
+                <span class="macro-nonterminal">$</span><span class="macro">crate::comps!</span>[@(<span class="macro-nonterminal">$</span><span class="kw">crate</span>) <span class="macro-nonterminal">$arch </span>=&gt; $(<span class="macro-nonterminal">$components</span>)<span class="kw-2">*</span>]
+            );
+        )*
+
+        world
+    }}
+}
+
+<span class="doccomment">/// Asserts that a type can be used as a partition.
+///
+/// # Example
+/// ```
+/// use dynec::system::partition::EntityCreationPartition;
+/// dynec::assert_partition!(EntityCreationPartition);
+/// ```
+</span><span class="attribute">#[macro_export]
+</span><span class="macro">macro_rules! </span>assert_partition {
+    (@expr <span class="macro-nonterminal">$value</span>:expr) =&gt; {
+        <span class="kw">const _</span>: <span class="kw">fn</span>() = || {
+            <span class="kw">let _ </span>= <span class="macro-nonterminal">$crate::system::partition::Wrapper</span>(Box::new(<span class="macro-nonterminal">$value</span>));
+        };
+    };
+
+    (<span class="macro-nonterminal">$ty</span>:ty) =&gt; {
+        <span class="kw">const _</span>: <span class="kw">fn</span>(<span class="macro-nonterminal">$ty</span>) = |value| {
+            <span class="kw">let _ </span>= <span class="macro-nonterminal">$crate::system::partition::Wrapper</span>(Box::new(value));
+        };
+    };
+}
+</code></pre></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (8b0c05d9a 2022-10-07)" ></div></body></html>

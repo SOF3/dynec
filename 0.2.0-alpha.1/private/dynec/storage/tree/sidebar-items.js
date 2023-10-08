@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["StoragePartition","Return value of [`Tree::partition_at`]."],["Tree","A storage based on [`BTreeMap`]."]]};

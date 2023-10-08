@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["Thread","The thread ID for a system executor."]],"struct":[["Aggregate","Groups multiple tracers into a tuple and dispatches each call to them in serial."],["ElapsedFmt",""],["Log","A tracer that logs all events."],["Noop","An empty tracer."],["PartitionFmt",""]],"trait":[["Tracer","A handler that receives scheduling-related events in dynec."]]};

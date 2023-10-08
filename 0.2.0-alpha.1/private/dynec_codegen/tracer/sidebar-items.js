@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["PolyfillData",""],["PolyfillDataKey",""]],"fn":[["api",""],["polyfill",""]],"struct":[["PolyfillInput",""]]};

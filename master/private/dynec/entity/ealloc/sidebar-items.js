@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["builder","iter_gaps"],"mod":["recycling","sharding","snapshot"],"struct":["BTreeHint","Map","MutTakeIter","Recycling","RecyclingShard","ShardMap","ShardMapEntry","Snapshot","StaticShardAssigner","ThreadRngShardAssigner"],"trait":["AnyEalloc","Ealloc","Recycler","Shard","ShardAssigner"],"type":["AnyBuilder"]};

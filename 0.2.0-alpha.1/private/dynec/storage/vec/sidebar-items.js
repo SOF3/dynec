@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["iter_mut",""],["slice_assume_init_mut",""],["slice_assume_init_ref",""]],"struct":[["StoragePartition","Return value of [`VecStorage::partition_at`]."],["VecStorage","The basic storage indexed by entity IDs directly."]]};

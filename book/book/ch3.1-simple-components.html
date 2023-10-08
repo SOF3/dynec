@@ -1,0 +1,317 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Simple Components - dynec</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+    </head>
+    <body>
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="ch1-ecs.html"><strong aria-hidden="true">1.</strong> ECS</a></li><li class="chapter-item expanded "><a href="ch2-archetypes.html"><strong aria-hidden="true">2.</strong> Archetypes</a></li><li class="chapter-item expanded "><a href="ch3-components.html"><strong aria-hidden="true">3.</strong> Components</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="ch3.1-simple-components.html" class="active"><strong aria-hidden="true">3.1.</strong> Simple Components</a></li><li class="chapter-item expanded "><a href="ch3.2-isotope-components.html"><strong aria-hidden="true">3.2.</strong> Isotope Components</a></li></ol></li><li class="chapter-item expanded "><a href="ch4-systems.html"><strong aria-hidden="true">4.</strong> Systems</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="ch4.1-states.html"><strong aria-hidden="true">4.1.</strong> Global and local states</a></li><li class="chapter-item expanded "><a href="ch4.2-component-access.html"><strong aria-hidden="true">4.2.</strong> Component access</a></li><li class="chapter-item expanded "><a href="ch4.3-partitions.html"><strong aria-hidden="true">4.3.</strong> Partitions</a></li><li class="chapter-item expanded "><a href="ch4.4-online-entity-updates.html"><strong aria-hidden="true">4.4.</strong> Online entity updates</a></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky bordered">
+                    <div class="left-buttons">
+                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </button>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">dynec</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="simple-components"><a class="header" href="#simple-components">Simple components</a></h1>
+<p>Simple components are components where
+each entity can have at most one instance of the component.
+To declare that a type <code>C</code> is a component for entities of archetype <code>A</code>,
+implement <a href="https://sof3.github.io/dynec/master/dynec/comp/trait.Simple.html"><code>comp::Simple&lt;A&gt;</code></a> for <code>C</code>.
+dynec provides a <a href="https://sof3.github.io/dynec/master/dynec/attr.comp.html">convenience macro</a> for this:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[comp(of = Bullet)]
+struct Location([f32; 3]);
+<span class="boring">}
+</span></code></pre></pre>
+<p>Since Rust allows implementing the same trait with different type parameters,
+<code>C</code> can be used as a component for entities of both <code>A</code> and <code>B</code>
+if it implements <code>comp::Simple&lt;A&gt;</code> and <code>comp::Simple&lt;B&gt;</code> separately.
+This can be achieved by invoking the macro twice:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use dynec::comp;
+
+#[comp(of = Player)]
+#[comp(of = Bullet)]
+struct Location([f32; 3]);
+<span class="boring">}
+</span></code></pre></pre>
+<p>Note that components are only stored on entities if at least one system uses it.</p>
+<h2 id="initializer"><a class="header" href="#initializer">Initializer</a></h2>
+<p>Simple components can be equipped with an auto-initializer.
+When an entity is created without passing this component,
+it is filled with the value returned by the auto-initializer.</p>
+<p>The auto-initializer can depend on other simple components
+passed by the entity creator or other auto-initializers.
+Along with the fact that only components requested from systems get persisted,
+this means you can pass a parameter during entity creation,
+let other component auto-initializers read from this parameter,
+and this parameter will get dropped after entity creation completes.</p>
+<p>The auto-initializer can be specified in the macro
+either as a closure:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use dynec::comp;
+
+#[comp(of = Bullet, init = |speed: &amp;Speed| Damage(speed.modulus()))]
+struct Damage(f32);
+<span class="boring">}
+</span></code></pre></pre>
+<p>or as a function pointer with arity (i.e. number of parameters for the function):</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use dynec::comp;
+
+fn default_damage(speed: &amp;Speed) -&gt; Damage {
+    Damage(speed.modulus()) 
+}
+
+#[comp(of = Bullet, init = default_damage/1)]
+struct Damage(f32);
+<span class="boring">}
+</span></code></pre></pre>
+<h2 id="presence"><a class="header" href="#presence">Presence</a></h2>
+<p>A component can be either &quot;required&quot; or &quot;optional&quot;.</p>
+<p>The &quot;optional&quot; presence allows components to be missing on some entities.
+Therefore, accessing optional components only returns <code>Option&lt;C&gt;</code> instead of <code>C</code>.</p>
+<p>&quot;Required&quot; components must either have an auto-initializer
+or be passed during entity creation.
+This ensures that accessing the component always succeeds for any entities.</p>
+<p>Note that entities created during the middle of a tick
+are only fully initialized after the end of the tick.
+More will be explained in later sections.</p>
+<p>Components with &quot;required&quot; presence should <em>both</em>
+set <a href="https://sof3.github.io/dynec/master/dynec/comp/trait.Simple.html#associatedconstant.PRESENCE"><code>PRESENCE = SimplePresence::Required</code></a>
+<em>and</em> implement <a href="https://sof3.github.io/dynec/master/dynec/comp/trait.Must.html"><code>comp::Must&lt;A&gt;</code></a>.
+This is automatically done by passing <code>required</code> in the macro:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use dynec::comp;
+
+#[comp(of = Bullet, required)]
+struct Damage(u32);
+<span class="boring">}
+</span></code></pre></pre>
+<h2 id="finalizers"><a class="header" href="#finalizers">Finalizers</a></h2>
+<p>A finalizer is a component that prevents an entity from getting deleted.</p>
+<p>Yes, I know this may be confusing.
+Contrary to finalizers in Java/C#,
+a finalizer is a data component instead of a function.
+They are actually more similar to <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/">finalizers in Kubernetes</a>.
+When an entity is flagged for deletion,
+dynec checks if all finalizer components for that entity have been removed;
+the component data of the entity only get dropped after this check is true.</p>
+<p>This gives systems a chance to execute cleanup logic
+by reading the component data of the &quot;terminating&quot; entity.
+For example, a system that despawns deleted bullets from network players
+may implement its logic like the pseudocode below:</p>
+<pre><code>for each `Bullet` entity just flagged for deletion:
+    read component `NetworkId` for the entity
+    broadcast despawn packet to all players
+    remove the `Despawn` finalizer component
+</code></pre>
+<p>Without the finalizer component,
+the system would be unable to get the <code>NetworkId</code> for the despawned bullet.</p>
+<p>Note that deletion-flagged entities are checked every tick.
+To avoid impacting performance due to a growing backlog,
+finalizer components should be removed as soon as possible
+after deletion has been flagged.</p>
+<h2 id="choosing-the-component-type"><a class="header" href="#choosing-the-component-type">Choosing the component type</a></h2>
+<p>Systems that write to the same component type cannot execute together.
+Furthermore, most games often need to access a single component over a loop,
+so avoid putting multiple unrelated fields in the same component type.
+Instead, prefer small, often single-field structs,
+unless the multiple fields are naturally related,
+e.g. positions/RGB values that are always accessed together.</p>
+<p>Avoid using <a href="https://doc.rust-lang.org/std/option/enum.Option.html"><code>Option</code></a> in component types;
+instead, use optional components to represent unused fields.
+dynec uses a compact bit vector to track the existence of components,
+which only takes 1 bit for each component,
+while <code>Option</code> needs to preserve alignment and could take up to 64 bits
+if the wrapped type requires an alignment of 64 bits (e.g. <code>u64</code>/<code>f64</code>).</p>
+<p>Avoid allocating heap memory for each entity component.
+In other words, use of <code>Box</code>/<code>Vec</code>/etc should be avoided in component types,
+because heap allocation is slow and results in memory fragmentation,
+which greatly deteriorates the performance gain provided by ECS.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="ch3-components.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next" href="ch3.2-isotope-components.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="ch3-components.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next" href="ch3.2-isotope-components.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script type="text/javascript">
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
+
+        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </body>
+</html>

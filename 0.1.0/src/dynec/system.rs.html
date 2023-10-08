@@ -1,0 +1,186 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/system.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>system.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../dynec/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../dynec/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../dynec/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
+<span id="2">2</span>
+<span id="3">3</span>
+<span id="4">4</span>
+<span id="5">5</span>
+<span id="6">6</span>
+<span id="7">7</span>
+<span id="8">8</span>
+<span id="9">9</span>
+<span id="10">10</span>
+<span id="11">11</span>
+<span id="12">12</span>
+<span id="13">13</span>
+<span id="14">14</span>
+<span id="15">15</span>
+<span id="16">16</span>
+<span id="17">17</span>
+<span id="18">18</span>
+<span id="19">19</span>
+<span id="20">20</span>
+<span id="21">21</span>
+<span id="22">22</span>
+<span id="23">23</span>
+<span id="24">24</span>
+<span id="25">25</span>
+<span id="26">26</span>
+<span id="27">27</span>
+<span id="28">28</span>
+<span id="29">29</span>
+<span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
+<span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
+<span id="37">37</span>
+<span id="38">38</span>
+<span id="39">39</span>
+<span id="40">40</span>
+<span id="41">41</span>
+<span id="42">42</span>
+<span id="43">43</span>
+<span id="44">44</span>
+<span id="45">45</span>
+<span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
+<span id="49">49</span>
+<span id="50">50</span>
+<span id="51">51</span>
+<span id="52">52</span>
+<span id="53">53</span>
+<span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
+<span id="57">57</span>
+<span id="58">58</span>
+<span id="59">59</span>
+<span id="60">60</span>
+<span id="61">61</span>
+<span id="62">62</span>
+<span id="63">63</span>
+<span id="64">64</span>
+<span id="65">65</span>
+<span id="66">66</span>
+<span id="67">67</span>
+<span id="68">68</span>
+<span id="69">69</span>
+<span id="70">70</span>
+<span id="71">71</span>
+<span id="72">72</span>
+<span id="73">73</span>
+<span id="74">74</span>
+<span id="75">75</span>
+<span id="76">76</span>
+<span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
+<span id="80">80</span>
+<span id="81">81</span>
+<span id="82">82</span>
+<span id="83">83</span>
+<span id="84">84</span>
+<span id="85">85</span>
+<span id="86">86</span>
+<span id="87">87</span>
+<span id="88">88</span>
+<span id="89">89</span>
+<span id="90">90</span>
+<span id="91">91</span>
+<span id="92">92</span>
+</pre><pre class="rust"><code><span class="doccomment">//! Systems are actions performed every frame to manipulate entities and components.
+//!
+//! A system can declare mutable or immutable access
+//! to archetype-specific components and global states.
+//! dynec will schedule systems such that systems have unique access to mutable resources they
+//! request.
+//! Furthermore, systems can request relative execution order through [`Partition`]s.
+//! Systems that use thread-unsafe resources (systems that are not [`Send`])
+//! are always executed on the main thread.
+
+</span><span class="kw">use </span>std::any::TypeId;
+
+<span class="kw">use </span><span class="kw">crate</span>::entity::{ealloc, referrer};
+<span class="kw">use </span><span class="kw">crate</span>::world;
+<span class="kw">use </span><span class="kw">crate</span>::world::offline;
+
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>accessor;
+<span class="kw">pub use </span>accessor::{
+    Accessor, Chunked <span class="kw">as </span>ChunkedAccessor, Read, ReadIsotope, ReadSimple, Write, WriteIsotope,
+    WriteSimple,
+};
+
+<span class="kw">pub mod </span>partition;
+<span class="kw">pub use </span>partition::{EntityCreationPartition, Partition};
+
+<span class="kw">mod </span>entity;
+<span class="attribute">#[doc(hidden)]
+</span><span class="kw">pub use </span>entity::{entity_iterator, EntityCreatorImpl, EntityDeleterImpl};
+<span class="kw">pub use </span>entity::{EntityCreator, EntityDeleter, EntityIterator};
+
+<span class="kw">pub mod </span>spec;
+<span class="attribute">#[doc(inline)]
+</span><span class="kw">pub use </span>spec::Spec;
+
+<span class="doccomment">/// Describes a system.
+</span><span class="kw">pub trait </span>Descriptor {
+    <span class="doccomment">/// Describes the resource requirements of this system.
+    ///
+    /// The method is only called when the system was initially scheduled,
+    /// but it should return a consistent value.
+    </span><span class="kw">fn </span>get_spec(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Spec;
+
+    <span class="doccomment">/// Delegates to [`Referrer::visit_type`](referrer::Referrer::visit_type)
+    /// for the states of this system.
+    </span><span class="kw">fn </span>visit_type(<span class="kw-2">&amp;</span><span class="self">self</span>, arg: <span class="kw-2">&amp;mut </span>referrer::VisitTypeArg);
+
+    <span class="doccomment">/// By default, systems with states that strongly reference entities always execute
+    /// before systems that create those entities to ensure the entities initialized.
+    /// If references to uninitialized entities are tolerable,
+    /// include the TypeId of the archetype in the returned vector.
+    </span><span class="kw">fn </span>state_maybe_uninit(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Vec&lt;TypeId&gt; { Vec::new() }
+
+    <span class="doccomment">/// Executes the mutable visitor
+    </span><span class="kw">fn </span>visit_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; referrer::AsObject&lt;<span class="lifetime">&#39;_</span>&gt;;
+}
+
+<span class="doccomment">/// A system requests some resources, stores some states of its own and is runnable with the
+/// requested resources.
+///
+/// There may be multiple instances of the same implementor type.
+/// This is meaningful as they may have different states.
+</span><span class="kw">pub trait </span>Sendable: Send + Descriptor {
+    <span class="doccomment">/// Runs the system.
+    </span><span class="kw">fn </span>run(
+        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+        globals: <span class="kw-2">&amp;</span>world::SyncGlobals,
+        components: <span class="kw-2">&amp;</span>world::Components,
+        ealloc_shard_map: <span class="kw-2">&amp;mut </span>ealloc::ShardMap,
+        offline_shard: <span class="kw-2">&amp;mut </span>offline::BufferShard,
+    );
+
+    <span class="doccomment">/// Returns self upcast to [`Descriptor`] as a trait object.
+    </span><span class="kw">fn </span>as_descriptor_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span><span class="kw">dyn </span>Descriptor;
+}
+
+<span class="doccomment">/// A variant of [`Sendable`] that runs on the main thread only,
+/// but allows storing [`Send`] states
+/// and accessing non-&lt;code&gt;[Send] + [Sync]&lt;/code&gt; global states.
+</span><span class="kw">pub trait </span>Unsendable: Descriptor {
+    <span class="doccomment">/// Runs the system.
+    </span><span class="kw">fn </span>run(
+        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+        sync_globals: <span class="kw-2">&amp;</span>world::SyncGlobals,
+        unsync_globals: <span class="kw-2">&amp;mut </span>world::UnsyncGlobals,
+        components: <span class="kw-2">&amp;</span>world::Components,
+        ealloc_shard_map: <span class="kw-2">&amp;mut </span>ealloc::ShardMap,
+        offline_shard: <span class="kw-2">&amp;mut </span>offline::BufferShard,
+    );
+
+    <span class="doccomment">/// Returns self upcast to [`Descriptor`] as a trait object.
+    </span><span class="kw">fn </span>as_descriptor_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span><span class="kw">dyn </span>Descriptor;
+}
+</code></pre></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (8b0c05d9a 2022-10-07)" ></div></body></html>

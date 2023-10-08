@@ -1,0 +1,143 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="An opinionated ECS-like framework."><title>dynec - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-47e7ab555ef2818a.css" id="mainThemeStyle"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="dynec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.74.0-nightly (2f5df8a94 2023-08-31)" data-channel="nightly" data-search-js="search-6dfdfced5eff6596.js" data-settings-js="settings-de11bff964e9d4e5.js" data-settings-css="settings-8c76f75bfb6bd192.css" data-theme-light-css="light-f194925aa375ae96.css" data-theme-dark-css="dark-1dd4d1ce031e15de.css" data-theme-ayu-css="ayu-49e58d069f567085.css" ><script src="../static.files/storage-db41da1a38ea3cb8.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-ef3a2de404864b0b.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../static.files/light-f194925aa375ae96.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../static.files/dark-1dd4d1ce031e15de.css"><link rel="stylesheet" href="../static.files/noscript-cffde32267a19fd6.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="logo-container" href="../dynec/index.html"><img class="rust-logo" src="../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><h2></h2></nav><nav class="sidebar"><a class="logo-container" href="../dynec/index.html"><img class="rust-logo" src="../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><h2 class="location"><a href="#">Crate dynec</a></h2><div class="sidebar-elems"><ul class="block"><li class="version">Version 0.2.0-alpha.1</li><li><a id="all-types" href="all.html">All Items</a></li></ul><section><ul class="block"><li><a href="#reexports">Re-exports</a></li><li><a href="#modules">Modules</a></li><li><a href="#macros">Macros</a></li><li><a href="#traits">Traits</a></li><li><a href="#attributes">Attribute Macros</a></li><li><a href="#derives">Derive Macros</a></li></ul></section></div></nav><main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Crate <a class="mod" href="#">dynec</a><button id="copy-path" title="Copy item path to clipboard"><img src="../static.files/clipboard-7571035ce49a181d.svg" width="19" height="18" alt="Copy item path"></button></h1><span class="out-of-band"><a class="src" href="../src/dynec/lib.rs.html#1-208">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>An opinionated ECS-like framework.</p>
+<p><a href="https://github.com/SOF3/dynec/actions/workflows/ci.yml"><img src="https://github.com/SOF3/dynec/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+<a href="https://codecov.io/gh/SOF3/dynec"><img src="https://codecov.io/gh/SOF3/dynec/branch/master/graph/badge.svg?token=WAU2FOLHVW" alt="codecov" /></a></p>
+<h2 id="what-is-ecs"><a href="#what-is-ecs">What is ECS?</a></h2>
+<p>ECS is a data-oriented programming paradigm that focuses on optimizing the CPU cache.
+Objects (“Entities”) store their data in “Components”,
+which are processed in “Systems”.</p>
+<h2 id="dynec-has-e-c-and-s-but-it-is-not-the-typical-ecs"><a href="#dynec-has-e-c-and-s-but-it-is-not-the-typical-ecs">dynec has E, C and S, but it is not the typical ECS</a></h2>
+<p>dynec is <strong>statically archetyped</strong>.
+The archetype of an entity refers to the set of components it can have,
+which is comparable to the <em>class</em> of an object in OOP.
+In dynec, entities cannot change to another archetype once created.
+Entities can still have optional components, but they must be known in advance.</p>
+<p>This allows entity references to be strictly typed.
+When you hold an entity reference,
+you are assured that all entities in the reference are present.
+Entities of different archetypes are stored separately,
+which further improves <em>cache locality</em>
+(since components of different archetypes are mostly unrelated).
+Components can also declare that they must always be present on entities of an archetype,
+which give you more confidence that the component really exists.</p>
+<p>Furthermore, archetypes cannot be subtyped.
+This means that, unlike the traditional ECS,
+there is no “join query” that queries all entities with a subset of components present.
+Iteration can only be performed on all entities of an archetype
+(it is also possible to iterate over all entities with a single component,
+but this is for a different purpose).
+If you want to fetch all entities with all of multiple components
+like how you would usually do in other frameworks,
+you probably wanted to split them to be a separate entity instead.</p>
+<h3 id="doesnt-this-make-polymorphism-more-difficult-to-use"><a href="#doesnt-this-make-polymorphism-more-difficult-to-use">Doesn’t this make polymorphism more difficult to use?</a></h3>
+<p>I imagine your design is like this:
+some entities have the “pig” archetype,
+some have the “bird” archetype,
+both share the common animal components,
+while “bird” also has the additional flight- and egg-related components.</p>
+<p>This is not the perspective to organize entities in dynec.
+Pigs and birds are both the same archetype, let’s say “animal”.
+The term “bird” is just an umbrella term to refer to abilities such as flying and laying eggs.
+It should not be a concept that appears in the code logic at all,
+because “bird” does not really mean anything at the programming level.
+In a sense, entities in dynec are comparable to some optional components in traditional ECS.</p>
+<p>This implies entities would have a lot of references among them —
+a bird entity needs to reference its flight management entity and egg-laying entity.
+Although this seems to complicate the design a lot,
+this is actually inevitable in high-quality software
+where one-to-one relationship is probably rare compared to one-to-many relationship.
+For example, a bird may lay multiple types of eggs,
+which would result in multiple egg-laying entities;
+this cannot be trivially managed anyway.</p>
+<h2 id="entities-are-optionally-reference-counted-and-trackable"><a href="#entities-are-optionally-reference-counted-and-trackable">Entities are (optionally) reference-counted and trackable</a></h2>
+<p>When debug assertions are enabled, all entity references are counted.
+When an entity is deleted, dynec panics if there are still dangling references to the entity
+and searches for the dangling references from all components and states in the world.
+This means we can be (mostly) confident that any entity reference points to a live one,
+and enables reduction of the size of a strong entity reference to one integer
+because strong reference should not be able to outlive the referenced entity
+(most ECS frameworks require another integer to store the “generation”
+to avoid dangling references from pointing to a new entity recreated at the same offset).</p>
+<p>Dropping all references before an entity is deleted sounds troublesome to implement,
+but dynec provides two solutions for this.
+First, dynec supports “finalizer components”,
+where components serve as <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/">asynchronous finalizers</a>.
+Systems can create finalizers that ensure that references to the entity are dropped
+before the actual deletion (and the dangling reference check) takes place.
+This gives different systems the chance to clean up an entity
+without losing the context that describes the entity
+(because components are dropped after deletion and cannot be read anymore).
+Second, if it is really necessary to retain the (dangling) entity reference,
+you can store a “weak reference” instead —
+weak references are also reference-counted, but they do not cause a dangling reference panic.</p>
+<p>Nevertheless, in order to track where entities are located,
+all components and global and system-local states (basically all storages managed by dynec)
+must implement a trait that supports scanning all owned strong/weak entity references.
+dynec provides a derive macro to achieve this,
+but since Rust does not support specialization (yet),
+an <code>#[entity]</code> attribute needs to be applied on every field that may reference entities.
+However, with the use of static assertions,
+most mistakes in implementing the trait can be revealed at compile time
+(exceptions are types with generic parameters, which require manual confirmation).
+Despite all the trouble, the ability to scan for entity references make more features feasible,
+including automatic system dependency declaration and entity rearrangement (described below).</p>
+<h2 id="entities-can-have-multiple-components-of-the-same-type"><a href="#entities-can-have-multiple-components-of-the-same-type">Entities can have multiple components of the same type</a></h2>
+<p>How would we store the health of a player?
+We create a <code>Health</code> component for player entities.
+What if we also want to store the hunger of a player?
+OK, we also add a <code>Hunger</code> component for player entities.
+Now, what if we have an unknown number of such attributes,
+determined at runtime (e.g. by plugins or an authoritative game server)?
+Since we cannot declare types dynamically, it seems we have to refactor into a map or a Vec.
+Or maybe a <code>SmallVec&lt;[Attribute; N]&gt;</code> to avoid heap allocation.
+Wait, how much is <code>N</code>?</p>
+<p>In dynec, we avoid this problem with “isotope components”.
+Similar to isotopes in chemistry,
+there may be multiple components of the same type (<code>Attribute</code>) for the same entity,
+but these components belong to different “discriminants” (e.g. the attribute ID).
+So in terms of semantics, it looks as if we got a <code>HashMap&lt;AttributeId, Attribute&gt;</code> component,
+but in terms of performance, each <code>AttributeId</code> gets allocated in a new storage
+as if it is a different component.
+This design is also more efficient in the example here,
+because some systems may only want to manipulate health but not hunger,
+so it should be able to execute concurrently with systems that use the hunger attribute;
+it is also better for cache locality since it avoids striding attributes with unused values.
+This is not possible in ECS frameworks that only support type-based component key,
+which lack flexibility for dynamically defined logic.</p>
+<h2 id="entities-can-be-rearranged-to-optimize-random-access-not-yet-implemented"><a href="#entities-can-be-rearranged-to-optimize-random-access-not-yet-implemented">Entities can be rearranged to optimize random access (not yet implemented)</a></h2>
+<p>One of the reasons why ECS performs better than traditional OOP-based code style
+is that components are stored in a compact region instead of scattered around the heap,
+reducing the frequency of CPU cache penetration that causes slow memory access.
+However, when the amount of data is large,
+since entities are typically randomly arranged (no less random than heap allocation),
+systems may need to access components from entities arranged far apart.
+For example, in the case of iterating over all edges in a network simulation
+(where nodes and edges are entities, and edges have components referencing the endpoint nodes),
+although the data describing the edge itself are contiguously arranged,
+accessing the data for the endpoint nodes would lead to random memory access,
+greatly deterriorating the performance.</p>
+<p>In dynec, since all entity references are trackable,
+it is possible to permute all entities of the same archetype
+so that relevant entities are located more closely.
+For example, in the case of a spatial graph
+(where edge length is comparable to node density, i.e. very few super-long edges),
+we can perform an quadtree/octree sort on all nodes and edges such that
+iterating over all edge entities would process spatially nearby edges,
+which in turn accesses spatially nearby nodes,
+both of which have higher chance of getting nearby memory allocation.</p>
+<p>Of course, entity rearrangement is only useful for scenarios
+where the ideal entity arrangement can be retained for a long period.
+For example, it is useful to rearrange buildings on a map because they are mostly stationary,
+but it is not useful to rearrange cars travelling on the map since their order quickly changes
+(unless cars have very slow speed or move in a similar direction as nearby cars).
+Since entity rearrangement requires mutable access to all component storages for an archetype
+and processes a lot of data at the same time,
+this is a stop-the-world operation that must not be performed frequently,
+so the period for which the arrangement drifts away (such that rearrangement is necessary)
+should be negligibly long such that user experience is not affected.</p>
+</div></details><h2 id="reexports" class="small-section-header"><a href="#reexports">Re-exports</a></h2><ul class="item-table"><li><div class="item-name" id="reexport.Archetype"><code>pub use archetype::<a class="trait" href="archetype/trait.Archetype.html" title="trait dynec::archetype::Archetype">Archetype</a>;</code></div></li><li><div class="item-name" id="reexport.Entity"><code>pub use entity::<a class="struct" href="entity/struct.Entity.html" title="struct dynec::entity::Entity">Entity</a>;</code></div></li><li><div class="item-name" id="reexport.Storage"><code>pub use storage::<a class="trait" href="storage/trait.Storage.html" title="trait dynec::storage::Storage">Storage</a>;</code></div></li><li><div class="item-name" id="reexport.new"><code>pub use world::<a class="fn" href="world/fn.new.html" title="fn dynec::world::new">new</a>;</code></div></li><li><div class="item-name" id="reexport.Bundle"><code>pub use world::<a class="trait" href="world/trait.Bundle.html" title="trait dynec::world::Bundle">Bundle</a>;</code></div></li><li><div class="item-name" id="reexport.World"><code>pub use world::<a class="struct" href="world/struct.World.html" title="struct dynec::world::World">World</a>;</code></div></li></ul><h2 id="modules" class="small-section-header"><a href="#modules">Modules</a></h2><ul class="item-table"><li><div class="item-name"><a class="mod" href="archetype/index.html" title="mod dynec::archetype">archetype</a></div><div class="desc docblock-short">An archetype is a kind of entity with a fixed set of (optional) components.</div></li><li><div class="item-name"><a class="mod" href="comp/index.html" title="mod dynec::comp">comp</a></div><div class="desc docblock-short">A component is a small data structure that can be attached to an entity.</div></li><li><div class="item-name"><a class="mod" href="entity/index.html" title="mod dynec::entity">entity</a></div><div class="desc docblock-short">An entity is a single object that owns components.</div></li><li><div class="item-name"><a class="mod" href="global/index.html" title="mod dynec::global">global</a><span title="Restricted Visibility">&nbsp;🔒</span> </div></li><li><div class="item-name"><a class="mod" href="macros/index.html" title="mod dynec::macros">macros</a><span title="Restricted Visibility">&nbsp;🔒</span> </div></li><li><div class="item-name"><a class="mod" href="scheduler/index.html" title="mod dynec::scheduler">scheduler</a></div><div class="desc docblock-short">The scheduler manages the execution of systems,
+including resource negotiation and dependency constraints.</div></li><li><div class="item-name"><a class="mod" href="storage/index.html" title="mod dynec::storage">storage</a></div><div class="desc docblock-short">A storage is the data structure where components of the same type for all entities are stored.</div></li><li><div class="item-name"><a class="mod" href="system/index.html" title="mod dynec::system">system</a></div><div class="desc docblock-short">Systems are actions performed every frame to manipulate entities and components.</div></li><li><div class="item-name"><a class="mod" href="test_util/index.html" title="mod dynec::test_util">test_util</a></div></li><li><div class="item-name"><a class="mod" href="tracer/index.html" title="mod dynec::tracer">tracer</a></div><div class="desc docblock-short">Exposes testing, profiling and tracing capabilities.</div></li><li><div class="item-name"><a class="mod" href="util/index.html" title="mod dynec::util">util</a></div><div class="desc docblock-short">Miscellaneous types used in the API.</div></li><li><div class="item-name"><a class="mod" href="world/index.html" title="mod dynec::world">world</a></div><div class="desc docblock-short">The world stores the states of the game.</div></li></ul><h2 id="macros" class="small-section-header"><a href="#macros">Macros</a></h2><ul class="item-table"><li><div class="item-name"><a class="macro" href="macro.accessors.html" title="macro dynec::accessors">accessors</a></div><div class="desc docblock-short">Declares a composite struct that implements
+<a href="system/accessor/trait.Accessor.html" title="trait dynec::system::accessor::Accessor"><code>Accessor</code></a> and <a href="system/accessor/trait.Chunked.html" title="trait dynec::system::accessor::Chunked"><code>Chunked</code></a>
+by delegation to all fields and reconstructing the same struct with different types.</div></li><li><div class="item-name"><a class="macro" href="macro.archetype.html" title="macro dynec::archetype">archetype</a></div><div class="desc docblock-short">Declares archetypes.</div></li><li><div class="item-name"><a class="macro" href="macro.assert_partition.html" title="macro dynec::assert_partition">assert_partition</a></div><div class="desc docblock-short">Asserts that a type can be used as a partition.</div></li><li><div class="item-name"><a class="macro" href="macro.comps.html" title="macro dynec::comps">comps</a></div><div class="desc docblock-short">Creates a map of components for a given archetype.</div></li><li><div class="item-name"><a class="macro" href="macro.system_test.html" title="macro dynec::system_test">system_test</a></div><div class="desc docblock-short">Convenience macro that constructs a new world for testing a small number of systems.</div></li></ul><h2 id="traits" class="small-section-header"><a href="#traits">Traits</a></h2><ul class="item-table"><li><div class="item-name"><a class="trait" href="trait.Global.html" title="trait dynec::Global">Global</a></div><div class="desc docblock-short">A global state that can be requested by all systems.</div></li></ul><h2 id="attributes" class="small-section-header"><a href="#attributes">Attribute Macros</a></h2><ul class="item-table"><li><div class="item-name"><a class="attr" href="attr.comp.html" title="attr dynec::comp">comp</a></div><div class="desc docblock-short">Derives a <a href="comp/trait.Simple.html" title="trait dynec::comp::Simple"><code>comp::Simple</code></a>
+or <a href="comp/trait.Isotope.html" title="trait dynec::comp::Isotope"><code>comp::Isotope</code></a> implementation for the applied type.
+This macro does not modify the input other than stripping attributes.</div></li><li><div class="item-name"><a class="attr" href="attr.global.html" title="attr dynec::global">global</a></div><div class="desc docblock-short">Derives a <a href="global/trait.Global.html" title="trait dynec::global::Global"><code>Global</code></a> implementation for the applied type.
+This macro does not modify the input other than stripping attributes.</div></li><li><div class="item-name"><a class="attr" href="attr.system.html" title="attr dynec::system">system</a></div><div class="desc docblock-short">Converts a function into a system.</div></li></ul><h2 id="derives" class="small-section-header"><a href="#derives">Derive Macros</a></h2><ul class="item-table"><li><div class="item-name"><a class="derive" href="derive.Discrim.html" title="derive dynec::Discrim">Discrim</a></div><div class="desc docblock-short">Derives a <a href="comp/discrim/trait.Discrim.html" title="trait dynec::comp::discrim::Discrim"><code>Discrim</code></a> implementation for the type.</div></li><li><div class="item-name"><a class="derive" href="derive.EntityRef.html" title="derive dynec::EntityRef">EntityRef</a></div><div class="desc docblock-short">Derives a <a href="entity/referrer/trait.Referrer.html" title="trait dynec::entity::referrer::Referrer"><code>Referrer</code></a> implementation for the type.</div></li></ul></section></div></main></body></html>

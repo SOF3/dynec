@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["partition","spec"],"struct":["Spec"],"trait":["Accessor","ChunkedAccessor","Descriptor","EntityCreator","EntityDeleter","EntityIterator","Mut","MutChunk","MutFull","MutFullChunk","MutPartition","MutPartitionChunk","Read","ReadChunk","ReadIsotope","ReadIsotopeRef","ReadSimple","Sendable","Unsendable","Write","WriteIsotope","WriteSimple"]};

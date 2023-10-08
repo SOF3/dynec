@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["Flag","The flag exists as a component of an entity if and only if the entity was marked for deletion."]]};

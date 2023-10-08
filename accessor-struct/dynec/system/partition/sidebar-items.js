@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["EntityCreationPartition","Wrapper"],"trait":["Partition"]};

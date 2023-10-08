@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"opaque":[""],"trait":["Atomic","Raw"],"type":["Primitive"]};

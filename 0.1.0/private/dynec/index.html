@@ -1,0 +1,87 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="An opinionated ECS framework."><meta name="keywords" content="rust, rustlang, rust-lang, dynec"><title>dynec - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../normalize.css"><link rel="stylesheet" href="../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../ayu.css" disabled><link rel="stylesheet" href="../dark.css" disabled><link rel="stylesheet" href="../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../storage.js"></script><script defer src="../crates.js"></script><script defer src="../main.js"></script><noscript><link rel="stylesheet" href="../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../favicon.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../dynec/index.html"><div class="logo-container"><img class="rust-logo" src="../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../dynec/index.html"><div class="logo-container"><img class="rust-logo" src="../rust-logo.svg" alt="logo"></div></a><h2 class="location"><a href="#">Crate dynec</a></h2><div class="sidebar-elems"><div class="block"><ul><li class="version">Version 0.1.0</li><li><a id="all-types" href="all.html">All Items</a></li></ul></div><section><div class="block"><ul><li><a href="#reexports">Re-exports</a></li><li><a href="#modules">Modules</a></li><li><a href="#macros">Macros</a></li><li><a href="#traits">Traits</a></li><li><a href="#attributes">Attribute Macros</a></li><li><a href="#derives">Derive Macros</a></li></ul></div></section></div></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../dynec/index.html"><img class="rust-logo" src="../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="main-heading"><h1 class="fqn">Crate <a class="mod" href="#">dynec</a><button id="copy-path" onclick="copy_path(this)" title="Copy item path to clipboard"><img src="../clipboard.svg" width="19" height="18" alt="Copy item path"></button></h1><span class="out-of-band"><a class="srclink" href="../src/dynec/lib.rs.html#1-105">source</a> · <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span></div><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>An opinionated ECS framework.</p>
+<p><a href="https://github.com/SOF3/dynec/actions/workflows/ci.yml"><img src="https://github.com/SOF3/dynec/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+<a href="https://codecov.io/gh/SOF3/dynec"><img src="https://codecov.io/gh/SOF3/dynec/branch/master/graph/badge.svg?token=WAU2FOLHVW" alt="codecov" /></a></p>
+<h2 id="design-goals-ie-opinions"><a href="#design-goals-ie-opinions">Design goals (i.e. opinions)</a></h2><h3 id="leverage-type-checker"><a href="#leverage-type-checker">Leverage type checker</a></h3>
+<p>The design goal of dynec is to leverage compile-time type checking
+to reveal as many bugs as possible without requiring tests.
+Therefore, compile-time-only type parameters are extensively used throughout the project.</p>
+<h3 id="maximize-cache-locality"><a href="#maximize-cache-locality">Maximize cache locality</a></h3>
+<p>dynec attempts to maximize cache locality
+by providing the ability to permute the order of entities on demand,
+allowing the user to sort nearby entities together.</p>
+<h2 id="features-or-anti-features"><a href="#features-or-anti-features">Features (or anti-features)</a></h2><h3 id="explicit-static-archetypes"><a href="#explicit-static-archetypes">Explicit static archetypes.</a></h3>
+<ul>
+<li>The archetype of an entity is fixed at the time of creation.</li>
+<li>Entities cannot change archetypes.
+<ul>
+<li>Components can be <em>optional</em> or <em>required</em>/<em>auto-init</em>.</li>
+<li>Required/auto-init components always exist for an entity of that archetype,
+so no need to <a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#method.unwrap" title="Option::unwrap"><code>Option::unwrap</code></a> all the time.</li>
+</ul>
+</li>
+<li>Entities of different archetypes are stored separately.
+<ul>
+<li>Yes, only components of the same type and the same archetype are stored together.</li>
+<li>This improves cache locality since components for the same archetype
+are more likely to be processed together.</li>
+</ul>
+</li>
+<li>Entity references are typed by archetype.
+<ul>
+<li>This allows ensuring at compile time that an entity always has a certain component.
+Elides runtime checks once again.</li>
+</ul>
+</li>
+</ul>
+<h3 id="safe-deletion"><a href="#safe-deletion">Safe deletion</a></h3>
+<ul>
+<li>Entity deletion is deferred until all “finalizer” components are removed,
+similar to <code>.metadata.finalizers</code> in Kubernetes.</li>
+<li>When debug assertions are enabled,
+entity deletion panics if it is still referenced from other entities.
+<ul>
+<li>Dangling entity references are detected as soon as possible.</li>
+<li>This is implemented by conditionally storing an <code>Arc&lt;()&gt;</code> in debug mode.</li>
+</ul>
+</li>
+</ul>
+<h3 id="isotope-components"><a href="#isotope-components">Isotope components</a></h3>
+<ul>
+<li>Motivation: sometimes we want a finite, small but dynamic number of components of the same
+type for the same entity.</li>
+<li>This is typically implemented with <code>Vec&lt;T&gt;</code>/<code>SmallVec&lt;[T; N]&gt;</code>,
+<ul>
+<li>But it is difficult to determine <code>N</code> at compile time.</li>
+<li>All <code>T</code> are closely packed together, but perhaps we want to pack <code>T</code>s of the same index
+together instead for better cache locality.</li>
+</ul>
+</li>
+<li>Isotope components are treated as components with the type <code>(TypeId::of::&lt;T&gt;(), discriminant)</code></li>
+<li>The discriminant is a small number similar to what you would use in a <code>SmallVec&lt;[T; N]&gt;</code>.</li>
+<li>Expected use case: Each discriminant is a relatively independent system where components with
+that discriminant interact closely.</li>
+</ul>
+<h3 id="entity-rearrangement"><a href="#entity-rearrangement">Entity rearrangement</a></h3>
+<ul>
+<li>Motivation: entities may have mostly static locations in the game world, so it is useful to
+sort all entities by location to improve cache locality when nearby entities interact.</li>
+<li>Provides a permutation API to rearrange entities of a certain archetype.</li>
+<li>Entity references are updated immediately after rearrangement.
+<ul>
+<li>This requires all state and component types to implement a trait that iterates over all
+entity references.</li>
+<li>If this was implemented incorrectly, it results in a panic in debug mode through
+refcounting.</li>
+</ul>
+</li>
+<li>Rearrangement is a stop-the-world operation that happens between ticks, so perform sparingly.</li>
+<li>It is not useful for entities that rearrange frequently, e.g. players that travel around
+frequently.</li>
+<li>It is useful for entities that are mostly stationary, e.g. buildings that cannot move.</li>
+</ul>
+</div></details><h2 id="reexports" class="small-section-header"><a href="#reexports">Re-exports</a></h2><div class="item-table"><div class="item-row"><div class="item-left import-item" id="reexport.Archetype"><code>pub use archetype::<a class="trait" href="archetype/trait.Archetype.html" title="trait dynec::archetype::Archetype">Archetype</a>;</code></div></div><div class="item-row"><div class="item-left import-item" id="reexport.Entity"><code>pub use entity::<a class="struct" href="entity/struct.Entity.html" title="struct dynec::entity::Entity">Entity</a>;</code></div></div><div class="item-row"><div class="item-left import-item" id="reexport.new"><code>pub use world::<a class="fn" href="world/fn.new.html" title="fn dynec::world::new">new</a>;</code></div></div><div class="item-row"><div class="item-left import-item" id="reexport.storage"><code>pub use world::<a class="mod" href="world/storage/index.html" title="mod dynec::world::storage">storage</a>;</code></div></div><div class="item-row"><div class="item-left import-item" id="reexport.tracer"><code>pub use world::<a class="mod" href="world/tracer/index.html" title="mod dynec::world::tracer">tracer</a>;</code></div></div><div class="item-row"><div class="item-left import-item" id="reexport.Bundle"><code>pub use world::<a class="trait" href="world/trait.Bundle.html" title="trait dynec::world::Bundle">Bundle</a>;</code></div></div><div class="item-row"><div class="item-left import-item" id="reexport.World"><code>pub use world::<a class="struct" href="world/struct.World.html" title="struct dynec::world::World">World</a>;</code></div></div></div><h2 id="modules" class="small-section-header"><a href="#modules">Modules</a></h2><div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="mod" href="archetype/index.html" title="dynec::archetype mod">archetype</a></div><div class="item-right docblock-short">An archetype is a kind of entity with a fixed set of (optional) components.</div></div><div class="item-row"><div class="item-left module-item"><a class="mod" href="comp/index.html" title="dynec::comp mod">comp</a></div><div class="item-right docblock-short">A component is a small data structure that can be attached to an entity.</div></div><div class="item-row"><div class="item-left module-item"><a class="mod" href="entity/index.html" title="dynec::entity mod">entity</a></div><div class="item-right docblock-short">An entity is a single object that owns components.</div></div><div class="item-row"><div class="item-left module-item"><a class="mod" href="global/index.html" title="dynec::global mod">global</a><span title="Restricted Visibility">&nbsp;🔒</span> </div></div><div class="item-row"><div class="item-left module-item"><a class="mod" href="macros/index.html" title="dynec::macros mod">macros</a><span title="Restricted Visibility">&nbsp;🔒</span> </div></div><div class="item-row"><div class="item-left module-item"><a class="mod" href="system/index.html" title="dynec::system mod">system</a></div><div class="item-right docblock-short">Systems are actions performed every frame to manipulate entities and components.</div></div><div class="item-row"><div class="item-left module-item"><a class="mod" href="util/index.html" title="dynec::util mod">util</a></div><div class="item-right docblock-short">Miscellaneous types used in the API.</div></div><div class="item-row"><div class="item-left module-item"><a class="mod" href="world/index.html" title="dynec::world mod">world</a></div><div class="item-right docblock-short">The world stores the states of the game.</div></div></div><h2 id="macros" class="small-section-header"><a href="#macros">Macros</a></h2><div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="macro" href="macro.accessors.html" title="dynec::accessors macro">accessors</a></div><div class="item-right docblock-short">Declares a composite struct that implements
+<a href="system/accessor/trait.Accessor.html"><code>Accessor</code></a> and <a href="system/accessor/trait.Chunked.html"><code>Chunked</code></a>
+by delegation to all fields and reconstructing the same struct with different types.</div></div><div class="item-row"><div class="item-left module-item"><a class="macro" href="macro.archetype.html" title="dynec::archetype macro">archetype</a></div><div class="item-right docblock-short">Declares archetypes.</div></div><div class="item-row"><div class="item-left module-item"><a class="macro" href="macro.assert_partition.html" title="dynec::assert_partition macro">assert_partition</a></div><div class="item-right docblock-short">Asserts that a type can be used as a partition.</div></div><div class="item-row"><div class="item-left module-item"><a class="macro" href="macro.comps.html" title="dynec::comps macro">comps</a></div><div class="item-right docblock-short">Creates a map of components for a given archetype.</div></div><div class="item-row"><div class="item-left module-item"><a class="macro" href="macro.system_test.html" title="dynec::system_test macro">system_test</a></div><div class="item-right docblock-short">Convenience macro that constructs a new world for testing a small number of systems.</div></div></div><h2 id="traits" class="small-section-header"><a href="#traits">Traits</a></h2><div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="trait" href="trait.Global.html" title="dynec::Global trait">Global</a></div><div class="item-right docblock-short">A global state that can be requested by all systems.</div></div></div><h2 id="attributes" class="small-section-header"><a href="#attributes">Attribute Macros</a></h2><div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="attr" href="attr.comp.html" title="dynec::comp attr">comp</a></div><div class="item-right docblock-short">Derives a <a href="comp/simple/trait.Simple.html"><code>comp::Simple</code></a>
+or <a href="comp/isotope/trait.Isotope.html"><code>comp::Isotope</code></a> implementation for the applied type.
+This macro does not modify the input other than stripping attributes.</div></div><div class="item-row"><div class="item-left module-item"><a class="attr" href="attr.global.html" title="dynec::global attr">global</a></div><div class="item-right docblock-short">Derives a <a href="global/trait.Global.html"><code>Global</code></a> implementation for the applied type.
+This macro does not modify the input other than stripping attributes.</div></div><div class="item-row"><div class="item-left module-item"><a class="attr" href="attr.system.html" title="dynec::system attr">system</a></div><div class="item-right docblock-short">Converts a function into a system.</div></div></div><h2 id="derives" class="small-section-header"><a href="#derives">Derive Macros</a></h2><div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="derive" href="derive.Discrim.html" title="dynec::Discrim derive">Discrim</a></div><div class="item-right docblock-short">Derives a <a href="comp/discrim/trait.Discrim.html"><code>Discrim</code></a> implementation for the type.</div></div><div class="item-row"><div class="item-left module-item"><a class="derive" href="derive.EntityRef.html" title="dynec::EntityRef derive">EntityRef</a></div><div class="item-right docblock-short">Derives a <a href="entity/referrer/trait.Referrer.html"><code>Referrer</code></a> implementation for the type.</div></div></div></section></div></main><div id="rustdoc-vars" data-root-path="../" data-current-crate="dynec" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (8b0c05d9a 2022-10-07)" ></div></body></html>

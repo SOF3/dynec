@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"attr":["comp","global","system"],"derive":["Discrim","EntityRef"],"macro":["archetype","assert_partition","comps","system_test","zip"],"mod":["archetype","comp","entity","global","macros","scheduler","storage","system","test_util","tracer","util","world"],"trait":["Global"]};

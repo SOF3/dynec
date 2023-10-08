@@ -1,0 +1,884 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `codegen/src/system.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>system.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../dynec_codegen/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../dynec_codegen/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../dynec_codegen/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
+<span id="2">2</span>
+<span id="3">3</span>
+<span id="4">4</span>
+<span id="5">5</span>
+<span id="6">6</span>
+<span id="7">7</span>
+<span id="8">8</span>
+<span id="9">9</span>
+<span id="10">10</span>
+<span id="11">11</span>
+<span id="12">12</span>
+<span id="13">13</span>
+<span id="14">14</span>
+<span id="15">15</span>
+<span id="16">16</span>
+<span id="17">17</span>
+<span id="18">18</span>
+<span id="19">19</span>
+<span id="20">20</span>
+<span id="21">21</span>
+<span id="22">22</span>
+<span id="23">23</span>
+<span id="24">24</span>
+<span id="25">25</span>
+<span id="26">26</span>
+<span id="27">27</span>
+<span id="28">28</span>
+<span id="29">29</span>
+<span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
+<span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
+<span id="37">37</span>
+<span id="38">38</span>
+<span id="39">39</span>
+<span id="40">40</span>
+<span id="41">41</span>
+<span id="42">42</span>
+<span id="43">43</span>
+<span id="44">44</span>
+<span id="45">45</span>
+<span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
+<span id="49">49</span>
+<span id="50">50</span>
+<span id="51">51</span>
+<span id="52">52</span>
+<span id="53">53</span>
+<span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
+<span id="57">57</span>
+<span id="58">58</span>
+<span id="59">59</span>
+<span id="60">60</span>
+<span id="61">61</span>
+<span id="62">62</span>
+<span id="63">63</span>
+<span id="64">64</span>
+<span id="65">65</span>
+<span id="66">66</span>
+<span id="67">67</span>
+<span id="68">68</span>
+<span id="69">69</span>
+<span id="70">70</span>
+<span id="71">71</span>
+<span id="72">72</span>
+<span id="73">73</span>
+<span id="74">74</span>
+<span id="75">75</span>
+<span id="76">76</span>
+<span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
+<span id="80">80</span>
+<span id="81">81</span>
+<span id="82">82</span>
+<span id="83">83</span>
+<span id="84">84</span>
+<span id="85">85</span>
+<span id="86">86</span>
+<span id="87">87</span>
+<span id="88">88</span>
+<span id="89">89</span>
+<span id="90">90</span>
+<span id="91">91</span>
+<span id="92">92</span>
+<span id="93">93</span>
+<span id="94">94</span>
+<span id="95">95</span>
+<span id="96">96</span>
+<span id="97">97</span>
+<span id="98">98</span>
+<span id="99">99</span>
+<span id="100">100</span>
+<span id="101">101</span>
+<span id="102">102</span>
+<span id="103">103</span>
+<span id="104">104</span>
+<span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
+<span id="129">129</span>
+<span id="130">130</span>
+<span id="131">131</span>
+<span id="132">132</span>
+<span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
+<span id="180">180</span>
+<span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
+<span id="232">232</span>
+<span id="233">233</span>
+<span id="234">234</span>
+<span id="235">235</span>
+<span id="236">236</span>
+<span id="237">237</span>
+<span id="238">238</span>
+<span id="239">239</span>
+<span id="240">240</span>
+<span id="241">241</span>
+<span id="242">242</span>
+<span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
+<span id="246">246</span>
+<span id="247">247</span>
+<span id="248">248</span>
+<span id="249">249</span>
+<span id="250">250</span>
+<span id="251">251</span>
+<span id="252">252</span>
+<span id="253">253</span>
+<span id="254">254</span>
+<span id="255">255</span>
+<span id="256">256</span>
+<span id="257">257</span>
+<span id="258">258</span>
+<span id="259">259</span>
+<span id="260">260</span>
+<span id="261">261</span>
+<span id="262">262</span>
+<span id="263">263</span>
+<span id="264">264</span>
+<span id="265">265</span>
+<span id="266">266</span>
+<span id="267">267</span>
+<span id="268">268</span>
+<span id="269">269</span>
+<span id="270">270</span>
+<span id="271">271</span>
+<span id="272">272</span>
+<span id="273">273</span>
+<span id="274">274</span>
+<span id="275">275</span>
+<span id="276">276</span>
+<span id="277">277</span>
+<span id="278">278</span>
+<span id="279">279</span>
+<span id="280">280</span>
+<span id="281">281</span>
+<span id="282">282</span>
+<span id="283">283</span>
+<span id="284">284</span>
+<span id="285">285</span>
+<span id="286">286</span>
+<span id="287">287</span>
+<span id="288">288</span>
+<span id="289">289</span>
+<span id="290">290</span>
+<span id="291">291</span>
+<span id="292">292</span>
+<span id="293">293</span>
+<span id="294">294</span>
+<span id="295">295</span>
+<span id="296">296</span>
+<span id="297">297</span>
+<span id="298">298</span>
+<span id="299">299</span>
+<span id="300">300</span>
+<span id="301">301</span>
+<span id="302">302</span>
+<span id="303">303</span>
+<span id="304">304</span>
+<span id="305">305</span>
+<span id="306">306</span>
+<span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
+<span id="314">314</span>
+<span id="315">315</span>
+<span id="316">316</span>
+<span id="317">317</span>
+<span id="318">318</span>
+<span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
+<span id="322">322</span>
+<span id="323">323</span>
+<span id="324">324</span>
+<span id="325">325</span>
+<span id="326">326</span>
+<span id="327">327</span>
+<span id="328">328</span>
+<span id="329">329</span>
+<span id="330">330</span>
+<span id="331">331</span>
+<span id="332">332</span>
+<span id="333">333</span>
+<span id="334">334</span>
+<span id="335">335</span>
+<span id="336">336</span>
+<span id="337">337</span>
+<span id="338">338</span>
+<span id="339">339</span>
+<span id="340">340</span>
+<span id="341">341</span>
+<span id="342">342</span>
+<span id="343">343</span>
+<span id="344">344</span>
+<span id="345">345</span>
+<span id="346">346</span>
+<span id="347">347</span>
+<span id="348">348</span>
+<span id="349">349</span>
+<span id="350">350</span>
+<span id="351">351</span>
+<span id="352">352</span>
+<span id="353">353</span>
+<span id="354">354</span>
+<span id="355">355</span>
+<span id="356">356</span>
+<span id="357">357</span>
+<span id="358">358</span>
+<span id="359">359</span>
+<span id="360">360</span>
+<span id="361">361</span>
+<span id="362">362</span>
+<span id="363">363</span>
+<span id="364">364</span>
+<span id="365">365</span>
+<span id="366">366</span>
+<span id="367">367</span>
+<span id="368">368</span>
+<span id="369">369</span>
+<span id="370">370</span>
+<span id="371">371</span>
+<span id="372">372</span>
+<span id="373">373</span>
+<span id="374">374</span>
+<span id="375">375</span>
+<span id="376">376</span>
+<span id="377">377</span>
+<span id="378">378</span>
+<span id="379">379</span>
+<span id="380">380</span>
+<span id="381">381</span>
+<span id="382">382</span>
+<span id="383">383</span>
+<span id="384">384</span>
+<span id="385">385</span>
+<span id="386">386</span>
+<span id="387">387</span>
+<span id="388">388</span>
+<span id="389">389</span>
+<span id="390">390</span>
+<span id="391">391</span>
+<span id="392">392</span>
+<span id="393">393</span>
+<span id="394">394</span>
+<span id="395">395</span>
+<span id="396">396</span>
+<span id="397">397</span>
+<span id="398">398</span>
+<span id="399">399</span>
+<span id="400">400</span>
+<span id="401">401</span>
+<span id="402">402</span>
+<span id="403">403</span>
+<span id="404">404</span>
+<span id="405">405</span>
+<span id="406">406</span>
+<span id="407">407</span>
+<span id="408">408</span>
+<span id="409">409</span>
+<span id="410">410</span>
+<span id="411">411</span>
+<span id="412">412</span>
+<span id="413">413</span>
+<span id="414">414</span>
+<span id="415">415</span>
+<span id="416">416</span>
+<span id="417">417</span>
+<span id="418">418</span>
+<span id="419">419</span>
+<span id="420">420</span>
+<span id="421">421</span>
+<span id="422">422</span>
+<span id="423">423</span>
+<span id="424">424</span>
+<span id="425">425</span>
+<span id="426">426</span>
+<span id="427">427</span>
+<span id="428">428</span>
+<span id="429">429</span>
+<span id="430">430</span>
+<span id="431">431</span>
+<span id="432">432</span>
+<span id="433">433</span>
+<span id="434">434</span>
+<span id="435">435</span>
+<span id="436">436</span>
+<span id="437">437</span>
+<span id="438">438</span>
+<span id="439">439</span>
+<span id="440">440</span>
+<span id="441">441</span>
+</pre><pre class="rust"><code><span class="kw">use </span>proc_macro2::TokenStream;
+<span class="kw">use </span>quote::quote;
+<span class="kw">use </span>syn::parse::ParseStream;
+<span class="kw">use </span>syn::punctuated::Punctuated;
+<span class="kw">use </span>syn::Error;
+
+<span class="kw">use </span><span class="kw">crate</span>::entity_ref;
+<span class="kw">use </span><span class="kw">crate</span>::util::Result;
+
+<span class="kw">mod </span>arg;
+<span class="kw">use </span>arg::ArgType;
+<span class="kw">mod </span>item;
+<span class="kw">mod </span>opt;
+
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>imp(args: TokenStream, input: TokenStream) -&gt; <span class="prelude-ty">Result</span>&lt;TokenStream&gt; {
+    <span class="kw">let </span><span class="kw-2">mut </span>input: syn::ItemFn = syn::parse2(input)<span class="question-mark">?</span>;
+    <span class="kw">let </span>ident = <span class="kw-2">&amp;</span>input.sig.ident;
+    <span class="kw">let </span>vis = <span class="kw-2">&amp;</span>input.vis;
+    <span class="kw">let </span>other_attrs = <span class="kw-2">&amp;</span>input.attrs;
+
+    <span class="kw">if </span>!<span class="macro">matches!</span>(input.sig.output, syn::ReturnType::Default) {
+        <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new_spanned(<span class="kw-2">&amp;</span>input.sig.output, <span class="string">&quot;system functions must return unit&quot;</span>));
+    }
+
+    <span class="comment">// 1. Parse item-level attributes.
+    </span><span class="kw">let </span>item = item::Agg::parse(ident, args)<span class="question-mark">?</span>;
+    <span class="kw">let </span>item::Agg { crate_name, name, state_maybe_uninit, deps, .. } = item;
+
+    <span class="comment">// 2. Parse parameters.
+
+    </span><span class="kw">let </span><span class="kw-2">mut </span>local_state_field_idents: Vec&lt;syn::Ident&gt; = Vec::new();
+    <span class="kw">let </span><span class="kw-2">mut </span>local_state_field_pats: Vec&lt;Box&lt;syn::Pat&gt;&gt; = Vec::new();
+    <span class="kw">let </span><span class="kw-2">mut </span>local_state_field_tys: Vec&lt;syn::Type&gt; = Vec::new();
+    <span class="kw">let </span><span class="kw-2">mut </span>local_state_entity_attrs: Vec&lt;TokenStream&gt; = Vec::new();
+
+    <span class="kw">let </span><span class="kw-2">mut </span>param_state_field_idents: Vec&lt;syn::Ident&gt; = Vec::new();
+    <span class="kw">let </span><span class="kw-2">mut </span>param_state_field_tys: Vec&lt;syn::Type&gt; = Vec::new();
+
+    <span class="kw">let </span><span class="kw-2">mut </span>initial_state_field_idents: Vec&lt;syn::Ident&gt; = Vec::new();
+    <span class="kw">let </span><span class="kw-2">mut </span>initial_state_field_defaults: Vec&lt;Box&lt;syn::Expr&gt;&gt; = Vec::new();
+
+    <span class="kw">let </span><span class="kw-2">mut </span>isotope_discrim_idents: Vec&lt;syn::Ident&gt; = Vec::new();
+    <span class="kw">let </span><span class="kw-2">mut </span>isotope_discrim_ty_params: Vec&lt;syn::Ident&gt; = Vec::new();
+    <span class="kw">let </span><span class="kw-2">mut </span>isotope_discrim_type_bounds: Vec&lt;TokenStream&gt; = Vec::new();
+    <span class="kw">let </span><span class="kw-2">mut </span>isotope_discrim_values: Vec&lt;Box&lt;syn::Expr&gt;&gt; = Vec::new();
+
+    <span class="kw">let </span><span class="kw-2">mut </span>input_types: Vec&lt;syn::Type&gt; = Vec::new();
+    <span class="kw">let </span><span class="kw-2">mut </span>system_run_args: Vec&lt;TokenStream&gt; = Vec::new();
+
+    <span class="kw">let </span><span class="kw-2">mut </span>global_requests: Vec&lt;TokenStream&gt; = Vec::new();
+    <span class="kw">let </span><span class="kw-2">mut </span>simple_requests: Vec&lt;TokenStream&gt; = Vec::new();
+    <span class="kw">let </span><span class="kw-2">mut </span>isotope_requests: Vec&lt;TokenStream&gt; = Vec::new();
+    <span class="kw">let </span><span class="kw-2">mut </span>entity_creator_requests: Vec&lt;TokenStream&gt; = Vec::new();
+
+    <span class="kw">for </span>(param_index, param) <span class="kw">in </span>input.sig.inputs.iter_mut().enumerate() {
+        <span class="kw">let </span>param = <span class="kw">match </span>param {
+            syn::FnArg::Receiver(receiver) =&gt; {
+                <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new_spanned(receiver, <span class="string">&quot;system functions must not be a method&quot;</span>))
+            }
+            syn::FnArg::Typed(typed) =&gt; typed,
+        };
+
+        input_types.push(syn::Type::clone(<span class="kw-2">&amp;</span>param.ty));
+
+        <span class="kw">let </span>arg_type = arg::infer_arg_type(param)<span class="question-mark">?</span>;
+
+        <span class="kw">let </span>run_arg = <span class="kw">match </span>arg_type {
+            ArgType::Local { default, referrer_attr } =&gt; {
+                <span class="kw">let </span>referrer_attr = <span class="kw">match </span>referrer_attr {
+                    <span class="prelude-val">Some</span>(<span class="bool-val">true</span>) =&gt; <span class="macro">quote!</span>(<span class="attribute">#[entity]</span>),
+                    <span class="prelude-val">Some</span>(<span class="bool-val">false</span>) =&gt; <span class="macro">quote!</span>(<span class="attribute">#[not_entity]</span>),
+                    <span class="prelude-val">None </span>=&gt; <span class="macro">quote!</span>(),
+                };
+
+                <span class="kw">let </span>field_name = <span class="kw">match </span><span class="kw-2">&amp;*</span>param.pat {
+                    syn::Pat::Ident(ident) =&gt; ident.ident.clone(),
+                    syn::Pat::Reference(pat) =&gt; <span class="kw">match </span><span class="kw-2">&amp;*</span>pat.pat {
+                        syn::Pat::Ident(ident) =&gt; ident.ident.clone(),
+                        <span class="kw">_ </span>=&gt; <span class="macro">quote::format_ident!</span>(<span class="string">&quot;__dynec_local_{}&quot;</span>, param_index),
+                    },
+                    <span class="kw">_ </span>=&gt; <span class="macro">quote::format_ident!</span>(<span class="string">&quot;__dynec_local_{}&quot;</span>, param_index),
+                };
+
+                <span class="kw">let </span>param_ty = <span class="kw">match </span><span class="kw-2">&amp;*</span>param.ty {
+                    syn::Type::Reference(ty) =&gt; <span class="kw-2">&amp;</span>ty.elem,
+                    <span class="kw">_ </span>=&gt; {
+                        <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new_spanned(
+                            <span class="kw-2">&amp;</span>param.ty,
+                            <span class="string">&quot;#[local] and #[param] can only be used on reference type parameters&quot;</span>,
+                        ))
+                    }
+                };
+
+                local_state_field_idents.push(field_name.clone());
+                local_state_field_pats.push(param.pat.clone());
+                local_state_field_tys.push(syn::Type::clone(param_ty));
+                local_state_entity_attrs.push(referrer_attr);
+
+                <span class="kw">if let </span><span class="prelude-val">Some</span>(default) = default {
+                    initial_state_field_idents.push(field_name.clone());
+                    initial_state_field_defaults.push(default);
+                } <span class="kw">else </span>{
+                    param_state_field_idents.push(field_name.clone());
+                    param_state_field_tys.push(syn::Type::clone(param_ty));
+                }
+
+                <span class="macro">quote! </span>{
+                    <span class="attribute">#[allow(clippy::unnecessary_mut_passed)]
+                    </span>{
+                        <span class="kw-2">&amp;mut </span><span class="self">self</span>.#field_name
+                    }
+                }
+            }
+            ArgType::Global { thread_local, maybe_uninit } =&gt; {
+                <span class="kw">if </span>thread_local &amp;&amp; !item.system_thread_local {
+                    <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new_spanned(
+                        param,
+                        <span class="string">&quot;Thread-local global states can only be used in systems marked as \
+                         `#[dynec(thread_local)]`.&quot;</span>,
+                    ));
+                }
+
+                <span class="kw">let </span>new_sync = <span class="kw">match </span>thread_local {
+                    <span class="bool-val">true </span>=&gt; <span class="macro">quote!</span>(new_unsync),
+                    <span class="bool-val">false </span>=&gt; <span class="macro">quote!</span>(new_sync),
+                };
+
+                <span class="kw">let </span>(param_ty, mutable) = <span class="kw">match </span><span class="kw-2">&amp;*</span>param.ty {
+                    syn::Type::Reference(ty) =&gt; (<span class="kw-2">&amp;</span>ty.elem, ty.mutability.is_some()),
+                    <span class="kw">_ </span>=&gt; {
+                        <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new_spanned(
+                            <span class="kw-2">&amp;</span>param.ty,
+                            <span class="string">&quot;#[global] can only be used on reference type parameters&quot;</span>,
+                        ))
+                    }
+                };
+
+                global_requests.push(<span class="macro">quote! </span>{
+                    #crate_name::system::spec::GlobalRequest::#new_sync::&lt;#param_ty&gt;(#mutable)
+                        #(.maybe_uninit::&lt;#maybe_uninit&gt;())*
+                });
+
+                <span class="kw">match </span>(thread_local, mutable) {
+                    (<span class="bool-val">false</span>, <span class="bool-val">true</span>) =&gt; <span class="macro">quote!</span>(<span class="kw-2">&amp;mut *</span>sync_globals.write::&lt;#param_ty&gt;()),
+                    (<span class="bool-val">false</span>, <span class="bool-val">false</span>) =&gt; <span class="macro">quote!</span>(<span class="kw-2">&amp;*</span>sync_globals.read::&lt;#param_ty&gt;()),
+                    (<span class="bool-val">true</span>, <span class="kw">_</span>) =&gt; <span class="macro">quote!</span>(unsync_globals.get::&lt;#param_ty&gt;()),
+                }
+            }
+            ArgType::Simple { mutable, arch, comp, maybe_uninit } =&gt; {
+                simple_requests.push(<span class="macro">quote! </span>{
+                    #crate_name::system::spec::SimpleRequest::new::&lt;#arch, #comp&gt;(#mutable)
+                        #(.maybe_uninit::&lt;#maybe_uninit&gt;())*
+                });
+
+                <span class="kw">match </span>mutable {
+                    <span class="bool-val">true </span>=&gt; <span class="macro">quote!</span>(components.write_simple_storage::&lt;#arch, #comp&gt;()),
+                    <span class="bool-val">false </span>=&gt; <span class="macro">quote!</span>(components.read_simple_storage::&lt;#arch, #comp&gt;()),
+                }
+            }
+            ArgType::Isotope { mutable, arch, comp, discrim, discrim_key, maybe_uninit } =&gt; {
+                <span class="kw">let </span>discrim_field = <span class="kw">if let </span><span class="prelude-val">Some</span>(discrim) = discrim {
+                    <span class="kw">let </span>discrim_key = <span class="kw">match </span>discrim_key {
+                        <span class="prelude-val">Ok</span>(ty) =&gt; ty,
+                        <span class="prelude-val">Err</span>(span) =&gt; {
+                            <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(
+                                span,
+                                <span class="string">&quot;Type parameter `K` must be specified for \
+                                 `ReadIsotope`/`WriteIsotope` if partial isotope access is used&quot;</span>,
+                            ))
+                        }
+                    };
+
+                    <span class="kw">let </span>discrim_ident =
+                        <span class="macro">quote::format_ident!</span>(<span class="string">&quot;__dynec_isotope_discrim_{}&quot;</span>, param_index);
+                    isotope_discrim_idents.push(discrim_ident.clone());
+                    isotope_discrim_ty_params.push(<span class="macro">quote::format_ident!</span>(
+                        <span class="string">&quot;__DynecDiscrimType{}&quot;</span>,
+                        isotope_discrim_ty_params.len()
+                    ));
+                    isotope_discrim_type_bounds.push(<span class="macro">quote!</span>(
+                        #crate_name::comp::discrim::Set&lt;
+                            &lt;#comp <span class="kw">as </span>#crate_name::comp::Isotope&lt;#arch&gt;&gt;::Discrim,
+                            Key = #discrim_key,
+                        &gt;));
+                    isotope_discrim_values.push(discrim);
+
+                    <span class="prelude-val">Some</span>(<span class="macro">quote!</span>(<span class="self">self</span>.__dynec_isotope_discrim_idents.#discrim_ident))
+                } <span class="kw">else </span>{
+                    <span class="prelude-val">None
+                </span>};
+
+                <span class="kw">let </span>discrim_field_variadic = discrim_field.as_ref().map(|expr| <span class="macro">quote!</span>(<span class="kw-2">&amp;</span>#expr));
+                <span class="kw">let </span>discrim_value_option = <span class="kw">match </span><span class="kw-2">&amp;</span>discrim_field {
+                    <span class="prelude-val">Some</span>(expr) =&gt; {
+                        <span class="macro">quote!</span>(<span class="prelude-val">Some</span>({
+                            <span class="kw">let </span>__iter = #crate_name::comp::discrim::Set::iter_discrims(<span class="kw-2">&amp;</span>#expr);
+                            <span class="kw">let </span>__iter = ::std::iter::Iterator::map(__iter, |d| {
+                                <span class="kw">let </span>d: <span class="kw-2">&amp;</span>&lt;#comp <span class="kw">as </span>#crate_name::comp::Isotope&lt;#arch&gt;&gt;::Discrim = <span class="kw-2">&amp;</span>d; <span class="comment">// auto deref
+                                </span>#crate_name::comp::Discrim::into_usize(<span class="kw-2">*</span>d)
+                            });
+                            ::std::iter::Iterator::collect::&lt;::std::vec::Vec&lt;<span class="kw">_</span>&gt;&gt;(__iter)
+                        }))
+                    }
+                    <span class="prelude-val">None </span>=&gt; <span class="macro">quote!</span>(<span class="prelude-val">None</span>),
+                };
+
+                isotope_requests.push(<span class="macro">quote! </span>{
+                    #crate_name::system::spec::IsotopeRequest::new::&lt;#arch, #comp&gt;(#discrim_value_option, #mutable)
+                        #(.maybe_uninit::&lt;#maybe_uninit&gt;())*
+                });
+
+                <span class="kw">let </span>method_ident = <span class="kw">match </span>(mutable, discrim_field.is_some()) {
+                    (<span class="bool-val">true</span>, <span class="bool-val">true</span>) =&gt; <span class="macro">quote!</span>(write_partial_isotope_storage::&lt;#arch, #comp, <span class="kw">_</span>&gt;),
+                    (<span class="bool-val">true</span>, <span class="bool-val">false</span>) =&gt; <span class="macro">quote!</span>(write_full_isotope_storage::&lt;#arch, #comp&gt;),
+                    (<span class="bool-val">false</span>, <span class="bool-val">true</span>) =&gt; <span class="macro">quote!</span>(read_partial_isotope_storage::&lt;#arch, #comp, <span class="kw">_</span>&gt;),
+                    (<span class="bool-val">false</span>, <span class="bool-val">false</span>) =&gt; <span class="macro">quote!</span>(read_full_isotope_storage::&lt;#arch, #comp&gt;),
+                };
+
+                <span class="macro">quote!</span>(components.#method_ident(#discrim_field_variadic))
+            }
+            ArgType::EntityCreator { arch, no_partition } =&gt; {
+                <span class="kw">let </span>no_partition_call = no_partition.then(|| <span class="macro">quote!</span>(.no_partition()));
+                entity_creator_requests.push(<span class="macro">quote! </span>{
+                    #crate_name::system::spec::EntityCreatorRequest::new::&lt;#arch&gt;()
+                        #no_partition_call
+                });
+
+                <span class="macro">quote!</span>(#crate_name::system::EntityCreatorImpl {
+                    buffer: <span class="kw-2">&amp;</span>offline_buffer,
+                    ealloc: ealloc_shard_map.borrow::&lt;#arch&gt;(),
+                })
+            }
+            ArgType::EntityDeleter { arch } =&gt; {
+                <span class="macro">quote!</span>(#crate_name::system::EntityDeleterImpl::&lt;#arch&gt; {
+                    buffer: <span class="kw-2">&amp;</span>offline_buffer,
+                    _ph: ::std::marker::PhantomData,
+                })
+            }
+            ArgType::EntityIterator { arch } =&gt; {
+                <span class="macro">quote!</span>(#crate_name::system::entity_iterator::&lt;#arch, <span class="kw">_</span>&gt;(ealloc_shard_map.borrow::&lt;#arch&gt;()))
+            }
+        };
+        system_run_args.push(run_arg);
+    }
+
+    <span class="comment">// 3. Generate code.
+
+    </span><span class="kw">let </span>fn_body = <span class="kw-2">&amp;*</span>input.block;
+
+    <span class="kw">let </span>input_args: Vec&lt;<span class="kw">_</span>&gt; = input.sig.inputs.iter().collect();
+
+    <span class="kw">let </span>input_proxy_args: Vec&lt;<span class="kw">_</span>&gt; =
+        (<span class="number">0</span>..input.sig.inputs.len()).map(|i| <span class="macro">quote::format_ident!</span>(<span class="string">&quot;arg_{}&quot;</span>, i)).collect();
+
+    <span class="comment">// Destructure all local states into local variables.
+    </span><span class="kw">let </span>destructure_local_states = <span class="macro">quote! </span>{
+        <span class="attribute">#[allow(unused_variables, clippy::unused_unit)]
+        </span><span class="kw">let </span>(#(#local_state_field_pats,)<span class="kw-2">*</span>) = {
+            <span class="kw">let </span><span class="self">Self </span>{
+                #(#local_state_field_idents,)*
+                __dynec_isotope_discrim_idents: <span class="kw">_</span>,
+            } = <span class="self">self</span>;
+            (#(#local_state_field_idents,)<span class="kw-2">*</span>)
+        };
+    };
+
+    <span class="kw">let </span>isotope_discrim_idents_struct = <span class="macro">quote! </span>{
+        <span class="attribute">#[allow(non_camel_case_types)]
+        </span><span class="kw">struct </span>__dynec_isotope_discrim_idents&lt;#(
+            #isotope_discrim_ty_params: #isotope_discrim_type_bounds,
+        )<span class="kw-2">*</span>&gt; {
+            #(#isotope_discrim_idents: #isotope_discrim_ty_params,)*
+        }
+    };
+    <span class="kw">let </span><span class="kw-2">mut </span>local_state_struct = syn::parse2(<span class="macro">quote! </span>{
+        <span class="attribute">#[allow(non_camel_case_types)]
+        </span><span class="kw">struct </span>__dynec_local_state&lt;#(
+            #isotope_discrim_ty_params: #isotope_discrim_type_bounds,
+        )<span class="kw-2">*</span>&gt; {
+            #(#local_state_entity_attrs #local_state_field_idents: #local_state_field_tys,)*
+            <span class="attribute">#[not_entity = <span class="string">&quot;no entities can be assigned in discriminants because the world is not created yet.&quot;</span>]
+            </span>__dynec_isotope_discrim_idents: __dynec_isotope_discrim_idents&lt;#(#isotope_discrim_ty_params,)<span class="kw-2">*</span>&gt;,
+        }
+    }).expect(<span class="string">&quot;invalid struct expression&quot;</span>);
+    <span class="kw">let </span>impl_referrer_for_local_state = entity_ref::entity_ref(
+        <span class="kw-2">&amp;mut </span>local_state_struct,
+        crate_name.clone(),
+        <span class="macro">quote! </span>{
+            this_field_references_an_entity_so_it_should_use_dynec_param_entity_or_dynec_local_entity
+        },
+    )<span class="question-mark">?</span>;
+
+    <span class="kw">let </span>(system_trait, system_run_params) = <span class="kw">match </span>item.system_thread_local {
+        <span class="bool-val">true </span>=&gt; (
+            <span class="macro">quote!</span>(Unsendable),
+            <span class="macro">quote! </span>{
+                sync_globals: <span class="kw-2">&amp;</span>#crate_name::world::SyncGlobals,
+                unsync_globals: <span class="kw-2">&amp;mut </span>#crate_name::world::UnsyncGlobals,
+                components: <span class="kw-2">&amp;</span>#crate_name::world::Components,
+                ealloc_shard_map: <span class="kw-2">&amp;mut </span>#crate_name::entity::ealloc::ShardMap,
+                offline_buffer: <span class="kw-2">&amp;mut </span>#crate_name::world::offline::BufferShard,
+            },
+        ),
+        <span class="bool-val">false </span>=&gt; (
+            <span class="macro">quote!</span>(Sendable),
+            <span class="macro">quote! </span>{
+                sync_globals: <span class="kw-2">&amp;</span>#crate_name::world::SyncGlobals,
+                components: <span class="kw-2">&amp;</span>#crate_name::world::Components,
+                ealloc_shard_map: <span class="kw-2">&amp;mut </span>#crate_name::entity::ealloc::ShardMap,
+                offline_buffer: <span class="kw-2">&amp;mut </span>#crate_name::world::offline::BufferShard,
+            },
+        ),
+    };
+
+    <span class="kw">let </span>build_fn = <span class="macro">quote! </span>{
+        <span class="doccomment">/// Builds an instance of the system with required parameters.
+        </span>#vis <span class="kw">fn </span>build(
+            <span class="kw-2">&amp;</span><span class="self">self</span>,
+            #(#param_state_field_idents: #param_state_field_tys,)*
+        ) -&gt; <span class="kw">impl </span>#crate_name::system::#system_trait {
+            <span class="comment">// Parameters are first borrowed here to prepare the discrim set.
+            // This block cannot move out any `#param_state_field_idents`
+            // because they will be moved into the local state struct in the next
+            // statement.
+            </span><span class="kw">let </span>__dynec_isotope_discrim_idents = {
+                __dynec_isotope_discrim_idents {
+                    #(#isotope_discrim_idents: ::std::clone::Clone::clone(<span class="kw-2">&amp;</span>#isotope_discrim_values),)*
+                }
+            };
+
+            __dynec_local_state {
+                __dynec_isotope_discrim_idents,
+                #(#param_state_field_idents,)*
+                #(#initial_state_field_idents: #initial_state_field_defaults,)*
+            }
+        }
+    };
+    <span class="kw">let </span>call_fn = <span class="macro">quote! </span>{
+        <span class="doccomment">/// Calls the underlying system function directly.
+        ///
+        /// This function should only be used in unit tests.
+        </span>#vis <span class="kw">fn </span>call(#(#input_proxy_args: #input_types),<span class="kw-2">*</span>) {
+            __dynec_original(#(#input_proxy_args),<span class="kw-2">*</span>)
+        }
+    };
+
+    <span class="kw">let </span>impl_descriptor = <span class="macro">quote! </span>{
+        <span class="attribute">#[automatically_derived]
+        </span><span class="kw">impl</span>&lt;#(
+            #isotope_discrim_ty_params: #isotope_discrim_type_bounds,
+        )<span class="kw-2">*</span>&gt; #crate_name::system::Descriptor <span class="kw">for </span>__dynec_local_state&lt;#(#isotope_discrim_ty_params,)<span class="kw-2">*</span>&gt; {
+            <span class="kw">fn </span>get_spec(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; #crate_name::system::Spec {
+                #destructure_local_states
+
+                #crate_name::system::Spec {
+                    debug_name: {
+                        ::std::string::String::from(#name)
+                    },
+                    dependencies: <span class="macro">vec!</span>[#(#deps),<span class="kw-2">*</span>],
+                    global_requests: <span class="macro">vec!</span>[#(#global_requests),<span class="kw-2">*</span>],
+                    simple_requests: <span class="macro">vec!</span>[#(#simple_requests),<span class="kw-2">*</span>],
+                    isotope_requests: <span class="macro">vec!</span>[#(#isotope_requests),<span class="kw-2">*</span>],
+                    entity_creator_requests: <span class="macro">vec!</span>[#(#entity_creator_requests),<span class="kw-2">*</span>],
+                }
+            }
+
+            <span class="kw">fn </span>visit_type(<span class="kw-2">&amp;</span><span class="self">self</span>, arg: <span class="kw-2">&amp;mut </span>#crate_name::entity::referrer::VisitTypeArg) {
+                &lt;<span class="self">Self </span><span class="kw">as </span>#crate_name::entity::Referrer&gt;::visit_type(arg)
+            }
+
+            <span class="kw">fn </span>state_maybe_uninit(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ::std::vec::Vec&lt;::std::any::TypeId&gt; {
+                <span class="macro">vec!</span>[#(#state_maybe_uninit),<span class="kw-2">*</span>]
+            }
+
+            <span class="kw">fn </span>visit_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; #crate_name::entity::referrer::AsObject&lt;<span class="lifetime">&#39;_</span>&gt; {
+                #crate_name::entity::referrer::AsObject::of(<span class="self">self</span>)
+            }
+        }
+    };
+    <span class="kw">let </span>impl_system = <span class="macro">quote! </span>{
+        <span class="attribute">#[automatically_derived]
+        </span><span class="kw">impl</span>&lt;#(
+            #isotope_discrim_ty_params: #isotope_discrim_type_bounds,
+        )<span class="kw-2">*</span>&gt; #crate_name::system::#system_trait <span class="kw">for </span>__dynec_local_state&lt;#(#isotope_discrim_ty_params,)<span class="kw-2">*</span>&gt; {
+            <span class="kw">fn </span>run(<span class="kw-2">&amp;mut </span><span class="self">self</span>, #system_run_params) {
+                <span class="kw">let </span>offline_buffer = ::std::cell::RefCell::new(offline_buffer);
+
+                __dynec_original(#(#system_run_args),<span class="kw-2">*</span>)
+            }
+
+            <span class="kw">fn </span>as_descriptor_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span><span class="kw">dyn </span>#crate_name::system::Descriptor { <span class="self">self </span>}
+        }
+    };
+
+    <span class="kw">let </span>output = <span class="macro">quote! </span>{
+        <span class="comment">// A unit struct that serves as the API entry point.
+        </span>#(<span class="attribute">#[#other_attrs]</span>)*
+        <span class="attribute">#[derive(Clone, Copy)]
+        #[allow(non_camel_case_types)]
+        </span>#vis <span class="kw">struct </span>#ident;
+
+        <span class="kw">const _</span>: () = {
+            <span class="comment">// Public API methods.
+            </span><span class="attribute">#[automatically_derived]
+            </span><span class="kw">impl </span>#ident {
+                #build_fn
+                #call_fn
+            }
+
+            #isotope_discrim_idents_struct
+
+            #local_state_struct
+            #impl_referrer_for_local_state
+
+            <span class="comment">// The actual function is moved here.
+            </span><span class="kw">fn </span>__dynec_original(#(#input_args),<span class="kw-2">*</span>) {
+                #fn_body
+            }
+
+            #impl_descriptor
+
+            #impl_system
+        };
+    };
+
+    <span class="kw">if </span>item.debug_print {
+        <span class="macro">println!</span>(<span class="string">&quot;{}&quot;</span>, <span class="kw-2">&amp;</span>output);
+    }
+
+    <span class="prelude-val">Ok</span>(output)
+}
+
+<span class="kw">fn </span>parse_maybe_uninit&lt;T&gt;(
+    input: ParseStream,
+    constructor: <span class="kw">fn</span>(syn::token::Paren, Punctuated&lt;syn::Type, <span class="macro">syn::Token!</span>[,]&gt;) -&gt; T,
+) -&gt; <span class="prelude-ty">Result</span>&lt;T&gt; {
+    <span class="kw">let </span>inner;
+    <span class="kw">let </span>paren = <span class="macro">syn::parenthesized!</span>(inner <span class="kw">in </span>input);
+    <span class="kw">let </span>punctuated = Punctuated::parse_terminated(<span class="kw-2">&amp;</span>inner)<span class="question-mark">?</span>;
+    <span class="prelude-val">Ok</span>(constructor(paren, punctuated))
+}
+</code></pre></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="dynec_codegen" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (8b0c05d9a 2022-10-07)" ></div></body></html>

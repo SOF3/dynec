@@ -62,7 +62,7 @@ pub trait Descriptor {
 ///
 /// There may be multiple instances of the same implementor type.
 /// This is meaningful as they may have different states.
-pub trait Sendable: Send + Descriptor {
+pub trait Sendable: Send + Descriptor + 'static {
     /// Runs the system.
     fn run(
         &mut self,

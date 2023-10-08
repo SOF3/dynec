@@ -35,7 +35,7 @@ fn isotope_discrim_read_test_system(
     assert_eq!(map_vec, vec![(TestDiscrim1(11), &IsoNoInit(3)), (TestDiscrim1(13), &IsoNoInit(5))]);
 }
 
-fn isotope_discrim_test_world(system: impl system::Sendable + 'static) -> world::World {
+fn isotope_discrim_test_world(system: impl system::Sendable) -> world::World {
     let mut world = system_test!(system;);
 
     let ent = world.create(crate::comps![@(crate) TestArch =>

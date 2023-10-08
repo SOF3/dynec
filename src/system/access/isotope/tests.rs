@@ -1,5 +1,7 @@
 //! Tests isotope storage access.
 
+#![allow(clippy::ptr_arg)]
+
 use crate::test_util::*;
 use crate::{system, system_test, tracer, world};
 

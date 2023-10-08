@@ -24,7 +24,9 @@ impl<A, C, StorageRef> Single<A, C, StorageRef> {
 }
 
 #[derive_trait(pub Get{
+    /// The archetype that this accessor retrieves for.
     type Arch: Archetype = A;
+    /// The component that this accessor retrieves.
     type Comp: comp::SimpleOrIsotope<Self::Arch> = C;
 })]
 impl<A, C, StorageRef> Single<A, C, StorageRef>
@@ -47,7 +49,9 @@ where
 }
 
 #[derive_trait(pub MustGet{
+    /// The archetype that this accessor retrieves for.
     type Arch: Archetype = A;
+    /// The component that this accessor retrieves.
     type Comp: comp::SimpleOrIsotope<Self::Arch> + comp::Must<Self::Arch> = C;
 })]
 impl<A, C, StorageRef> Single<A, C, StorageRef>
@@ -100,7 +104,9 @@ where
 }
 
 #[derive_trait(pub GetChunked {
+    /// The archetype that this accessor retrieves for.
     type Arch: Archetype = A;
+    /// The component that this accessor retrieves.
     type Comp: comp::SimpleOrIsotope<Self::Arch> = C;
 })]
 impl<A, C, StorageRef> Single<A, C, StorageRef>
@@ -123,7 +129,9 @@ where
 }
 
 #[derive_trait(pub MustGetChunked{
+    /// The archetype that this accessor retrieves for.
     type Arch: Archetype = A;
+    /// The component that this accessor retrieves.
     type Comp: comp::SimpleOrIsotope<Self::Arch> + comp::Must<Self::Arch> = C;
 })]
 impl<A, C, StorageRef> Single<A, C, StorageRef>
@@ -154,7 +162,9 @@ where
 }
 
 #[derive_trait(pub GetMut{
+    /// The archetype that this accessor retrieves for.
     type Arch: Archetype = A;
+    /// The component that this accessor retrieves.
     type Comp: comp::SimpleOrIsotope<Self::Arch> = C;
 })]
 impl<A, C, StorageRef> Single<A, C, StorageRef>
@@ -183,7 +193,9 @@ where
 }
 
 #[derive_trait(pub MustGetMut{
+    /// The archetype that this accessor retrieves for.
     type Arch: Archetype = A;
+    /// The component that this accessor retrieves.
     type Comp: comp::SimpleOrIsotope<Self::Arch> + comp::Must<Self::Arch> = C;
 })]
 impl<A, C, StorageRef> Single<A, C, StorageRef>
@@ -214,7 +226,9 @@ where
 }
 
 #[derive_trait(pub Set{
+    /// The archetype that this accessor retrieves for.
     type Arch: Archetype = A;
+    /// The component that this accessor retrieves.
     type Comp: comp::SimpleOrIsotope<Self::Arch> = C;
 })]
 impl<A, C, StorageRef> Single<A, C, StorageRef>
@@ -252,7 +266,9 @@ where
 }
 
 #[derive_trait(pub MustSet{
+    /// The archetype that this accessor retrieves for.
     type Arch: Archetype = A;
+    /// The component that this accessor retrieves.
     type Comp: comp::SimpleOrIsotope<Self::Arch> + comp::Must<Self::Arch> = C;
 })]
 impl<A, C, StorageRef> Single<A, C, StorageRef>
@@ -344,7 +360,9 @@ where
 }
 
 #[derive_trait(pub GetMutChunked{
+    /// The archetype that this accessor retrieves for.
     type Arch: Archetype = A;
+    /// The component that this accessor retrieves.
     type Comp: comp::SimpleOrIsotope<Self::Arch> + comp::Must<Self::Arch> = C;
 })]
 impl<A, C, StorageRef> Single<A, C, StorageRef>

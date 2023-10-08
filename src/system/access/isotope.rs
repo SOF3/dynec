@@ -112,8 +112,11 @@ where
 }
 
 #[derive_trait(pub Get{
+    /// The archetype that this accessor retrieves for.
     type Arch: Archetype = A;
+    /// The component that this accessor retrieves.
     type Comp: comp::Isotope<Self::Arch> = C;
+    /// The key for the discriminant set, `Comp::Discrim` for full accessors, typically `usize` for partial accessors
     type Key: fmt::Debug + Copy + 'static = KeyT;
 })]
 impl<A, C, KeyT, StorageMapT> Isotope<A, C, StorageMapT>
@@ -205,8 +208,11 @@ where
 }
 
 #[derive_trait(pub GetRef{
+    /// The archetype that this accessor retrieves for.
     type Arch: Archetype = A;
+    /// The component that this accessor retrieves.
     type Comp: comp::Isotope<Self::Arch> = C;
+    /// The key for the discriminant set, `Comp::Discrim` for full accessors, typically `usize` for partial accessors
     type Key: fmt::Debug + Copy + 'static = KeyT;
 })]
 impl<A, C, KeyT, StorageMapT> Isotope<A, C, StorageMapT>
@@ -256,8 +262,11 @@ where
 }
 
 #[derive_trait(pub GetMut{
+    /// The archetype that this accessor retrieves for.
     type Arch: Archetype = A;
+    /// The component that this accessor retrieves.
     type Comp: comp::Isotope<Self::Arch> = C;
+    /// The key for the discriminant set, `Comp::Discrim` for full accessors, typically `usize` for partial accessors
     type Key: fmt::Debug + Copy + 'static = KeyT;
 })]
 impl<A, C, KeyT, StorageMapT> Isotope<A, C, StorageMapT>

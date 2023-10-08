@@ -86,7 +86,7 @@ struct ZipIter<A: Archetype, Z: Zip<A>>(Z, PhantomData<A>);
 
 impl<A: Archetype, Z: Zip<A>> ZipIter<A, Z> {
     fn take_serial(&mut self, entity: A::RawEntity) -> Z::Item {
-        let right = self.0.split(entity.add(1));
+        let right = self.0.split(entity.add(1)); // add 1 so that `entity` remains on the left chunk
         let left = mem::replace(&mut self.0, right);
         left.get(entity::TempRef::new(entity))
     }
@@ -94,7 +94,7 @@ impl<A: Archetype, Z: Zip<A>> ZipIter<A, Z> {
 
 impl<A: Archetype, Z: ZipChunked<A>> ZipIter<A, Z> {
     fn take_serial_chunk(&mut self, start: A::RawEntity, end: A::RawEntity) -> Z::Chunk {
-        let right = self.0.split(end.add(1));
+        let right = self.0.split(end); // no need to add 1 here since `end` does not belong to the required chunk
         let left = mem::replace(&mut self.0, right);
         left.get_chunk(entity::TempRefChunk::new(start, end))
     }

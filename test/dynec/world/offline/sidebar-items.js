@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"struct":[["BufferShard","A shard of offline operation store."]]};

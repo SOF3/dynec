@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":[["GlobalBuilder",""]],"fn":[["populate_default_globals",""]],"struct":[["Builder","This type is used to build a world. No more systems can be scheduled after the builder is built."]],"type":[["GlobalBuilderMap",""]]};

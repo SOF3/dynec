@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"constant":[["INPUT_TYPE_ERROR",""]],"enum":[["ItemOpt",""]],"fn":[["derive",""]]};

@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":[["derive",""],["drain_attr",""],["entity_ref",""]]};

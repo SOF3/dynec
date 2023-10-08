@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":[["imp",""],["parse_maybe_uninit",""]],"mod":[["arg",""],["item",""],["opt",""]]};

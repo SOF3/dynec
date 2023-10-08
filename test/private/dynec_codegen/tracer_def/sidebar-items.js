@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":[["AssocFnOpt",""],["AssocFnParamOpt",""],["AssocTypeOpt",""],["TraitOpt",""]],"fn":[["imp",""],["tuple_generics",""]]};

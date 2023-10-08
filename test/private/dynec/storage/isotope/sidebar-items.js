@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"struct":[["Map","Isotope storages of the same type but different discriminants."]],"trait":[["AnyMap","Downcastable trait object of [`Map`]."]],"type":[["MapInner",""]]};

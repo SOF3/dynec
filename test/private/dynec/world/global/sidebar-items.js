@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"struct":[["SyncGlobals","Stores the thread-safe global states in a world."],["UnsyncGlobals","Stores the thread-unsafe global states in a world."]]};

@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":[["Node","Identifies a topological node in the schedule of a cycle."]],"struct":[["PartitionIndex","Uniquely identifies a `system::Partition`."],["SendSystemIndex","Uniquely identifies a `system::Sendable`."],["UnsendSystemIndex","Uniquely identifies a `system::Unsendable`."]]};

@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":[["OperationResult","Result of an operation."]],"struct":[["Buffer","A sharded store for offline operations."],["BufferShard","A shard of offline operation store."],["CreateEntity","Create an entity."],["DeleteEntity",""]],"trait":[["Operation","An operation to be executed after join."]]};

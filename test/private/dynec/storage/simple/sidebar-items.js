@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"struct":[["Simple","Storage and metadata for a simple component."],["SimpleStorage",""]],"trait":[["AnySimpleStorage",""]]};

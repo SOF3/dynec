@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":[["main_worker",""],["threaded_worker",""]],"mod":[["deadlock_counter",""]],"struct":[["Context",""],["Executor",""],["SendArgs",""]]};

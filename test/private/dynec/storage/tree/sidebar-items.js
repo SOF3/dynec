@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"struct":[["Tree","A storage based on [`BTreeMap`]."]]};

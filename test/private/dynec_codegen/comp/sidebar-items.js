@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":[["FunctionRefWithArity","Either a closure or a function reference in the form `path / arity` (e.g. `count/1`)."],["ItemOpt",""]],"fn":[["imp",""]]};

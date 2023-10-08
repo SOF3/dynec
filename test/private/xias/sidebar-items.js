@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"trait":[["Homosign","See [`Xias::homosign`]."],["LossyFloat","See [`Xias::lossy_float`]."],["SmallFloat","See [`Xias::small_float`]."],["SmallInt","See [`Xias::small_int`]."],["TruncInt","See [`Xias::trunc_int`]."],["Xias","Blanket trait that imports all traits in this crate."]]};

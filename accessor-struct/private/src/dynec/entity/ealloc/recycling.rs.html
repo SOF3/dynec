@@ -261,29 +261,29 @@
 
 <span class="doccomment">/// The default allocator supporting atomically-allocated new IDs and arbitrary recycler.
 </span><span class="attr">#[derive(Debug)]
-</span><span class="kw">pub struct </span>Recycling&lt;E: Raw, T: Recycler&lt;E&gt;, S: ShardAssigner&gt; {
+</span><span class="kw">pub struct </span>Recycling&lt;RawT: Raw, T: Recycler&lt;RawT&gt;, S: ShardAssigner&gt; {
     <span class="doccomment">/// Whether `mark_need_flush` was called.
     </span>flush_mark:         bool,
     <span class="doccomment">/// The next ID to allocate into shards.
-    </span>global_gauge:       Arc&lt;E::Atomic&gt;,
+    </span>global_gauge:       Arc&lt;RawT::Atomic&gt;,
     <span class="doccomment">/// A sorted list of recycled IDs during the last join.
-    </span>recyclable:         Arc&lt;BTreeSet&lt;E&gt;&gt;,
+    </span>recyclable:         Arc&lt;BTreeSet&lt;RawT&gt;&gt;,
     <span class="doccomment">/// The actual IDs assigned to different shards.
     </span>recycler_shards:    MutableShards&lt;T&gt;,
     <span class="doccomment">/// The assigned shard.
     </span>shard_assigner:     S,
     <span class="doccomment">/// The queue of deallocated IDs to distribute.
-    </span>dealloc_queue:      Vec&lt;E&gt;,
+    </span>dealloc_queue:      Vec&lt;RawT&gt;,
     <span class="doccomment">/// The queue of allocated IDs during online, to be synced to recyclable after join.
-    </span>reuse_queue_shards: MutableShards&lt;Vec&lt;E&gt;&gt;,
+    </span>reuse_queue_shards: MutableShards&lt;Vec&lt;RawT&gt;&gt;,
 }
 
-<span class="kw">impl</span>&lt;E: Raw, T: Recycler&lt;E&gt;, S: ShardAssigner&gt; Recycling&lt;E, T, S&gt; {
+<span class="kw">impl</span>&lt;RawT: Raw, T: Recycler&lt;RawT&gt;, S: ShardAssigner&gt; Recycling&lt;RawT, T, S&gt; {
     <span class="doccomment">/// Creates a new recycling allocator with a custom shard assigner.
     /// This can only be used for unit testing since the Archetype API does not support dynamic
     /// shard assigners.
     </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>new_with_shard_assigner(num_shards: usize, shard_assigner: S) -&gt; <span class="self">Self </span>{
-        <span class="kw">let </span>global_gauge = E::new();
+        <span class="kw">let </span>global_gauge = RawT::new();
         <span class="self">Self </span>{
             flush_mark: <span class="bool-val">false</span>,
             global_gauge: Arc::new(global_gauge),
@@ -301,24 +301,24 @@
     }
 
     <span class="kw">fn </span>get_reuse_queue_offline(
-        reuse_queues: <span class="kw-2">&amp;mut </span>MutableShards&lt;Vec&lt;E&gt;&gt;,
+        reuse_queues: <span class="kw-2">&amp;mut </span>MutableShards&lt;Vec&lt;RawT&gt;&gt;,
         index: usize,
-    ) -&gt; <span class="kw-2">&amp;mut </span>Vec&lt;E&gt; {
+    ) -&gt; <span class="kw-2">&amp;mut </span>Vec&lt;RawT&gt; {
         <span class="kw">let </span>arc = reuse_queues.get_mut(index).expect(<span class="string">&quot;index out of bounds&quot;</span>);
         Arc::get_mut(arc).expect(<span class="string">&quot;shards are dropped in offline mode&quot;</span>).get_mut()
     }
 
     <span class="kw">fn </span>iter_allocated_chunks_offline(
         <span class="kw-2">&amp;mut </span><span class="self">self</span>,
-    ) -&gt; <span class="kw">impl </span>iter::FusedIterator&lt;Item = ops::Range&lt;E&gt;&gt; + <span class="lifetime">&#39;_ </span>{
+    ) -&gt; <span class="kw">impl </span>iter::FusedIterator&lt;Item = ops::Range&lt;RawT&gt;&gt; + <span class="lifetime">&#39;_ </span>{
         iter_gaps(<span class="self">self</span>.global_gauge.load(), <span class="self">self</span>.recyclable.iter().copied())
     }
 }
 
-<span class="kw">impl</span>&lt;E: Raw, T: Recycler&lt;E&gt;, S: ShardAssigner&gt; Ealloc <span class="kw">for </span>Recycling&lt;E, T, S&gt; {
-    <span class="kw">type </span>Raw = E;
+<span class="kw">impl</span>&lt;RawT: Raw, T: Recycler&lt;RawT&gt;, S: ShardAssigner&gt; Ealloc <span class="kw">for </span>Recycling&lt;RawT, T, S&gt; {
+    <span class="kw">type </span>Raw = RawT;
     <span class="kw">type </span>AllocHint = T::Hint;
-    <span class="kw">type </span>Shard = <span class="kw">impl </span>Shard&lt;Raw = E, Hint = T::Hint&gt;;
+    <span class="kw">type </span>Shard = <span class="kw">impl </span>Shard&lt;Raw = RawT, Hint = T::Hint&gt;;
 
     <span class="kw">fn </span>new(num_shards: usize) -&gt; <span class="self">Self </span>{ <span class="self">Self</span>::new_with_shard_assigner(num_shards, S::default()) }
 
@@ -355,7 +355,7 @@
         shard.allocate(hint)
     }
 
-    <span class="kw">fn </span>queue_deallocate(<span class="kw-2">&amp;mut </span><span class="self">self</span>, id: E) { <span class="self">self</span>.dealloc_queue.push(id); }
+    <span class="kw">fn </span>queue_deallocate(<span class="kw-2">&amp;mut </span><span class="self">self</span>, id: RawT) { <span class="self">self</span>.dealloc_queue.push(id); }
 
     <span class="kw">fn </span>flush(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
         <span class="self">self</span>.flush_mark = <span class="bool-val">false</span>;
@@ -451,18 +451,18 @@
     reuse_queue:  ReuseQueueRef,
 }
 
-<span class="kw">impl</span>&lt;E: Raw, GaugeRef, RecyclerRef, ReuseQueueRef&gt; Shard
+<span class="kw">impl</span>&lt;RawT: Raw, GaugeRef, RecyclerRef, ReuseQueueRef&gt; Shard
     <span class="kw">for </span>RecyclingShard&lt;GaugeRef, RecyclerRef, ReuseQueueRef&gt;
 <span class="kw">where
-    </span>GaugeRef: ops::Deref&lt;Target = E::Atomic&gt; + Send + <span class="lifetime">&#39;static</span>,
+    </span>GaugeRef: ops::Deref&lt;Target = RawT::Atomic&gt; + Send + <span class="lifetime">&#39;static</span>,
     RecyclerRef: ops::DerefMut + Send + <span class="lifetime">&#39;static</span>,
-    &lt;RecyclerRef <span class="kw">as </span>ops::Deref&gt;::Target: Recycler&lt;E&gt;,
-    ReuseQueueRef: ops::DerefMut&lt;Target = Vec&lt;E&gt;&gt; + Send + <span class="lifetime">&#39;static</span>,
+    &lt;RecyclerRef <span class="kw">as </span>ops::Deref&gt;::Target: Recycler&lt;RawT&gt;,
+    ReuseQueueRef: ops::DerefMut&lt;Target = Vec&lt;RawT&gt;&gt; + Send + <span class="lifetime">&#39;static</span>,
 {
-    <span class="kw">type </span>Raw = E;
-    <span class="kw">type </span>Hint = &lt;RecyclerRef::Target <span class="kw">as </span>Recycler&lt;E&gt;&gt;::Hint;
+    <span class="kw">type </span>Raw = RawT;
+    <span class="kw">type </span>Hint = &lt;RecyclerRef::Target <span class="kw">as </span>Recycler&lt;RawT&gt;&gt;::Hint;
 
-    <span class="kw">fn </span>allocate(<span class="kw-2">&amp;mut </span><span class="self">self</span>, hint: <span class="self">Self</span>::Hint) -&gt; E {
+    <span class="kw">fn </span>allocate(<span class="kw-2">&amp;mut </span><span class="self">self</span>, hint: <span class="self">Self</span>::Hint) -&gt; RawT {
         <span class="kw">if let </span><span class="prelude-val">Some</span>(id) = <span class="self">self</span>.recycler.poll(hint) {
             id
         } <span class="kw">else </span>{
@@ -471,14 +471,14 @@
     }
 }
 
-<span class="kw">impl</span>&lt;E: Raw, T: Recycler&lt;E&gt;, GaugeRef, RecyclerRef, ReuseQueueRef&gt;
+<span class="kw">impl</span>&lt;RawT: Raw, T: Recycler&lt;RawT&gt;, GaugeRef, RecyclerRef, ReuseQueueRef&gt;
     RecyclingShard&lt;GaugeRef, RecyclerRef, ReuseQueueRef&gt;
 <span class="kw">where
-    </span>GaugeRef: ops::Deref&lt;Target = E::Atomic&gt;,
+    </span>GaugeRef: ops::Deref&lt;Target = RawT::Atomic&gt;,
     RecyclerRef: ops::DerefMut&lt;Target = T&gt;,
-    ReuseQueueRef: ops::DerefMut&lt;Target = Vec&lt;E&gt;&gt;,
+    ReuseQueueRef: ops::DerefMut&lt;Target = Vec&lt;RawT&gt;&gt;,
 {
-    <span class="kw">fn </span>allocate(<span class="kw-2">&amp;mut </span><span class="self">self</span>, hint: T::Hint) -&gt; E {
+    <span class="kw">fn </span>allocate(<span class="kw-2">&amp;mut </span><span class="self">self</span>, hint: T::Hint) -&gt; RawT {
         <span class="kw">if let </span><span class="prelude-val">Some</span>(id) = <span class="self">self</span>.recycler.poll(hint) {
             <span class="self">self</span>.reuse_queue.push(id);
             id

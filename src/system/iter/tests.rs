@@ -2,7 +2,7 @@
 
 use crate::entity::{Raw as _, Ref};
 use crate::test_util::*;
-use crate::{system, system_test, tracer};
+use crate::{system, system_test, system_test_exported, tracer, world};
 
 #[test]
 fn test_entity_iter_partial_single_mut() {
@@ -98,50 +98,63 @@ fn test_entity_iter_partial_chunked_mut() {
         let [mut double_iso_acc_0, double_iso_acc_1] = double_iso_acc.split_isotopes([0, 1]);
         let [single_iso_acc_0] = single_iso_acc.split([0]);
 
-        for (chunk, (simple, double0, double1, single)) in iter.chunks_with((
-            &simple_acc,
-            &mut double_iso_acc_0,
-            &double_iso_acc_1,
-            &single_iso_acc_0,
-        )) {
-            assert_eq!(chunk.start.get(), 1);
-            assert_eq!(chunk.end.get(), 4);
+        for (chunk_enumerate, (chunk, (simple, double0, double1, single))) in iter
+            .chunks_with((&simple_acc, &mut double_iso_acc_0, &double_iso_acc_1, &single_iso_acc_0))
+            .enumerate()
+        {
+            match chunk_enumerate {
+                0 => {
+                    assert_eq!(chunk.start.get(), 1);
+                    assert_eq!(chunk.end.get(), 3);
 
-            assert_eq!(simple[0], Simple5RequiredNoInit(5));
-            assert_eq!(double0[0], IsoWithInit(11));
-            assert_eq!(double1[0], IsoWithInit(73));
-            assert_eq!(single[0], IsoWithInit(41));
+                    assert_eq!(simple[0], Simple5RequiredNoInit(5));
+                    assert_eq!(double0[0], IsoWithInit(11));
+                    assert_eq!(double1[0], IsoWithInit(73));
+                    assert_eq!(single[0], IsoWithInit(41));
 
-            assert_eq!(simple[1], Simple5RequiredNoInit(47));
-            assert_eq!(double0[1], IsoWithInit(73));
-            assert_eq!(double1[1], IsoWithInit(17));
-            assert_eq!(single[1], IsoWithInit(43));
+                    assert_eq!(simple[1], Simple5RequiredNoInit(47));
+                    assert_eq!(double0[1], IsoWithInit(73));
+                    assert_eq!(double1[1], IsoWithInit(17));
+                    assert_eq!(single[1], IsoWithInit(43));
+                }
+                1 => {
+                    assert_eq!(chunk.start.get(), 4);
+                    assert_eq!(chunk.end.get(), 5);
 
-            assert_eq!(simple[2], Simple5RequiredNoInit(53));
-            assert_eq!(double0[2], IsoWithInit(19));
-            assert_eq!(double1[2], IsoWithInit(23));
-            assert_eq!(single[2], IsoWithInit(73));
+                    assert_eq!(simple[0], Simple5RequiredNoInit(53));
+                    assert_eq!(double0[0], IsoWithInit(19));
+                    assert_eq!(double1[0], IsoWithInit(23));
+                    assert_eq!(single[0], IsoWithInit(73));
+                }
+                _ => unreachable!(),
+            }
         }
     }
 
-    let mut world = system_test! {
+    let (mut world, (hole,)) = system_test_exported! {
         test_system.build();
-        _: TestArch = (
+        TestArch = (
             Simple5RequiredNoInit(5),
             @(TestDiscrim2(7), IsoWithInit(11)),
             @(TestDiscrim2(31), IsoWithInit(41)),
         );
-        _: TestArch = (
+        TestArch = (
             Simple5RequiredNoInit(47),
             @(TestDiscrim2(13), IsoWithInit(17)),
             @(TestDiscrim2(31), IsoWithInit(43)),
         );
-        _: TestArch = (
+        let hole: TestArch = (
+            Simple5RequiredNoInit(404),
+        );
+        TestArch = (
             Simple5RequiredNoInit(53),
             @(TestDiscrim2(7), IsoWithInit(19)),
             @(TestDiscrim2(13), IsoWithInit(23)),
         );
     };
+
+    let delete_result = world.delete(hole);
+    assert_eq!(delete_result, world::DeleteResult::Deleted);
 
     world.execute(&tracer::Log(log::Level::Trace));
 }

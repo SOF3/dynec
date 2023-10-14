@@ -44,12 +44,29 @@ Naming type parameters follows the following conventions:
 - If the type parameter has no specific bounds
   and there are no more than two type parameters in scope,
   the dummy names `T` and `U` MAY be used.
-- If the type parameter is defined in the scope of a key-value store,
+- If the type parameter is defined in the scope of a key-value collection,
   i.e. the item at which the type parameters are defined
   corresponds exclusively to exactly one key-value item,
-  the names `K` and `V` MAY be used for key and value types.
-  `K` or `V` SHOULD NOT be used alone without the other one.
+  the names `K` and `V` MAY be used for key and value types on the same collections.
+  `K` or `V` SHOULD NOT be used alone without the other one or on different collections.
+- `F` and `I` MAY be used to represent closure and iterator types
+  only if there is no more than one generic function/iterator type in scope.
+- Domain-specific acronyms: The following type parameters are ALLOWED only if
+  they describe the following dynec-specific concepts:
+  - `A`: Archetype
+  - `C`: Component (Simple or Isotope)
+  - `D`: Discriminant (for isotope components)
+  - `E`: Implements `entity::Ref` (NOT `entity::Raw`)
 - Otherwise, the full name SHOULD be described in PascalCase directly
-  if it does not collide with the name of a type/trait that may be imported
+  if it does not collide with the name of a type/trait used in this project
   (regardless whether it is *currently* imported).
-- In the case of name collision, a `T` SHOULD be appended to its name.
+- In the case of name collision, a `T` MAY be appended to its name.
+
+#### Imports
+
+- The `Result` type MUST NOT be aliased in the main crate.
+  However, importing `syn::Result` is RECOMMENDED in the codegen crate.
+- Traits SHOULD be imported `as _`
+  if the imported trait identifier is not directly used
+  (if the module only uses the imported methods in the trait).
+- Imports from the standard library MUST prefer `std` over `core`.

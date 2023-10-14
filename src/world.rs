@@ -94,6 +94,7 @@ pub struct World {
 impl World {
     /// Executes all systems in the world.
     pub fn execute(&mut self, tracer: &impl Tracer) {
+        self.ealloc_map.flush_if_marked();
         self.scheduler.execute(
             tracer,
             &mut self.components,
@@ -163,18 +164,24 @@ impl World {
     ///
     /// The return value indicates whether the entity can be deleted *immediately*.
     pub fn delete<E: entity::Ref>(&mut self, entity: E) -> DeleteResult {
+        self.ealloc_map.mark_need_flush::<E::Archetype>();
+
         let id = entity.id();
         drop(entity); // drop `entity` so that its refcount is removed
 
         let (world, mut systems) = self.as_mut();
         let result = flag_delete_entity::<E::Archetype>(id, world, &mut systems[..]);
-        if let DeleteResult::Terminating = result {
-            self.scheduler.offline_buffer().rerun_queue.push(Box::new(offline::DeleteEntity::<
-                E::Archetype,
-            > {
-                entity: id,
-            })
-                as Box<dyn offline::Operation>);
+
+        match result {
+            DeleteResult::Deleted => {}
+            DeleteResult::Terminating => {
+                self.scheduler.offline_buffer().rerun_queue.push(Box::new(offline::DeleteEntity::<
+                    E::Archetype,
+                > {
+                    entity: id,
+                })
+                    as Box<dyn offline::Operation>);
+            }
         }
 
         result
@@ -256,7 +263,7 @@ fn init_entity<A: Archetype>(
 }
 
 /// Result of deleting an entity.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DeleteResult {
     /// The entity has been immediately deleted.
     Deleted,

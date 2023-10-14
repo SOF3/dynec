@@ -806,6 +806,34 @@ macro_rules! system_test {
     }}
 }
 
+/// Similar to [`system_test`], but returns the entities in the form
+/// `(world, (ent1, ent2, ...))`
+#[macro_export]
+macro_rules! system_test_exported {
+    (
+        $($systems:expr),* ;
+        $(
+            $(let $var:ident :)? $arch:ty = ($($components:tt)*);
+        )*
+    ) => {{
+        let mut builder = $crate::world::Builder::new(0);
+        $(
+            builder.schedule(Box::new($systems));
+        )*
+
+        #[allow(unused_mut)]
+        let mut world = builder.build();
+
+        $(
+            $(let $var = )? world.create::<$arch>(
+                $crate::comps![@($crate) $arch => $($components)*]
+            );
+        )*
+
+        (world, ($($($var,)?)*))
+    }}
+}
+
 /// Asserts that a type can be used as a partition.
 ///
 /// # Example

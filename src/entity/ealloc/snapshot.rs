@@ -11,7 +11,7 @@ use crate::entity::Raw;
 // TODO change this into a trait to allow non-recycling ealloc.
 // TODO make this a trait so that offline access does not need to clone the entire recyclable set.
 /// A snapshot of the allocated entities during offline.
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Snapshot<E> {
     pub(super) gauge:      E,
     pub(super) recyclable: Arc<BTreeSet<E>>,

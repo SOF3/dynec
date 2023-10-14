@@ -16,6 +16,8 @@ type MutableShards<T> = Vec<Arc<Mutex<T>>>;
 /// The default allocator supporting atomically-allocated new IDs and arbitrary recycler.
 #[derive(Debug)]
 pub struct Recycling<E: Raw, T: Recycler<E>, S: ShardAssigner> {
+    /// Whether `mark_need_flush` was called.
+    flush_mark:         bool,
     /// The next ID to allocate into shards.
     global_gauge:       Arc<E::Atomic>,
     /// A sorted list of recycled IDs during the last join.
@@ -37,6 +39,7 @@ impl<E: Raw, T: Recycler<E>, S: ShardAssigner> Recycling<E, T, S> {
     pub(crate) fn new_with_shard_assigner(num_shards: usize, shard_assigner: S) -> Self {
         let global_gauge = E::new();
         Self {
+            flush_mark: false,
             global_gauge: Arc::new(global_gauge),
             recyclable: Arc::default(),
             recycler_shards: (0..num_shards).map(|_| Arc::default()).collect(),
@@ -109,6 +112,8 @@ impl<E: Raw, T: Recycler<E>, S: ShardAssigner> Ealloc for Recycling<E, T, S> {
     fn queue_deallocate(&mut self, id: E) { self.dealloc_queue.push(id); }
 
     fn flush(&mut self) {
+        self.flush_mark = false;
+
         let mut ids = &self.dealloc_queue[..];
         {
             let recyclable = Arc::get_mut(&mut self.recyclable)
@@ -155,6 +160,13 @@ impl<E: Raw, T: Recycler<E>, S: ShardAssigner> Ealloc for Recycling<E, T, S> {
         }
 
         self.dealloc_queue.clear();
+    }
+
+    fn mark_need_flush(&mut self) { self.flush_mark = true; }
+    fn flush_if_marked(&mut self) {
+        if self.flush_mark {
+            self.flush();
+        }
     }
 }
 

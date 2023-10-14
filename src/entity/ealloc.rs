@@ -1,6 +1,6 @@
 //! Manages entity ID allocation and deallocation.
 
-use std::any::{Any, TypeId};
+use std::any::{type_name, Any, TypeId};
 use std::cell::{self, RefCell};
 use std::collections::HashMap;
 use std::{iter, ops};
@@ -60,8 +60,14 @@ pub trait Ealloc: 'static {
 
     /// Flushes the queued operations after joining.
     fn flush(&mut self);
+
+    /// Marks that the allocator needs to flush before executing the next system.
+    fn mark_need_flush(&mut self);
+    /// Flush and reset the mark if `mark_need_flush` was called since the last flush.
+    fn flush_if_marked(&mut self);
 }
 
+// Object-safe version of [`Ealloc`].
 pub(crate) trait AnyEalloc {
     fn as_any_mut(&mut self) -> &mut dyn Any;
 
@@ -70,6 +76,9 @@ pub(crate) trait AnyEalloc {
     fn snapshot(&self) -> Box<dyn Any + Send + Sync>;
 
     fn flush(&mut self);
+
+    fn mark_need_flush(&mut self);
+    fn flush_if_marked(&mut self);
 }
 
 impl<T: Ealloc> AnyEalloc for T {
@@ -82,6 +91,9 @@ impl<T: Ealloc> AnyEalloc for T {
     fn snapshot(&self) -> Box<dyn Any + Send + Sync> { Box::new(Ealloc::snapshot(self)) }
 
     fn flush(&mut self) { Ealloc::flush(self); }
+
+    fn mark_need_flush(&mut self) { Ealloc::mark_need_flush(self) }
+    fn flush_if_marked(&mut self) { Ealloc::flush_if_marked(self) }
 }
 
 // Default allocator
@@ -180,6 +192,22 @@ impl Map {
     /// This function is intended for offline access e.g. in unit tests.
     pub fn snapshot<A: Archetype>(&mut self) -> Snapshot<A::RawEntity> {
         Ealloc::snapshot(self.get::<A>())
+    }
+
+    /// Marks that an archetype has been modified between ticks and shall be flushed.
+    pub(crate) fn mark_need_flush<A: Archetype>(&mut self) {
+        let Some(ealloc) = self.map.get_mut(&TypeId::of::<A>()) else {
+            panic!("Archetype {} is not used in any systems", type_name::<A>())
+        };
+
+        ealloc.mark_need_flush();
+    }
+
+    /// Flush all archetypes that have been [marked for flush](Self::mark_need_flush).
+    pub(crate) fn flush_if_marked(&mut self) {
+        for ealloc in self.map.values_mut() {
+            ealloc.flush_if_marked();
+        }
     }
 }
 

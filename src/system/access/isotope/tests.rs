@@ -140,9 +140,7 @@ fn partial_isotope_discrim_read(
         assert_eq!(map_vec, expect_all);
     }
 
-    let mut world = system_test!(
-        test_system.build(req_discrims, single_expects, expect_all);
-    );
+    let mut world = system_test!(test_system.build(req_discrims, single_expects, expect_all););
 
     let ent = world.create(crate::comps![@(crate) TestArch =>
         @(TestDiscrim1(11), IsoNoInit(3)),

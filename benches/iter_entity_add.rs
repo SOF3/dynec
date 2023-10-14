@@ -201,19 +201,29 @@ fn iter_entity_add(c: &mut Criterion) {
 
     iter_entity_add_with_deletion(&mut group, "full", |_| iter::empty());
 
-    iter_entity_add_with_deletion(&mut group, "holes", |total| {
-        iter::repeat([(1_u64, 2), (4, 8), (16, 12)].into_iter())
-            .flatten()
-            .scan(0, |state, (keep, delete)| {
-                *state += keep;
-                let start = *state;
-                *state += delete;
-                let end = *state;
-                Some(start..end)
-            })
-            .flatten()
-            .take_while(move |&index| index < total)
+    const BASE_HOLES: [(u64, u64); 3] = [(1_u64, 2), (4, 8), (16, 12)];
+    iter_entity_add_with_deletion(&mut group, "holes", |total| generate_holes(total, BASE_HOLES));
+    iter_entity_add_with_deletion(&mut group, "holes 4x", |total| {
+        generate_holes(total, BASE_HOLES.map(|(keep, delete)| (keep * 4, delete * 4)))
     });
+}
+
+fn generate_holes(
+    total: u64,
+    groups: impl Clone + IntoIterator<Item = (u64, u64)>,
+) -> impl Iterator<Item = u64> {
+    iter::repeat(groups)
+        .map(|group| group.into_iter())
+        .flatten()
+        .scan(0, |state, (keep, delete)| {
+            *state += keep;
+            let start = *state;
+            *state += delete;
+            let end = *state;
+            Some(start..end)
+        })
+        .flatten()
+        .take_while(move |&index| index < total)
 }
 
 criterion_group!(benches, iter_entity_add);

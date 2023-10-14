@@ -92,7 +92,7 @@
 <span class="comment">// TODO change this into a trait to allow non-recycling ealloc.
 // TODO make this a trait so that offline access does not need to clone the entire recyclable set.
 </span><span class="doccomment">/// A snapshot of the allocated entities during offline.
-</span><span class="attr">#[derive(Clone)]
+</span><span class="attr">#[derive(Debug, Clone)]
 </span><span class="kw">pub struct </span>Snapshot&lt;E&gt; {
     <span class="kw">pub</span>(<span class="kw">super</span>) gauge:      E,
     <span class="kw">pub</span>(<span class="kw">super</span>) recyclable: Arc&lt;BTreeSet&lt;E&gt;&gt;,

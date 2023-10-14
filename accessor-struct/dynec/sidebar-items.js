@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"attr":["comp","global","system"],"derive":["Discrim","EntityRef"],"macro":["archetype","assert_partition","comps","system_test","zip"],"mod":["archetype","comp","entity","scheduler","storage","system","tracer","util","world"],"trait":["Global"]};
+window.SIDEBAR_ITEMS = {"attr":["comp","global","system"],"derive":["Discrim","EntityRef"],"macro":["archetype","assert_partition","comps","system_test","system_test_exported","zip"],"mod":["archetype","comp","entity","scheduler","storage","system","tracer","util","world"],"trait":["Global"]};

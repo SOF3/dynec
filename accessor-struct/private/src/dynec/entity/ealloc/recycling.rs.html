@@ -232,6 +232,18 @@
 <a href="#232" id="232">232</a>
 <a href="#233" id="233">233</a>
 <a href="#234" id="234">234</a>
+<a href="#235" id="235">235</a>
+<a href="#236" id="236">236</a>
+<a href="#237" id="237">237</a>
+<a href="#238" id="238">238</a>
+<a href="#239" id="239">239</a>
+<a href="#240" id="240">240</a>
+<a href="#241" id="241">241</a>
+<a href="#242" id="242">242</a>
+<a href="#243" id="243">243</a>
+<a href="#244" id="244">244</a>
+<a href="#245" id="245">245</a>
+<a href="#246" id="246">246</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::BTreeSet;
 <span class="kw">use </span>std::sync::Arc;
 <span class="kw">use </span>std::{iter, ops};
@@ -250,6 +262,8 @@
 <span class="doccomment">/// The default allocator supporting atomically-allocated new IDs and arbitrary recycler.
 </span><span class="attr">#[derive(Debug)]
 </span><span class="kw">pub struct </span>Recycling&lt;E: Raw, T: Recycler&lt;E&gt;, S: ShardAssigner&gt; {
+    <span class="doccomment">/// Whether `mark_need_flush` was called.
+    </span>flush_mark:         bool,
     <span class="doccomment">/// The next ID to allocate into shards.
     </span>global_gauge:       Arc&lt;E::Atomic&gt;,
     <span class="doccomment">/// A sorted list of recycled IDs during the last join.
@@ -271,6 +285,7 @@
     </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>new_with_shard_assigner(num_shards: usize, shard_assigner: S) -&gt; <span class="self">Self </span>{
         <span class="kw">let </span>global_gauge = E::new();
         <span class="self">Self </span>{
+            flush_mark: <span class="bool-val">false</span>,
             global_gauge: Arc::new(global_gauge),
             recyclable: Arc::default(),
             recycler_shards: (<span class="number">0</span>..num_shards).map(|<span class="kw">_</span>| Arc::default()).collect(),
@@ -343,6 +358,8 @@
     <span class="kw">fn </span>queue_deallocate(<span class="kw-2">&amp;mut </span><span class="self">self</span>, id: E) { <span class="self">self</span>.dealloc_queue.push(id); }
 
     <span class="kw">fn </span>flush(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
+        <span class="self">self</span>.flush_mark = <span class="bool-val">false</span>;
+
         <span class="kw">let </span><span class="kw-2">mut </span>ids = <span class="kw-2">&amp;</span><span class="self">self</span>.dealloc_queue[..];
         {
             <span class="kw">let </span>recyclable = Arc::get_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>.recyclable)
@@ -389,6 +406,13 @@
         }
 
         <span class="self">self</span>.dealloc_queue.clear();
+    }
+
+    <span class="kw">fn </span>mark_need_flush(<span class="kw-2">&amp;mut </span><span class="self">self</span>) { <span class="self">self</span>.flush_mark = <span class="bool-val">true</span>; }
+    <span class="kw">fn </span>flush_if_marked(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
+        <span class="kw">if </span><span class="self">self</span>.flush_mark {
+            <span class="self">self</span>.flush();
+        }
     }
 }
 

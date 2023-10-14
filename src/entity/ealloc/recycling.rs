@@ -15,29 +15,29 @@ type MutableShards<T> = Vec<Arc<Mutex<T>>>;
 
 /// The default allocator supporting atomically-allocated new IDs and arbitrary recycler.
 #[derive(Debug)]
-pub struct Recycling<E: Raw, T: Recycler<E>, S: ShardAssigner> {
+pub struct Recycling<RawT: Raw, T: Recycler<RawT>, S: ShardAssigner> {
     /// Whether `mark_need_flush` was called.
     flush_mark:         bool,
     /// The next ID to allocate into shards.
-    global_gauge:       Arc<E::Atomic>,
+    global_gauge:       Arc<RawT::Atomic>,
     /// A sorted list of recycled IDs during the last join.
-    recyclable:         Arc<BTreeSet<E>>,
+    recyclable:         Arc<BTreeSet<RawT>>,
     /// The actual IDs assigned to different shards.
     recycler_shards:    MutableShards<T>,
     /// The assigned shard.
     shard_assigner:     S,
     /// The queue of deallocated IDs to distribute.
-    dealloc_queue:      Vec<E>,
+    dealloc_queue:      Vec<RawT>,
     /// The queue of allocated IDs during online, to be synced to recyclable after join.
-    reuse_queue_shards: MutableShards<Vec<E>>,
+    reuse_queue_shards: MutableShards<Vec<RawT>>,
 }
 
-impl<E: Raw, T: Recycler<E>, S: ShardAssigner> Recycling<E, T, S> {
+impl<RawT: Raw, T: Recycler<RawT>, S: ShardAssigner> Recycling<RawT, T, S> {
     /// Creates a new recycling allocator with a custom shard assigner.
     /// This can only be used for unit testing since the Archetype API does not support dynamic
     /// shard assigners.
     pub(crate) fn new_with_shard_assigner(num_shards: usize, shard_assigner: S) -> Self {
-        let global_gauge = E::new();
+        let global_gauge = RawT::new();
         Self {
             flush_mark: false,
             global_gauge: Arc::new(global_gauge),
@@ -55,24 +55,24 @@ impl<E: Raw, T: Recycler<E>, S: ShardAssigner> Recycling<E, T, S> {
     }
 
     fn get_reuse_queue_offline(
-        reuse_queues: &mut MutableShards<Vec<E>>,
+        reuse_queues: &mut MutableShards<Vec<RawT>>,
         index: usize,
-    ) -> &mut Vec<E> {
+    ) -> &mut Vec<RawT> {
         let arc = reuse_queues.get_mut(index).expect("index out of bounds");
         Arc::get_mut(arc).expect("shards are dropped in offline mode").get_mut()
     }
 
     fn iter_allocated_chunks_offline(
         &mut self,
-    ) -> impl iter::FusedIterator<Item = ops::Range<E>> + '_ {
+    ) -> impl iter::FusedIterator<Item = ops::Range<RawT>> + '_ {
         iter_gaps(self.global_gauge.load(), self.recyclable.iter().copied())
     }
 }
 
-impl<E: Raw, T: Recycler<E>, S: ShardAssigner> Ealloc for Recycling<E, T, S> {
-    type Raw = E;
+impl<RawT: Raw, T: Recycler<RawT>, S: ShardAssigner> Ealloc for Recycling<RawT, T, S> {
+    type Raw = RawT;
     type AllocHint = T::Hint;
-    type Shard = impl Shard<Raw = E, Hint = T::Hint>;
+    type Shard = impl Shard<Raw = RawT, Hint = T::Hint>;
 
     fn new(num_shards: usize) -> Self { Self::new_with_shard_assigner(num_shards, S::default()) }
 
@@ -109,7 +109,7 @@ impl<E: Raw, T: Recycler<E>, S: ShardAssigner> Ealloc for Recycling<E, T, S> {
         shard.allocate(hint)
     }
 
-    fn queue_deallocate(&mut self, id: E) { self.dealloc_queue.push(id); }
+    fn queue_deallocate(&mut self, id: RawT) { self.dealloc_queue.push(id); }
 
     fn flush(&mut self) {
         self.flush_mark = false;
@@ -205,18 +205,18 @@ pub struct RecyclingShard<GaugeRef, RecyclerRef, ReuseQueueRef> {
     reuse_queue:  ReuseQueueRef,
 }
 
-impl<E: Raw, GaugeRef, RecyclerRef, ReuseQueueRef> Shard
+impl<RawT: Raw, GaugeRef, RecyclerRef, ReuseQueueRef> Shard
     for RecyclingShard<GaugeRef, RecyclerRef, ReuseQueueRef>
 where
-    GaugeRef: ops::Deref<Target = E::Atomic> + Send + 'static,
+    GaugeRef: ops::Deref<Target = RawT::Atomic> + Send + 'static,
     RecyclerRef: ops::DerefMut + Send + 'static,
-    <RecyclerRef as ops::Deref>::Target: Recycler<E>,
-    ReuseQueueRef: ops::DerefMut<Target = Vec<E>> + Send + 'static,
+    <RecyclerRef as ops::Deref>::Target: Recycler<RawT>,
+    ReuseQueueRef: ops::DerefMut<Target = Vec<RawT>> + Send + 'static,
 {
-    type Raw = E;
-    type Hint = <RecyclerRef::Target as Recycler<E>>::Hint;
+    type Raw = RawT;
+    type Hint = <RecyclerRef::Target as Recycler<RawT>>::Hint;
 
-    fn allocate(&mut self, hint: Self::Hint) -> E {
+    fn allocate(&mut self, hint: Self::Hint) -> RawT {
         if let Some(id) = self.recycler.poll(hint) {
             id
         } else {
@@ -225,14 +225,14 @@ where
     }
 }
 
-impl<E: Raw, T: Recycler<E>, GaugeRef, RecyclerRef, ReuseQueueRef>
+impl<RawT: Raw, T: Recycler<RawT>, GaugeRef, RecyclerRef, ReuseQueueRef>
     RecyclingShard<GaugeRef, RecyclerRef, ReuseQueueRef>
 where
-    GaugeRef: ops::Deref<Target = E::Atomic>,
+    GaugeRef: ops::Deref<Target = RawT::Atomic>,
     RecyclerRef: ops::DerefMut<Target = T>,
-    ReuseQueueRef: ops::DerefMut<Target = Vec<E>>,
+    ReuseQueueRef: ops::DerefMut<Target = Vec<RawT>>,
 {
-    fn allocate(&mut self, hint: T::Hint) -> E {
+    fn allocate(&mut self, hint: T::Hint) -> RawT {
         if let Some(id) = self.recycler.poll(hint) {
             self.reuse_queue.push(id);
             id

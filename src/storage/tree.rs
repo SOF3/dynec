@@ -6,20 +6,20 @@ use super::{Access, ChunkMut, ChunkRef, Partition, Storage};
 use crate::entity;
 
 /// A storage based on [`BTreeMap`].
-pub struct Tree<E: entity::Raw, C> {
+pub struct Tree<RawT: entity::Raw, C> {
     // `SyncUnsafeCell<C>` here must be treated as a normal `C`
     // unless the whole storage is mutably locked,
     // which means the current function exclusively manages this map.
     // `&Tree` must not be used to access the cells mutably.
-    data: BTreeMap<E, SyncUnsafeCell<C>>,
+    data: BTreeMap<RawT, SyncUnsafeCell<C>>,
 }
 
-impl<E: entity::Raw, C> Default for Tree<E, C> {
+impl<RawT: entity::Raw, C> Default for Tree<RawT, C> {
     fn default() -> Self { Self { data: BTreeMap::new() } }
 }
 
-impl<E: entity::Raw, C: Send + Sync + 'static> Access for Tree<E, C> {
-    type RawEntity = E;
+impl<RawT: entity::Raw, C: Send + Sync + 'static> Access for Tree<RawT, C> {
+    type RawEntity = RawT;
     type Comp = C;
 
     fn get_mut(&mut self, id: Self::RawEntity) -> Option<&mut C> {
@@ -32,7 +32,7 @@ impl<E: entity::Raw, C: Send + Sync + 'static> Access for Tree<E, C> {
     }
 }
 
-impl<E: entity::Raw, C: Send + Sync + 'static> Storage for Tree<E, C> {
+impl<RawT: entity::Raw, C: Send + Sync + 'static> Storage for Tree<RawT, C> {
     fn get(&self, id: Self::RawEntity) -> Option<&C> {
         self.data.get(&id).map(|cell| unsafe {
             // Safety: `&self` implies that nobody else can mutate the values.
@@ -71,21 +71,21 @@ impl<E: entity::Raw, C: Send + Sync + 'static> Storage for Tree<E, C> {
             .map(|(entity, item)| ChunkMut { slice: slice::from_mut(item), start: entity })
     }
 
-    type Partition<'t> = StoragePartition<'t, E, C>;
+    type Partition<'t> = StoragePartition<'t, RawT, C>;
     fn as_partition(&mut self) -> Self::Partition<'_> {
         StoragePartition { data: &self.data, lower_bound: None, upper_bound: None }
     }
 }
 
 /// Return value of [`Tree::split_at`].
-pub struct StoragePartition<'t, E: entity::Raw, C> {
-    data:        &'t BTreeMap<E, SyncUnsafeCell<C>>,
-    lower_bound: Option<E>,
-    upper_bound: Option<E>,
+pub struct StoragePartition<'t, RawT: entity::Raw, C> {
+    data:        &'t BTreeMap<RawT, SyncUnsafeCell<C>>,
+    lower_bound: Option<RawT>,
+    upper_bound: Option<RawT>,
 }
 
-impl<'t, E: entity::Raw, C> StoragePartition<'t, E, C> {
-    fn assert_bounds(&self, entity: E) {
+impl<'t, RawT: entity::Raw, C> StoragePartition<'t, RawT, C> {
+    fn assert_bounds(&self, entity: RawT) {
         if let Some(bound) = self.lower_bound {
             assert!(entity >= bound, "Entity {entity:?} is not in the partition {bound:?}..");
         }
@@ -95,11 +95,11 @@ impl<'t, E: entity::Raw, C> StoragePartition<'t, E, C> {
     }
 }
 
-impl<'t, E: entity::Raw, C: Send + Sync + 'static> Access for StoragePartition<'t, E, C> {
-    type RawEntity = E;
+impl<'t, RawT: entity::Raw, C: Send + Sync + 'static> Access for StoragePartition<'t, RawT, C> {
+    type RawEntity = RawT;
     type Comp = C;
 
-    fn get_mut(&mut self, entity: E) -> Option<&mut C> {
+    fn get_mut(&mut self, entity: RawT) -> Option<&mut C> {
         self.assert_bounds(entity);
 
         let cell = self.data.get(&entity)?;
@@ -115,8 +115,10 @@ impl<'t, E: entity::Raw, C: Send + Sync + 'static> Access for StoragePartition<'
     fn iter_mut(&mut self) -> Self::IterMut<'_> { self.by_ref().into_iter_mut() }
 }
 
-impl<'t, E: entity::Raw, C: Send + Sync + 'static> Partition<'t> for StoragePartition<'t, E, C> {
-    type ByRef<'u> = StoragePartition<'u, E, C> where Self: 'u;
+impl<'t, RawT: entity::Raw, C: Send + Sync + 'static> Partition<'t>
+    for StoragePartition<'t, RawT, C>
+{
+    type ByRef<'u> = StoragePartition<'u, RawT, C> where Self: 'u;
     fn by_ref(&mut self) -> Self::ByRef<'_> {
         StoragePartition {
             data:        self.data,
@@ -125,11 +127,11 @@ impl<'t, E: entity::Raw, C: Send + Sync + 'static> Partition<'t> for StoragePart
         }
     }
 
-    type IntoIterMut = impl Iterator<Item = (E, &'t mut C)>;
+    type IntoIterMut = impl Iterator<Item = (RawT, &'t mut C)>;
     fn into_iter_mut(self) -> Self::IntoIterMut {
         let iter = match (self.lower_bound, self.upper_bound) {
             (Some(lower), Some(upper)) => Box::new(self.data.range(lower..upper))
-                as Box<dyn Iterator<Item = (&E, &SyncUnsafeCell<C>)>>,
+                as Box<dyn Iterator<Item = (&RawT, &SyncUnsafeCell<C>)>>,
             (Some(lower), None) => Box::new(self.data.range(lower..)),
             (None, Some(upper)) => Box::new(self.data.range(..upper)),
             (None, None) => Box::new(self.data.iter()),
@@ -156,7 +158,7 @@ impl<'t, E: entity::Raw, C: Send + Sync + 'static> Partition<'t> for StoragePart
         }
     }
 
-    fn split_out(&mut self, entity: E) -> Self {
+    fn split_out(&mut self, entity: RawT) -> Self {
         self.assert_bounds(entity);
 
         let right = Self {

@@ -38,5 +38,3 @@ jobs:
       - name: Push pages
         run: git push --force
         working-directory: ..site-repo
-      - run: git push origin HEAD:last-benched-tag
-        if: ${{github.ref_type}} == tag

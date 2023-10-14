@@ -1,7 +1,9 @@
 # ECS
 
-dynec is an ECS (Entity-Component-System) framework.
-It is a data-oriented programming approach where
+Dynec uses concepts from the ECS (Entity-Component-System) paradigm.
+It is a data-oriented programming approach that consists of three core concepts:
+
+- 
 data are mostly stored in "components" for different "entities",
 and logic is run in "systems" that process the data.
 

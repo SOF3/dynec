@@ -144,14 +144,20 @@
 <a href="#144" id="144">144</a>
 <a href="#145" id="145">145</a>
 <a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Miscellaneous types used in the API.
 
 </span><span class="attr">#[cfg(debug_assertions)]
 </span><span class="kw">use </span>std::any;
 <span class="kw">use </span>std::any::TypeId;
 <span class="kw">use </span>std::borrow::Borrow;
-<span class="kw">use </span>std::num::NonZeroU32;
-<span class="kw">use </span>std::{cmp, fmt, hash, mem, ops};
+<span class="kw">use </span>std::{cmp, fmt, hash, mem, num, ops};
 
 <span class="doccomment">/// A generic mutable/immutable reference type.
 </span><span class="kw">pub trait </span>Ref {
@@ -274,9 +280,17 @@
 /// Undefined behavior may occur if the invariants of `Eq` and `Ord` are not fully satisfied.
 </span><span class="kw">pub unsafe trait </span>UnsafeEqOrd: Eq + Ord {}
 
+<span class="comment">// Safety: NonZeroU16 is semantically identical to `u16`,
+// which is a regular primitive satisfying all equivalence and ordering invariants.
+</span><span class="kw">unsafe impl </span>UnsafeEqOrd <span class="kw">for </span>num::NonZeroU16 {}
+
 <span class="comment">// Safety: NonZeroU32 is semantically identical to `u32`,
 // which is a regular primitive satisfying all equivalence and ordering invariants.
-</span><span class="kw">unsafe impl </span>UnsafeEqOrd <span class="kw">for </span>NonZeroU32 {}
+</span><span class="kw">unsafe impl </span>UnsafeEqOrd <span class="kw">for </span>num::NonZeroU32 {}
+
+<span class="comment">// Safety: NonZeroU64 is semantically identical to `u64`,
+// which is a regular primitive satisfying all equivalence and ordering invariants.
+</span><span class="kw">unsafe impl </span>UnsafeEqOrd <span class="kw">for </span>num::NonZeroU64 {}
 
 <span class="comment">// Safety: `usize` is a regular primitive satisfying all equivalence and ordering invariants.
 </span><span class="kw">unsafe impl </span>UnsafeEqOrd <span class="kw">for </span>usize {}

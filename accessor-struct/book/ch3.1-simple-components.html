@@ -137,19 +137,19 @@
                         <h1 id="simple-components"><a class="header" href="#simple-components">Simple components</a></h1>
 <p>Simple components are components where
 each entity can have at most one instance of the component.
-To declare that a type <code>C</code> is a component for entities of archetype <code>A</code>,
-implement <a href="https://sof3.github.io/dynec/master/dynec/comp/trait.Simple.html"><code>comp::Simple&lt;A&gt;</code></a> for <code>C</code>.
-dynec provides a <a href="https://sof3.github.io/dynec/master/dynec/attr.comp.html">convenience macro</a> for this:</p>
+A type can be used as a simple component for entities of archetype <code>A</code>
+if it implements <a href="https://sof3.github.io/dynec/master/dynec/comp/trait.Simple.html"><code>comp::Simple&lt;A&gt;</code></a>.
+Dynec provides <a href="https://sof3.github.io/dynec/master/dynec/attr.comp.html">a convenience macro</a> to do this:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>#[comp(of = Bullet)]
 struct Location([f32; 3]);
 <span class="boring">}
 </span></code></pre></pre>
-<p>Since Rust allows implementing the same trait with different type parameters,
-<code>C</code> can be used as a component for entities of both <code>A</code> and <code>B</code>
-if it implements <code>comp::Simple&lt;A&gt;</code> and <code>comp::Simple&lt;B&gt;</code> separately.
-This can be achieved by invoking the macro twice:</p>
+<p>This declares a simple component called <code>Location</code>
+that can be used on <code>Bullet</code> entities.</p>
+<p>The same type can be reused as components for multiple archetypes.
+by applying the macro multiple times:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use dynec::comp;
@@ -159,17 +159,17 @@ This can be achieved by invoking the macro twice:</p>
 struct Location([f32; 3]);
 <span class="boring">}
 </span></code></pre></pre>
-<p>Note that components are only stored on entities if at least one system uses it.</p>
 <h2 id="initializer"><a class="header" href="#initializer">Initializer</a></h2>
 <p>Simple components can be equipped with an auto-initializer.
-When an entity is created without passing this component,
-it is filled with the value returned by the auto-initializer.</p>
-<p>The auto-initializer can depend on other simple components
-passed by the entity creator or other auto-initializers.
-Along with the fact that only components requested from systems get persisted,
-this means you can pass a parameter during entity creation,
-let other component auto-initializers read from this parameter,
-and this parameter will get dropped after entity creation completes.</p>
+If an entity is created without specifying this component,
+the auto-initializer is called to fill the component.</p>
+<p>The auto-initializer can read values of other simple components,
+either specified by the entity creator or returned by another auto-initializer.
+Since Dynec does not persist a component
+unless it is requested by a system or explicitly registered,
+this means you can pass a temporary component during entity creation,
+use its value in other component auto-initializers,
+and this temporary component gets dropped after entity creation completes.</p>
 <p>The auto-initializer can be specified in the macro
 either as a closure:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -180,7 +180,8 @@ either as a closure:</p>
 struct Damage(f32);
 <span class="boring">}
 </span></code></pre></pre>
-<p>or as a function pointer with arity (i.e. number of parameters for the function):</p>
+<p>or as a function pointer with arity notation
+(i.e. write the number of parameters for the function after a <code>/</code>):</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use dynec::comp;
@@ -194,19 +195,20 @@ struct Damage(f32);
 <span class="boring">}
 </span></code></pre></pre>
 <h2 id="presence"><a class="header" href="#presence">Presence</a></h2>
-<p>A component can be either &quot;required&quot; or &quot;optional&quot;.</p>
-<p>The &quot;optional&quot; presence allows components to be missing on some entities.
-Therefore, accessing optional components only returns <code>Option&lt;C&gt;</code> instead of <code>C</code>.</p>
-<p>&quot;Required&quot; components must either have an auto-initializer
+<p>A component is either <code>Required</code> or <code>Optional</code>.</p>
+<p><code>Optional</code> components may be missing on some entities.
+Accessing optional components returns <code>Option&lt;C&gt;</code> instead of <code>C</code>.</p>
+<p><code>Required</code> components must either have an auto-initializer
 or be passed during entity creation.
-This ensures that accessing the component always succeeds for any entities.</p>
-<p>Note that entities created during the middle of a tick
-are only fully initialized after the end of the tick.
-More will be explained in later sections.</p>
-<p>Components with &quot;required&quot; presence should <em>both</em>
+This ensures that accessing the component always succeeds for an initialized entity;
+optimizations such as chunk iteration are only possible for <code>Required</code> components.
+Nevertheless, components are <strong>always</strong> missing
+for uninitialized entities created during the middle of a tick;
+more will be explained in later sections.</p>
+<p>A <code>Required</code> component must <em>both</em>
 set <a href="https://sof3.github.io/dynec/master/dynec/comp/trait.Simple.html#associatedconstant.PRESENCE"><code>PRESENCE = SimplePresence::Required</code></a>
 <em>and</em> implement <a href="https://sof3.github.io/dynec/master/dynec/comp/trait.Must.html"><code>comp::Must&lt;A&gt;</code></a>.
-This is automatically done by passing <code>required</code> in the macro:</p>
+This is automatically done by specifying <code>required</code> in the <code>#[comp]</code> macro:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use dynec::comp;
@@ -216,46 +218,73 @@ struct Damage(u32);
 <span class="boring">}
 </span></code></pre></pre>
 <h2 id="finalizers"><a class="header" href="#finalizers">Finalizers</a></h2>
-<p>A finalizer is a component that prevents an entity from getting deleted.</p>
+<p>A finalizer component is a component that prevents an entity from getting deleted.</p>
+<blockquote>
 <p>Yes, I know this may be confusing.
 Contrary to finalizers in Java/C#,
 a finalizer is a data component instead of a function.
-They are actually more similar to <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/">finalizers in Kubernetes</a>.
-When an entity is flagged for deletion,
-dynec checks if all finalizer components for that entity have been removed;
-the component data of the entity only get dropped after this check is true.</p>
+They are actually more similar to <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/">finalizers in Kubernetes</a>.</p>
+</blockquote>
+<p>When an entity is flagged for deletion,
+Dynec checks if all finalizer components for that entity have been removed.
+If there is at least one present finalizer component for the entity,
+the entity would instead be scheduled to asynchronously delete
+when all finalizer components have been unset.</p>
 <p>This gives systems a chance to execute cleanup logic
 by reading the component data of the &quot;terminating&quot; entity.
 For example, a system that despawns deleted bullets from network players
-may implement its logic like the pseudocode below:</p>
-<pre><code>for each `Bullet` entity just flagged for deletion:
-    read component `NetworkId` for the entity
-    broadcast despawn packet to all players
-    remove the `Despawn` finalizer component
+may get a chance to handle bullet deletion:</p>
+<pre><code class="language-text">for each `Bullet` entity flagged for deletion:
+    if `Despawn` componnent is set
+        read component `NetworkId` for the entity
+        broadcast despawn packet to all players
+        unset the `Despawn` finalizer component
 </code></pre>
 <p>Without the finalizer component,
-the system would be unable to get the <code>NetworkId</code> for the despawned bullet.</p>
+the system would be unable to get the <code>NetworkId</code> for the despawned bullet
+since the component has been cleaned up.</p>
 <p>Note that deletion-flagged entities are checked every tick.
-To avoid impacting performance due to a growing backlog,
+To avoid a growing backlog of entities to delete,
 finalizer components should be removed as soon as possible
 after deletion has been flagged.</p>
-<h2 id="choosing-the-component-type"><a class="header" href="#choosing-the-component-type">Choosing the component type</a></h2>
-<p>Systems that write to the same component type cannot execute together.
-Furthermore, most games often need to access a single component over a loop,
-so avoid putting multiple unrelated fields in the same component type.
+<h2 id="best-practices"><a class="header" href="#best-practices">Best practices</a></h2>
+<h3 id="small-component-structs"><a class="header" href="#small-component-structs">Small component structs</a></h3>
+<p>Dynec prevents systems that write to the same component type
+from executing concurrently to avoid data race.
+In reality, most systems only need to access a subset of fields,
+so avoid putting many unrelated fields in the same component type.
 Instead, prefer small, often single-field structs,
 unless the multiple fields are naturally related,
 e.g. positions/RGB values that are always accessed together.</p>
+<h3 id="optional-types"><a class="header" href="#optional-types">Optional types</a></h3>
 <p>Avoid using <a href="https://doc.rust-lang.org/std/option/enum.Option.html"><code>Option</code></a> in component types;
 instead, use optional components to represent unused fields.
-dynec uses a compact bit vector to track the existence of components,
-which only takes 1 bit for each component,
-while <code>Option</code> needs to preserve alignment and could take up to 64 bits
-if the wrapped type requires an alignment of 64 bits (e.g. <code>u64</code>/<code>f64</code>).</p>
-<p>Avoid allocating heap memory for each entity component.
-In other words, use of <code>Box</code>/<code>Vec</code>/etc should be avoided in component types,
-because heap allocation is slow and results in memory fragmentation,
-which greatly deteriorates the performance gain provided by ECS.</p>
+By default, Dynec uses a compact bit vector to track the existence of components,
+which only takes 1 bit per component.
+Meanwhile, <code>Option&lt;T&gt;</code> needs to preserve the alignment of <code>T</code>,
+so a type like <code>Option&lt;f64&gt;</code> is 128 bits large
+(1 bit for <code>None</code>, 63 bits for alignment padding, 64 bits for the actual data),
+which is very wasteful of memory.</p>
+<h3 id="heap-allocated-types"><a class="header" href="#heap-allocated-types">Heap-allocated types</a></h3>
+<p>Minimize external (heap) memory referenced in entity components.
+Heap allocation/deallocation is costly,
+and the memory allocated is randomly located in the memory,
+which means the CPU needs to keep loading new memory pages
+into its memory cache layers
+and greatly worsens performance.
+Dynec stores component data in (almost) contiguous memory
+and prefers processing adjacent entities in the same CPU,
+so keeping all relevant data in the component structure is preferred.</p>
+<p>While this is inevitable for some component types like strings,
+types like <code>Vec</code> can often be avoided:</p>
+<ul>
+<li>If each entity has a similar structure of items
+(i.e. <code>comp[0]</code> for entity 1 has the same logic as <code>comp[0]</code> for entity 2),
+use isotope components instead.</li>
+<li>If the items in the vector are unstructured
+(i.e. <code>comp[0]</code> for entity 1 has the same logic as <code>comp[1]</code> for entit y2),
+consider turning each item into an entity and process the entity instead.</li>
+</ul>
 
                     </main>
 

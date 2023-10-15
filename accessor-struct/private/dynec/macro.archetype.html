@@ -1,6 +1,9 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Declares archetypes."><title>archetype in dynec - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-47e7ab555ef2818a.css" id="mainThemeStyle"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="dynec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.74.0-nightly (2f5df8a94 2023-08-31)" data-channel="nightly" data-search-js="search-6dfdfced5eff6596.js" data-settings-js="settings-de11bff964e9d4e5.js" data-settings-css="settings-8c76f75bfb6bd192.css" data-theme-light-css="light-f194925aa375ae96.css" data-theme-dark-css="dark-1dd4d1ce031e15de.css" data-theme-ayu-css="ayu-49e58d069f567085.css" ><script src="../static.files/storage-db41da1a38ea3cb8.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-ef3a2de404864b0b.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../static.files/light-f194925aa375ae96.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../static.files/dark-1dd4d1ce031e15de.css"><link rel="stylesheet" href="../static.files/noscript-cffde32267a19fd6.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc macro"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="logo-container" href="../dynec/index.html"><img class="rust-logo" src="../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><h2></h2></nav><nav class="sidebar"><a class="logo-container" href="../dynec/index.html"><img class="rust-logo" src="../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><div class="sidebar-elems"><h2><a href="index.html">In dynec</a></h2></div></nav><main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Macro <a href="index.html">dynec</a>::<wbr><a class="macro" href="#">archetype</a><button id="copy-path" title="Copy item path to clipboard"><img src="../static.files/clipboard-7571035ce49a181d.svg" width="19" height="18" alt="Copy item path"></button></h1><span class="out-of-band"><a class="src" href="../src/dynec_codegen/lib.rs.html#24">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>archetype!() { /* proc-macro */ }</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Declares archetypes.</p>
 <h2 id="example"><a href="#example">Example</a></h2>
-<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="macro">dynec::archetype! </span>{
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>std::collections::BTreeSet;
+<span class="kw">use </span>std::num::NonZeroU16;
+
+<span class="macro">dynec::archetype! </span>{
     <span class="doccomment">/// This is an example archetype.
     /// We can document it and apply attributes on it.
     </span><span class="attr">#[allow(dead_code)]
@@ -10,13 +13,30 @@
     /// separated by semicolons.
     /// The trailing semicolon is optional.
     </span><span class="kw">pub</span>(<span class="kw">crate</span>) Bar;
+
+    <span class="doccomment">/// Options can be applied in parentheses.
+    </span><span class="kw">pub </span>Qux(raw_entity = NonZeroU16, recycler = BTreeSet&lt;NonZeroU16&gt;);
 }
 
 <span class="macro">static_assertions::assert_impl_all!</span>(Foo: dynec::Archetype);
 <span class="macro">static_assertions::assert_impl_all!</span>(Bar: dynec::Archetype);</code></pre></div>
 <p>Since documentation, attributes, visibility and the trailing semicolon are optional,
-private undocumented archetypes can be declared in a single line as well:</p>
+a private undocumented archetype can be declared in a single line as well:</p>
 
 <div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="macro">dynec::archetype!</span>(Foo);
 <span class="macro">static_assertions::assert_impl_all!</span>(Foo: dynec::Archetype);</code></pre></div>
+<h2 id="options"><a href="#options">Options</a></h2>
+<p>Options are applied in parentheses after an archetype identifier.
+Multiple options are separated by commas.</p>
+<h3 id="raw_entity--ty"><a href="#raw_entity--ty"><code>raw_entity = $ty</code></a></h3>
+<p>Selects the <a href="entity/raw/trait.Raw.html" title="trait dynec::entity::raw::Raw">backing type for entity ID</a> for entities of this archetype.
+The default value is <a href="https://doc.rust-lang.org/nightly/core/num/nonzero/struct.NonZeroU32.html" title="struct core::num::nonzero::NonZeroU32"><code>NonZeroU32</code></a>.</p>
+<h3 id="recycler--ty"><a href="#recycler--ty"><code>recycler = $ty</code></a></h3>
+<p>Selects the data structure used in the recycling entity allocator to
+<a href="entity/ealloc/recycling/recycler/trait.Recycler.html" title="trait dynec::entity::ealloc::recycling::recycler::Recycler">recycle</a> freed IDs.
+The default value is <a href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html" title="struct alloc::vec::Vec"><code>Vec&lt;#raw_entity&gt;</code></a>.</p>
+<h3 id="shard_assigner--ty"><a href="#shard_assigner--ty"><code>shard_assigner = $ty</code></a></h3>
+<p>Selects the <a href="entity/ealloc/sharding/trait.ShardAssigner.html" title="trait dynec::entity::ealloc::sharding::ShardAssigner">strategy to assign</a> available entity IDs
+to different hsards.
+The default value is <a href="entity/ealloc/sharding/struct.ThreadRngShardAssigner.html" title="struct dynec::entity::ealloc::sharding::ThreadRngShardAssigner"><code>ThreadRngShardAssigner</code></a>.</p>
 </div></details></section></div></main></body></html>

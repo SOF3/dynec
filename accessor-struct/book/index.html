@@ -143,9 +143,8 @@ It is a data-oriented programming approach that consists of three core concepts:
 <li><strong>Systems</strong> process the components to execute game logic.</li>
 </ul>
 <h2 id="data"><a class="header" href="#data">Data</a></h2>
-<p>An entity corresponds to an object.
-Different components store the data related to an object.
-I like visualizing them as rows and columns,
+<p>An intuitive way to visualize entities and components
+would be a table,
 where each row is an entity and each cell is a component of that entity:</p>
 <div class="table-wrapper"><table><thead><tr><th style="text-align: center">Entity #</th><th style="text-align: center">Location</th><th style="text-align: center">Hitpoint</th><th style="text-align: center">Experience</th></tr></thead><tbody>
 <tr><td style="text-align: center">0</td><td style="text-align: center">(1, 2, 3)</td><td style="text-align: center">100</td><td style="text-align: center">5</td></tr>
@@ -153,34 +152,28 @@ where each row is an entity and each cell is a component of that entity:</p>
 <tr><td style="text-align: center">⋮</td><td style="text-align: center">⋮</td><td style="text-align: center">⋮</td><td style="text-align: center">⋮</td></tr>
 </tbody></table>
 </div>
-<p>Everything can be entities!
+<p>Everything can be an entity!
 For example, in a shooters game,
-each player and and each bullet is a separate entity.
-The components for a bullet are different from those for a player:</p>
-<div class="table-wrapper"><table><thead><tr><th style="text-align: center">Entity #</th><th style="text-align: center">Location</th><th style="text-align: center">Speed</th><th style="text-align: center">Damage</th></tr></thead><tbody>
+each player is an entity,
+each bullet is an entity,
+and even each inventory slot of the player may be an entity as well.</p>
+<p>The components for a bullet are different from those for a player:</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: center">Entity #</th><th style="text-align: center">Location</th><th style="text-align: center">Velocity</th><th style="text-align: center">Damage</th></tr></thead><tbody>
 <tr><td style="text-align: center">0</td><td style="text-align: center">(1, 2.5, 3.5)</td><td style="text-align: center">(0, 0.5, 0.5)</td><td style="text-align: center">20</td></tr>
 <tr><td style="text-align: center">⋮</td><td style="text-align: center">⋮</td><td style="text-align: center">⋮</td><td style="text-align: center">⋮</td></tr>
 </tbody></table>
 </div>
-<p>Unlike the traitional OOP pattern where
-components of the same object are stored together,
-ECS typically stores components of the same type together.
-Since data of the same type are usually processed together in bulk,
-CPU cache lines have much better efficiency
-compared to the traditional random access on the heap.</p>
 <h2 id="logic"><a class="header" href="#logic">Logic</a></h2>
-<p>A system is a function that processes data.
-In a typical game or simulation,
-each system are executed once per &quot;cycle&quot; (a.k.a. &quot;ticks&quot;) in the main loop.
+<p>A system is a function that processes the data.
+In a typical simulation program,
+each system is executed once per &quot;cycle&quot; (a.k.a. &quot;ticks&quot;) in a main loop.
 Usually, systems are implemented as loops that execute over all entities of a type:</p>
 <pre><code>for each bullet entity {
     location[bullet] += speed[bullet]
 }
 </code></pre>
-<p>An ECS framework schedules systems that can be run together on different threads.
-Therefore, programs written with ECS are almost lock-free,
-so they are more efficient on a multi-threaded environment
-compared to traditional approaches that might result in frequent lock contention.</p>
+<p>An ECS framework schedules systems to run on different threads.
+Therefore, programs written with ECS are almost lock-free.</p>
 
                     </main>
 

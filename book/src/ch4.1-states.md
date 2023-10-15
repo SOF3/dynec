@@ -1,35 +1,8 @@
 # Parameter, local and global states
 
-## Local states
-
-Systems can persist values over multiple executions,
-known as "local states":
-
-```rust
-#[system]
-fn hello_world(
-    #[dynec(local(initial = 0))] counter: &mut i32,
-) {
-    *counter += 1;
-    println!("counter = {counter}");
-}
-```
-
-`0` is the initial value of `counter` before the system is run the first time.
-The parameter type must be a reference (`&T` or `&mut T`) to the actual stored type.
-
-Calling `world.execute()` in a row will print the following:
-
-```text
-counter = 1
-counter = 2
-counter = 3
-...
-```
-
 ## Parameter states
 
-The initial value can be passed as a parameter instead:
+A system may request parameters when building:
 
 ```rust
 #[system]
@@ -37,58 +10,111 @@ fn hello_world(
     #[dynec(param)] counter: &mut i32,
 ) {
     *counter += 1;
+    println!("{counter}");
 }
 
-// ...
+builder.schedule(hello_world.build(123));
+builder.schedule(hello_world.build(456));
 
-builder.schedule(Box::new(hello_world.build(123)));
+// ...
+world.execute(dynec::tracer::Noop); // prints 124 and 457 in unspecified order
+world.execute(dynec::tracer::Noop); // prints 125 and 458 in unspecified order
 ```
 
-The arguments to `.build()` are all `#[param]` parameters in the order they are defined.
+The parameter type must be a reference (`&T` or `&mut T`) to the actual stored type.
+
+Each `#[dynec(param)]` parameter in `hello_world`
+must be a reference (`&T` or `&mut T`),
+adds a new parameter of type `T`
+to the generated `build()` method in the order they are specified,
+with the reference part stripped.
+
+Parameter states, along with other states, may be mutated when the system is run.
+Each system (each instance returned by `build()`) maintains its own states.
+
+## Local states
+
+Unlike parameter states, local states are defined by the system itself
+and is not specified through the `build()` function.
+
+```rust
+#[system]
+fn hello_world(
+    #[dynec(local(initial = 0))] counter: &mut i32,
+) {
+    *counter += 1;
+    println!("{counter}");
+}
+
+builder.schedule(hello_world.build());
+builder.schedule(hello_world.build());
+
+// ...
+world.execute(dynec::tracer::Noop); // prints 1, 1 in unspecified order
+world.execute(dynec::tracer::Noop); // prints 2, 2 in unspecified order
+```
+
+`0` is the initial value of `counter` before the system is run the first time.
+If parameter states are defined in the function,
+the `initial` expression may use such parameters by name as well.
 
 ## Global states
 
-States can be shared between multiple systems, identified by their type.
-Such types must implement the [`Global`][trait.global] trait,
+States can also be shared among multiple systems
+using the type as the identifier.
+Such types must implement the [`Global`][trait.Global] trait,
 which can be done through the [`#[global]`][attr.global] macro:
 
 ```rust
-#[dynec::global(initial = Self::default())]
 #[derive(Default)]
+#[dynec::global(initial = Self::default())]
 struct MyCounter {
     value: i32,
 }
 
 #[system]
-fn hello_world(
+fn add_counter(
     #[dynec(global)] counter: &mut MyCounter,
 ) {
     counter.value += 1;
 }
+
+#[system]
+fn print_counter(
+    #[dynec(global)] counter: &MyCounter,
+) {
+    println!("{counter}");
+}
 ```
 
-The initial value of a global state can also be assigned
-in [`Bundle::register`][bundle.register] instead
-if it is not specified in the `#[dynec::global]`:
+If no `initial` value is specified in `#[global]`,
+the initial value of a global state must be assigned
+in [`Bundle::register`][Bundle::register].
 
 ```rust
 impl world::Bundle for Bundle {
     fn register(&mut self, builder: &mut world::Builder) {
-        builder.schedule(Box::new(hello_world.build()));
+        builder.schedule(add_counter.build());
+        builder.schedule(print_counter.build());
         builder.global(MyCounter { value: 123 });
     }
 }
+
+// ...
+world.execute(dynec::tracer::Noop); // prints 123 or 124 based on unspecified order
+world.execute(dynec::tracer::Noop); // prints 124 or 125 based on unspecified order
 ```
 
-The program panics if `Bundle::register` does not initialize all global states.
+The program panics if some used global states do not have an `initial`
+but `Bundle::register` does not initialize them.
 
 Note that `&T` and `&mut T` are semantically different for global states.
 Multiple systems requesting `&T` for the same `T` may run in parallel
 in a multi-threaded runtime,
 but when a system requesting `&mut T` is running,
-all other `&T` and `&mut T`-requesting systems are unschedulable
+all other systems requesting `&T` or `&mut T` cannot run until the system is complete
 (but other unrelated systems can still be scheduled).
 
-[trait.global]: https://sof3.github.io/dynec/master/dynec/trait.Global.html
-[attr.global]: https://sof3.github.io/dynec/master/dynec/attr.global.html
-[bundle.register]: https://sof3.github.io/dynec/master/dynec/world/trait.Bundle.html#method.register
+[trait.Global]: ../dynec/trait.Global.html
+[attr.global]: ../dynec/attr.global.html
+[Bundle::register]: ../dynec/world/trait.Bundle.html#method.register

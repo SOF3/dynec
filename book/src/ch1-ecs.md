@@ -39,7 +39,7 @@ In a typical simulation program,
 each system is executed once per "cycle" (a.k.a. "ticks") in a main loop.
 Usually, systems are implemented as loops that execute over all entities of a type:
 
-```
+```text
 for each bullet entity {
     location[bullet] += speed[bullet]
 }

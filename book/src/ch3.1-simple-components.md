@@ -79,7 +79,7 @@ for uninitialized entities created during the middle of a tick;
 more will be explained in later sections.
 
 A `Required` component must *both*
-set [`PRESENCE = SimplePresence::Required`][comp::Simple::PRESENCE]
+set [`PRESENCE = SimplePresence::Required`][comp::SimpleOrIsotope::PRESENCE]
 *and* implement [`comp::Must<A>`][Must].
 This is automatically done by specifying `required` in the `#[comp]` macro:
 
@@ -169,12 +169,12 @@ types like `Vec` can often be avoided:
   (i.e. `comp[0]` for entity 1 has the same logic as `comp[0]` for entity 2),
   use isotope components instead.
 - If the items in the vector are unstructured
-  (i.e. `comp[0]` for entity 1 has the same logic as `comp[1]` for entit y2),
+  (i.e. `comp[0]` for entity 1 has the same logic as `comp[1]` for entity 1),
   consider turning each item into an entity and process the entity instead.
 
-[comp::Simple]: https://sof3.github.io/dynec/master/dynec/comp/trait.Simple.html
-[comp::Simple::PRESENCE]: https://sof3.github.io/dynec/master/dynec/comp/trait.Simple.html#associatedconstant.PRESENCE
-[macro.comp]: https://sof3.github.io/dynec/master/dynec/attr.comp.html
-[Must]: https://sof3.github.io/dynec/master/dynec/comp/trait.Must.html
+[comp::Simple]: ../dynec/comp/trait.Simple.html
+[comp::SimpleOrIsotope::PRESENCE]: ../dynec/comp/trait.SimpleOrIsotope.html#associatedconstant.PRESENCE
+[macro.comp]: ../dynec/attr.comp.html
+[Must]: ../dynec/comp/trait.Must.html
 [k8s-finalizers]: https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/
 [option]: https://doc.rust-lang.org/std/option/enum.Option.html

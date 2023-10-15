@@ -79,7 +79,7 @@ pub trait Sendable: Send + Descriptor + 'static {
 /// A variant of [`Sendable`] that runs on the main thread only,
 /// but allows storing [`Send`] states
 /// and accessing non-<code>[Send] + [Sync]</code> global states.
-pub trait Unsendable: Descriptor {
+pub trait Unsendable: Descriptor + 'static {
     /// Runs the system.
     fn run(
         &mut self,

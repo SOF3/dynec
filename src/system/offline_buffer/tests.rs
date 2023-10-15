@@ -165,7 +165,7 @@ fn test_entity_delete_send_system_leak() {
     }
 
     let mut builder = world::Builder::new(0);
-    builder.schedule(Box::new(test_system.build()));
+    builder.schedule(test_system.build());
 
     let mut world = builder.build();
 
@@ -209,7 +209,7 @@ fn test_entity_delete_unsend_system_leak() {
     }
 
     let mut builder = world::Builder::new(0);
-    builder.schedule_thread_unsafe(Box::new(test_system.build()));
+    builder.schedule_thread_unsafe(test_system.build());
 
     let mut world = builder.build();
 
@@ -274,7 +274,7 @@ fn test_entity_delete_unsync_global_leak() {
     }
 
     let mut builder = world::Builder::new(0);
-    builder.schedule_thread_unsafe(Box::new(test_system.build()));
+    builder.schedule_thread_unsafe(test_system.build());
 
     let mut world = builder.build();
 
@@ -307,7 +307,7 @@ fn test_entity_delete_simple_leak() {
     }
 
     let mut builder = world::Builder::new(0);
-    builder.schedule(Box::new(test_system.build()));
+    builder.schedule(test_system.build());
 
     let mut world = builder.build();
 
@@ -344,7 +344,7 @@ fn test_entity_delete_isotope_leak() {
     }
 
     let mut builder = world::Builder::new(0);
-    builder.schedule(Box::new(test_system.build()));
+    builder.schedule(test_system.build());
 
     let mut world = builder.build();
 

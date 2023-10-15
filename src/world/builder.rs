@@ -178,7 +178,12 @@ impl Builder {
     }
 
     /// Schedules a thread-safe system.
-    pub fn schedule(&mut self, system: Box<dyn system::Sendable>) {
+    pub fn schedule(&mut self, system: impl system::Sendable) {
+        self.schedule_boxed(Box::new(system))
+    }
+
+    /// Schedules a thread-safe system.
+    pub fn schedule_boxed(&mut self, system: Box<dyn system::Sendable>) {
         let mut type_visitor = referrer::VisitTypeArg::new();
         system.visit_type(&mut type_visitor);
         let state_maybe_uninit = system.state_maybe_uninit();
@@ -188,7 +193,12 @@ impl Builder {
     }
 
     /// Schedules a system that must be run on the main thread.
-    pub fn schedule_thread_unsafe(&mut self, system: Box<dyn system::Unsendable>) {
+    pub fn schedule_thread_unsafe(&mut self, system: impl system::Unsendable) {
+        self.schedule_thread_unsafe_boxed(Box::new(system))
+    }
+
+    /// Schedules a system that must be run on the main thread.
+    pub fn schedule_thread_unsafe_boxed(&mut self, system: Box<dyn system::Unsendable>) {
         let mut type_visitor = referrer::VisitTypeArg::new();
         system.visit_type(&mut type_visitor);
         let state_maybe_uninit = system.state_maybe_uninit();

@@ -3,48 +3,62 @@
 Sometimes we want to store multiple components of the same type on an entity.
 For example, we want to store the ingredients that make up a bullet.
 The straightforward approach is to use
-a `Vec<(Element, Weight)>`/`HashMap<Element, Weight>`,
-but this is very bad for performance and memory due to many heap allocations,
-making ECS almost as slow as OOP.
+a `Vec<(Element, Ingredient)>`/`HashMap<Element, Ingredient>`,
+but this is very bad for performance and memory due to many heap allocations.
+This is where isotope components come handy.
 
-Isotope components allow us to create components dynamically.
-While simple components are identified by their type,
-isotope components are identified by the type along with a "discriminant" value,
-which is an (optionally newtyped) `usize` that distinguishes between isotopes.
+An isotope component works like a component that stores
+a map of "discriminants" to component values.
 For example, in the example above,
 `Element` can be used as the discriminant
 that distinguishes between different "weight" components,
-such that each `Weight` component refers to a different element.
+and an entity has a separate `Ingredient` for each `Element`.
 
 Like simple components, isotope components are also archetyped,
-but they implement [`comp::Isotope<A>`][comp.isotope] instead,
+but they implement [`comp::Isotope<A>`][comp::Isotope] instead,
 which can also be achieved through the `#[comp]` macro:
 
 ```rust
+#[derive(Discrim)]
+struct Element(u16);
+
 #[comp(of = Bullet, isotope = Element)]
-struct Ingredient(Weight);
+struct Ingredient(f64);
 ```
+
+Unlike vector/map simple components,
+Dynec treats each discriminant as a different component
+such that it has its own storage and lock mechanism,
+so systems can execute in parallel
+to process different discriminants of the same component.
 
 ## Choosing the discriminant type
 
-Since a new component storage is created for every new isotope discriminant,
-the number of different discriminants must be kept finite.
+Dynec creates a new component storage for every new isotope discriminant.
+If you use the `storage::Vec` (the default) storage,
+the space complexity is the product of
+the number of entities and the number of possible discriminants.
+Therefore, the number of possible discriminant values must be kept finite.
+
 An example valid usage is to have each discriminant
 correspond to one item defined in the game config file,
 which is a realistically small number that does not grow with the game over time.
+Ideally, the possible values of discriminant are generated from a 0-based auto-increment,
+e.g. corresponding to the order of the item in the config file.
 
 ## Initializer
 
-As mentioned above, isotope components are just like simple components with the type
-`HashMap<Discriminant, Value>`.
-Initializers for isotope components return
-iterators of (discriminant, value) tuples instead.
+Similar to simple components, isotope components can also have an auto-initializer.
+However, new discriminants may be introduced after entity creation,
+so isotopes cannot be exhaustively initialized during entity creation
+but initialized when new discriminants are added instead.
+Therefore, isotope auto-initializers cannot depend on any other values.
 
-Since the returned iterator involves dynamic discriminant values,
-it is not possible to implement [`comp::Must`][must] for isotope components automatically.
-Nevertheless, if the user is sure that all discriminants are populated
-in the initializer through exhausting the domain of discriminants,
-they can implement this trait manually.
+## Presence
 
-[comp.isotope]: https://sof3.github.io/dynec/master/dynec/comp/trait.Isotope.html
-[must]: https://sof3.github.io/dynec/master/dynec/comp/trait.Must.html
+Isotope components can also have a `Required` presence like simple components.
+However, since discriminants are dynamically introduced,
+it is not possible to initialize an entity with all possible discriminants exhaustively.
+An isotope component can be `Required` as long as it has an auto-initializer.
+
+[comp::Isotope]: ../dynec/comp/trait.Isotope.html

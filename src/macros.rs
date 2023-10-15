@@ -240,7 +240,7 @@ mod comps_tests {}
 /// fn test_system(#[dynec(global)] _qux: &Qux) {}
 ///
 /// let mut builder = dynec::world::Builder::new(1);
-/// builder.schedule(Box::new(test_system.build()));
+/// builder.schedule(test_system.build());
 /// builder.build();
 /// ```
 #[doc(inline)]
@@ -815,7 +815,7 @@ macro_rules! system_test {
     ) => {{
         let mut builder = $crate::world::Builder::new(0);
         $(
-            builder.schedule(Box::new($systems));
+            builder.schedule($systems);
         )*
 
         #[allow(unused_mut)]
@@ -843,7 +843,7 @@ macro_rules! system_test_exported {
     ) => {{
         let mut builder = $crate::world::Builder::new(0);
         $(
-            builder.schedule(Box::new($systems));
+            builder.schedule($systems);
         )*
 
         #[allow(unused_mut)]

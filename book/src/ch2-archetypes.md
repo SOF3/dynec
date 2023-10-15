@@ -52,5 +52,5 @@ dynec::archetype! {
 There is nothing magical here;
 each line just declares an empty enum and implements [`Archetype`][trait.archetype] for it.
 
-[macro.archetype]: https://sof3.github.io/dynec/master/dynec/macro.archetype.html
-[trait.Archetype]: https://sof3.github.io/dynec/master/dynec/archetype/trait.Archetype.html
+[macro.archetype]: ../dynec/macro.archetype.html
+[trait.Archetype]: ../dynec/archetype/trait.Archetype.html

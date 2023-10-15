@@ -4,8 +4,7 @@
 use std::any;
 use std::any::TypeId;
 use std::borrow::Borrow;
-use std::num::NonZeroU32;
-use std::{cmp, fmt, hash, mem, ops};
+use std::{cmp, fmt, hash, mem, num, ops};
 
 /// A generic mutable/immutable reference type.
 pub trait Ref {
@@ -128,9 +127,17 @@ impl Borrow<TypeId> for DbgTypeId {
 /// Undefined behavior may occur if the invariants of `Eq` and `Ord` are not fully satisfied.
 pub unsafe trait UnsafeEqOrd: Eq + Ord {}
 
+// Safety: NonZeroU16 is semantically identical to `u16`,
+// which is a regular primitive satisfying all equivalence and ordering invariants.
+unsafe impl UnsafeEqOrd for num::NonZeroU16 {}
+
 // Safety: NonZeroU32 is semantically identical to `u32`,
 // which is a regular primitive satisfying all equivalence and ordering invariants.
-unsafe impl UnsafeEqOrd for NonZeroU32 {}
+unsafe impl UnsafeEqOrd for num::NonZeroU32 {}
+
+// Safety: NonZeroU64 is semantically identical to `u64`,
+// which is a regular primitive satisfying all equivalence and ordering invariants.
+unsafe impl UnsafeEqOrd for num::NonZeroU64 {}
 
 // Safety: `usize` is a regular primitive satisfying all equivalence and ordering invariants.
 unsafe impl UnsafeEqOrd for usize {}

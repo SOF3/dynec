@@ -2,6 +2,9 @@
 ///
 /// # Example
 /// ```
+/// use std::collections::BTreeSet;
+/// use std::num::NonZeroU16;
+///
 /// dynec::archetype! {
 ///     /// This is an example archetype.
 ///     /// We can document it and apply attributes on it.
@@ -12,6 +15,9 @@
 ///     /// separated by semicolons.
 ///     /// The trailing semicolon is optional.
 ///     pub(crate) Bar;
+///
+///     /// Options can be applied in parentheses.
+///     pub Qux(raw_entity = NonZeroU16, recycler = BTreeSet<NonZeroU16>);
 /// }
 ///
 /// static_assertions::assert_impl_all!(Foo: dynec::Archetype);
@@ -19,11 +25,30 @@
 /// ```
 ///
 /// Since documentation, attributes, visibility and the trailing semicolon are optional,
-/// private undocumented archetypes can be declared in a single line as well:
+/// a private undocumented archetype can be declared in a single line as well:
+///
 /// ```
 /// dynec::archetype!(Foo);
 /// static_assertions::assert_impl_all!(Foo: dynec::Archetype);
 /// ```
+///
+/// # Options
+/// Options are applied in parentheses after an archetype identifier.
+/// Multiple options are separated by commas.
+///
+/// ## `raw_entity = $ty`
+/// Selects the [backing type for entity ID](crate::entity::Raw) for entities of this archetype.
+/// The default value is [`NonZeroU32`](std::num::NonZeroU32).
+///
+/// ## `recycler = $ty`
+/// Selects the data structure used in the recycling entity allocator to
+/// [recycle](crate::entity::ealloc::Recycler) freed IDs.
+/// The default value is [`Vec<#raw_entity>`](Vec).
+///
+/// ## `shard_assigner = $ty`
+/// Selects the [strategy to assign](crate::entity::ealloc::ShardAssigner) available entity IDs
+/// to different hsards.
+/// The default value is [`ThreadRngShardAssigner`](crate::entity::ealloc::ThreadRngShardAssigner).
 #[doc(inline)]
 pub use dynec_codegen::archetype;
 
@@ -857,8 +882,8 @@ macro_rules! assert_partition {
 }
 
 /// Declares a composite struct that implements
-/// [`IntoZip`](crate::system::access::IntoZip), [`Zip`](crate::system::access::Zip)
-/// and [`ZipChunked`](crate::system::access::ZipChunked)
+/// [`IntoZip`](crate::system::iter::IntoZip), [`Zip`](crate::system::iter::Zip)
+/// and [`ZipChunked`](crate::system::iter::ZipChunked)
 /// by delegation to all fields and reconstructing the same struct with different types.
 ///
 /// All fields accept arbitrary types, similar to a tuple,

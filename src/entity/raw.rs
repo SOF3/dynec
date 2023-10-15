@@ -1,5 +1,4 @@
-use std::num::NonZeroU32;
-use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::atomic;
 use std::{fmt, ops};
 
 use crate::util::UnsafeEqOrd;
@@ -52,39 +51,6 @@ pub trait Raw: Sized + Send + Sync + Copy + fmt::Debug + UnsafeEqOrd + 'static {
     fn range(range: ops::Range<Self>) -> Self::Range;
 }
 
-impl Raw for NonZeroU32 {
-    type Atomic = AtomicU32;
-
-    fn new() -> Self::Atomic { AtomicU32::new(1) }
-
-    fn add(self, count: usize) -> Self {
-        let count: u32 = count.try_into().expect("count is too large");
-        NonZeroU32::new(self.get() + count).expect("integer overflow")
-    }
-
-    fn sub(self, other: Self) -> usize {
-        (self.get() - other.get()).try_into().expect("usize >= u32")
-    }
-
-    fn approx_midpoint(self, other: Self) -> Self {
-        NonZeroU32::new((self.get() + other.get()) / 2)
-            .expect("get() >= 1, get() + get() >= 2, half >= 1")
-    }
-
-    fn from_primitive(i: Primitive) -> Self {
-        i.try_into().ok().and_then(Self::new).expect("Invalid usize")
-    }
-
-    fn to_primitive(self) -> Primitive { self.get().try_into().expect("Too many entities") }
-
-    type Range = impl Iterator<Item = Self>;
-    fn range(range: ops::Range<Self>) -> Self::Range {
-        (range.start.get()..range.end.get()).map(|v| {
-            NonZeroU32::new(v).expect("zero does not appear between two non-zero unsigned integers")
-        })
-    }
-}
-
 /// An atomic variant of [`Raw`].
 pub trait Atomic<E: Raw>: Send + Sync + 'static {
     /// Equivalent to `AtomicUsize::fetch_add(self, count, Ordering::SeqCst)`
@@ -100,26 +66,68 @@ pub trait Atomic<E: Raw>: Send + Sync + 'static {
     fn load_mut(&mut self) -> E;
 }
 
-impl Atomic<NonZeroU32> for AtomicU32 {
-    fn fetch_add(&self, count: usize) -> NonZeroU32 {
-        let original = AtomicU32::fetch_add(
-            self,
-            count.try_into().expect("count is too large"),
-            Ordering::SeqCst,
-        );
-        NonZeroU32::new(original).expect("integer overflow")
-    }
+macro_rules! impl_raw {
+    ($base:ty, $atomic:ty, $primitive:ty) => {
+        impl Raw for $base {
+            type Atomic = $atomic;
 
-    fn load(&self) -> NonZeroU32 {
-        let original = AtomicU32::load(self, Ordering::SeqCst);
-        NonZeroU32::new(original).expect("invalid state")
-    }
+            fn new() -> Self::Atomic { <$atomic>::new(1) }
 
-    fn load_mut(&mut self) -> NonZeroU32 {
-        let original = *AtomicU32::get_mut(self);
-        NonZeroU32::new(original).expect("invalid state")
-    }
+            fn add(self, count: usize) -> Self {
+                let count: $primitive = count.try_into().expect("count is too large");
+                <$base>::new(self.get() + count).expect("integer overflow")
+            }
+
+            fn sub(self, other: Self) -> usize {
+                (self.get() - other.get()).try_into().expect("usize should be sufficiently large")
+            }
+
+            fn approx_midpoint(self, other: Self) -> Self {
+                <$base>::new((self.get() + other.get()) / 2)
+                    .expect("get() >= 1, get() + get() >= 2, half >= 1")
+            }
+
+            fn from_primitive(i: Primitive) -> Self {
+                i.try_into().ok().and_then(Self::new).expect("Invalid usize")
+            }
+
+            fn to_primitive(self) -> Primitive { self.get().try_into().expect("Too many entities") }
+
+            type Range = impl Iterator<Item = Self>;
+            fn range(range: ops::Range<Self>) -> Self::Range {
+                (range.start.get()..range.end.get()).map(|v| {
+                    <$base>::new(v)
+                        .expect("zero does not appear between two non-zero unsigned integers")
+                })
+            }
+        }
+
+        impl Atomic<$base> for $atomic {
+            fn fetch_add(&self, count: usize) -> $base {
+                let original = <$atomic>::fetch_add(
+                    self,
+                    count.try_into().expect("count is too large"),
+                    atomic::Ordering::SeqCst,
+                );
+                <$base>::new(original).expect("integer overflow")
+            }
+
+            fn load(&self) -> $base {
+                let original = <$atomic>::load(self, atomic::Ordering::SeqCst);
+                <$base>::new(original).expect("invalid state")
+            }
+
+            fn load_mut(&mut self) -> $base {
+                let original = *<$atomic>::get_mut(self);
+                <$base>::new(original).expect("invalid state")
+            }
+        }
+    };
 }
+
+impl_raw!(std::num::NonZeroU16, std::sync::atomic::AtomicU16, u16);
+impl_raw!(std::num::NonZeroU32, std::sync::atomic::AtomicU32, u32);
+impl_raw!(std::num::NonZeroU64, std::sync::atomic::AtomicU64, u64);
 
 /// The primitive scalar type.
 pub type Primitive = usize;

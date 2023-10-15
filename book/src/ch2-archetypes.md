@@ -1,37 +1,46 @@
 # Archetypes
 
-In traditional ECS frameworks, entities are grouped by the components they have,
-e.g. if an entity has a "location" and "speed" component,
-it is considered as an entity that can move and
-is looped by the system that requests these components.
-The set of components created for an entity is called its "archetype",
-which is comparable to "classes" in OOP.
+In traditional ECS, the type of an entity is identified by the components it has.
+For example, an entity is considered to be "moveable"
+if it has the "location" and "speed" components.
+Systems iterate over the "moveable" entities by performing a "join query"
+that intersects the entities with a "location" and the entities with a "speed".
+Thus, an entity type is effectively a subtype of any combination of its components,
+e.g. both "player" and "bullet" are subtypes of "moveable".
 
-In dynec, entities are *statically archetyped*,
-which means the possible components of an entity is *known* and *fixed* from creation.
-In the analogy of rows and columns, an archetype is similar to a table.
-As such, different archetypes have their own entity IDs.
+Dynec takes a different approach on entity typing.
+Dynec requires the type of an entity (its "archeytpe") to be
+*known* during creation and *immutable* after creation ("statically archetyped").
+A reference to an entity always contains the archetype.
 
-What if we want to add/remove components for an entity?
-dynec still supports optional components,
-but the entity is still stored in the same archetype,
-so it still appears in the loop when systems iterate over this archetype.
-If you would like to loop over entities with certain components,
-it is a better idea to split the components to a separate entity with a new archetype
-and loop on that archetype instead.
-(It is also possible to loop over entities with a specific component,
-but joining multiple components is not supported)
+Dynec still supports adding/removing components for an entity,
+but this is implemented by making the component optional (effectively `Option<Comp>`)
+instead of changing its archetype.
+Adding/removing a component would not affect
+systems iterating over all entities of its archetype.
+
+To iterate over entities with only a specific component,
+the suggested approach is to split the components
+to a separate entity with a new archetype
+and iterate over entities with that archetype instead.
+(It is also possible to iterate over entities with a specific component,
+but it is less efficient than iterate over all entities of the same component,
+and joining multiple components is not supported)
 
 Archetypes are typically represented as an unconstructable type (an empty enum)
-that is referenced as a type parameter in system declarations.
+referenced as a type parameter in system declarations.
+Therefore, multiple systems can reuse the same generic function
+where the archetype is a type parameter,
+achieving something similar to the "subtyping" approach.
+Nevertheless, Dynec discourages treating archetypes as subtypes
+and encourages splitting shared components to an entity.
 Therefore, it is possible to reuse the same function
 for multiple systems by leaving the archetype as a type parameter.
-There is a convenience macro to achieve this:
+
+An archetype can be declared through the [`dynec::archetype`][macro.archetype] macro:
 
 ```rust
-use dynec::archetype;
-
-archetype! {
+dynec::archetype! {
     /// A building entity can store goods inside.
     pub Building;
 
@@ -40,8 +49,8 @@ archetype! {
 }
 ```
 
-The [`archetype!` macro][macro.archetype] just declares an empty enum
-that implements [`Archetype`][trait.archetype].
+There is nothing magical here;
+each line just declares an empty enum and implements [`Archetype`][trait.archetype] for it.
 
 [macro.archetype]: https://sof3.github.io/dynec/master/dynec/macro.archetype.html
-[trait.archetype]: https://sof3.github.io/dynec/master/dynec/archetype/trait.Archetype.html
+[trait.Archetype]: https://sof3.github.io/dynec/master/dynec/archetype/trait.Archetype.html

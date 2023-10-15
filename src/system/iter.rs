@@ -126,7 +126,7 @@ pub trait ZipChunked<A: Archetype>: Zip<A> {
     fn get_chunk(self, chunk: entity::TempRefChunk<A>) -> Self::Chunk;
 }
 
-/// Values that can be used as a [`Zip`] in [`EntityIterator`](crate::system::EntityIterator),
+/// Values that can be used as a [`Zip`] in [`EntityIterator`],
 /// similar to [`IntoIterator`] for iterators.
 ///
 /// This trait is intended to map storages to components of a single entity,

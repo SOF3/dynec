@@ -167,7 +167,7 @@ Nevertheless, Dynec discourages treating archetypes as subtypes
 and encourages splitting shared components to an entity.
 Therefore, it is possible to reuse the same function
 for multiple systems by leaving the archetype as a type parameter.</p>
-<p>An archetype can be declared through the <a href="https://sof3.github.io/dynec/master/dynec/macro.archetype.html"><code>dynec::archetype</code></a> macro:</p>
+<p>An archetype can be declared through the <a href="../dynec/macro.archetype.html"><code>dynec::archetype</code></a> macro:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>dynec::archetype! {
@@ -180,7 +180,7 @@ for multiple systems by leaving the archetype as a type parameter.</p>
 <span class="boring">}
 </span></code></pre></pre>
 <p>There is nothing magical here;
-each line just declares an empty enum and implements <a href="https://sof3.github.io/dynec/master/dynec/archetype/trait.Archetype.html"><code>Archetype</code></a> for it.</p>
+each line just declares an empty enum and implements <a href="../dynec/archetype/trait.Archetype.html"><code>Archetype</code></a> for it.</p>
 
                     </main>
 

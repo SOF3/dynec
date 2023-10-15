@@ -138,8 +138,8 @@
 <p>Simple components are components where
 each entity can have at most one instance of the component.
 A type can be used as a simple component for entities of archetype <code>A</code>
-if it implements <a href="https://sof3.github.io/dynec/master/dynec/comp/trait.Simple.html"><code>comp::Simple&lt;A&gt;</code></a>.
-Dynec provides <a href="https://sof3.github.io/dynec/master/dynec/attr.comp.html">a convenience macro</a> to do this:</p>
+if it implements <a href="../dynec/comp/trait.Simple.html"><code>comp::Simple&lt;A&gt;</code></a>.
+Dynec provides <a href="../dynec/attr.comp.html">a convenience macro</a> to do this:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>#[comp(of = Bullet)]
@@ -206,8 +206,8 @@ Nevertheless, components are <strong>always</strong> missing
 for uninitialized entities created during the middle of a tick;
 more will be explained in later sections.</p>
 <p>A <code>Required</code> component must <em>both</em>
-set <a href="https://sof3.github.io/dynec/master/dynec/comp/trait.Simple.html#associatedconstant.PRESENCE"><code>PRESENCE = SimplePresence::Required</code></a>
-<em>and</em> implement <a href="https://sof3.github.io/dynec/master/dynec/comp/trait.Must.html"><code>comp::Must&lt;A&gt;</code></a>.
+set <a href="../dynec/comp/trait.SimpleOrIsotope.html#associatedconstant.PRESENCE"><code>PRESENCE = SimplePresence::Required</code></a>
+<em>and</em> implement <a href="../dynec/comp/trait.Must.html"><code>comp::Must&lt;A&gt;</code></a>.
 This is automatically done by specifying <code>required</code> in the <code>#[comp]</code> macro:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -282,7 +282,7 @@ types like <code>Vec</code> can often be avoided:</p>
 (i.e. <code>comp[0]</code> for entity 1 has the same logic as <code>comp[0]</code> for entity 2),
 use isotope components instead.</li>
 <li>If the items in the vector are unstructured
-(i.e. <code>comp[0]</code> for entity 1 has the same logic as <code>comp[1]</code> for entit y2),
+(i.e. <code>comp[0]</code> for entity 1 has the same logic as <code>comp[1]</code> for entity 1),
 consider turning each item into an entity and process the entity instead.</li>
 </ul>
 

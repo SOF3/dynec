@@ -22,6 +22,6 @@ building the world would panic.</p>
 </span><span class="kw">fn </span>test_system(<span class="attr">#[dynec(global)] </span>_qux: <span class="kw-2">&amp;</span>Qux) {}
 
 <span class="kw">let </span><span class="kw-2">mut </span>builder = dynec::world::Builder::new(<span class="number">1</span>);
-builder.schedule(Box::new(test_system.build()));
+builder.schedule(test_system.build());
 builder.build();</code></pre></div>
 </div></details></section></div></main></body></html>

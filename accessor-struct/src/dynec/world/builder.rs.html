@@ -294,6 +294,16 @@
 <a href="#294" id="294">294</a>
 <a href="#295" id="295">295</a>
 <a href="#296" id="296">296</a>
+<a href="#297" id="297">297</a>
+<a href="#298" id="298">298</a>
+<a href="#299" id="299">299</a>
+<a href="#300" id="300">300</a>
+<a href="#301" id="301">301</a>
+<a href="#302" id="302">302</a>
+<a href="#303" id="303">303</a>
+<a href="#304" id="304">304</a>
+<a href="#305" id="305">305</a>
+<a href="#306" id="306">306</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::any::{Any, TypeId};
 <span class="kw">use </span>std::collections::HashMap;
 
@@ -474,7 +484,12 @@
     }
 
     <span class="doccomment">/// Schedules a thread-safe system.
-    </span><span class="kw">pub fn </span>schedule(<span class="kw-2">&amp;mut </span><span class="self">self</span>, system: Box&lt;<span class="kw">dyn </span>system::Sendable&gt;) {
+    </span><span class="kw">pub fn </span>schedule(<span class="kw-2">&amp;mut </span><span class="self">self</span>, system: <span class="kw">impl </span>system::Sendable) {
+        <span class="self">self</span>.schedule_boxed(Box::new(system))
+    }
+
+    <span class="doccomment">/// Schedules a thread-safe system.
+    </span><span class="kw">pub fn </span>schedule_boxed(<span class="kw-2">&amp;mut </span><span class="self">self</span>, system: Box&lt;<span class="kw">dyn </span>system::Sendable&gt;) {
         <span class="kw">let </span><span class="kw-2">mut </span>type_visitor = referrer::VisitTypeArg::new();
         system.visit_type(<span class="kw-2">&amp;mut </span>type_visitor);
         <span class="kw">let </span>state_maybe_uninit = system.state_maybe_uninit();
@@ -484,7 +499,12 @@
     }
 
     <span class="doccomment">/// Schedules a system that must be run on the main thread.
-    </span><span class="kw">pub fn </span>schedule_thread_unsafe(<span class="kw-2">&amp;mut </span><span class="self">self</span>, system: Box&lt;<span class="kw">dyn </span>system::Unsendable&gt;) {
+    </span><span class="kw">pub fn </span>schedule_thread_unsafe(<span class="kw-2">&amp;mut </span><span class="self">self</span>, system: <span class="kw">impl </span>system::Unsendable) {
+        <span class="self">self</span>.schedule_thread_unsafe_boxed(Box::new(system))
+    }
+
+    <span class="doccomment">/// Schedules a system that must be run on the main thread.
+    </span><span class="kw">pub fn </span>schedule_thread_unsafe_boxed(<span class="kw-2">&amp;mut </span><span class="self">self</span>, system: Box&lt;<span class="kw">dyn </span>system::Unsendable&gt;) {
         <span class="kw">let </span><span class="kw-2">mut </span>type_visitor = referrer::VisitTypeArg::new();
         system.visit_type(<span class="kw-2">&amp;mut </span>type_visitor);
         <span class="kw">let </span>state_maybe_uninit = system.state_maybe_uninit();

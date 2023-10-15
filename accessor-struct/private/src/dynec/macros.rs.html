@@ -1149,7 +1149,7 @@
 /// fn test_system(#[dynec(global)] _qux: &amp;Qux) {}
 ///
 /// let mut builder = dynec::world::Builder::new(1);
-/// builder.schedule(Box::new(test_system.build()));
+/// builder.schedule(test_system.build());
 /// builder.build();
 /// ```
 </span><span class="attr">#[doc(inline)]
@@ -1724,7 +1724,7 @@
     ) =&gt; {{
         <span class="kw">let </span><span class="kw-2">mut </span>builder = <span class="macro-nonterminal">$crate::world::Builder::new</span>(<span class="number">0</span>);
         $(
-            builder.schedule(Box::new(<span class="macro-nonterminal">$systems</span>));
+            builder.schedule(<span class="macro-nonterminal">$systems</span>);
         )*
 
         <span class="attr">#[allow(unused_mut)]
@@ -1752,7 +1752,7 @@
     ) =&gt; {{
         <span class="kw">let </span><span class="kw-2">mut </span>builder = <span class="macro-nonterminal">$crate::world::Builder::new</span>(<span class="number">0</span>);
         $(
-            builder.schedule(Box::new(<span class="macro-nonterminal">$systems</span>));
+            builder.schedule(<span class="macro-nonterminal">$systems</span>);
         )*
 
         <span class="attr">#[allow(unused_mut)]

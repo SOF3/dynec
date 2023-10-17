@@ -317,6 +317,30 @@
 <a href="#317" id="317">317</a>
 <a href="#318" id="318">318</a>
 <a href="#319" id="319">319</a>
+<a href="#320" id="320">320</a>
+<a href="#321" id="321">321</a>
+<a href="#322" id="322">322</a>
+<a href="#323" id="323">323</a>
+<a href="#324" id="324">324</a>
+<a href="#325" id="325">325</a>
+<a href="#326" id="326">326</a>
+<a href="#327" id="327">327</a>
+<a href="#328" id="328">328</a>
+<a href="#329" id="329">329</a>
+<a href="#330" id="330">330</a>
+<a href="#331" id="331">331</a>
+<a href="#332" id="332">332</a>
+<a href="#333" id="333">333</a>
+<a href="#334" id="334">334</a>
+<a href="#335" id="335">335</a>
+<a href="#336" id="336">336</a>
+<a href="#337" id="337">337</a>
+<a href="#338" id="338">338</a>
+<a href="#339" id="339">339</a>
+<a href="#340" id="340">340</a>
+<a href="#341" id="341">341</a>
+<a href="#342" id="342">342</a>
+<a href="#343" id="343">343</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Iterate over entities of an archetype.
 //!
 //! While individual accessors also provide functions like
@@ -326,7 +350,7 @@
 //! enabling better performance with chunk partitioning.
 
 </span><span class="kw">use </span>std::marker::PhantomData;
-<span class="kw">use </span>std::{any, mem, ops};
+<span class="kw">use </span>std::{any, iter, mem, ops};
 
 <span class="kw">use </span><span class="kw">super</span>::access::single;
 <span class="kw">use </span><span class="kw">crate</span>::entity::{ealloc, Raw <span class="kw">as _</span>};
@@ -399,6 +423,23 @@
             )
         })
     }
+
+    <span class="doccomment">/// Same as [`entities_with`](Self::entities_with),
+    /// but leverages chunked storages for better performance.
+    </span><span class="kw">pub fn </span>entities_with_chunked&lt;IntoZ: IntoZip&lt;A&gt;&gt;(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        zip: IntoZ,
+    ) -&gt; <span class="kw">impl </span>Iterator&lt;Item = (entity::TempRef&lt;A&gt;, &lt;IntoZ::IntoZip <span class="kw">as </span>Zip&lt;A&gt;&gt;::Item)&gt;
+    <span class="kw">where
+        </span>IntoZ::IntoZip: ZipChunked&lt;A&gt;,
+    {
+        <span class="self">self</span>.chunks_with(zip).flat_map(|(entities, data)| {
+            iter::zip(
+                entity::Raw::range(entities.start..entities.end).map(entity::TempRef::new),
+                &lt;IntoZ::IntoZip <span class="kw">as </span>ZipChunked&lt;A&gt;&gt;::chunk_to_entities(data),
+            )
+        })
+    }
 }
 
 <span class="kw">struct </span>ZipIter&lt;A: Archetype, Z: Zip&lt;A&gt;&gt;(Z, PhantomData&lt;A&gt;);
@@ -443,6 +484,9 @@
     </span><span class="kw">type </span>Chunk;
     <span class="doccomment">/// Returns the requested components as chunks for the specified entities.
     </span><span class="kw">fn </span>get_chunk(<span class="self">self</span>, chunk: entity::TempRefChunk&lt;A&gt;) -&gt; <span class="self">Self</span>::Chunk;
+
+    <span class="doccomment">/// Converts a chunk into an iterator of items.
+    </span><span class="kw">fn </span>chunk_to_entities(chunk: <span class="self">Self</span>::Chunk) -&gt; <span class="kw">impl </span>Iterator&lt;Item = <span class="self">Self</span>::Item&gt;;
 }
 
 <span class="doccomment">/// Values that can be used as a [`Zip`] in [`EntityIterator`],
@@ -453,7 +497,7 @@
 /// - [`&amp;ReadSimple`](crate::system::ReadSimple) and [`&amp;mut WriteSimple`](crate::system::WriteSimple)
 /// - Shared/mutable references to [split](access::Isotope::split) isotope accessors
 /// - Any of the above wrapped with [`Try`] for [optional](comp::Presence::Optional) components.
-/// - Tuples of `Zip` implementors, including other tuples.
+/// - Non-empty tuples of `Zip` implementors, including other tuples.
 /// - Structs of `Zip` fields that use the [`Zip`](crate::zip) derive macro.
 ///
 /// The default configuration only implements for tuples of up to 4 elements.
@@ -557,6 +601,8 @@
     <span class="kw">fn </span>get_chunk(<span class="self">self</span>, chunk: entity::TempRefChunk&lt;A&gt;) -&gt; <span class="self">Self</span>::Chunk {
         <span class="self">self</span>.accessor.get_chunk(chunk)
     }
+
+    <span class="kw">fn </span>chunk_to_entities(chunk: <span class="self">Self</span>::Chunk) -&gt; <span class="kw">impl </span>Iterator&lt;Item = <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span>C&gt; { chunk.iter() }
 }
 
 <span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>, A, C, StorageRef&gt; IntoZip&lt;A&gt; <span class="kw">for </span>Try&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>access::Single&lt;A, C, StorageRef&gt;&gt;
@@ -630,6 +676,8 @@
     <span class="kw">fn </span>get_chunk(<span class="self">self</span>, chunk: entity::TempRefChunk&lt;A&gt;) -&gt; <span class="self">Self</span>::Chunk {
         <span class="self">self</span>.accessor.into_chunk_mut(chunk)
     }
+
+    <span class="kw">fn </span>chunk_to_entities(chunk: <span class="self">Self</span>::Chunk) -&gt; <span class="kw">impl </span>Iterator&lt;Item = <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>C&gt; { chunk.iter_mut() }
 }
 
 <span class="kw">mod </span>tuple_impls;

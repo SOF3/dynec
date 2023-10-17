@@ -185,7 +185,34 @@
 <a href="#185" id="185">185</a>
 <a href="#186" id="186">186</a>
 <a href="#187" id="187">187</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>proc_macro2::TokenStream;
+<a href="#188" id="188">188</a>
+<a href="#189" id="189">189</a>
+<a href="#190" id="190">190</a>
+<a href="#191" id="191">191</a>
+<a href="#192" id="192">192</a>
+<a href="#193" id="193">193</a>
+<a href="#194" id="194">194</a>
+<a href="#195" id="195">195</a>
+<a href="#196" id="196">196</a>
+<a href="#197" id="197">197</a>
+<a href="#198" id="198">198</a>
+<a href="#199" id="199">199</a>
+<a href="#200" id="200">200</a>
+<a href="#201" id="201">201</a>
+<a href="#202" id="202">202</a>
+<a href="#203" id="203">203</a>
+<a href="#204" id="204">204</a>
+<a href="#205" id="205">205</a>
+<a href="#206" id="206">206</a>
+<a href="#207" id="207">207</a>
+<a href="#208" id="208">208</a>
+<a href="#209" id="209">209</a>
+<a href="#210" id="210">210</a>
+<a href="#211" id="211">211</a>
+<a href="#212" id="212">212</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span>std::iter;
+
+<span class="kw">use </span>proc_macro2::{Span, TokenStream};
 <span class="kw">use </span>quote::quote;
 <span class="kw">use </span>syn::parse::{Parse, ParseStream};
 <span class="kw">use </span>syn::punctuated::Punctuated;
@@ -200,12 +227,19 @@
     <span class="kw">for </span>Input { debug_print, crate_name, meta, vis, ident, fields, .. } <span class="kw">in </span>inputs {
         <span class="kw">let </span>debug_print = debug_print.is_some();
 
+        <span class="kw">if </span>fields.is_empty() {
+            <span class="kw">return </span><span class="prelude-val">Err</span>(syn::Error::new(
+                Span::call_site(),
+                <span class="string">&quot;zip structs must have at least one field&quot;</span>,
+            ));
+        }
+
         <span class="kw">let </span>crate_name = <span class="kw">match </span>crate_name {
             <span class="prelude-val">Some</span>((<span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, crate_name)) =&gt; crate_name,
             <span class="prelude-val">None </span>=&gt; <span class="macro">quote!</span>(::dynec),
         };
 
-        <span class="kw">let </span>field_ty: Vec&lt;<span class="kw">_</span>&gt; =
+        <span class="kw">let </span>field_tys: Vec&lt;<span class="kw">_</span>&gt; =
             (<span class="number">0</span>..fields.len()).map(|i| <span class="macro">quote::format_ident!</span>(<span class="string">&quot;__T{}&quot;</span>, i)).collect();
         <span class="kw">let </span>field_meta: Vec&lt;<span class="kw">_</span>&gt; = fields
             .iter()
@@ -215,75 +249,91 @@
             })
             .collect();
         <span class="kw">let </span>field_vis: Vec&lt;<span class="kw">_</span>&gt; = fields.iter().map(|field| <span class="kw-2">&amp;</span>field.vis).collect();
-        <span class="kw">let </span>field_ident: Vec&lt;<span class="kw">_</span>&gt; = fields.iter().map(|field| <span class="kw-2">&amp;</span>field.ident).collect();
+        <span class="kw">let </span>field_idents: Vec&lt;<span class="kw">_</span>&gt; = fields.iter().map(|field| <span class="kw-2">&amp;</span>field.ident).collect();
+
+        <span class="kw">let </span>first_field_ident = field_idents.first().expect(<span class="string">&quot;struct checked to be non empty&quot;</span>);
+        <span class="kw">let </span>first_field_ty = field_tys.first().expect(<span class="string">&quot;struct checked to be non empty&quot;</span>);
+        <span class="kw">let </span><span class="kw-2">mut </span>stacked_zip = <span class="macro">quote!</span>(&lt;#first_field_ty <span class="kw">as </span>#crate_name::system::ZipChunked::&lt;__Arch&gt;&gt;::chunk_to_entities(#first_field_ident));
+        <span class="kw">let </span><span class="kw-2">mut </span>stacked_tuples = <span class="macro">quote!</span>(#first_field_ident);
+        <span class="kw">for </span>(<span class="kw-2">&amp;</span>field_ident, field_ty) <span class="kw">in </span>iter::zip(<span class="kw-2">&amp;</span>field_idents, <span class="kw-2">&amp;</span>field_tys).skip(<span class="number">1</span>) {
+            stacked_zip = <span class="macro">quote!</span>(::core::iter::zip(#stacked_zip, &lt;#field_ty <span class="kw">as </span>#crate_name::system::ZipChunked::&lt;__Arch&gt;&gt;::chunk_to_entities(#field_ident)));
+            stacked_tuples = <span class="macro">quote!</span>((#stacked_tuples, #field_ident));
+        }
 
         <span class="kw">let </span>item = <span class="macro">quote! </span>{
             #(#meta)*
-            #vis <span class="kw">struct </span>#ident&lt;#(#field_ty),<span class="kw-2">*</span>&gt; {
-                #(#field_meta #field_vis #field_ident: #field_ty,)*
+            #vis <span class="kw">struct </span>#ident&lt;#(#field_tys),<span class="kw-2">*</span>&gt; {
+                #(#field_meta #field_vis #field_idents: #field_tys,)*
             }
 
-            <span class="kw">impl</span>&lt;__Arch: #crate_name::Archetype, #(#field_ty),<span class="kw-2">*</span>&gt;
+            <span class="kw">impl</span>&lt;__Arch: #crate_name::Archetype, #(#field_tys),<span class="kw-2">*</span>&gt;
                 #crate_name::system::IntoZip&lt;__Arch&gt;
-                <span class="kw">for </span>#ident&lt;#(#field_ty,)<span class="kw-2">*</span>&gt;
+                <span class="kw">for </span>#ident&lt;#(#field_tys,)<span class="kw-2">*</span>&gt;
             <span class="kw">where
-                </span>#(#field_ty: #crate_name::system::IntoZip&lt;__Arch&gt;,)*
+                </span>#(#field_tys: #crate_name::system::IntoZip&lt;__Arch&gt;,)*
             {
-                <span class="kw">type </span>IntoZip = #ident&lt;#(&lt;#field_ty <span class="kw">as </span>#crate_name::system::IntoZip&lt;__Arch&gt;&gt;::IntoZip,)<span class="kw-2">*</span>&gt;;
+                <span class="kw">type </span>IntoZip = #ident&lt;#(&lt;#field_tys <span class="kw">as </span>#crate_name::system::IntoZip&lt;__Arch&gt;&gt;::IntoZip,)<span class="kw-2">*</span>&gt;;
 
                 <span class="kw">fn </span>into_zip(<span class="self">self</span>) -&gt; <span class="self">Self</span>::IntoZip {
-                    <span class="kw">let </span><span class="self">Self </span>{ #(#field_ident,)* } = <span class="self">self</span>;
+                    <span class="kw">let </span><span class="self">Self </span>{ #(#field_idents,)* } = <span class="self">self</span>;
                     #ident { #(
-                        #field_ident: &lt;#field_ty <span class="kw">as </span>#crate_name::system::IntoZip&lt;__Arch&gt;&gt;::into_zip(#field_ident),
+                        #field_idents: &lt;#field_tys <span class="kw">as </span>#crate_name::system::IntoZip&lt;__Arch&gt;&gt;::into_zip(#field_idents),
                     )* }
                 }
             }
 
-            <span class="kw">impl</span>&lt;__Arch: #crate_name::Archetype, #(#field_ty),<span class="kw-2">*</span>&gt;
+            <span class="kw">impl</span>&lt;__Arch: #crate_name::Archetype, #(#field_tys),<span class="kw-2">*</span>&gt;
                 #crate_name::system::Zip&lt;__Arch&gt;
-                <span class="kw">for </span>#ident&lt;#(#field_ty,)<span class="kw-2">*</span>&gt;
+                <span class="kw">for </span>#ident&lt;#(#field_tys,)<span class="kw-2">*</span>&gt;
             <span class="kw">where
-                </span>#(#field_ty: #crate_name::system::Zip&lt;__Arch&gt;,)*
+                </span>#(#field_tys: #crate_name::system::Zip&lt;__Arch&gt;,)*
             {
                 <span class="kw">fn </span>split(<span class="kw-2">&amp;mut </span><span class="self">self</span>, offset: __Arch::RawEntity) -&gt; <span class="self">Self </span>{
-                    <span class="kw">let </span><span class="self">Self </span>{ #(#field_ident,)* } = <span class="self">self</span>;
+                    <span class="kw">let </span><span class="self">Self </span>{ #(#field_idents,)* } = <span class="self">self</span>;
                     #ident { #(
-                        #field_ident: &lt;#field_ty <span class="kw">as </span>#crate_name::system::Zip&lt;__Arch&gt;&gt;::split(#field_ident, offset),
+                        #field_idents: &lt;#field_tys <span class="kw">as </span>#crate_name::system::Zip&lt;__Arch&gt;&gt;::split(#field_idents, offset),
                     )* }
                 }
 
                 <span class="kw">type </span>Item = #ident&lt;
-                    #(&lt;#field_ty <span class="kw">as </span>#crate_name::system::Zip&lt;__Arch&gt;&gt;::Item,)*
+                    #(&lt;#field_tys <span class="kw">as </span>#crate_name::system::Zip&lt;__Arch&gt;&gt;::Item,)*
                 &gt;;
                 <span class="kw">fn </span>get&lt;E: #crate_name::entity::Ref&lt;Archetype = __Arch&gt;&gt;(<span class="self">self</span>, __dynec_entity: E) -&gt; <span class="self">Self</span>::Item {
-                    <span class="kw">let </span><span class="self">Self </span>{ #(#field_ident,)* } = <span class="self">self</span>;
+                    <span class="kw">let </span><span class="self">Self </span>{ #(#field_idents,)* } = <span class="self">self</span>;
                     <span class="kw">let </span>__dynec_entity = #crate_name::entity::TempRef::&lt;__Arch&gt;::new(__dynec_entity.id());
                     #ident { #(
-                        #field_ident: &lt;#field_ty <span class="kw">as </span>#crate_name::system::Zip&lt;__Arch&gt;&gt;::get(
-                            #field_ident,
+                        #field_idents: &lt;#field_tys <span class="kw">as </span>#crate_name::system::Zip&lt;__Arch&gt;&gt;::get(
+                            #field_idents,
                             __dynec_entity,
                         ),
                     )* }
                 }
             }
 
-            <span class="kw">impl</span>&lt;__Arch: #crate_name::Archetype, #(#field_ty),<span class="kw-2">*</span>&gt;
+            <span class="kw">impl</span>&lt;__Arch: #crate_name::Archetype, #(#field_tys),<span class="kw-2">*</span>&gt;
                 #crate_name::system::ZipChunked&lt;__Arch&gt;
-                <span class="kw">for </span>#ident&lt;#(#field_ty,)<span class="kw-2">*</span>&gt;
+                <span class="kw">for </span>#ident&lt;#(#field_tys,)<span class="kw-2">*</span>&gt;
             <span class="kw">where
-                </span>#(#field_ty: #crate_name::system::ZipChunked&lt;__Arch&gt;,)*
+                </span>#(#field_tys: #crate_name::system::ZipChunked&lt;__Arch&gt;,)*
             {
                 <span class="kw">type </span>Chunk = #ident&lt;
-                    #(&lt;#field_ty <span class="kw">as </span>#crate_name::system::ZipChunked&lt;__Arch&gt;&gt;::Chunk,)*
+                    #(&lt;#field_tys <span class="kw">as </span>#crate_name::system::ZipChunked&lt;__Arch&gt;&gt;::Chunk,)*
                 &gt;;
                 <span class="kw">fn </span>get_chunk(<span class="self">self</span>, __dynec_chunk: #crate_name::entity::TempRefChunk&lt;__Arch&gt;) -&gt; <span class="self">Self</span>::Chunk {
-                    <span class="kw">let </span><span class="self">Self </span>{ #(#field_ident,)* } = <span class="self">self</span>;
+                    <span class="kw">let </span><span class="self">Self </span>{ #(#field_idents,)* } = <span class="self">self</span>;
                     #ident { #(
-                        #field_ident: &lt;#field_ty <span class="kw">as </span>#crate_name::system::ZipChunked&lt;__Arch&gt;&gt;::get_chunk(
-                            #field_ident,
+                        #field_idents: &lt;#field_tys <span class="kw">as </span>#crate_name::system::ZipChunked&lt;__Arch&gt;&gt;::get_chunk(
+                            #field_idents,
                             __dynec_chunk,
                         ),
                     )* }
+                }
+
+                <span class="kw">fn </span>chunk_to_entities(chunk: <span class="self">Self</span>::Chunk) -&gt; <span class="kw">impl </span>Iterator&lt;Item = #ident&lt;
+                    #(&lt;#field_tys <span class="kw">as </span>#crate_name::system::Zip&lt;__Arch&gt;&gt;::Item,)*
+                &gt;&gt; {
+                    <span class="kw">let </span>#ident { #(#field_idents,)* } = chunk;
+                    #stacked_zip.map(|#stacked_tuples| #ident { #(#field_idents,)* })
                 }
             }
         };

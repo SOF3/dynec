@@ -5,7 +5,9 @@ by delegation to all fields and reconstructing the same struct with different ty
 <p>All fields accept arbitrary types, similar to a tuple,
 and are projected to the corresponding storages upon entity iteration.</p>
 <h2 id="example"><a href="#example">Example</a></h2>
-<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="macro">dynec::zip! </span>{
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#![feature(return_position_impl_trait_in_trait)]
+
+</span><span class="macro">dynec::zip! </span>{
     <span class="doccomment">/// This is an example zip struct.
     /// We can document it and apply attributes on it.
     </span><span class="attr">#[allow(dead_code)]

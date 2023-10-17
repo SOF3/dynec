@@ -1,4 +1,6 @@
-use proc_macro2::TokenStream;
+use std::iter;
+
+use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
@@ -13,12 +15,19 @@ pub(crate) fn imp(input: TokenStream) -> Result<TokenStream> {
     for Input { debug_print, crate_name, meta, vis, ident, fields, .. } in inputs {
         let debug_print = debug_print.is_some();
 
+        if fields.is_empty() {
+            return Err(syn::Error::new(
+                Span::call_site(),
+                "zip structs must have at least one field",
+            ));
+        }
+
         let crate_name = match crate_name {
             Some((_, _, _, crate_name)) => crate_name,
             None => quote!(::dynec),
         };
 
-        let field_ty: Vec<_> =
+        let field_tys: Vec<_> =
             (0..fields.len()).map(|i| quote::format_ident!("__T{}", i)).collect();
         let field_meta: Vec<_> = fields
             .iter()
@@ -28,75 +37,91 @@ pub(crate) fn imp(input: TokenStream) -> Result<TokenStream> {
             })
             .collect();
         let field_vis: Vec<_> = fields.iter().map(|field| &field.vis).collect();
-        let field_ident: Vec<_> = fields.iter().map(|field| &field.ident).collect();
+        let field_idents: Vec<_> = fields.iter().map(|field| &field.ident).collect();
+
+        let first_field_ident = field_idents.first().expect("struct checked to be non empty");
+        let first_field_ty = field_tys.first().expect("struct checked to be non empty");
+        let mut stacked_zip = quote!(<#first_field_ty as #crate_name::system::ZipChunked::<__Arch>>::chunk_to_entities(#first_field_ident));
+        let mut stacked_tuples = quote!(#first_field_ident);
+        for (&field_ident, field_ty) in iter::zip(&field_idents, &field_tys).skip(1) {
+            stacked_zip = quote!(::core::iter::zip(#stacked_zip, <#field_ty as #crate_name::system::ZipChunked::<__Arch>>::chunk_to_entities(#field_ident)));
+            stacked_tuples = quote!((#stacked_tuples, #field_ident));
+        }
 
         let item = quote! {
             #(#meta)*
-            #vis struct #ident<#(#field_ty),*> {
-                #(#field_meta #field_vis #field_ident: #field_ty,)*
+            #vis struct #ident<#(#field_tys),*> {
+                #(#field_meta #field_vis #field_idents: #field_tys,)*
             }
 
-            impl<__Arch: #crate_name::Archetype, #(#field_ty),*>
+            impl<__Arch: #crate_name::Archetype, #(#field_tys),*>
                 #crate_name::system::IntoZip<__Arch>
-                for #ident<#(#field_ty,)*>
+                for #ident<#(#field_tys,)*>
             where
-                #(#field_ty: #crate_name::system::IntoZip<__Arch>,)*
+                #(#field_tys: #crate_name::system::IntoZip<__Arch>,)*
             {
-                type IntoZip = #ident<#(<#field_ty as #crate_name::system::IntoZip<__Arch>>::IntoZip,)*>;
+                type IntoZip = #ident<#(<#field_tys as #crate_name::system::IntoZip<__Arch>>::IntoZip,)*>;
 
                 fn into_zip(self) -> Self::IntoZip {
-                    let Self { #(#field_ident,)* } = self;
+                    let Self { #(#field_idents,)* } = self;
                     #ident { #(
-                        #field_ident: <#field_ty as #crate_name::system::IntoZip<__Arch>>::into_zip(#field_ident),
+                        #field_idents: <#field_tys as #crate_name::system::IntoZip<__Arch>>::into_zip(#field_idents),
                     )* }
                 }
             }
 
-            impl<__Arch: #crate_name::Archetype, #(#field_ty),*>
+            impl<__Arch: #crate_name::Archetype, #(#field_tys),*>
                 #crate_name::system::Zip<__Arch>
-                for #ident<#(#field_ty,)*>
+                for #ident<#(#field_tys,)*>
             where
-                #(#field_ty: #crate_name::system::Zip<__Arch>,)*
+                #(#field_tys: #crate_name::system::Zip<__Arch>,)*
             {
                 fn split(&mut self, offset: __Arch::RawEntity) -> Self {
-                    let Self { #(#field_ident,)* } = self;
+                    let Self { #(#field_idents,)* } = self;
                     #ident { #(
-                        #field_ident: <#field_ty as #crate_name::system::Zip<__Arch>>::split(#field_ident, offset),
+                        #field_idents: <#field_tys as #crate_name::system::Zip<__Arch>>::split(#field_idents, offset),
                     )* }
                 }
 
                 type Item = #ident<
-                    #(<#field_ty as #crate_name::system::Zip<__Arch>>::Item,)*
+                    #(<#field_tys as #crate_name::system::Zip<__Arch>>::Item,)*
                 >;
                 fn get<E: #crate_name::entity::Ref<Archetype = __Arch>>(self, __dynec_entity: E) -> Self::Item {
-                    let Self { #(#field_ident,)* } = self;
+                    let Self { #(#field_idents,)* } = self;
                     let __dynec_entity = #crate_name::entity::TempRef::<__Arch>::new(__dynec_entity.id());
                     #ident { #(
-                        #field_ident: <#field_ty as #crate_name::system::Zip<__Arch>>::get(
-                            #field_ident,
+                        #field_idents: <#field_tys as #crate_name::system::Zip<__Arch>>::get(
+                            #field_idents,
                             __dynec_entity,
                         ),
                     )* }
                 }
             }
 
-            impl<__Arch: #crate_name::Archetype, #(#field_ty),*>
+            impl<__Arch: #crate_name::Archetype, #(#field_tys),*>
                 #crate_name::system::ZipChunked<__Arch>
-                for #ident<#(#field_ty,)*>
+                for #ident<#(#field_tys,)*>
             where
-                #(#field_ty: #crate_name::system::ZipChunked<__Arch>,)*
+                #(#field_tys: #crate_name::system::ZipChunked<__Arch>,)*
             {
                 type Chunk = #ident<
-                    #(<#field_ty as #crate_name::system::ZipChunked<__Arch>>::Chunk,)*
+                    #(<#field_tys as #crate_name::system::ZipChunked<__Arch>>::Chunk,)*
                 >;
                 fn get_chunk(self, __dynec_chunk: #crate_name::entity::TempRefChunk<__Arch>) -> Self::Chunk {
-                    let Self { #(#field_ident,)* } = self;
+                    let Self { #(#field_idents,)* } = self;
                     #ident { #(
-                        #field_ident: <#field_ty as #crate_name::system::ZipChunked<__Arch>>::get_chunk(
-                            #field_ident,
+                        #field_idents: <#field_tys as #crate_name::system::ZipChunked<__Arch>>::get_chunk(
+                            #field_idents,
                             __dynec_chunk,
                         ),
                     )* }
+                }
+
+                fn chunk_to_entities(chunk: Self::Chunk) -> impl Iterator<Item = #ident<
+                    #(<#field_tys as #crate_name::system::Zip<__Arch>>::Item,)*
+                >> {
+                    let #ident { #(#field_idents,)* } = chunk;
+                    #stacked_zip.map(|#stacked_tuples| #ident { #(#field_idents,)* })
                 }
             }
         };

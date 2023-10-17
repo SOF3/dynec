@@ -7,7 +7,7 @@
 //! enabling better performance with chunk partitioning.
 
 use std::marker::PhantomData;
-use std::{any, mem, ops};
+use std::{any, iter, mem, ops};
 
 use super::access::single;
 use crate::entity::{ealloc, Raw as _};
@@ -80,6 +80,23 @@ impl<A: Archetype> EntityIterator<A> {
             )
         })
     }
+
+    /// Same as [`entities_with`](Self::entities_with),
+    /// but leverages chunked storages for better performance.
+    pub fn entities_with_chunked<IntoZ: IntoZip<A>>(
+        &self,
+        zip: IntoZ,
+    ) -> impl Iterator<Item = (entity::TempRef<A>, <IntoZ::IntoZip as Zip<A>>::Item)>
+    where
+        IntoZ::IntoZip: ZipChunked<A>,
+    {
+        self.chunks_with(zip).flat_map(|(entities, data)| {
+            iter::zip(
+                entity::Raw::range(entities.start..entities.end).map(entity::TempRef::new),
+                <IntoZ::IntoZip as ZipChunked<A>>::chunk_to_entities(data),
+            )
+        })
+    }
 }
 
 struct ZipIter<A: Archetype, Z: Zip<A>>(Z, PhantomData<A>);
@@ -124,6 +141,9 @@ pub trait ZipChunked<A: Archetype>: Zip<A> {
     type Chunk;
     /// Returns the requested components as chunks for the specified entities.
     fn get_chunk(self, chunk: entity::TempRefChunk<A>) -> Self::Chunk;
+
+    /// Converts a chunk into an iterator of items.
+    fn chunk_to_entities(chunk: Self::Chunk) -> impl Iterator<Item = Self::Item>;
 }
 
 /// Values that can be used as a [`Zip`] in [`EntityIterator`],
@@ -134,7 +154,7 @@ pub trait ZipChunked<A: Archetype>: Zip<A> {
 /// - [`&ReadSimple`](crate::system::ReadSimple) and [`&mut WriteSimple`](crate::system::WriteSimple)
 /// - Shared/mutable references to [split](access::Isotope::split) isotope accessors
 /// - Any of the above wrapped with [`Try`] for [optional](comp::Presence::Optional) components.
-/// - Tuples of `Zip` implementors, including other tuples.
+/// - Non-empty tuples of `Zip` implementors, including other tuples.
 /// - Structs of `Zip` fields that use the [`Zip`](crate::zip) derive macro.
 ///
 /// The default configuration only implements for tuples of up to 4 elements.
@@ -238,6 +258,8 @@ where
     fn get_chunk(self, chunk: entity::TempRefChunk<A>) -> Self::Chunk {
         self.accessor.get_chunk(chunk)
     }
+
+    fn chunk_to_entities(chunk: Self::Chunk) -> impl Iterator<Item = &'t C> { chunk.iter() }
 }
 
 impl<'t, A, C, StorageRef> IntoZip<A> for Try<&'t mut access::Single<A, C, StorageRef>>
@@ -311,6 +333,8 @@ where
     fn get_chunk(self, chunk: entity::TempRefChunk<A>) -> Self::Chunk {
         self.accessor.into_chunk_mut(chunk)
     }
+
+    fn chunk_to_entities(chunk: Self::Chunk) -> impl Iterator<Item = &'t mut C> { chunk.iter_mut() }
 }
 
 mod tuple_impls;

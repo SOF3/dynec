@@ -3,6 +3,16 @@
 use super::{IntoZip, Zip, ZipChunked};
 use crate::{entity, Archetype};
 
+/// Similar to [`itertools::izip!`], but produces always tuples even for 1-tuples.
+macro_rules! uniform_izip {
+    ($expr:expr,) => {
+        $expr.into_iter().map(|v| (v,))
+    };
+    ($($expr:expr,)*) => {
+        itertools::izip!($($expr,)*)
+    }
+}
+
 macro_rules! impl_zip_for_tuple {
     ($($idents:ident)*) => {
         impl<A: Archetype, $($idents,)* > IntoZip<A> for ($($idents,)*)
@@ -57,6 +67,13 @@ macro_rules! impl_zip_for_tuple {
                     ZipChunked::<A>::get_chunk($idents, chunk),
                 )*)
             }
+
+            fn chunk_to_entities(chunk: Self::Chunk) -> impl Iterator<Item = ($(
+                <$idents as Zip<A>>::Item,
+            )*)> {
+                let ($($idents,)*) = chunk;
+                uniform_izip!($((<$idents as ZipChunked<A>>::chunk_to_entities($idents)),)*)
+            }
         }
     }
 }
@@ -80,7 +97,7 @@ macro_rules! impl_zip_for_tuple_accumulate {
     (@ALWAYS) => {
         #[allow(unused_variables)]
         const _: () = {
-            impl_zip_for_tuple!();
+            // impl_zip_for_tuple!();
         };
     };
     (@MIXED $($idents_front:ident)* $($feature:literal $($idents_feature:ident)*)* @ALWAYS $($idents_always:ident)*) => {

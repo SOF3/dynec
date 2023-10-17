@@ -891,6 +891,8 @@ macro_rules! assert_partition {
 ///
 /// # Example
 /// ```
+/// #![feature(return_position_impl_trait_in_trait)]
+///
 /// dynec::zip! {
 ///     /// This is an example zip struct.
 ///     /// We can document it and apply attributes on it.

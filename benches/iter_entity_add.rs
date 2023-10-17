@@ -62,15 +62,11 @@ fn system_individual_add_system_chunked(
     entities: system::EntityIterator<TestArch>,
 ) {
     for (_, (px, py, pz, vx, vy, vz)) in
-        entities.chunks_with((&mut px, &mut py, &mut pz, &vx, &vy, &vz))
+        entities.entities_with_chunked((&mut px, &mut py, &mut pz, &vx, &vy, &vz))
     {
-        for (px, (py, (pz, (vx, (vy, vz))))) in
-            iter::zip(px, iter::zip(py, iter::zip(pz, iter::zip(vx, iter::zip(vy, vz)))))
-        {
-            px.0 += vx.0;
-            py.0 += vy.0;
-            pz.0 += vz.0;
-        }
+        px.0 += vx.0;
+        py.0 += vy.0;
+        pz.0 += vz.0;
     }
 }
 
@@ -113,11 +109,9 @@ fn system_array_add_system_chunked(
     v: system::ReadSimple<TestArch, VelocityArray>,
     entities: system::EntityIterator<TestArch>,
 ) {
-    for (_, (p, v)) in entities.chunks_with((&mut p, &v)) {
-        for (p, v) in iter::zip(p, v) {
-            for i in 0..3 {
-                p.0[i] += v.0[i];
-            }
+    for (_, (p, v)) in entities.entities_with_chunked((&mut p, &v)) {
+        for i in 0..3 {
+            p.0[i] += v.0[i];
         }
     }
 }

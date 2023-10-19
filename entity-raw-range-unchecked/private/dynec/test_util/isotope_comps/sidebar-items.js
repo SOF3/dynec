@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["IsoNoInit","IsoWithInit","StrongRefIsotope","TestDiscrim1","TestDiscrim2"]};

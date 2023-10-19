@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["imp"],"mod":["kw"],"struct":["Field","Input","Inputs"]};

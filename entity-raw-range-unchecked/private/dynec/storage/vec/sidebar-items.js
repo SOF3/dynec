@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["iter_mut","new_iter_chunks","new_iter_chunks_mut","new_iter_chunks_ref","slice_assume_init_mut","slice_assume_init_ref","trisplit_fn_mut","trisplit_fn_ref"],"opaque":[""],"struct":["IterChunks","StoragePartition","VecStorage"]};

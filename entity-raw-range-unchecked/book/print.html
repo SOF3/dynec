@@ -1,0 +1,858 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>dynec</title>
+        <meta name="robots" content="noindex" />
+        <!-- Custom HTML head -->
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+    </head>
+    <body>
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="ch1-ecs.html"><strong aria-hidden="true">1.</strong> ECS</a></li><li class="chapter-item expanded "><a href="ch2-archetypes.html"><strong aria-hidden="true">2.</strong> Archetypes</a></li><li class="chapter-item expanded "><a href="ch3-components.html"><strong aria-hidden="true">3.</strong> Components</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="ch3.1-simple-components.html"><strong aria-hidden="true">3.1.</strong> Simple Components</a></li><li class="chapter-item expanded "><a href="ch3.2-isotope-components.html"><strong aria-hidden="true">3.2.</strong> Isotope Components</a></li></ol></li><li class="chapter-item expanded "><a href="ch4-systems.html"><strong aria-hidden="true">4.</strong> Systems</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="ch4.1-states.html"><strong aria-hidden="true">4.1.</strong> Global and local states</a></li><li class="chapter-item expanded "><a href="ch4.2-component-access.html"><strong aria-hidden="true">4.2.</strong> Component access</a></li><li class="chapter-item expanded "><a href="ch4.3-partitions.html"><strong aria-hidden="true">4.3.</strong> Partitions</a></li><li class="chapter-item expanded "><a href="ch4.4-online-entity-updates.html"><strong aria-hidden="true">4.4.</strong> Online entity updates</a></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky bordered">
+                    <div class="left-buttons">
+                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </button>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">dynec</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="ecs"><a class="header" href="#ecs">ECS</a></h1>
+<p>Dynec uses concepts from the ECS (Entity-Component-System) paradigm.
+It is a data-oriented programming approach that consists of three core concepts:</p>
+<ul>
+<li>An <strong>entity</strong> represent different objects.</li>
+<li>Different <strong>component</strong>s store data for an entity.</li>
+<li><strong>Systems</strong> process the components to execute game logic.</li>
+</ul>
+<h2 id="data"><a class="header" href="#data">Data</a></h2>
+<p>An intuitive way to visualize entities and components
+would be a table,
+where each row is an entity and each cell is a component of that entity:</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: center">Entity #</th><th style="text-align: center">Location</th><th style="text-align: center">Hitpoint</th><th style="text-align: center">Experience</th></tr></thead><tbody>
+<tr><td style="text-align: center">0</td><td style="text-align: center">(1, 2, 3)</td><td style="text-align: center">100</td><td style="text-align: center">5</td></tr>
+<tr><td style="text-align: center">1</td><td style="text-align: center">(1, 3, 4)</td><td style="text-align: center">80</td><td style="text-align: center">4</td></tr>
+<tr><td style="text-align: center">⋮</td><td style="text-align: center">⋮</td><td style="text-align: center">⋮</td><td style="text-align: center">⋮</td></tr>
+</tbody></table>
+</div>
+<p>Everything can be an entity!
+For example, in a shooters game,
+each player is an entity,
+each bullet is an entity,
+and even each inventory slot of the player may be an entity as well.</p>
+<p>The components for a bullet are different from those for a player:</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: center">Entity #</th><th style="text-align: center">Location</th><th style="text-align: center">Velocity</th><th style="text-align: center">Damage</th></tr></thead><tbody>
+<tr><td style="text-align: center">0</td><td style="text-align: center">(1, 2.5, 3.5)</td><td style="text-align: center">(0, 0.5, 0.5)</td><td style="text-align: center">20</td></tr>
+<tr><td style="text-align: center">⋮</td><td style="text-align: center">⋮</td><td style="text-align: center">⋮</td><td style="text-align: center">⋮</td></tr>
+</tbody></table>
+</div>
+<h2 id="logic"><a class="header" href="#logic">Logic</a></h2>
+<p>A system is a function that processes the data.
+In a typical simulation program,
+each system is executed once per &quot;cycle&quot; (a.k.a. &quot;ticks&quot;) in a main loop.
+Usually, systems are implemented as loops that execute over all entities of a type:</p>
+<pre><code class="language-text">for each bullet entity {
+    location[bullet] += speed[bullet]
+}
+</code></pre>
+<p>An ECS framework schedules systems to run on different threads.
+Therefore, programs written with ECS are almost lock-free.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="archetypes"><a class="header" href="#archetypes">Archetypes</a></h1>
+<p>In traditional ECS, the type of an entity is identified by the components it has.
+For example, an entity is considered to be &quot;moveable&quot;
+if it has the &quot;location&quot; and &quot;speed&quot; components.
+Systems iterate over the &quot;moveable&quot; entities by performing a &quot;join query&quot;
+that intersects the entities with a &quot;location&quot; and the entities with a &quot;speed&quot;.
+Thus, an entity type is effectively a subtype of any combination of its components,
+e.g. both &quot;player&quot; and &quot;bullet&quot; are subtypes of &quot;moveable&quot;.</p>
+<p>Dynec takes a different approach on entity typing.
+Dynec requires the type of an entity (its &quot;archeytpe&quot;) to be
+<em>known</em> during creation and <em>immutable</em> after creation (&quot;statically archetyped&quot;).
+A reference to an entity always contains the archetype.</p>
+<p>Dynec still supports adding/removing components for an entity,
+but this is implemented by making the component optional (effectively <code>Option&lt;Comp&gt;</code>)
+instead of changing its archetype.
+Adding/removing a component would not affect
+systems iterating over all entities of its archetype.</p>
+<p>To iterate over entities with only a specific component,
+the suggested approach is to split the components
+to a separate entity with a new archetype
+and iterate over entities with that archetype instead.
+(It is also possible to iterate over entities with a specific component,
+but it is less efficient than iterate over all entities of the same component,
+and joining multiple components is not supported)</p>
+<p>Archetypes are typically represented as an unconstructable type (an empty enum)
+referenced as a type parameter in system declarations.
+Therefore, multiple systems can reuse the same generic function
+where the archetype is a type parameter,
+achieving something similar to the &quot;subtyping&quot; approach.
+Nevertheless, Dynec discourages treating archetypes as subtypes
+and encourages splitting shared components to an entity.
+Therefore, it is possible to reuse the same function
+for multiple systems by leaving the archetype as a type parameter.</p>
+<p>An archetype can be declared through the <a href="../dynec/macro.archetype.html"><code>dynec::archetype</code></a> macro:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>dynec::archetype! {
+    /// A building entity can store goods inside.
+    pub Building;
+
+    /// Each road entity represents a connection between two buildings.
+    pub Road;
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>There is nothing magical here;
+each line just declares an empty enum and implements <a href="../dynec/archetype/trait.Archetype.html"><code>Archetype</code></a> for it.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="components"><a class="header" href="#components">Components</a></h1>
+<p>Components store the actual data for an entity.
+In Dynec, since entities are statically archetyped,
+a component is only meaningful when specified togethre with an archetype.</p>
+<p>There are two kinds of components, namely &quot;simple components&quot; and &quot;isotope components&quot;.
+For simple components, each entity cannot have
+more than one instance for each component type.
+Meanwhile, isotope components allow storing multiple instances
+of the same component type for the same entity.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="simple-components"><a class="header" href="#simple-components">Simple components</a></h1>
+<p>Simple components are components where
+each entity can have at most one instance of the component.
+A type can be used as a simple component for entities of archetype <code>A</code>
+if it implements <a href="../dynec/comp/trait.Simple.html"><code>comp::Simple&lt;A&gt;</code></a>.
+Dynec provides <a href="../dynec/attr.comp.html">a convenience macro</a> to do this:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[comp(of = Bullet)]
+struct Location([f32; 3]);
+<span class="boring">}
+</span></code></pre></pre>
+<p>This declares a simple component called <code>Location</code>
+that can be used on <code>Bullet</code> entities.</p>
+<p>The same type can be reused as components for multiple archetypes.
+by applying the macro multiple times:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use dynec::comp;
+
+#[comp(of = Player)]
+#[comp(of = Bullet)]
+struct Location([f32; 3]);
+<span class="boring">}
+</span></code></pre></pre>
+<h2 id="initializer"><a class="header" href="#initializer">Initializer</a></h2>
+<p>Simple components can be equipped with an auto-initializer.
+If an entity is created without specifying this component,
+the auto-initializer is called to fill the component.</p>
+<p>The auto-initializer can read values of other simple components,
+either specified by the entity creator or returned by another auto-initializer.
+Since Dynec does not persist a component
+unless it is requested by a system or explicitly registered,
+this means you can pass a temporary component during entity creation,
+use its value in other component auto-initializers,
+and this temporary component gets dropped after entity creation completes.</p>
+<p>The auto-initializer can be specified in the macro
+either as a closure:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use dynec::comp;
+
+#[comp(of = Bullet, init = |velocity: &amp;Velocity| Damage(velocity.norm()))]
+struct Damage(f32);
+<span class="boring">}
+</span></code></pre></pre>
+<p>or as a function pointer with arity notation
+(i.e. write the number of parameters for the function after a <code>/</code>):</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use dynec::comp;
+
+fn default_damage(velocity: &amp;Velocity) -&gt; Damage {
+    Damage(velocity.norm()) 
+}
+
+#[comp(of = Bullet, init = default_damage/1)]
+struct Damage(f32);
+<span class="boring">}
+</span></code></pre></pre>
+<h2 id="presence"><a class="header" href="#presence">Presence</a></h2>
+<p>A component is either <code>Required</code> or <code>Optional</code>.</p>
+<p><code>Optional</code> components may be missing on some entities.
+Accessing optional components returns <code>Option&lt;C&gt;</code> instead of <code>C</code>.</p>
+<p><code>Required</code> components must either have an auto-initializer
+or be passed during entity creation.
+This ensures that accessing the component always succeeds for an initialized entity;
+optimizations such as chunk iteration are only possible for <code>Required</code> components.
+Nevertheless, components are <strong>always</strong> missing
+for uninitialized entities created during the middle of a tick;
+more will be explained in later sections.</p>
+<p>A <code>Required</code> component must <em>both</em>
+set <a href="../dynec/comp/trait.SimpleOrIsotope.html#associatedconstant.PRESENCE"><code>PRESENCE = SimplePresence::Required</code></a>
+<em>and</em> implement <a href="../dynec/comp/trait.Must.html"><code>comp::Must&lt;A&gt;</code></a>.
+This is automatically done by specifying <code>required</code> in the <code>#[comp]</code> macro:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use dynec::comp;
+
+#[comp(of = Bullet, required)]
+struct Damage(u32);
+<span class="boring">}
+</span></code></pre></pre>
+<h2 id="finalizers"><a class="header" href="#finalizers">Finalizers</a></h2>
+<p>A finalizer component is a component that prevents an entity from getting deleted.</p>
+<blockquote>
+<p>Yes, I know this may be confusing.
+Contrary to finalizers in Java/C#,
+a finalizer is a data component instead of a function.
+They are actually more similar to <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/">finalizers in Kubernetes</a>.</p>
+</blockquote>
+<p>When an entity is flagged for deletion,
+Dynec checks if all finalizer components for that entity have been removed.
+If there is at least one present finalizer component for the entity,
+the entity would instead be scheduled to asynchronously delete
+when all finalizer components have been unset.</p>
+<p>This gives systems a chance to execute cleanup logic
+by reading the component data of the &quot;terminating&quot; entity.
+For example, a system that despawns deleted bullets from network players
+may get a chance to handle bullet deletion:</p>
+<pre><code class="language-text">for each `Bullet` entity flagged for deletion:
+    if `Despawn` componnent is set
+        read component `NetworkId` for the entity
+        broadcast despawn packet to all players
+        unset the `Despawn` finalizer component
+</code></pre>
+<p>Without the finalizer component,
+the system would be unable to get the <code>NetworkId</code> for the despawned bullet
+since the component has been cleaned up.</p>
+<p>Note that deletion-flagged entities are checked every tick.
+To avoid a growing backlog of entities to delete,
+finalizer components should be removed as soon as possible
+after deletion has been flagged.</p>
+<h2 id="best-practices"><a class="header" href="#best-practices">Best practices</a></h2>
+<h3 id="small-component-structs"><a class="header" href="#small-component-structs">Small component structs</a></h3>
+<p>Dynec prevents systems that write to the same component type
+from executing concurrently to avoid data race.
+In reality, most systems only need to access a subset of fields,
+so avoid putting many unrelated fields in the same component type.
+Instead, prefer small, often single-field structs,
+unless the multiple fields are naturally related,
+e.g. positions/RGB values that are always accessed together.</p>
+<h3 id="optional-types"><a class="header" href="#optional-types">Optional types</a></h3>
+<p>Avoid using <a href="https://doc.rust-lang.org/std/option/enum.Option.html"><code>Option</code></a> in component types;
+instead, use optional components to represent unused fields.
+By default, Dynec uses a compact bit vector to track the existence of components,
+which only takes 1 bit per component.
+Meanwhile, <code>Option&lt;T&gt;</code> needs to preserve the alignment of <code>T</code>,
+so a type like <code>Option&lt;f64&gt;</code> is 128 bits large
+(1 bit for <code>None</code>, 63 bits for alignment padding, 64 bits for the actual data),
+which is very wasteful of memory.</p>
+<h3 id="heap-allocated-types"><a class="header" href="#heap-allocated-types">Heap-allocated types</a></h3>
+<p>Minimize external (heap) memory referenced in entity components.
+Heap allocation/deallocation is costly,
+and the memory allocated is randomly located in the memory,
+which means the CPU needs to keep loading new memory pages
+into its memory cache layers
+and greatly worsens performance.
+Dynec stores component data in (almost) contiguous memory
+and prefers processing adjacent entities in the same CPU,
+so keeping all relevant data in the component structure is preferred.</p>
+<p>While this is inevitable for some component types like strings,
+types like <code>Vec</code> can often be avoided:</p>
+<ul>
+<li>If each entity has a similar structure of items
+(i.e. <code>comp[0]</code> for entity 1 has the same logic as <code>comp[0]</code> for entity 2),
+use isotope components instead.</li>
+<li>If the items in the vector are unstructured
+(i.e. <code>comp[0]</code> for entity 1 has the same logic as <code>comp[1]</code> for entity 1),
+consider turning each item into an entity and process the entity instead.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="isotope-components"><a class="header" href="#isotope-components">Isotope Components</a></h1>
+<p>Sometimes we want to store multiple components of the same type on an entity.
+For example, we want to store the ingredients that make up a bullet.
+The straightforward approach is to use
+a <code>Vec&lt;(Element, Ingredient)&gt;</code>/<code>HashMap&lt;Element, Ingredient&gt;</code>,
+but this is very bad for performance and memory due to many heap allocations.
+This is where isotope components come handy.</p>
+<p>An isotope component works like a component that stores
+a map of &quot;discriminants&quot; to component values.
+For example, in the example above,
+<code>Element</code> can be used as the discriminant
+that distinguishes between different &quot;weight&quot; components,
+and an entity has a separate <code>Ingredient</code> for each <code>Element</code>.</p>
+<p>Like simple components, isotope components are also archetyped,
+but they implement <a href="../dynec/comp/trait.Isotope.html"><code>comp::Isotope&lt;A&gt;</code></a> instead,
+which can also be achieved through the <code>#[comp]</code> macro:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Discrim)]
+struct Element(u16);
+
+#[comp(of = Bullet, isotope = Element)]
+struct Ingredient(f64);
+<span class="boring">}
+</span></code></pre></pre>
+<p>Unlike vector/map simple components,
+Dynec treats each discriminant as a different component
+such that it has its own storage and lock mechanism,
+so systems can execute in parallel
+to process different discriminants of the same component.</p>
+<h2 id="choosing-the-discriminant-type"><a class="header" href="#choosing-the-discriminant-type">Choosing the discriminant type</a></h2>
+<p>Dynec creates a new component storage for every new isotope discriminant.
+If you use the <code>storage::Vec</code> (the default) storage,
+the space complexity is the product of
+the number of entities and the number of possible discriminants.
+Therefore, the number of possible discriminant values must be kept finite.</p>
+<p>An example valid usage is to have each discriminant
+correspond to one item defined in the game config file,
+which is a realistically small number that does not grow with the game over time.
+Ideally, the possible values of discriminant are generated from a 0-based auto-increment,
+e.g. corresponding to the order of the item in the config file.</p>
+<h2 id="initializer-1"><a class="header" href="#initializer-1">Initializer</a></h2>
+<p>Similar to simple components, isotope components can also have an auto-initializer.
+However, new discriminants may be introduced after entity creation,
+so isotopes cannot be exhaustively initialized during entity creation
+but initialized when new discriminants are added instead.
+Therefore, isotope auto-initializers cannot depend on any other values.</p>
+<h2 id="presence-1"><a class="header" href="#presence-1">Presence</a></h2>
+<p>Isotope components can also have a <code>Required</code> presence like simple components.
+However, since discriminants are dynamically introduced,
+it is not possible to initialize an entity with all possible discriminants exhaustively.
+An isotope component can be <code>Required</code> as long as it has an auto-initializer.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="systems"><a class="header" href="#systems">Systems</a></h1>
+<p>Systems contain the actual code that process components.
+A system can be created using the <a href="https://sof3.github.io/dynec/master/dynec/attr.system.html"><code>#[system]</code></a> macro:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use dynec::system;
+
+#[system]
+fn hello_world() {
+    println!(&quot;Hello world!&quot;);
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>After the <code>#[system]</code> macro is applied,
+<code>hello_world</code> becomes a unit struct
+with the associated functions <code>hello_world::call()</code> and <code>hello_world.build()</code>.
+<code>call</code> calls the original function directly,
+while <code>build()</code> creates a system descriptor that can be passed to a world builder.</p>
+<p>We can package this system into a &quot;bundle&quot;:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use dynec::world;
+
+pub struct MyBundle;
+
+impl world::Bundle for Bundle {
+    fn register(&amp;mut self, builder: &amp;mut world::Builder) {
+        builder.schedule(hello_world.build());
+        // schedule more systems here
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>Then users can add the bundle into their world:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let mut world = dynec::new([
+    Box::new(MyBundle),
+    // add more bundles here
+]);
+<span class="boring">}
+</span></code></pre></pre>
+<p>Alternatively, in unit tests,
+the <a href="https://sof3.github.io/dynec/master/dynec/macro.system_test.html"><code>system_test!</code></a> macro can be used:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let mut world = dynec::system_test!(
+    hello_world.build();
+);
+<span class="boring">}
+</span></code></pre></pre>
+<p>Calling <code>world.execute()</code> would execute the world once.
+Run this in your program main loop:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>event_loop.run(|| {
+    world.execute(&amp;dynec::tracer::Noop);
+})
+<span class="boring">}
+</span></code></pre></pre>
+<h2 id="ticking"><a class="header" href="#ticking">Ticking</a></h2>
+<p>Since dynec is just a platform-agnostic ECS framework,
+it does not integrate with any GUI or scheduler frameworks to execute the main loop.
+Usually it is executed at the same rate as the world simulation, screen rendering
+or turns (for turn-based games), depending on your requirements.</p>
+<p>It is advisable to keep latency-sensitive operations out of the main loop,
+i.e. do not process them directly with the Dynec scheduler
+so that the world tick rate does not become a necessary latency bottleneck.
+Dynec systems are designed for ticked simulation, not event handling;
+event handlers may interact with the ticked world through non-blocking channels.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="parameter-local-and-global-states"><a class="header" href="#parameter-local-and-global-states">Parameter, local and global states</a></h1>
+<h2 id="parameter-states"><a class="header" href="#parameter-states">Parameter states</a></h2>
+<p>A system may request parameters when building:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[system]
+fn hello_world(
+    #[dynec(param)] counter: &amp;mut i32,
+) {
+    *counter += 1;
+    println!(&quot;{counter}&quot;);
+}
+
+builder.schedule(hello_world.build(123));
+builder.schedule(hello_world.build(456));
+
+// ...
+world.execute(dynec::tracer::Noop); // prints 124 and 457 in unspecified order
+world.execute(dynec::tracer::Noop); // prints 125 and 458 in unspecified order
+<span class="boring">}
+</span></code></pre></pre>
+<p>The parameter type must be a reference (<code>&amp;T</code> or <code>&amp;mut T</code>) to the actual stored type.</p>
+<p>Each <code>#[dynec(param)]</code> parameter in <code>hello_world</code>
+must be a reference (<code>&amp;T</code> or <code>&amp;mut T</code>),
+adds a new parameter of type <code>T</code>
+to the generated <code>build()</code> method in the order they are specified,
+with the reference part stripped.</p>
+<p>Parameter states, along with other states, may be mutated when the system is run.
+Each system (each instance returned by <code>build()</code>) maintains its own states.</p>
+<h2 id="local-states"><a class="header" href="#local-states">Local states</a></h2>
+<p>Unlike parameter states, local states are defined by the system itself
+and is not specified through the <code>build()</code> function.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[system]
+fn hello_world(
+    #[dynec(local(initial = 0))] counter: &amp;mut i32,
+) {
+    *counter += 1;
+    println!(&quot;{counter}&quot;);
+}
+
+builder.schedule(hello_world.build());
+builder.schedule(hello_world.build());
+
+// ...
+world.execute(dynec::tracer::Noop); // prints 1, 1 in unspecified order
+world.execute(dynec::tracer::Noop); // prints 2, 2 in unspecified order
+<span class="boring">}
+</span></code></pre></pre>
+<p><code>0</code> is the initial value of <code>counter</code> before the system is run the first time.
+If parameter states are defined in the function,
+the <code>initial</code> expression may use such parameters by name as well.</p>
+<h2 id="global-states"><a class="header" href="#global-states">Global states</a></h2>
+<p>States can also be shared among multiple systems
+using the type as the identifier.
+Such types must implement the <a href="../dynec/trait.Global.html"><code>Global</code></a> trait,
+which can be done through the <a href="../dynec/attr.global.html"><code>#[global]</code></a> macro:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Default)]
+#[dynec::global(initial = Self::default())]
+struct MyCounter {
+    value: i32,
+}
+
+#[system]
+fn add_counter(
+    #[dynec(global)] counter: &amp;mut MyCounter,
+) {
+    counter.value += 1;
+}
+
+#[system]
+fn print_counter(
+    #[dynec(global)] counter: &amp;MyCounter,
+) {
+    println!(&quot;{counter}&quot;);
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>If no <code>initial</code> value is specified in <code>#[global]</code>,
+the initial value of a global state must be assigned
+in <a href="../dynec/world/trait.Bundle.html#method.register"><code>Bundle::register</code></a>.</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>impl world::Bundle for Bundle {
+    fn register(&amp;mut self, builder: &amp;mut world::Builder) {
+        builder.schedule(add_counter.build());
+        builder.schedule(print_counter.build());
+        builder.global(MyCounter { value: 123 });
+    }
+}
+
+// ...
+world.execute(dynec::tracer::Noop); // prints 123 or 124 based on unspecified order
+world.execute(dynec::tracer::Noop); // prints 124 or 125 based on unspecified order
+<span class="boring">}
+</span></code></pre></pre>
+<p>The program panics if some used global states do not have an <code>initial</code>
+but <code>Bundle::register</code> does not initialize them.</p>
+<p>Note that <code>&amp;T</code> and <code>&amp;mut T</code> are semantically different for global states.
+Multiple systems requesting <code>&amp;T</code> for the same <code>T</code> may run in parallel
+in a multi-threaded runtime,
+but when a system requesting <code>&amp;mut T</code> is running,
+all other systems requesting <code>&amp;T</code> or <code>&amp;mut T</code> cannot run until the system is complete
+(but other unrelated systems can still be scheduled).</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="component-access"><a class="header" href="#component-access">Component access</a></h1>
+<p>As the name &quot;ECS&quot; implies,
+the most important feature is to manipulate the &quot;E&quot; and &quot;C&quot; from the &quot;S&quot;.</p>
+<h2 id="accessing-simple-components"><a class="header" href="#accessing-simple-components">Accessing simple components</a></h2>
+<p>Simple components can be accessed through <a href="../dynec/system/type.ReadSimple.html"><code>ReadSimple</code></a> or <a href="../dynec/system/type.WriteSimple.html"><code>WriteSimple</code></a>.
+First we declare the components we need, similar to in the previous chapters:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use dynec::{comp, system};
+
+dynec::archetype!(Bullet);
+
+#[comp(of = Bullet, required)]
+struct Position(Vector3&lt;f32&gt;);
+#[comp(of = Bullet, required, initial = Velocity(Vector3::zero()))]
+struct Velocity(Vector3&lt;f32&gt;);
+<span class="boring">}
+</span></code></pre></pre>
+<p>We want to update position based on the value of the velocity.
+Therefore we request reading velocity and writing position:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[system]
+fn motion(
+    mut position_acc: system::WriteSimple&lt;Bullet, Position&gt;,
+    velocity_acc: system::ReadSimple&lt;Bullet, Velocity&gt;,
+) {
+    // work with position_acc and velocity_acc
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>We will go through how to work with the data later.</p>
+<p>When a system that requests <code>WriteSimple&lt;A, C&gt;</code> is running for some <code>A</code> and <code>C</code>,
+all other systems that request <code>ReadSimple&lt;A, C&gt;</code> or <code>WriteSimple&lt;A, C&gt;</code>
+cannot run until the system is complete.
+Therefore, if you only need to read the data,
+use <code>ReadSimple</code> instead of <code>WriteSimple</code> even though
+the latter provides all abilities that the former can provide.</p>
+<h2 id="accessing-isotope-components"><a class="header" href="#accessing-isotope-components">Accessing isotope components</a></h2>
+<p>Isotope components are slightly more complex.
+A system may request access to
+some (&quot;partial access&quot;) or all (&quot;full access&quot;) discriminants for an isotope component.</p>
+<p>Full access allows the system to read/write any discriminants for the isotope type,
+and lazily initializes new discriminants if they were not encountered before.
+Therefore, when a system using <code>WriteIsotopeFull</code> is running,
+all other systems that access the same component in any way (read/write and full/partial)
+cannot run until the system is complete;
+when a system using <code>ReadIsotopeFull</code> is running,
+all other systems that use <code>WriteIsotopeFull</code> or <code>WriteIsotopePartial</code>
+on the same component cannot run until the system is complete.</p>
+<p>The usage syntax of full accessors is similar to simple accessors:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[system]
+fn add(
+    weights: ReadIsotopeFull&lt;Bullet, IngredientWeight&gt;,
+    mut volumes: WriteIsotopeFull&lt;Bullet, IngredientVolume&gt;,
+) {
+    // ...
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>Partial access only requests specific discriminants for the isotope type.
+The requested discriminants are specified through an attribute:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[system]
+fn add(
+    #[dynec(param)] &amp;element: &amp;Element,
+    #[dynec(isotope(discrim = [element]))]
+    weights: ReadIsotopePartial&lt;Bullet, IngredientWeight, [Element; 1]&gt;,
+    #[dynec(isotope(discrim = [element]))]
+    mut volumes: WriteIsotopePartial&lt;Bullet, IngredientVolume, [Element; 1]&gt;,
+) {
+    // ...
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>The <code>discrim</code> attribute option lets us specify which discriminants to access.
+The expression can reference the initial values of parameter states.
+However, mutating parameter states will <em>not</em> change
+the discriminants requested by the isotope.
+The third type parameter to <code>ReadIsotopePartial</code>/<code>WriteIsotopePartial</code>
+is the type of the expression passed to <code>discrim</code>.</p>
+<p>Since a partial accessor can only interact with specific discriminants,
+multiple systems using <code>WriteIsotopePartial</code> on the same component type
+can run concurrently if they request a disjoint set of discriminants.</p>
+<h2 id="iterating-over-entities"><a class="header" href="#iterating-over-entities">Iterating over entities</a></h2>
+<p>The recommended way to process all entities with accessors is
+to use the <a href="../dynec/system/iter/struct.EntityIterator.html"><code>EntityIterator</code></a> API.
+<code>EntityIterator</code> contains the list of initialized entities
+stored in an efficient lookup format,
+useful for performing bulk operations over all entities.</p>
+<p>An <code>EntityIterator</code> can be joined with multiple accessors
+to execute code on each entity efficiently:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[system]
+fn move_entities(
+    entities: system::EntityIterator&lt;Bullet&gt;,
+    position_acc: system::WriteSimple&lt;Bullet, Position&gt;,
+    velocity_acc: system::WriteSimple&lt;Bullet, Velocity&gt;,
+) {
+    for (_entity, (position, velocity)) in entities.entities_with((
+        &amp;mut position_acc,
+        &amp;velocity_acc,
+    )) {
+        *position += velocity;
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p><code>entities_with</code> also supports isotope accessors,
+but they must be split for a specific discriminant first:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[system]
+fn move_entities(
+    #[dynec(param)] &amp;element: &amp;Element,
+    entities: system::EntityIterator&lt;Bullet&gt;,
+    velocity_acc: system::WriteSimple&lt;Bullet, Velocity&gt;,
+    #[dynec(isotope(discrim = [element]))]
+    weights_acc: system::ReadIsotopePartial&lt;Bullet, IngredientWeight, [Element; 1]&gt;,
+) {
+    for (_entity, (position, weight)) in entities.entities_with((
+        &amp;mut position_acc,
+        &amp;weights_acc.split([element])[0],
+    )) {
+        *velocity += weight;
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="partitions"><a class="header" href="#partitions">Partitions</a></h1>
+<p>The execution order of systems is actually undefined.
+Although the scheduler avoids executing systems requesting conflicting resources
+from running concurrently,
+it is undefined which system executes first.
+For example, consider the following code:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[global(initial = Self::default())]
+struct Clock {
+    ticks: u32,
+}
+
+#[system]
+fn update_clock(#[dynec(global)] clock: &amp;mut Clock) {
+    clock.ticks += 1;
+}
+
+#[system]
+fn render_status(
+    #[dynec(global)] status: &amp;mut StatusBar,
+    #[dynec(global)] clock: &amp;Clock,
+) {
+    status.set_text(format!(&quot;Current time: {}&quot;, clock.ticks));
+}
+
+#[system]
+fn render_progress(
+    #[dynec(global)] progress: &amp;mut ProgressBar,
+    #[dynec(global)] clock: &amp;Clock,
+) {
+    progress.set_progress(clock.ticks);
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>It is actually possible that <code>render_status</code> is executed before <code>update_clock</code>
+but <code>render_progress</code> is executed afterwards,
+in which case the progress bar and the status bar have different values in the end.</p>
+<p>To avoid this problem, we introduce <em>partitions</em>,
+which can ensure some systems are executed before some others.</p>
+<p>A partition is any thread-safe value that implements <code>Debug + Eq + Hash</code>.
+Any two equivalent values (with the same type) are considered to be the same partition.
+So for the example above, we can create a <code>ClockUpdatedPartition</code> type:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Debug, PartialEq, Eq, Hash)]
+struct ClockUpdatedPartition;
+
+#[system(before(ClockUpdatedPartition))]
+fn update_clock(#[dynec(global)] clock: &amp;mut Clock) {
+    clock.ticks += 1;
+}
+
+#[system(after(ClockUpdatedPartition))]
+fn render_status(
+    #[dynec(global)] status: &amp;mut StatusBar,
+    #[dynec(global)] clock: &amp;Clock,
+) {
+    status.set_text(format!(&quot;Current time: {}&quot;, clock.ticks));
+}
+
+#[system(after(ClockUpdatedPartition))]
+fn render_progress(
+    #[dynec(global)] progress: &amp;mut ProgressBar,
+    #[dynec(global)] clock: &amp;Clock,
+) {
+    progress.set_progress(clock.ticks);
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>Thus, <code>update_clock</code> is already executed when <code>ClockUpdatedPartition</code> is complete.
+Then <code>render_status</code> and <code>render_progress</code> are only executed
+after the partition is complete,
+so they render the value of the updated clock.</p>
+<p>If the scheduler detected a cyclic dependency,
+it panics with an error like this:</p>
+<pre><code class="language-text">Scheduled systems have a cyclic dependency: thread-safe system #0 (main::update_clock) -&gt; partition #0 (main::ClockUpdatedPartition) -&gt; thread-safe system #0 (main::update_clock)
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="online-entity-updates"><a class="header" href="#online-entity-updates">Online entity updates</a></h1>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+            </nav>
+
+        </div>
+
+        <script type="text/javascript">
+            window.playground_copyable = true;
+        </script>
+        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
+        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+        <script type="text/javascript">
+        window.addEventListener('load', function() {
+            window.setTimeout(window.print, 100);
+        });
+        </script>
+    </body>
+</html>

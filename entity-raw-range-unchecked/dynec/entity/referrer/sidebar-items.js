@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["AsObject","VisitTypeArg"],"trait":["Referrer","VisitMutArg"]};

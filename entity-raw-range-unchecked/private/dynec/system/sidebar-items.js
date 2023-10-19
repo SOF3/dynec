@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["access","iter","offline_buffer","partition","spec"],"struct":["EntityCreator","EntityDeleter","Spec"],"trait":["Descriptor","Sendable","Unsendable"],"type":["ReadIsotopeFull","ReadIsotopePartial","ReadSimple","WriteIsotopeFull","WriteIsotopePartial","WriteSimple"]};

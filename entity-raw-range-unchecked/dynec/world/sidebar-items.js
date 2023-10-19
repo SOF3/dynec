@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["DeleteResult"],"fn":["new","new_unthreaded","new_with_concurrency"],"mod":["offline"],"struct":["Builder","Components","SyncGlobals","UnsyncGlobals","World"],"trait":["Bundle"]};

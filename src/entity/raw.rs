@@ -96,8 +96,10 @@ macro_rules! impl_raw {
             type Range = impl Iterator<Item = Self>;
             fn range(range: ops::Range<Self>) -> Self::Range {
                 (range.start.get()..range.end.get()).map(|v| {
-                    <$base>::new(v)
-                        .expect("zero does not appear between two non-zero unsigned integers")
+                    // Safety: v >= range.start.get(), which is guaranteed to be non-zero.
+                    // Unsafe is necessary here because this function is called during chunk iteration,
+                    // and this branch may break vectorization.
+                    unsafe { <$base>::new_unchecked(v) }
                 })
             }
         }

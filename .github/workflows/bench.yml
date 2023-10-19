@@ -14,24 +14,25 @@ jobs:
     steps:
       - name: Check out base
         if: github.event_name == 'pull_request'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ssh-key: ${{secrets.API_KEY}}
-          repo: ${{github.event.pull_request.base.repo.full_name}}
+          repository: ${{github.event.pull_request.base.repo.full_name}}
           ref: ${{github.event.pull_request.base.ref}}
       - name: Run benchmarks on base for comparison
         if: github.event_name == 'pull_request'
         run: cargo bench --features internal-bench
         
       - name: Check out head
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         if: github.event_name == 'pull_request'
         with:
           ssh-key: ${{secrets.API_KEY}}
-          repo: ${{github.event.pull_request.head.repo.full_name}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
           ref: ${{github.event.pull_request.head.ref}}
+          clean: false
       - name: Check out head
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         if: github.event_name == 'push'
         with:
           ssh-key: ${{secrets.API_KEY}}

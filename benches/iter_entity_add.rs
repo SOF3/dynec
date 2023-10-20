@@ -61,13 +61,13 @@ fn system_individual_add_system_chunked(
     vz: system::ReadSimple<TestArch, VelocityZ>,
     entities: system::EntityIterator<TestArch>,
 ) {
-    for (_, (px, py, pz, vx, vy, vz)) in
-        entities.entities_with_chunked((&mut px, &mut py, &mut pz, &vx, &vy, &vz))
-    {
-        px.0 += vx.0;
-        py.0 += vy.0;
-        pz.0 += vz.0;
-    }
+    entities.entities_with_chunked((&mut px, &mut py, &mut pz, &vx, &vy, &vz)).for_each(
+        |(_, (px, py, pz, vx, vy, vz))| {
+            px.0 += vx.0;
+            py.0 += vy.0;
+            pz.0 += vz.0;
+        },
+    )
 }
 
 #[dynec::comp(of = TestArch, required)]

@@ -65,4 +65,4 @@ name = "iter_entity_add"
 harness = false
 
 [profile.bench]
-debug = true
+lto = true

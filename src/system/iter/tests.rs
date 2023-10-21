@@ -20,7 +20,7 @@ macro_rules! test_partial_single_system {
                 mut single_iso_acc: system::ReadIsotopePartial<TestArch, IsoNoInit, [TestDiscrim1; 1]>,
             ) {
                 let [mut double_iso_acc_0, mut double_iso_acc_1] =
-                    double_iso_acc.split_isotopes([0, 1]);
+                    double_iso_acc.split_mut([0, 1]);
                 let [single_iso_acc_0] = single_iso_acc.split([0]);
 
                 let iter_collected: Vec<_> = iter
@@ -99,7 +99,7 @@ fn test_entity_iter_partial_chunked_mut() {
             [TestDiscrim2; 1],
         >,
     ) {
-        let [mut double_iso_acc_0, double_iso_acc_1] = double_iso_acc.split_isotopes([0, 1]);
+        let [mut double_iso_acc_0, double_iso_acc_1] = double_iso_acc.split_mut([0, 1]);
         let [single_iso_acc_0] = single_iso_acc.split([0]);
 
         for (chunk_enumerate, (chunk, (simple, double0, double1, single))) in iter
@@ -172,7 +172,7 @@ fn test_entity_iter_full_mut() {
         mut iso1_acc: system::WriteIsotopeFull<TestArch, IsoNoInit>,
     ) {
         let [mut iso1_acc_0, mut iso1_acc_1] =
-            iso1_acc.split_isotopes([TestDiscrim1(7), TestDiscrim1(13)]);
+            iso1_acc.split_mut([TestDiscrim1(7), TestDiscrim1(13)]);
 
         for (entity, (comp1, iso10, iso11)) in iter.entities_with((
             system::Try(&comp1_acc),

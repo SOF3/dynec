@@ -122,10 +122,12 @@ Without the finalizer component,
 the system would be unable to get the `NetworkId` for the despawned bullet
 since the component has been cleaned up.
 
-Note that deletion-flagged entities are checked every tick.
+<div class="warning">
+Deletion-flagged entities are checked every tick.
 To avoid a growing backlog of entities to delete,
 finalizer components should be removed as soon as possible
 after deletion has been flagged.
+</div>
 
 ## Best practices
 

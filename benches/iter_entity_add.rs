@@ -186,8 +186,7 @@ fn generate_holes(
     groups: impl Clone + IntoIterator<Item = (u64, u64)>,
 ) -> impl Iterator<Item = u64> {
     iter::repeat(groups)
-        .map(|group| group.into_iter())
-        .flatten()
+        .flat_map(|group| group.into_iter())
         .scan(0, |state, (keep, delete)| {
             *state += keep;
             let start = *state;

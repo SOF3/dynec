@@ -113,7 +113,7 @@ fn move_entities(
     position_acc: system::WriteSimple<Bullet, Position>,
     velocity_acc: system::WriteSimple<Bullet, Velocity>,
 ) {
-    for (_entity, (position, velocity)) in entities.entities_with((
+    for (_entity, (position, velocity)) in entities.entities_with_chunked((
         &mut position_acc,
         &velocity_acc,
     )) {
@@ -122,8 +122,9 @@ fn move_entities(
 }
 ```
 
-`entities_with` also supports isotope accessors,
-but they must be split for a specific discriminant first:
+`entities_with_chunked` also supports isotope accessors,
+but they must be split for a specific discriminant first
+by calling `split` on the accessor (`split_mut` for mutable accessors):
 
 ```rust
 #[system]
@@ -134,15 +135,30 @@ fn move_entities(
     #[dynec(isotope(discrim = [element]))]
     weights_acc: system::ReadIsotopePartial<Bullet, IngredientWeight, [Element; 1]>,
 ) {
-    for (_entity, (position, weight)) in entities.entities_with((
-        &mut position_acc,
-        &weights_acc.split([element])[0],
-    )) {
-        *velocity += weight;
+    let [weights_acc] = weights_acc.split([element]);
+    entities
+        .entities_with_chunked((
+            &mut velocity_acc,
+            &weights_acc,
+        ))
+        .for_each(|(_entity, (velocity, weight))| {
+            *velocity /= weight;
+        }
     }
 }
 ```
 
+> Note: `entities_with_chunked` returns an iterator,
+> so you may use it with a normal `for` loop as well.
+> However, benchmarks show that `for_each` has performs
+> significantly better than `for` loops due to vectorization.
+
+You may also use `par_entities_with_chunked` instead
+to execute the loop on multiple threads.
+`par_entities_with_chunked` returns a rayon [`ParallelIterator`][rayon::ParallelIterator],
+which has a very similar API to the native `Iterator`.
+
 [ReadSimple]: ../dynec/system/type.ReadSimple.html
 [WriteSimple]: ../dynec/system/type.WriteSimple.html
 [EntityIterator]: ../dynec/system/iter/struct.EntityIterator.html
+[rayon::ParallelIterator]: ../rayon/iter/trait.ParallelIterator.html

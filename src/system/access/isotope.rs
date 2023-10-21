@@ -195,7 +195,7 @@ where
         storage.iter().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
     }
 
-    /// Splits the accessor into multiple mmutable [`AccessSingle`] accessors
+    /// Splits the accessor into multiple immutable [`AccessSingle`] accessors
     /// so that they can be used independently.
     pub fn split<'t, const N: usize>(
         &'t mut self,
@@ -334,7 +334,7 @@ where
 
     /// Splits the accessor into multiple mutable [`AccessSingle`] accessors
     /// so that they can be used in entity iteration independently.
-    pub fn split_isotopes<'t, const N: usize>(
+    pub fn split_mut<'t, const N: usize>(
         &'t mut self,
         keys: [KeyT; N],
     ) -> [AccessSingle<

@@ -1,5 +1,5 @@
 var srcIndex = JSON.parse('{\
-"auto_enums":["",[["auto_enum",[],["context.rs","expr.rs","mod.rs","visitor.rs"]],["derive",[["core",[],["fmt.rs","future.rs","iter.rs","mod.rs","ops.rs"]],["external",[],["mod.rs"]],["std",[],["error.rs","io.rs","mod.rs"]],["ty_impls",[],["mod.rs"]]],["mod.rs"]]],["enum_derive.rs","lib.rs","utils.rs"]],\
+"auto_enums":["",[["auto_enum",[],["context.rs","expr.rs","mod.rs","visitor.rs"]],["derive",[["core",[],["fmt.rs","future.rs","iter.rs","mod.rs","ops.rs"]],["external",[],["mod.rs"]],["std",[],["error.rs","io.rs","mod.rs"]],["ty_impls",[],["mod.rs"]]],["mod.rs"]]],["enum_derive.rs","error.rs","lib.rs","utils.rs"]],\
 "bitvec":["",[["array",[],["api.rs","iter.rs","ops.rs","traits.rs"]],["boxed",[],["api.rs","iter.rs","ops.rs","traits.rs"]],["field",[],["io.rs"]],["macros",[],["internal.rs"]],["ptr",[],["addr.rs","proxy.rs","range.rs","single.rs","span.rs"]],["slice",[["specialization",[],["lsb0.rs","msb0.rs"]]],["api.rs","iter.rs","ops.rs","specialization.rs","traits.rs"]],["vec",[],["api.rs","iter.rs","ops.rs","traits.rs"]]],["access.rs","array.rs","boxed.rs","devel.rs","domain.rs","field.rs","index.rs","lib.rs","macros.rs","mem.rs","order.rs","ptr.rs","slice.rs","store.rs","vec.rs","view.rs"]],\
 "cfg_if":["",[],["lib.rs"]],\
 "crossbeam_deque":["",[],["deque.rs","lib.rs"]],\

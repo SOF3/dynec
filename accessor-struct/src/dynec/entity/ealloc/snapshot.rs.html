@@ -113,7 +113,7 @@
     }
 }
 
-<span class="attr">#[derive(Clone, Copy)]
+<span class="attr">#[derive(Debug, Clone, Copy)]
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>Slice&lt;<span class="lifetime">&#39;t</span>, E&gt; {
     <span class="kw">pub</span>(<span class="kw">crate</span>) start:      E,
     <span class="kw">pub</span>(<span class="kw">crate</span>) end:        E,
@@ -127,7 +127,7 @@
         // For now, we just take the assumption that the holes are uniformly distributed.
 
         </span><span class="kw">let </span>midpt = <span class="self">self</span>.start.approx_midpoint(<span class="self">self</span>.end);
-        <span class="kw">let </span>is_far = <span class="self">self</span>.end.sub(midpt) &lt; <span class="number">8</span>;
+        <span class="kw">let </span>is_far = <span class="self">self</span>.end.sub(midpt) &gt;= <span class="number">8</span>;
         is_far.then_some(midpt)
     }
 

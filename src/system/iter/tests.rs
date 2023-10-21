@@ -1,80 +1,85 @@
 //! Tests EntityIterator.
 
+use rayon::prelude::ParallelIterator;
+
 use crate::entity::{Raw as _, Ref};
 use crate::test_util::*;
 use crate::{system, system_test, system_test_exported, tracer, world};
 
-#[test]
-fn test_entity_iter_partial_single_mut() {
-    #[system(dynec_as(crate))]
-    fn test_system(
-        iter: system::EntityIterator<TestArch>,
-        simple_acc: system::ReadSimple<TestArch, Simple1OptionalNoDepNoInit>,
-        #[dynec(isotope(discrim = [TestDiscrim1(7), TestDiscrim1(13)]))]
-        mut double_iso_acc: system::WriteIsotopePartial<
-            TestArch,
-            IsoNoInit,
-            [TestDiscrim1; 2],
-        >,
-        #[dynec(isotope(discrim = [TestDiscrim1(31)]))]
-        mut single_iso_acc: system::ReadIsotopePartial<
-            TestArch,
-            IsoNoInit,
-            [TestDiscrim1; 1],
-        >,
-    ) {
-        let [mut double_iso_acc_0, mut double_iso_acc_1] = double_iso_acc.split_isotopes([0, 1]);
-        let [single_iso_acc_0] = single_iso_acc.split([0]);
+macro_rules! test_partial_single_system {
+    ($test_name:ident $iter_method:ident) => {
+        #[test]
+        fn $test_name() {
+            #[system(dynec_as(crate))]
+            fn test_system(
+                iter: system::EntityIterator<TestArch>,
+                simple_acc: system::ReadSimple<TestArch, Simple1OptionalNoDepNoInit>,
+                #[dynec(isotope(discrim = [TestDiscrim1(7), TestDiscrim1(13)]))]
+                mut double_iso_acc: system::WriteIsotopePartial<TestArch, IsoNoInit, [TestDiscrim1; 2]>,
+                #[dynec(isotope(discrim = [TestDiscrim1(31)]))]
+                mut single_iso_acc: system::ReadIsotopePartial<TestArch, IsoNoInit, [TestDiscrim1; 1]>,
+            ) {
+                let [mut double_iso_acc_0, mut double_iso_acc_1] =
+                    double_iso_acc.split_isotopes([0, 1]);
+                let [single_iso_acc_0] = single_iso_acc.split([0]);
 
-        for (entity, (simple, double0, double1, single)) in iter.entities_with((
-            system::Try(&simple_acc),
-            system::Try(&mut double_iso_acc_0),
-            system::Try(&mut double_iso_acc_1),
-            system::Try(&single_iso_acc_0),
-        )) {
-            match entity.id().to_primitive() {
-                1 => {
-                    assert_eq!(simple, Some(&Simple1OptionalNoDepNoInit(5)));
-                    assert_eq!(double0, Some(&mut IsoNoInit(11)));
-                    assert_eq!(double1, None);
-                    assert_eq!(single, Some(&IsoNoInit(41)));
+                let iter_collected: Vec<_> = iter
+                    .$iter_method((
+                        system::Try(&simple_acc),
+                        system::Try(&mut double_iso_acc_0),
+                        system::Try(&mut double_iso_acc_1),
+                        system::Try(&single_iso_acc_0),
+                    ))
+                    .collect();
+                for (entity, (simple, double0, double1, single)) in iter_collected {
+                    match entity.id().to_primitive() {
+                        1 => {
+                            assert_eq!(simple, Some(&Simple1OptionalNoDepNoInit(5)));
+                            assert_eq!(double0, Some(&mut IsoNoInit(11)));
+                            assert_eq!(double1, None);
+                            assert_eq!(single, Some(&IsoNoInit(41)));
+                        }
+                        2 => {
+                            assert_eq!(simple, None);
+                            assert_eq!(double0, None);
+                            assert_eq!(double1, Some(&mut IsoNoInit(17)));
+                            assert_eq!(single, Some(&IsoNoInit(43)));
+                        }
+                        3 => {
+                            assert_eq!(simple, None);
+                            assert_eq!(double0, Some(&mut IsoNoInit(19)));
+                            assert_eq!(double1, Some(&mut IsoNoInit(23)));
+                            assert_eq!(single, None);
+                        }
+                        _ => unreachable!(),
+                    }
                 }
-                2 => {
-                    assert_eq!(simple, None);
-                    assert_eq!(double0, None);
-                    assert_eq!(double1, Some(&mut IsoNoInit(17)));
-                    assert_eq!(single, Some(&IsoNoInit(43)));
-                }
-                3 => {
-                    assert_eq!(simple, None);
-                    assert_eq!(double0, Some(&mut IsoNoInit(19)));
-                    assert_eq!(double1, Some(&mut IsoNoInit(23)));
-                    assert_eq!(single, None);
-                }
-                _ => unreachable!(),
             }
+
+            let mut world = system_test! {
+                test_system.build();
+                _: TestArch = (
+                    Simple1OptionalNoDepNoInit(5),
+                    @(TestDiscrim1(7), IsoNoInit(11)),
+                    @(TestDiscrim1(31), IsoNoInit(41)),
+                );
+                _: TestArch = (
+                    @(TestDiscrim1(13), IsoNoInit(17)),
+                    @(TestDiscrim1(31), IsoNoInit(43)),
+                );
+                _: TestArch = (
+                    @(TestDiscrim1(7), IsoNoInit(19)),
+                    @(TestDiscrim1(13), IsoNoInit(23)),
+                );
+            };
+
+            world.execute(&tracer::Log(log::Level::Trace));
         }
-    }
-
-    let mut world = system_test! {
-        test_system.build();
-        _: TestArch = (
-            Simple1OptionalNoDepNoInit(5),
-            @(TestDiscrim1(7), IsoNoInit(11)),
-            @(TestDiscrim1(31), IsoNoInit(41)),
-        );
-        _: TestArch = (
-            @(TestDiscrim1(13), IsoNoInit(17)),
-            @(TestDiscrim1(31), IsoNoInit(43)),
-        );
-        _: TestArch = (
-            @(TestDiscrim1(7), IsoNoInit(19)),
-            @(TestDiscrim1(13), IsoNoInit(23)),
-        );
     };
-
-    world.execute(&tracer::Log(log::Level::Trace));
 }
+
+test_partial_single_system!(test_partial_single_serial entities_with);
+test_partial_single_system!(test_partial_single_chunked par_entities_with);
 
 #[test]
 fn test_entity_iter_partial_chunked_mut() {

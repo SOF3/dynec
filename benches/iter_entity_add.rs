@@ -32,44 +32,6 @@ fn individual_comps(rng: &mut ThreadRng) -> comp::Map<TestArch> {
     ]
 }
 
-#[system]
-fn system_individual_add_system_non_chunked(
-    mut px: system::WriteSimple<TestArch, PositionX>,
-    mut py: system::WriteSimple<TestArch, PositionY>,
-    mut pz: system::WriteSimple<TestArch, PositionZ>,
-    vx: system::ReadSimple<TestArch, VelocityX>,
-    vy: system::ReadSimple<TestArch, VelocityY>,
-    vz: system::ReadSimple<TestArch, VelocityZ>,
-    entities: system::EntityIterator<TestArch>,
-) {
-    for (_, (px, py, pz, vx, vy, vz)) in
-        entities.entities_with((&mut px, &mut py, &mut pz, &vx, &vy, &vz))
-    {
-        px.0 += vx.0;
-        py.0 += vy.0;
-        pz.0 += vz.0;
-    }
-}
-
-#[system]
-fn system_individual_add_system_chunked(
-    mut px: system::WriteSimple<TestArch, PositionX>,
-    mut py: system::WriteSimple<TestArch, PositionY>,
-    mut pz: system::WriteSimple<TestArch, PositionZ>,
-    vx: system::ReadSimple<TestArch, VelocityX>,
-    vy: system::ReadSimple<TestArch, VelocityY>,
-    vz: system::ReadSimple<TestArch, VelocityZ>,
-    entities: system::EntityIterator<TestArch>,
-) {
-    entities.entities_with_chunked((&mut px, &mut py, &mut pz, &vx, &vy, &vz)).for_each(
-        |(_, (px, py, pz, vx, vy, vz))| {
-            px.0 += vx.0;
-            py.0 += vy.0;
-            pz.0 += vz.0;
-        },
-    )
-}
-
 #[dynec::comp(of = TestArch, required)]
 struct PositionArray([f64; 3]);
 #[dynec::comp(of = TestArch, required)]
@@ -90,31 +52,48 @@ fn array_comps(rng: &mut ThreadRng) -> comp::Map<TestArch> {
     ]
 }
 
-#[system]
-fn system_array_add_system_non_chunked(
-    mut p: system::WriteSimple<TestArch, PositionArray>,
-    v: system::ReadSimple<TestArch, VelocityArray>,
-    entities: system::EntityIterator<TestArch>,
-) {
-    for (_, (p, v)) in entities.entities_with((&mut p, &v)) {
-        for i in 0..3 {
-            p.0[i] += v.0[i];
+macro_rules! make_systems {
+    ($system_name:ident $iter_method:ident) => {
+        paste::paste! {
+            #[system]
+            fn [<$system_name _idv>](
+                mut px: system::WriteSimple<TestArch, PositionX>,
+                mut py: system::WriteSimple<TestArch, PositionY>,
+                mut pz: system::WriteSimple<TestArch, PositionZ>,
+                vx: system::ReadSimple<TestArch, VelocityX>,
+                vy: system::ReadSimple<TestArch, VelocityY>,
+                vz: system::ReadSimple<TestArch, VelocityZ>,
+                entities: system::EntityIterator<TestArch>,
+            ) {
+                entities.$iter_method((&mut px, &mut py, &mut pz, &vx, &vy, &vz)).for_each(
+                    |(_, (px, py, pz, vx, vy, vz))| {
+                        px.0 += vx.0;
+                        py.0 += vy.0;
+                        pz.0 += vz.0;
+                    },
+                )
+            }
+
+            #[system]
+            fn [<$system_name _arr>](
+                mut p: system::WriteSimple<TestArch, PositionArray>,
+                v: system::ReadSimple<TestArch, VelocityArray>,
+                entities: system::EntityIterator<TestArch>,
+            ) {
+                entities.$iter_method((&mut p, &v)).for_each(
+                    |(_, (p, v))| {
+                        for i in 0..3 {
+                            p.0[i] += v.0[i];
+                        }
+                    },
+                )
+            }
         }
-    }
+    };
 }
 
-#[system]
-fn system_array_add_system_chunked(
-    mut p: system::WriteSimple<TestArch, PositionArray>,
-    v: system::ReadSimple<TestArch, VelocityArray>,
-    entities: system::EntityIterator<TestArch>,
-) {
-    for (_, (p, v)) in entities.entities_with_chunked((&mut p, &v)) {
-        for i in 0..3 {
-            p.0[i] += v.0[i];
-        }
-    }
-}
+make_systems!(system_add_ent entities_with);
+make_systems!(system_add_chunk entities_with_chunked);
 
 fn bench_iter_entity_add<SystemT, DeleteEntityIter>(
     group: &mut BenchmarkGroup<'_, measurement::WallTime>,
@@ -160,7 +139,7 @@ fn iter_entity_add_with_deletion<DeleteEntityIter: Iterator<Item = u64>>(
         group,
         name,
         "ent idv",
-        || system_individual_add_system_non_chunked.build(),
+        || system_add_ent_idv.build(),
         individual_comps,
         deletion,
     );
@@ -168,7 +147,7 @@ fn iter_entity_add_with_deletion<DeleteEntityIter: Iterator<Item = u64>>(
         group,
         name,
         "chunk idv",
-        || system_individual_add_system_chunked.build(),
+        || system_add_chunk_idv.build(),
         individual_comps,
         deletion,
     );
@@ -176,7 +155,7 @@ fn iter_entity_add_with_deletion<DeleteEntityIter: Iterator<Item = u64>>(
         group,
         name,
         "ent arr",
-        || system_array_add_system_non_chunked.build(),
+        || system_add_ent_arr.build(),
         array_comps,
         deletion,
     );
@@ -184,7 +163,7 @@ fn iter_entity_add_with_deletion<DeleteEntityIter: Iterator<Item = u64>>(
         group,
         name,
         "chunk arr",
-        || system_array_add_system_chunked.build(),
+        || system_add_chunk_arr.build(),
         array_comps,
         deletion,
     );

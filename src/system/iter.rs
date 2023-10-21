@@ -9,7 +9,10 @@
 use std::marker::PhantomData;
 use std::{any, iter, mem, ops};
 
+use rayon::prelude::ParallelIterator;
+
 use super::access::single;
+use crate::entity::ealloc::snapshot;
 use crate::entity::{ealloc, Raw as _};
 use crate::system::access;
 use crate::{comp, entity, storage, util, Archetype, Storage};
@@ -97,6 +100,76 @@ impl<A: Archetype> EntityIterator<A> {
             )
         })
     }
+
+    fn par_raw_chunks<IntoZ: IntoZip<A>>(
+        &self,
+        zip: IntoZ,
+    ) -> impl ParallelIterator<Item = (snapshot::Slice<'_, A::RawEntity>, IntoZ::IntoZip)>
+    where
+        IntoZ::IntoZip: Send,
+    {
+        rayon::iter::split((self.ealloc.as_slice(), zip.into_zip()), |(slice, zip)| {
+            let Some(midpt) = slice.midpoint_for_split() else { return ((slice, zip), None) };
+            let (slice_left, slice_right) = slice.split_at(midpt);
+            let mut zip_left = zip;
+            let zip_right = zip_left.split(midpt);
+            ((slice_left, zip_left), Some((slice_right, zip_right)))
+        })
+    }
+
+    /// Iterates over all entities in parallel, yielding the components requested.
+    pub fn par_entities_with<IntoZ: IntoZip<A>>(
+        &self,
+        zip: IntoZ,
+    ) -> impl ParallelIterator<Item = (entity::TempRef<A>, <IntoZ::IntoZip as Zip<A>>::Item)>
+    where
+        IntoZ::IntoZip: Send,
+        <IntoZ::IntoZip as Zip<A>>::Item: Send,
+    {
+        self.par_raw_chunks(zip).flat_map_iter(|(slice, zip)| {
+            let mut zip_iter = ZipIter(zip, PhantomData);
+            entity::Raw::range(slice.start..slice.end)
+                .map(move |entity| (entity::TempRef::new(entity), zip_iter.take_serial(entity)))
+        })
+    }
+
+    /// Iterates over all chunks of entities in parallel, yielding the components requested.
+    pub fn par_chunks_with<IntoZ: IntoZip<A>>(
+        &self,
+        zip: IntoZ,
+    ) -> impl ParallelIterator<Item = (entity::TempRefChunk<A>, <IntoZ::IntoZip as ZipChunked<A>>::Chunk)>
+    where
+        IntoZ::IntoZip: ZipChunked<A> + Send,
+        <IntoZ::IntoZip as ZipChunked<A>>::Chunk: Send,
+    {
+        self.par_raw_chunks(zip).map(|(slice, zip)| {
+            let mut zip_iter = ZipIter(zip, PhantomData);
+            (
+                entity::TempRefChunk::new(slice.start, slice.end),
+                zip_iter.take_serial_chunk(slice.start, slice.end),
+            )
+        })
+    }
+
+    /// Same as [`par_entities_with`](Self::par_entities_with),
+    /// but leverages chunked storages for better performance.
+    pub fn par_entities_with_chunked<IntoZ: IntoZip<A>>(
+        &self,
+        zip: IntoZ,
+    ) -> impl ParallelIterator<Item = (entity::TempRef<A>, <IntoZ::IntoZip as Zip<A>>::Item)>
+    where
+        IntoZ::IntoZip: ZipChunked<A> + Send,
+        <IntoZ::IntoZip as Zip<A>>::Item: Send,
+    {
+        self.par_raw_chunks(zip).flat_map_iter(|(slice, zip)| {
+            iter::zip(
+                entity::Raw::range(slice.start..slice.end).map(entity::TempRef::new),
+                <IntoZ::IntoZip as ZipChunked<A>>::chunk_to_entities(
+                    ZipIter(zip, PhantomData).take_serial_chunk(slice.start, slice.end),
+                ),
+            )
+        })
+    }
 }
 
 struct ZipIter<A: Archetype, Z: Zip<A>>(Z, PhantomData<A>);
@@ -169,7 +242,7 @@ pub trait IntoZip<A: Archetype> {
 }
 
 /// Determines how to resolve the case of a missing Result.
-pub trait MissingResln {
+pub trait MissingResln: Send + Sync {
     /// The return type of the resolution.
     type Result<T>;
     /// Resolves an optional value.

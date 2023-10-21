@@ -32,7 +32,7 @@ impl<E: Raw> Snapshot<E> {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct Slice<'t, E> {
     pub(crate) start:      E,
     pub(crate) end:        E,
@@ -46,7 +46,7 @@ impl<'t, E: Raw> Slice<'t, E> {
         // For now, we just take the assumption that the holes are uniformly distributed.
 
         let midpt = self.start.approx_midpoint(self.end);
-        let is_far = self.end.sub(midpt) < 8;
+        let is_far = self.end.sub(midpt) >= 8;
         is_far.then_some(midpt)
     }
 

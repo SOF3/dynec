@@ -23,7 +23,7 @@ itertools = "0.10.3"
 log = "0.4.16"
 parking_lot = {version = "0.12.0", features = ["owning_ref", "arc_lock", "send_guard"]}
 rand = "0.8.5"
-rayon = "1.5.2"
+rayon = "1.8.0"
 static_assertions = "1.1.0"
 strum = {version = "0.24.0", optional = true}
 xias = "0.3.0"
@@ -47,6 +47,7 @@ internal-bench = ["env_logger", "strum", "tuple-impl-8-zip"] # Internal feature:
 criterion = { version = "0.4.0", features = ["html_reports"] }
 env_logger = "0.10.0"
 lazy_static = "1.4.0"
+paste = "1.0.14"
 strum = "0.24.0"
 
 [lib]

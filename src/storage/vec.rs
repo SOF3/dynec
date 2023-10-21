@@ -216,17 +216,22 @@ impl<'t, RawT: entity::Raw, C: Send + Sync + 'static> Partition<'t>
                 let value = self.data.get_mut(index).expect("bits mismatch");
                 Some(unsafe { value.assume_init_mut() })
             }
-            Some(_) => None,
-            None => panic!(
-                "Entity {entity:?} is not in the partition ..{:?}",
-                self.offset + self.bits.len()
-            ),
+            _ => None,
         }
     }
 
     fn split_out(&mut self, entity: RawT) -> Self {
         let index =
             entity.to_primitive().checked_sub(self.offset).expect("parameter out of bounds");
+
+        if index > self.bits.len() {
+            return Self {
+                bits:   BitSlice::empty(),
+                data:   &mut [],
+                offset: self.offset + index,
+                _ph:    PhantomData,
+            };
+        }
         assert!(
             index <= self.bits.len(),
             "split at {index} for partition {}..{}",

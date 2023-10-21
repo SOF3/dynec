@@ -12,16 +12,10 @@ macro_rules! test_storage {
             test_single_small_hole
             test_single_big_hole_with_reinsertion
             test_partition_no_panic
-            #[should_panic = "Entity 5 is not in the partition ..4"] test_partition_panic_left_some
-            #[should_panic = "Entity 4 is not in the partition ..4"] test_partition_panic_left_none
             #[should_panic = "Entity 3 is not in the partition 5.."] test_partition_panic_right_some
             #[should_panic = "Entity 4 is not in the partition 5.."] test_partition_panic_right_none
-            #[should_panic = "Entity 4 is not in the partition ..3"] test_repartition_panic_ll_lr
-            #[should_panic = "Entity 8 is not in the partition ..3"] test_repartition_panic_ll_r
             #[should_panic = "Entity 2 is not in the partition 3.."] test_repartition_panic_lr_ll
-            #[should_panic = "Entity 8 is not in the partition ..5"] test_repartition_panic_lr_r
             #[should_panic = "Entity 2 is not in the partition 5.."] test_repartition_panic_rl_l
-            #[should_panic = "Entity 8 is not in the partition ..7"] test_repartition_panic_rl_rr
             #[should_panic = "Entity 3 is not in the partition 7.."] test_repartition_panic_rr_l
             #[should_panic = "Entity 6 is not in the partition 7.."] test_repartition_panic_rr_rl
         }

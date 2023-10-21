@@ -48,7 +48,7 @@ macro_rules! test_partial_single_system {
                         3 => {
                             assert_eq!(simple, None);
                             assert_eq!(double0, Some(&mut IsoNoInit(19)));
-                            assert_eq!(double1, Some(&mut IsoNoInit(23)));
+                            assert_eq!(double1, None);
                             assert_eq!(single, None);
                         }
                         _ => unreachable!(),
@@ -69,7 +69,6 @@ macro_rules! test_partial_single_system {
                 );
                 _: TestArch = (
                     @(TestDiscrim1(7), IsoNoInit(19)),
-                    @(TestDiscrim1(13), IsoNoInit(23)),
                 );
             };
 

@@ -243,10 +243,12 @@ may get a chance to handle bullet deletion:</p>
 <p>Without the finalizer component,
 the system would be unable to get the <code>NetworkId</code> for the despawned bullet
 since the component has been cleaned up.</p>
-<p>Note that deletion-flagged entities are checked every tick.
+<div class="warning">
+Deletion-flagged entities are checked every tick.
 To avoid a growing backlog of entities to delete,
 finalizer components should be removed as soon as possible
-after deletion has been flagged.</p>
+after deletion has been flagged.
+</div>
 <h2 id="best-practices"><a class="header" href="#best-practices">Best practices</a></h2>
 <h3 id="small-component-structs"><a class="header" href="#small-component-structs">Small component structs</a></h3>
 <p>Dynec prevents systems that write to the same component type

@@ -237,7 +237,7 @@ fn move_entities(
     position_acc: system::WriteSimple&lt;Bullet, Position&gt;,
     velocity_acc: system::WriteSimple&lt;Bullet, Velocity&gt;,
 ) {
-    for (_entity, (position, velocity)) in entities.entities_with((
+    for (_entity, (position, velocity)) in entities.entities_with_chunked((
         &amp;mut position_acc,
         &amp;velocity_acc,
     )) {
@@ -246,8 +246,9 @@ fn move_entities(
 }
 <span class="boring">}
 </span></code></pre></pre>
-<p><code>entities_with</code> also supports isotope accessors,
-but they must be split for a specific discriminant first:</p>
+<p><code>entities_with_chunked</code> also supports isotope accessors,
+but they must be split for a specific discriminant first
+by calling <code>split</code> on the accessor (<code>split_mut</code> for mutable accessors):</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>#[system]
@@ -258,15 +259,29 @@ fn move_entities(
     #[dynec(isotope(discrim = [element]))]
     weights_acc: system::ReadIsotopePartial&lt;Bullet, IngredientWeight, [Element; 1]&gt;,
 ) {
-    for (_entity, (position, weight)) in entities.entities_with((
-        &amp;mut position_acc,
-        &amp;weights_acc.split([element])[0],
-    )) {
-        *velocity += weight;
+    let [weights_acc] = weights_acc.split([element]);
+    entities
+        .entities_with_chunked((
+            &amp;mut velocity_acc,
+            &amp;weights_acc,
+        ))
+        .for_each(|(_entity, (velocity, weight))| {
+            *velocity /= weight;
+        }
     }
 }
 <span class="boring">}
 </span></code></pre></pre>
+<blockquote>
+<p>Note: <code>entities_with_chunked</code> returns an iterator,
+so you may use it with a normal <code>for</code> loop as well.
+However, benchmarks show that <code>for_each</code> has performs
+significantly better than <code>for</code> loops due to vectorization.</p>
+</blockquote>
+<p>You may also use <code>par_entities_with_chunked</code> instead
+to execute the loop on multiple threads.
+<code>par_entities_with_chunked</code> returns a rayon <a href="../rayon/iter/trait.ParallelIterator.html"><code>ParallelIterator</code></a>,
+which has a very similar API to the native <code>Iterator</code>.</p>
 
                     </main>
 

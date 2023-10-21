@@ -546,7 +546,7 @@
         storage.iter().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
     }
 
-    <span class="doccomment">/// Splits the accessor into multiple mmutable [`AccessSingle`] accessors
+    <span class="doccomment">/// Splits the accessor into multiple immutable [`AccessSingle`] accessors
     /// so that they can be used independently.
     </span><span class="kw">pub fn </span>split&lt;<span class="lifetime">&#39;t</span>, <span class="kw">const </span>N: usize&gt;(
         <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span><span class="self">self</span>,
@@ -685,7 +685,7 @@
 
     <span class="doccomment">/// Splits the accessor into multiple mutable [`AccessSingle`] accessors
     /// so that they can be used in entity iteration independently.
-    </span><span class="kw">pub fn </span>split_isotopes&lt;<span class="lifetime">&#39;t</span>, <span class="kw">const </span>N: usize&gt;(
+    </span><span class="kw">pub fn </span>split_mut&lt;<span class="lifetime">&#39;t</span>, <span class="kw">const </span>N: usize&gt;(
         <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span><span class="self">self</span>,
         keys: [KeyT; N],
     ) -&gt; [AccessSingle&lt;

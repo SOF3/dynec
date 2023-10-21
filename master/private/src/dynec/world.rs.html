@@ -390,6 +390,13 @@
 <a href="#390" id="390">390</a>
 <a href="#391" id="391">391</a>
 <a href="#392" id="392">392</a>
+<a href="#393" id="393">393</a>
+<a href="#394" id="394">394</a>
+<a href="#395" id="395">395</a>
+<a href="#396" id="396">396</a>
+<a href="#397" id="397">397</a>
+<a href="#398" id="398">398</a>
+<a href="#399" id="399">399</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! The world stores the states of the game.
 
 </span><span class="kw">use </span>std::any::{<span class="self">self</span>, TypeId};
@@ -486,6 +493,7 @@
 <span class="kw">impl </span>World {
     <span class="doccomment">/// Executes all systems in the world.
     </span><span class="kw">pub fn </span>execute(<span class="kw-2">&amp;mut </span><span class="self">self</span>, tracer: <span class="kw-2">&amp;</span><span class="kw">impl </span>Tracer) {
+        <span class="self">self</span>.ealloc_map.flush_if_marked();
         <span class="self">self</span>.scheduler.execute(
             tracer,
             <span class="kw-2">&amp;mut </span><span class="self">self</span>.components,
@@ -555,18 +563,24 @@
     ///
     /// The return value indicates whether the entity can be deleted *immediately*.
     </span><span class="kw">pub fn </span>delete&lt;E: entity::Ref&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, entity: E) -&gt; DeleteResult {
+        <span class="self">self</span>.ealloc_map.mark_need_flush::&lt;E::Archetype&gt;();
+
         <span class="kw">let </span>id = entity.id();
         drop(entity); <span class="comment">// drop `entity` so that its refcount is removed
 
         </span><span class="kw">let </span>(world, <span class="kw-2">mut </span>systems) = <span class="self">self</span>.as_mut();
         <span class="kw">let </span>result = flag_delete_entity::&lt;E::Archetype&gt;(id, world, <span class="kw-2">&amp;mut </span>systems[..]);
-        <span class="kw">if let </span>DeleteResult::Terminating = result {
-            <span class="self">self</span>.scheduler.offline_buffer().rerun_queue.push(Box::new(offline::DeleteEntity::&lt;
-                E::Archetype,
-            &gt; {
-                entity: id,
-            })
-                <span class="kw">as </span>Box&lt;<span class="kw">dyn </span>offline::Operation&gt;);
+
+        <span class="kw">match </span>result {
+            DeleteResult::Deleted =&gt; {}
+            DeleteResult::Terminating =&gt; {
+                <span class="self">self</span>.scheduler.offline_buffer().rerun_queue.push(Box::new(offline::DeleteEntity::&lt;
+                    E::Archetype,
+                &gt; {
+                    entity: id,
+                })
+                    <span class="kw">as </span>Box&lt;<span class="kw">dyn </span>offline::Operation&gt;);
+            }
         }
 
         result
@@ -648,7 +662,7 @@
 }
 
 <span class="doccomment">/// Result of deleting an entity.
-</span><span class="attr">#[derive(Debug, Clone, Copy)]
+</span><span class="attr">#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 </span><span class="kw">pub enum </span>DeleteResult {
     <span class="doccomment">/// The entity has been immediately deleted.
     </span>Deleted,

@@ -135,30 +135,8 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="parameter-local-and-global-states"><a class="header" href="#parameter-local-and-global-states">Parameter, local and global states</a></h1>
-<h2 id="local-states"><a class="header" href="#local-states">Local states</a></h2>
-<p>Systems can persist values over multiple executions,
-known as &quot;local states&quot;:</p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>#[system]
-fn hello_world(
-    #[dynec(local(initial = 0))] counter: &amp;mut i32,
-) {
-    *counter += 1;
-    println!(&quot;counter = {counter}&quot;);
-}
-<span class="boring">}
-</span></code></pre></pre>
-<p><code>0</code> is the initial value of <code>counter</code> before the system is run the first time.
-The parameter type must be a reference (<code>&amp;T</code> or <code>&amp;mut T</code>) to the actual stored type.</p>
-<p>Calling <code>world.execute()</code> in a row will print the following:</p>
-<pre><code class="language-text">counter = 1
-counter = 2
-counter = 3
-...
-</code></pre>
 <h2 id="parameter-states"><a class="header" href="#parameter-states">Parameter states</a></h2>
-<p>The initial value can be passed as a parameter instead:</p>
+<p>A system may request parameters when building:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>#[system]
@@ -166,53 +144,102 @@ fn hello_world(
     #[dynec(param)] counter: &amp;mut i32,
 ) {
     *counter += 1;
+    println!(&quot;{counter}&quot;);
 }
 
-// ...
+builder.schedule(hello_world.build(123));
+builder.schedule(hello_world.build(456));
 
-builder.schedule(Box::new(hello_world.build(123)));
+// ...
+world.execute(dynec::tracer::Noop); // prints 124 and 457 in unspecified order
+world.execute(dynec::tracer::Noop); // prints 125 and 458 in unspecified order
 <span class="boring">}
 </span></code></pre></pre>
-<p>The arguments to <code>.build()</code> are all <code>#[param]</code> parameters in the order they are defined.</p>
-<h2 id="global-states"><a class="header" href="#global-states">Global states</a></h2>
-<p>States can be shared between multiple systems, identified by their type.
-Such types must implement the <a href="https://sof3.github.io/dynec/master/dynec/trait.Global.html"><code>Global</code></a> trait,
-which can be done through the <a href="https://sof3.github.io/dynec/master/dynec/attr.global.html"><code>#[global]</code></a> macro:</p>
+<p>The parameter type must be a reference (<code>&amp;T</code> or <code>&amp;mut T</code>) to the actual stored type.</p>
+<p>Each <code>#[dynec(param)]</code> parameter in <code>hello_world</code>
+must be a reference (<code>&amp;T</code> or <code>&amp;mut T</code>),
+adds a new parameter of type <code>T</code>
+to the generated <code>build()</code> method in the order they are specified,
+with the reference part stripped.</p>
+<p>Parameter states, along with other states, may be mutated when the system is run.
+Each system (each instance returned by <code>build()</code>) maintains its own states.</p>
+<h2 id="local-states"><a class="header" href="#local-states">Local states</a></h2>
+<p>Unlike parameter states, local states are defined by the system itself
+and is not specified through the <code>build()</code> function.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>#[dynec::global(initial = Self::default())]
-#[derive(Default)]
+</span>#[system]
+fn hello_world(
+    #[dynec(local(initial = 0))] counter: &amp;mut i32,
+) {
+    *counter += 1;
+    println!(&quot;{counter}&quot;);
+}
+
+builder.schedule(hello_world.build());
+builder.schedule(hello_world.build());
+
+// ...
+world.execute(dynec::tracer::Noop); // prints 1, 1 in unspecified order
+world.execute(dynec::tracer::Noop); // prints 2, 2 in unspecified order
+<span class="boring">}
+</span></code></pre></pre>
+<p><code>0</code> is the initial value of <code>counter</code> before the system is run the first time.
+If parameter states are defined in the function,
+the <code>initial</code> expression may use such parameters by name as well.</p>
+<h2 id="global-states"><a class="header" href="#global-states">Global states</a></h2>
+<p>States can also be shared among multiple systems
+using the type as the identifier.
+Such types must implement the <a href="../dynec/trait.Global.html"><code>Global</code></a> trait,
+which can be done through the <a href="../dynec/attr.global.html"><code>#[global]</code></a> macro:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Default)]
+#[dynec::global(initial = Self::default())]
 struct MyCounter {
     value: i32,
 }
 
 #[system]
-fn hello_world(
+fn add_counter(
     #[dynec(global)] counter: &amp;mut MyCounter,
 ) {
     counter.value += 1;
 }
+
+#[system]
+fn print_counter(
+    #[dynec(global)] counter: &amp;MyCounter,
+) {
+    println!(&quot;{counter}&quot;);
+}
 <span class="boring">}
 </span></code></pre></pre>
-<p>The initial value of a global state can also be assigned
-in <a href="https://sof3.github.io/dynec/master/dynec/world/trait.Bundle.html#method.register"><code>Bundle::register</code></a> instead
-if it is not specified in the <code>#[dynec::global]</code>:</p>
+<p>If no <code>initial</code> value is specified in <code>#[global]</code>,
+the initial value of a global state must be assigned
+in <a href="../dynec/world/trait.Bundle.html#method.register"><code>Bundle::register</code></a>.</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>impl world::Bundle for Bundle {
     fn register(&amp;mut self, builder: &amp;mut world::Builder) {
-        builder.schedule(Box::new(hello_world.build()));
+        builder.schedule(add_counter.build());
+        builder.schedule(print_counter.build());
         builder.global(MyCounter { value: 123 });
     }
 }
+
+// ...
+world.execute(dynec::tracer::Noop); // prints 123 or 124 based on unspecified order
+world.execute(dynec::tracer::Noop); // prints 124 or 125 based on unspecified order
 <span class="boring">}
 </span></code></pre></pre>
-<p>The program panics if <code>Bundle::register</code> does not initialize all global states.</p>
+<p>The program panics if some used global states do not have an <code>initial</code>
+but <code>Bundle::register</code> does not initialize them.</p>
 <p>Note that <code>&amp;T</code> and <code>&amp;mut T</code> are semantically different for global states.
 Multiple systems requesting <code>&amp;T</code> for the same <code>T</code> may run in parallel
 in a multi-threaded runtime,
 but when a system requesting <code>&amp;mut T</code> is running,
-all other <code>&amp;T</code> and <code>&amp;mut T</code>-requesting systems are unschedulable
+all other systems requesting <code>&amp;T</code> or <code>&amp;mut T</code> cannot run until the system is complete
 (but other unrelated systems can still be scheduled).</p>
 
                     </main>

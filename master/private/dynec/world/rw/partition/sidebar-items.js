@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["mut_owned_par_iter_chunks_mut","mut_owned_par_iter_mut"],"opaque":[""],"struct":["PartitionAccessor"]};

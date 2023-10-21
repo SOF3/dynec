@@ -256,6 +256,7 @@
 <a href="#256" id="256">256</a>
 <a href="#257" id="257">257</a>
 <a href="#258" id="258">258</a>
+<a href="#259" id="259">259</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>matches2::option_match;
 <span class="kw">use </span>proc_macro2::TokenStream;
 <span class="kw">use </span>quote::quote;
@@ -298,12 +299,6 @@
         };
 
     <span class="kw">let </span>presence = args.find_one(|arg| <span class="macro">option_match!</span>(arg, ItemOpt::Required =&gt; <span class="kw-2">&amp;</span>()))<span class="question-mark">?</span>;
-    <span class="kw">if let </span>(<span class="prelude-val">Some</span>((isotope_span, <span class="kw">_</span>)), <span class="prelude-val">Some</span>((presence_span, <span class="kw">_</span>))) = (isotope, presence) {
-        <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(
-            isotope_span.join(presence_span).unwrap_or(presence_span),
-            <span class="string">&quot;isotope components cannot be required because new isotopes may be created dynamically&quot;</span>,
-        ));
-    }
     <span class="kw">let </span>presence_enum = <span class="kw">match </span>presence {
         <span class="prelude-val">Some</span>(<span class="kw">_</span>) =&gt; <span class="macro">quote!</span>(#crate_name::comp::Presence::Required),
         <span class="prelude-val">None </span>=&gt; <span class="macro">quote!</span>(#crate_name::comp::Presence::Optional),
@@ -319,6 +314,13 @@
     <span class="kw">let </span>finalizer = finalizer.is_some();
 
     <span class="kw">let </span>init = args.find_one(|arg| <span class="macro">option_match!</span>(arg, ItemOpt::Init(<span class="kw">_</span>, func) =&gt; func))<span class="question-mark">?</span>;
+    <span class="kw">if let </span>(<span class="prelude-val">Some</span>((isotope_span, <span class="kw">_</span>)), <span class="prelude-val">Some</span>((presence_span, <span class="kw">_</span>)), <span class="prelude-val">None</span>) = (isotope, presence, init) {
+        <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(
+            isotope_span.join(presence_span).unwrap_or(presence_span),
+            <span class="string">&quot;isotope components without an auto-initializer cannot be required because new \
+             isotopes may be created dynamically&quot;</span>,
+        ));
+    }
 
     <span class="kw">let </span>input: syn::DeriveInput = syn::parse2(input)<span class="question-mark">?</span>;
     <span class="kw">let </span>generics = util::parse_generics(<span class="kw-2">&amp;</span>input);

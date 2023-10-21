@@ -357,15 +357,6 @@
 <a href="#357" id="357">357</a>
 <a href="#358" id="358">358</a>
 <a href="#359" id="359">359</a>
-<a href="#360" id="360">360</a>
-<a href="#361" id="361">361</a>
-<a href="#362" id="362">362</a>
-<a href="#363" id="363">363</a>
-<a href="#364" id="364">364</a>
-<a href="#365" id="365">365</a>
-<a href="#366" id="366">366</a>
-<a href="#367" id="367">367</a>
-<a href="#368" id="368">368</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>matches2::option_match;
 <span class="kw">use </span>proc_macro2::Span;
 <span class="kw">use </span>syn::spanned::Spanned;
@@ -394,7 +385,7 @@
         arch:         Box&lt;syn::Type&gt;,
         comp:         Box&lt;syn::Type&gt;,
         discrim:      <span class="prelude-ty">Option</span>&lt;Box&lt;syn::Expr&gt;&gt;,
-        discrim_key:  <span class="prelude-ty">Result</span>&lt;Box&lt;syn::Type&gt;, Span&gt;,
+        discrim_set:  <span class="prelude-ty">Result</span>&lt;Box&lt;syn::Type&gt;, Span&gt;,
         maybe_uninit: Vec&lt;syn::Type&gt;,
     },
     EntityCreator {
@@ -421,8 +412,8 @@
             Error::new(
                 args_span,
                 <span class="string">&quot;Cannot infer archetype and component for component access. Specify explicitly \
-                 with `#[dynec(simple(arch = X, comp = Y))]`, or use `impl ReadSimple&lt;X, \
-                 Y&gt;`/`impl WriteSimple&lt;X, Y&gt;`.&quot;</span>,
+                 with `#[dynec(simple(arch = X, comp = Y))]`, or use `ReadSimple&lt;X, \
+                 Y&gt;`/`WriteSimple&lt;X, Y&gt;`.&quot;</span>,
             )
         })<span class="question-mark">?</span>;
 
@@ -445,21 +436,21 @@
             <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(
                 args_span,
                 <span class="string">&quot;Cannot infer archetype and component for component access. Specify explicitly \
-                 with `#[dynec(isotope(arch = X, comp = Y))]`, or use `impl ReadIsotope&lt;X, \
-                 Y&gt;`/`impl WriteIsotope&lt;X, Y&gt;`.&quot;</span>,
+                 with `#[dynec(isotope(arch = X, comp = Y, [discrim_set = Z]))]`, or use \
+                 `(Read|Write)Isotope(Full|Isotope)&lt;X, Y, [Z]&gt;`.&quot;</span>,
             ));
         }
 
         <span class="kw">let </span><span class="kw-2">&amp;</span>arch = args.get(<span class="number">0</span>).expect(<span class="string">&quot;args.len() &gt;= 2&quot;</span>);
         <span class="kw">let </span><span class="kw-2">&amp;</span>comp = args.get(<span class="number">1</span>).expect(<span class="string">&quot;args.len() &gt;= 2&quot;</span>);
-        <span class="kw">let </span>discrim_key = args.get(<span class="number">2</span>).map(|<span class="kw-2">&amp;</span>ty| Box::new(ty.clone())).ok_or(args_span);
+        <span class="kw">let </span>discrim_set = args.get(<span class="number">2</span>).map(|<span class="kw-2">&amp;</span>ty| Box::new(ty.clone())).ok_or(args_span);
 
         <span class="prelude-val">Ok</span>(ArgType::Isotope {
-            mutable: mutable || ident == <span class="string">&quot;WriteIsotope&quot;</span>,
+            mutable: mutable || ident.starts_with(<span class="string">&quot;WriteIsotope&quot;</span>),
             arch: Box::new(arch.clone()),
             comp: Box::new(comp.clone()),
             discrim,
-            discrim_key,
+            discrim_set,
             maybe_uninit,
         })
     })
@@ -533,30 +524,21 @@
     <span class="kw">let </span>arg_type = <span class="kw">match </span>maybe_partial {
         <span class="prelude-val">Some</span>(MaybePartial::Full(arg_type)) =&gt; arg_type,
         arg_type =&gt; {
-            <span class="kw">let </span>impl_ty = <span class="kw">match </span><span class="kw-2">&amp;*</span>param.ty {
-                syn::Type::ImplTrait(ty) =&gt; ty,
-                <span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new_spanned(<span class="kw-2">&amp;</span>param, USAGE_INFERENCE_ERROR)),
+            <span class="kw">let </span>syn::Type::Path(ty) = <span class="kw-2">&amp;*</span>param.ty <span class="kw">else </span>{
+                <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new_spanned(<span class="kw-2">&amp;*</span>param.ty, USAGE_INFERENCE_ERROR));
             };
 
-            <span class="kw">if </span>impl_ty.bounds.len() != <span class="number">1 </span>{
-                <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new_spanned(<span class="kw-2">&amp;</span>impl_ty.bounds, USAGE_INFERENCE_ERROR));
-            }
-
-            <span class="kw">let </span>bound = <span class="kw">match </span>impl_ty.bounds.first().expect(<span class="string">&quot;bounds.len() == 1&quot;</span>) {
-                syn::TypeParamBound::Trait(bound) =&gt; bound,
-                bound =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new_spanned(bound, USAGE_INFERENCE_ERROR)),
-            };
-
-            <span class="kw">let </span>trait_name = bound.path.segments.last().expect(<span class="string">&quot;path should not be empty&quot;</span>);
+            <span class="kw">let </span>trait_name = ty.path.segments.last().expect(<span class="string">&quot;path should not be empty&quot;</span>);
             <span class="kw">let </span>trait_name_string = trait_name.ident.to_string();
 
             <span class="kw">let </span>builder = <span class="kw">match </span>arg_type {
                 <span class="prelude-val">Some</span>(MaybePartial::Partial(builder)) =&gt; builder,
                 <span class="prelude-val">None </span>=&gt; <span class="kw">match </span>trait_name_string.as_str() {
                     <span class="string">&quot;ReadSimple&quot; </span>| <span class="string">&quot;WriteSimple&quot; </span>=&gt; simple_partial_builder(<span class="bool-val">false</span>, Vec::new()),
-                    <span class="string">&quot;ReadIsotope&quot; </span>| <span class="string">&quot;WriteIsotope&quot; </span>=&gt; {
-                        isotope_partial_builder(<span class="bool-val">false</span>, <span class="prelude-val">None</span>, Vec::new())
-                    }
+                    <span class="string">&quot;ReadIsotopePartial&quot;
+                    </span>| <span class="string">&quot;WriteIsotopePartial&quot;
+                    </span>| <span class="string">&quot;ReadIsotopeFull&quot;
+                    </span>| <span class="string">&quot;WriteIsotopeFull&quot; </span>=&gt; isotope_partial_builder(<span class="bool-val">false</span>, <span class="prelude-val">None</span>, Vec::new()),
                     <span class="string">&quot;EntityCreator&quot; </span>=&gt; entity_creator_partial_builder(<span class="bool-val">false</span>),
                     <span class="string">&quot;EntityDeleter&quot; </span>=&gt; entity_deleter_partial_builder(),
                     <span class="string">&quot;EntityIterator&quot; </span>=&gt; entity_iterator_partial_builder(),
@@ -665,8 +647,8 @@
             <span class="kw">let </span>discrim = opts.find_one(
                 |opt| <span class="macro">option_match!</span>(opt, opt::IsotopeArg::Discrim(<span class="kw">_</span>, discrim) =&gt; discrim),
             )<span class="question-mark">?</span>;
-            <span class="kw">let </span>discrim_key = opts
-                .find_one(|opt| <span class="macro">option_match!</span>(opt, opt::IsotopeArg::DiscrimKey(<span class="kw">_</span>, ty) =&gt; ty))<span class="question-mark">?
+            <span class="kw">let </span>discrim_set = opts
+                .find_one(|opt| <span class="macro">option_match!</span>(opt, opt::IsotopeArg::DiscrimSet(<span class="kw">_</span>, ty) =&gt; ty))<span class="question-mark">?
                 </span>.ok_or(param_span);
             <span class="kw">let </span>maybe_uninit = opts.merge_all(|opt| <span class="macro">option_match!</span>(opt, opt::IsotopeArg::MaybeUninit(<span class="kw">_</span>, tys) =&gt; tys.iter().cloned()));
 
@@ -677,7 +659,7 @@
                         arch: arch.clone(),
                         comp: comp.clone(),
                         discrim: discrim.map(|(<span class="kw">_</span>, discrim)| discrim.clone()),
-                        discrim_key: discrim_key.map(|(<span class="kw">_</span>, ty)| ty.clone()),
+                        discrim_set: discrim_set.map(|(<span class="kw">_</span>, ty)| ty.clone()),
                         maybe_uninit,
                     })
                 }

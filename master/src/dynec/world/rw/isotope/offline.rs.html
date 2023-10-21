@@ -35,10 +35,12 @@
 <a href="#35" id="35">35</a>
 <a href="#36" id="36">36</a>
 <a href="#37" id="37">37</a>
+<a href="#38" id="38">38</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::any::{type_name, TypeId};
 <span class="kw">use </span>std::sync::Arc;
 
-<span class="kw">use crate</span>::{comp, entity, world, Archetype, Storage <span class="kw">as _</span>};
+<span class="kw">use </span><span class="kw">crate</span>::storage::Access <span class="kw">as _</span>;
+<span class="kw">use crate</span>::{comp, entity, world, Archetype};
 
 <span class="kw">impl </span>world::Components {
     <span class="kw">fn </span>offline_isotope_storage&lt;A, C&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, discrim: C::Discrim) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;mut </span>C::Storage&gt;

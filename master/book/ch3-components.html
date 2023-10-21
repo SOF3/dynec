@@ -135,9 +135,14 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="components"><a class="header" href="#components">Components</a></h1>
-<p>Components store the actual data of entities.
-In dynec, since entities are statically archetyped,
-components are always only usable in specific archetypes.</p>
+<p>Components store the actual data for an entity.
+In Dynec, since entities are statically archetyped,
+a component is only meaningful when specified togethre with an archetype.</p>
+<p>There are two kinds of components, namely &quot;simple components&quot; and &quot;isotope components&quot;.
+For simple components, each entity cannot have
+more than one instance for each component type.
+Meanwhile, isotope components allow storing multiple instances
+of the same component type for the same entity.</p>
 
                     </main>
 

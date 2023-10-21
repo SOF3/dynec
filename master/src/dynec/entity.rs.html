@@ -220,6 +220,19 @@
 <a href="#220" id="220">220</a>
 <a href="#221" id="221">221</a>
 <a href="#222" id="222">222</a>
+<a href="#223" id="223">223</a>
+<a href="#224" id="224">224</a>
+<a href="#225" id="225">225</a>
+<a href="#226" id="226">226</a>
+<a href="#227" id="227">227</a>
+<a href="#228" id="228">228</a>
+<a href="#229" id="229">229</a>
+<a href="#230" id="230">230</a>
+<a href="#231" id="231">231</a>
+<a href="#232" id="232">232</a>
+<a href="#233" id="233">233</a>
+<a href="#234" id="234">234</a>
+<a href="#235" id="235">235</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! An entity is a single object that owns components.
 //!
 //! Entities are reference-counted in debug mode,
@@ -279,8 +292,8 @@
 }
 
 <span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>, A: Archetype&gt; TempRef&lt;<span class="lifetime">&#39;t</span>, A&gt; {
-    <span class="doccomment">/// Creates a new TemporaryRef with a lifetime.
-    </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>new(value: A::RawEntity) -&gt; <span class="self">Self </span>{ <span class="self">Self </span>{ value, _ph: PhantomData } }
+    <span class="doccomment">/// Creates a new temporary reference with a lifetime.
+    </span><span class="kw">pub fn </span>new(value: A::RawEntity) -&gt; <span class="self">Self </span>{ <span class="self">Self </span>{ value, _ph: PhantomData } }
 }
 
 <span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>, A: Archetype&gt; sealed::Sealed <span class="kw">for </span>TempRef&lt;<span class="lifetime">&#39;t</span>, A&gt; {}
@@ -296,6 +309,8 @@
 <span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>, A: Archetype&gt; Copy <span class="kw">for </span>TempRef&lt;<span class="lifetime">&#39;t</span>, A&gt; {}
 
 <span class="doccomment">/// A chunk of continuous [`TempRef`]s.
+///
+/// Methods on this type imitate the API of a [`&amp;[TempRef]`] slice.
 </span><span class="comment">// Instantiations of this struct must guarantee that all entities in `start..end`
 // satisfy the presence invariants for the duration of the lifetime `&#39;t`.
 </span><span class="kw">pub struct </span>TempRefChunk&lt;<span class="lifetime">&#39;t</span>, A: Archetype&gt; {
@@ -308,6 +323,17 @@
     <span class="doccomment">/// Creates a new TemporaryRef with a lifetime.
     </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>new(start: A::RawEntity, end: A::RawEntity) -&gt; <span class="self">Self </span>{
         <span class="self">Self </span>{ start, end, _ph: PhantomData }
+    }
+
+    <span class="doccomment">/// Gets the entity by a 0-based offset in the chunk.
+    ///
+    /// Returns `None` if the offset is out of bounds.
+    </span><span class="kw">pub fn </span>get(<span class="kw-2">&amp;</span><span class="self">self</span>, offset: usize) -&gt; <span class="prelude-ty">Option</span>&lt;TempRef&lt;<span class="lifetime">&#39;t</span>, A&gt;&gt; {
+        <span class="kw">if </span><span class="self">self</span>.start.add(offset) &lt; <span class="self">self</span>.end {
+            <span class="prelude-val">Some</span>(TempRef::new(<span class="self">self</span>.start.add(offset)))
+        } <span class="kw">else </span>{
+            <span class="prelude-val">None
+        </span>}
     }
 
     <span class="doccomment">/// Iterates over all entities in the chunk.

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"attr":["comp","global","system"],"derive":["Discrim","EntityRef"],"macro":["accessors","archetype","comps"]};
+window.SIDEBAR_ITEMS = {"attr":["comp","global","system"],"derive":["Discrim","EntityRef"],"macro":["archetype","comps","zip"]};

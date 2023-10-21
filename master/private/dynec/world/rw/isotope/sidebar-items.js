@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["panic_invalid_key","storage_map"],"mod":["offline","read","write"],"struct":["Base"]};
+window.SIDEBAR_ITEMS = {"fn":["panic_invalid_key","storage_map"],"mod":["offline","read","write"]};

@@ -134,6 +134,21 @@
 <a href="#134" id="134">134</a>
 <a href="#135" id="135">135</a>
 <a href="#136" id="136">136</a>
+<a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a>
+<a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::any::type_name;
 <span class="kw">use </span>std::marker::PhantomData;
 
@@ -142,8 +157,18 @@
 <span class="kw">use </span><span class="kw">crate</span>::comp::discrim::{FullMap <span class="kw">as _</span>, Mapped <span class="kw">as _</span>};
 <span class="kw">use </span><span class="kw">crate</span>::comp::{<span class="self">self</span>, Discrim};
 <span class="kw">use </span><span class="kw">crate</span>::entity::ealloc;
+<span class="kw">use </span><span class="kw">crate</span>::system::access::{StorageMap, StorageMapMut};
 <span class="kw">use </span><span class="kw">crate</span>::world::rw::isotope;
 <span class="kw">use crate</span>::{storage, system, world, Archetype};
+
+<span class="doccomment">/// Provides access to an isotope component in a specific archetype.
+///
+/// Getters require a mutable receiver to allow lazy initialization of new discriminants.
+/// Consider [splitting](system::AccessIsotope::split) accessors,
+/// which returns a [`system::AccessSingle`] with a shared receiver.
+/// If it can be asserted that no uninitialized discriminants will be encountered,
+/// use with [`known_discrims`](system::AccessIsotope::known_discrims).
+</span><span class="kw">pub type </span>WriteIsotopeFull&lt;<span class="lifetime">&#39;t</span>, A, C&gt; = system::AccessIsotope&lt;A, C, Storages&lt;<span class="lifetime">&#39;t</span>, A, C&gt;&gt;;
 
 <span class="kw">impl </span>world::Components {
     <span class="doccomment">/// Mutably access all discriminants of an isotope storage,
@@ -155,8 +180,8 @@
     </span><span class="kw">pub fn </span>write_full_isotope_storage&lt;A, C&gt;(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         snapshot: ealloc::Snapshot&lt;A::RawEntity&gt;,
-    ) -&gt; <span class="kw">impl </span>system::WriteIsotope&lt;A, C&gt; + <span class="lifetime">&#39;_
-    </span><span class="kw">where
+    ) -&gt; WriteIsotopeFull&lt;A, C&gt;
+    <span class="kw">where
         </span>A: Archetype,
         C: comp::Isotope&lt;A&gt;,
     {
@@ -179,11 +204,16 @@
             })
             .collect();
 
-        isotope::Base { getter: Getter { full_map, accessor_storages, snapshot, _ph: PhantomData } }
+        system::AccessIsotope::new(Storages {
+            full_map,
+            accessor_storages,
+            snapshot,
+            _ph: PhantomData,
+        })
     }
 }
 
-<span class="kw">struct </span>Getter&lt;<span class="lifetime">&#39;u</span>, A, C&gt;
+<span class="kw">pub struct </span>Storages&lt;<span class="lifetime">&#39;u</span>, A, C&gt;
 <span class="kw">where
     </span>A: Archetype,
     C: comp::Isotope&lt;A&gt;,
@@ -194,7 +224,7 @@
     _ph:               PhantomData&lt;(A, C)&gt;,
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;u</span>, A, C&gt; isotope::read::StorageGet&lt;A, C&gt; <span class="kw">for </span>Getter&lt;<span class="lifetime">&#39;u</span>, A, C&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">&#39;u</span>, A, C&gt; StorageMap&lt;A, C&gt; <span class="kw">for </span>Storages&lt;<span class="lifetime">&#39;u</span>, A, C&gt;
 <span class="kw">where
     </span>A: Archetype,
     C: comp::Isotope&lt;A&gt;,
@@ -242,7 +272,7 @@
     }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;u</span>, A, C&gt; isotope::write::StorageGetMut&lt;A, C&gt; <span class="kw">for </span>Getter&lt;<span class="lifetime">&#39;u</span>, A, C&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">&#39;u</span>, A, C&gt; StorageMapMut&lt;A, C&gt; <span class="kw">for </span>Storages&lt;<span class="lifetime">&#39;u</span>, A, C&gt;
 <span class="kw">where
     </span>A: Archetype,
     C: comp::Isotope&lt;A&gt;,

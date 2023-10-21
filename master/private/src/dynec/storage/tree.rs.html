@@ -163,42 +163,61 @@
 <a href="#163" id="163">163</a>
 <a href="#164" id="164">164</a>
 <a href="#165" id="165">165</a>
+<a href="#166" id="166">166</a>
+<a href="#167" id="167">167</a>
+<a href="#168" id="168">168</a>
+<a href="#169" id="169">169</a>
+<a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
+<a href="#172" id="172">172</a>
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
+<a href="#180" id="180">180</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::cell::SyncUnsafeCell;
 <span class="kw">use </span>std::collections::BTreeMap;
 <span class="kw">use </span>std::slice;
 
-<span class="kw">use super</span>::{ChunkMut, ChunkRef, Storage};
+<span class="kw">use super</span>::{Access, ChunkMut, ChunkRef, Partition, Storage};
 <span class="kw">use </span><span class="kw">crate</span>::entity;
 
 <span class="doccomment">/// A storage based on [`BTreeMap`].
-</span><span class="kw">pub struct </span>Tree&lt;E: entity::Raw, C&gt; {
-    <span class="comment">// `SyncUnsafeCell&lt;C&gt;` here must be treaeted as a normal `C`
+</span><span class="kw">pub struct </span>Tree&lt;RawT: entity::Raw, C&gt; {
+    <span class="comment">// `SyncUnsafeCell&lt;C&gt;` here must be treated as a normal `C`
     // unless the whole storage is mutably locked,
     // which means the current function exclusively manages this map.
     // `&amp;Tree` must not be used to access the cells mutably.
-    </span>data: BTreeMap&lt;E, SyncUnsafeCell&lt;C&gt;&gt;,
+    </span>data: BTreeMap&lt;RawT, SyncUnsafeCell&lt;C&gt;&gt;,
 }
 
-<span class="kw">impl</span>&lt;E: entity::Raw, C&gt; Default <span class="kw">for </span>Tree&lt;E, C&gt; {
+<span class="kw">impl</span>&lt;RawT: entity::Raw, C&gt; Default <span class="kw">for </span>Tree&lt;RawT, C&gt; {
     <span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{ <span class="self">Self </span>{ data: BTreeMap::new() } }
 }
 
-<span class="comment">// Safety: the backend of `get`/`get_mut` is a BTreeSet,
-// which is defined to be injective
-// assuming correct implementation of Eq + Ord.
-</span><span class="kw">unsafe impl</span>&lt;E: entity::Raw, C: Send + Sync + <span class="lifetime">&#39;static</span>&gt; Storage <span class="kw">for </span>Tree&lt;E, C&gt; {
-    <span class="kw">type </span>RawEntity = E;
+<span class="kw">impl</span>&lt;RawT: entity::Raw, C: Send + Sync + <span class="lifetime">&#39;static</span>&gt; Access <span class="kw">for </span>Tree&lt;RawT, C&gt; {
+    <span class="kw">type </span>RawEntity = RawT;
     <span class="kw">type </span>Comp = C;
 
+    <span class="kw">fn </span>get_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>, id: <span class="self">Self</span>::RawEntity) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;mut </span>C&gt; {
+        <span class="self">self</span>.data.get_mut(<span class="kw-2">&amp;</span>id).map(|cell| cell.get_mut())
+    }
+
+    <span class="kw">type </span>IterMut&lt;<span class="lifetime">&#39;t</span>&gt; = <span class="kw">impl </span>Iterator&lt;Item = (<span class="self">Self</span>::RawEntity, <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span><span class="self">Self</span>::Comp)&gt; + <span class="lifetime">&#39;t</span>;
+    <span class="kw">fn </span>iter_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::IterMut&lt;<span class="lifetime">&#39;_</span>&gt; {
+        Box::new(<span class="self">self</span>.data.iter_mut().map(|(<span class="kw-2">&amp;</span>entity, cell)| (entity, cell.get_mut())))
+    }
+}
+
+<span class="kw">impl</span>&lt;RawT: entity::Raw, C: Send + Sync + <span class="lifetime">&#39;static</span>&gt; Storage <span class="kw">for </span>Tree&lt;RawT, C&gt; {
     <span class="kw">fn </span>get(<span class="kw-2">&amp;</span><span class="self">self</span>, id: <span class="self">Self</span>::RawEntity) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>C&gt; {
         <span class="self">self</span>.data.get(<span class="kw-2">&amp;</span>id).map(|cell| <span class="kw">unsafe </span>{
             <span class="comment">// Safety: `&amp;self` implies that nobody else can mutate the values.
             </span><span class="kw-2">&amp;*</span>cell.get()
         })
-    }
-
-    <span class="kw">fn </span>get_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>, id: <span class="self">Self</span>::RawEntity) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;mut </span>C&gt; {
-        <span class="self">self</span>.data.get_mut(<span class="kw-2">&amp;</span>id).map(|cell| cell.get_mut())
     }
 
     <span class="kw">fn </span>set(<span class="kw-2">&amp;mut </span><span class="self">self</span>, id: <span class="self">Self</span>::RawEntity, new: <span class="prelude-ty">Option</span>&lt;C&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;C&gt; {
@@ -226,32 +245,27 @@
         <span class="self">self</span>.iter().map(|(entity, item)| ChunkRef { slice: slice::from_ref(item), start: entity })
     }
 
-    <span class="kw">type </span>IterMut&lt;<span class="lifetime">&#39;t</span>&gt; = <span class="kw">impl </span>Iterator&lt;Item = (<span class="self">Self</span>::RawEntity, <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span><span class="self">Self</span>::Comp)&gt; + <span class="lifetime">&#39;t</span>;
-    <span class="kw">fn </span>iter_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::IterMut&lt;<span class="lifetime">&#39;_</span>&gt; {
-        Box::new(<span class="self">self</span>.data.iter_mut().map(|(<span class="kw-2">&amp;</span>entity, cell)| (entity, cell.get_mut())))
-    }
-
     <span class="kw">type </span>IterChunksMut&lt;<span class="lifetime">&#39;t</span>&gt; = <span class="kw">impl </span>Iterator&lt;Item = ChunkMut&lt;<span class="lifetime">&#39;t</span>, <span class="self">Self</span>&gt;&gt; + <span class="lifetime">&#39;t</span>;
     <span class="kw">fn </span>iter_chunks_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::IterChunksMut&lt;<span class="lifetime">&#39;_</span>&gt; {
         <span class="self">self</span>.iter_mut()
             .map(|(entity, item)| ChunkMut { slice: slice::from_mut(item), start: entity })
     }
 
-    <span class="kw">type </span>Partition&lt;<span class="lifetime">&#39;t</span>&gt; = StoragePartition&lt;<span class="lifetime">&#39;t</span>, E, C&gt;;
+    <span class="kw">type </span>Partition&lt;<span class="lifetime">&#39;t</span>&gt; = StoragePartition&lt;<span class="lifetime">&#39;t</span>, RawT, C&gt;;
     <span class="kw">fn </span>as_partition(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::Partition&lt;<span class="lifetime">&#39;_</span>&gt; {
         StoragePartition { data: <span class="kw-2">&amp;</span><span class="self">self</span>.data, lower_bound: <span class="prelude-val">None</span>, upper_bound: <span class="prelude-val">None </span>}
     }
 }
 
-<span class="doccomment">/// Return value of [`Tree::partition_at`].
-</span><span class="kw">pub struct </span>StoragePartition&lt;<span class="lifetime">&#39;t</span>, E: entity::Raw, C&gt; {
-    data:        <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span>BTreeMap&lt;E, SyncUnsafeCell&lt;C&gt;&gt;,
-    lower_bound: <span class="prelude-ty">Option</span>&lt;E&gt;,
-    upper_bound: <span class="prelude-ty">Option</span>&lt;E&gt;,
+<span class="doccomment">/// Return value of [`Tree::split_at`].
+</span><span class="kw">pub struct </span>StoragePartition&lt;<span class="lifetime">&#39;t</span>, RawT: entity::Raw, C&gt; {
+    data:        <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span>BTreeMap&lt;RawT, SyncUnsafeCell&lt;C&gt;&gt;,
+    lower_bound: <span class="prelude-ty">Option</span>&lt;RawT&gt;,
+    upper_bound: <span class="prelude-ty">Option</span>&lt;RawT&gt;,
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>, E: entity::Raw, C&gt; StoragePartition&lt;<span class="lifetime">&#39;t</span>, E, C&gt; {
-    <span class="kw">fn </span>assert_bounds(<span class="kw-2">&amp;</span><span class="self">self</span>, entity: E) {
+<span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>, RawT: entity::Raw, C&gt; StoragePartition&lt;<span class="lifetime">&#39;t</span>, RawT, C&gt; {
+    <span class="kw">fn </span>assert_bounds(<span class="kw-2">&amp;</span><span class="self">self</span>, entity: RawT) {
         <span class="kw">if let </span><span class="prelude-val">Some</span>(bound) = <span class="self">self</span>.lower_bound {
             <span class="macro">assert!</span>(entity &gt;= bound, <span class="string">&quot;Entity {entity:?} is not in the partition {bound:?}..&quot;</span>);
         }
@@ -261,19 +275,11 @@
     }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>, E: entity::Raw, C: Send + Sync + <span class="lifetime">&#39;static</span>&gt; <span class="kw">super</span>::Partition&lt;<span class="lifetime">&#39;t</span>, E, C&gt;
-    <span class="kw">for </span>StoragePartition&lt;<span class="lifetime">&#39;t</span>, E, C&gt;
-{
-    <span class="kw">type </span>ByRef&lt;<span class="lifetime">&#39;u</span>&gt; = StoragePartition&lt;<span class="lifetime">&#39;u</span>, E, C&gt; <span class="kw">where </span><span class="self">Self</span>: <span class="lifetime">&#39;u</span>;
-    <span class="kw">fn </span>by_ref(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::ByRef&lt;<span class="lifetime">&#39;_</span>&gt; {
-        StoragePartition {
-            data:        <span class="self">self</span>.data,
-            lower_bound: <span class="self">self</span>.lower_bound,
-            upper_bound: <span class="self">self</span>.upper_bound,
-        }
-    }
+<span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>, RawT: entity::Raw, C: Send + Sync + <span class="lifetime">&#39;static</span>&gt; Access <span class="kw">for </span>StoragePartition&lt;<span class="lifetime">&#39;t</span>, RawT, C&gt; {
+    <span class="kw">type </span>RawEntity = RawT;
+    <span class="kw">type </span>Comp = C;
 
-    <span class="kw">fn </span>get_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>, entity: E) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;mut </span>C&gt; {
+    <span class="kw">fn </span>get_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>, entity: RawT) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;mut </span>C&gt; {
         <span class="self">self</span>.assert_bounds(entity);
 
         <span class="kw">let </span>cell = <span class="self">self</span>.data.get(<span class="kw-2">&amp;</span>entity)<span class="question-mark">?</span>;
@@ -285,11 +291,27 @@
         }
     }
 
-    <span class="kw">type </span>IterMut = <span class="kw">impl </span>Iterator&lt;Item = (E, <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>C)&gt;;
-    <span class="kw">fn </span>iter_mut(<span class="self">self</span>) -&gt; <span class="self">Self</span>::IterMut {
+    <span class="kw">type </span>IterMut&lt;<span class="lifetime">&#39;u</span>&gt; = <span class="kw">impl </span>Iterator&lt;Item = (<span class="self">Self</span>::RawEntity, <span class="kw-2">&amp;</span><span class="lifetime">&#39;u </span><span class="kw-2">mut </span><span class="self">Self</span>::Comp)&gt; + <span class="lifetime">&#39;u </span><span class="kw">where </span><span class="self">Self</span>: <span class="lifetime">&#39;u</span>;
+    <span class="kw">fn </span>iter_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::IterMut&lt;<span class="lifetime">&#39;_</span>&gt; { <span class="self">self</span>.by_ref().into_iter_mut() }
+}
+
+<span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>, RawT: entity::Raw, C: Send + Sync + <span class="lifetime">&#39;static</span>&gt; Partition&lt;<span class="lifetime">&#39;t</span>&gt;
+    <span class="kw">for </span>StoragePartition&lt;<span class="lifetime">&#39;t</span>, RawT, C&gt;
+{
+    <span class="kw">type </span>ByRef&lt;<span class="lifetime">&#39;u</span>&gt; = StoragePartition&lt;<span class="lifetime">&#39;u</span>, RawT, C&gt; <span class="kw">where </span><span class="self">Self</span>: <span class="lifetime">&#39;u</span>;
+    <span class="kw">fn </span>by_ref(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::ByRef&lt;<span class="lifetime">&#39;_</span>&gt; {
+        StoragePartition {
+            data:        <span class="self">self</span>.data,
+            lower_bound: <span class="self">self</span>.lower_bound,
+            upper_bound: <span class="self">self</span>.upper_bound,
+        }
+    }
+
+    <span class="kw">type </span>IntoIterMut = <span class="kw">impl </span>Iterator&lt;Item = (RawT, <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>C)&gt;;
+    <span class="kw">fn </span>into_iter_mut(<span class="self">self</span>) -&gt; <span class="self">Self</span>::IntoIterMut {
         <span class="kw">let </span>iter = <span class="kw">match </span>(<span class="self">self</span>.lower_bound, <span class="self">self</span>.upper_bound) {
             (<span class="prelude-val">Some</span>(lower), <span class="prelude-val">Some</span>(upper)) =&gt; Box::new(<span class="self">self</span>.data.range(lower..upper))
-                <span class="kw">as </span>Box&lt;<span class="kw">dyn </span>Iterator&lt;Item = (<span class="kw-2">&amp;</span>E, <span class="kw-2">&amp;</span>SyncUnsafeCell&lt;C&gt;)&gt;&gt;,
+                <span class="kw">as </span>Box&lt;<span class="kw">dyn </span>Iterator&lt;Item = (<span class="kw-2">&amp;</span>RawT, <span class="kw-2">&amp;</span>SyncUnsafeCell&lt;C&gt;)&gt;&gt;,
             (<span class="prelude-val">Some</span>(lower), <span class="prelude-val">None</span>) =&gt; Box::new(<span class="self">self</span>.data.range(lower..)),
             (<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(upper)) =&gt; Box::new(<span class="self">self</span>.data.range(..upper)),
             (<span class="prelude-val">None</span>, <span class="prelude-val">None</span>) =&gt; Box::new(<span class="self">self</span>.data.iter()),
@@ -304,25 +326,33 @@
         })
     }
 
-    <span class="kw">fn </span>partition_at(<span class="self">self</span>, entity: E) -&gt; (<span class="self">Self</span>, <span class="self">Self</span>) {
+    <span class="kw">fn </span>into_mut(<span class="self">self</span>, entity: <span class="self">Self</span>::RawEntity) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span><span class="self">Self</span>::Comp&gt; {
         <span class="self">self</span>.assert_bounds(entity);
+
+        <span class="kw">let </span>cell = <span class="self">self</span>.data.get(<span class="kw-2">&amp;</span>entity)<span class="question-mark">?</span>;
+        <span class="kw">unsafe </span>{
+            <span class="comment">// Safety: StoragePartition locks all keys under `self.cmp` exclusively,
+            // and our key is under `self.cmp`.
+            // We already have `&amp;mut self`, so no other threads are accessing this range.
+            </span><span class="prelude-val">Some</span>(<span class="kw-2">&amp;mut *</span>cell.get())
+        }
+    }
+
+    <span class="kw">fn </span>split_out(<span class="kw-2">&amp;mut </span><span class="self">self</span>, entity: RawT) -&gt; <span class="self">Self </span>{
+        <span class="self">self</span>.assert_bounds(entity);
+
+        <span class="kw">let </span>right = <span class="self">Self </span>{
+            data:        <span class="self">self</span>.data,
+            lower_bound: <span class="prelude-val">Some</span>(entity),
+            upper_bound: <span class="self">self</span>.upper_bound,
+        };
+        <span class="self">self</span>.upper_bound = <span class="prelude-val">Some</span>(entity);
 
         <span class="comment">// Safety: `entity` is between lower_bound and upper_bound,
         // so the resultant bound will be non-overlapping.
         // We already have `&amp;mut self`, so this range cannot be used until the partitions are
         // dropped.
-        </span>(
-            <span class="self">Self </span>{
-                data:        <span class="self">self</span>.data,
-                lower_bound: <span class="self">self</span>.lower_bound,
-                upper_bound: <span class="prelude-val">Some</span>(entity),
-            },
-            <span class="self">Self </span>{
-                data:        <span class="self">self</span>.data,
-                lower_bound: <span class="prelude-val">Some</span>(entity),
-                upper_bound: <span class="self">self</span>.upper_bound,
-            },
-        )
+        </span>right
     }
 }
 

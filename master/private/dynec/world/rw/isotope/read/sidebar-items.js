@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["own_storage"],"mod":["full","partial"],"opaque":[""],"struct":["SplitReader"],"trait":["StorageGet","StorageGetRef"],"type":["LockedStorage"]};
+window.SIDEBAR_ITEMS = {"fn":["own_storage"],"mod":["full","partial"],"type":["LockedStorage"]};

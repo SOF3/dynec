@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["imp"],"struct":["Field","Input","Inputs"]};

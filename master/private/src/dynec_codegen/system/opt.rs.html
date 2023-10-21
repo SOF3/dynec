@@ -427,7 +427,7 @@
     Arch(<span class="macro">syn::Token!</span>[=], Box&lt;syn::Type&gt;),
     Comp(<span class="macro">syn::Token!</span>[=], Box&lt;syn::Type&gt;),
     Discrim(<span class="macro">syn::Token!</span>[=], Box&lt;syn::Expr&gt;),
-    DiscrimKey(<span class="macro">syn::Token!</span>[=], Box&lt;syn::Type&gt;),
+    DiscrimSet(<span class="macro">syn::Token!</span>[=], Box&lt;syn::Type&gt;),
     MaybeUninit(syn::token::Paren, Punctuated&lt;syn::Type, <span class="macro">syn::Token!</span>[,]&gt;),
 }
 
@@ -453,10 +453,10 @@
                 <span class="kw">let </span>discrim = input.parse::&lt;syn::Expr&gt;()<span class="question-mark">?</span>;
                 IsotopeArg::Discrim(eq, Box::new(discrim))
             }
-            <span class="string">&quot;discrim_key&quot; </span>=&gt; {
+            <span class="string">&quot;discrim_set&quot; </span>=&gt; {
                 <span class="kw">let </span>eq = input.parse::&lt;<span class="macro">syn::Token!</span>[=]&gt;()<span class="question-mark">?</span>;
                 <span class="kw">let </span>ty = input.parse::&lt;syn::Type&gt;()<span class="question-mark">?</span>;
-                IsotopeArg::DiscrimKey(eq, Box::new(ty))
+                IsotopeArg::DiscrimSet(eq, Box::new(ty))
             }
             <span class="string">&quot;maybe_uninit&quot; </span>=&gt; parse_maybe_uninit(input, IsotopeArg::MaybeUninit)<span class="question-mark">?</span>,
             <span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new_spanned(<span class="kw-2">&amp;</span>name, <span class="string">&quot;Unknown option for #[dynec(isotope)]&quot;</span>)),

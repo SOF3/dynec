@@ -2,7 +2,7 @@
     pub(crate) ty: <a class="struct" href="../../util/struct.DbgTypeId.html" title="struct dynec::util::DbgTypeId">DbgTypeId</a>,
 }</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Builtin partition for partitioning component accessors before entity creators.</p>
 <h2 id="entity-creators"><a href="#entity-creators">Entity creators</a></h2>
-<p>All systems that request an <a href="../entity/trait.EntityCreator.html" title="trait dynec::system::entity::EntityCreator"><code>EntityCreator&lt;A&gt;</code></a>
+<p>All systems that request an <a href="../offline_buffer/struct.EntityCreator.html" title="struct dynec::system::offline_buffer::EntityCreator"><code>EntityCreator&lt;A&gt;</code></a>
 run after <code>EntityCreationPartition::new::&lt;A&gt;()</code>.
 This is to ensure systems that access strong references of this archetype
 are not run between the execution of this system and the cycle join,
@@ -12,7 +12,7 @@ no unknown systems can access the uninitialized reference it produces
 (e.g. if it does not store the created entity anywhere,
 or if the created entity is only accessiblee in a private component
 before the current cycle ends),
-on the argument that requested a <a href="../entity/trait.EntityCreator.html" title="trait dynec::system::entity::EntityCreator"><code>EntityCreator&lt;A&gt;</code></a>,
+on the argument that requested a <a href="../offline_buffer/struct.EntityCreator.html" title="struct dynec::system::offline_buffer::EntityCreator"><code>EntityCreator&lt;A&gt;</code></a>,
 apply the attribute <code>#[dynec(entity_creator(no_partition))]</code>;
 for manually defined systems that do not use the macro,
 call <a href="../spec/struct.EntityCreatorRequest.html" title="struct dynec::system::spec::EntityCreatorRequest"><code>EntityCreatorRequest::no_partition</code></a>.

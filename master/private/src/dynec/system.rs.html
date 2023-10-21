@@ -108,23 +108,23 @@
 <span class="kw">use </span><span class="kw">crate</span>::entity::{ealloc, referrer};
 <span class="kw">use </span><span class="kw">crate</span>::world;
 <span class="kw">use </span><span class="kw">crate</span>::world::offline;
+<span class="kw">pub use </span><span class="kw">crate</span>::world::rw::isotope::read::full::ReadIsotopeFull;
+<span class="kw">pub use </span><span class="kw">crate</span>::world::rw::isotope::read::partial::ReadIsotopePartial;
+<span class="kw">pub use </span><span class="kw">crate</span>::world::rw::isotope::write::full::WriteIsotopeFull;
+<span class="kw">pub use </span><span class="kw">crate</span>::world::rw::isotope::write::partial::WriteIsotopePartial;
+<span class="kw">pub use </span><span class="kw">crate</span>::world::rw::simple::{ReadSimple, WriteSimple};
 
-<span class="kw">mod </span>rw;
-<span class="kw">pub use </span>rw::{
-    Mut, MutChunk, MutFull, MutFullChunk, MutPartition, MutPartitionChunk, Read, ReadChunk,
-    ReadIsotope, ReadIsotopeRef, ReadSimple, Write, WriteIsotope, WriteSimple,
-};
+<span class="kw">pub mod </span>access;
+<span class="kw">pub use </span>access::{Isotope <span class="kw">as </span>AccessIsotope, Single <span class="kw">as </span>AccessSingle};
 
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>accessor;
-<span class="kw">pub use </span>accessor::{Accessor, Chunked <span class="kw">as </span>ChunkedAccessor};
+<span class="kw">pub mod </span>iter;
+<span class="kw">pub use </span>iter::{EntityIterator, IntoZip, Try, Zip, ZipChunked};
 
 <span class="kw">pub mod </span>partition;
 <span class="kw">pub use </span>partition::{EntityCreationPartition, Partition};
 
-<span class="kw">mod </span>entity;
-<span class="attr">#[doc(hidden)]
-</span><span class="kw">pub use </span>entity::{entity_iterator, EntityCreatorImpl, EntityDeleterImpl};
-<span class="kw">pub use </span>entity::{EntityCreator, EntityDeleter, EntityIterator};
+<span class="kw">mod </span>offline_buffer;
+<span class="kw">pub use </span>offline_buffer::{EntityCreator, EntityDeleter};
 
 <span class="kw">pub mod </span>spec;
 <span class="attr">#[doc(inline)]
@@ -157,7 +157,7 @@
 ///
 /// There may be multiple instances of the same implementor type.
 /// This is meaningful as they may have different states.
-</span><span class="kw">pub trait </span>Sendable: Send + Descriptor {
+</span><span class="kw">pub trait </span>Sendable: Send + Descriptor + <span class="lifetime">&#39;static </span>{
     <span class="doccomment">/// Runs the system.
     </span><span class="kw">fn </span>run(
         <span class="kw-2">&amp;mut </span><span class="self">self</span>,
@@ -174,7 +174,7 @@
 <span class="doccomment">/// A variant of [`Sendable`] that runs on the main thread only,
 /// but allows storing [`Send`] states
 /// and accessing non-&lt;code&gt;[Send] + [Sync]&lt;/code&gt; global states.
-</span><span class="kw">pub trait </span>Unsendable: Descriptor {
+</span><span class="kw">pub trait </span>Unsendable: Descriptor + <span class="lifetime">&#39;static </span>{
     <span class="doccomment">/// Runs the system.
     </span><span class="kw">fn </span>run(
         <span class="kw-2">&amp;mut </span><span class="self">self</span>,

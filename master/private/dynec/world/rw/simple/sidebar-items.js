@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"opaque":[""],"struct":["SimpleRw"]};
+window.SIDEBAR_ITEMS = {"type":["ReadSimple","WriteSimple"]};

@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"mod":["tuple_impl"],"struct":["MustRead","MustReadChunkSimple","MustWrite","MustWriteChunkSimple","TryRead","TryWrite"],"trait":["Accessor","Chunked"]};

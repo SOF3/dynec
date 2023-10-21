@@ -135,35 +135,42 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="archetypes"><a class="header" href="#archetypes">Archetypes</a></h1>
-<p>In traditional ECS frameworks, entities are grouped by the components they have,
-e.g. if an entity has a &quot;location&quot; and &quot;speed&quot; component,
-it is considered as an entity that can move and
-is looped by the system that requests these components.
-The set of components created for an entity is called its &quot;archetype&quot;,
-which is comparable to &quot;classes&quot; in OOP.</p>
-<p>In dynec, entities are <em>statically archetyped</em>,
-which means the possible components of an entity is <em>known</em> and <em>fixed</em> from creation.
-In the analogy of rows and columns, an archetype is similar to a table.
-As such, different archetypes have their own entity IDs.</p>
-<p>What if we want to add/remove components for an entity?
-dynec still supports optional components,
-but the entity is still stored in the same archetype,
-so it still appears in the loop when systems iterate over this archetype.
-If you would like to loop over entities with certain components,
-it is a better idea to split the components to a separate entity with a new archetype
-and loop on that archetype instead.
-(It is also possible to loop over entities with a specific component,
-but joining multiple components is not supported)</p>
+<p>In traditional ECS, the type of an entity is identified by the components it has.
+For example, an entity is considered to be &quot;moveable&quot;
+if it has the &quot;location&quot; and &quot;speed&quot; components.
+Systems iterate over the &quot;moveable&quot; entities by performing a &quot;join query&quot;
+that intersects the entities with a &quot;location&quot; and the entities with a &quot;speed&quot;.
+Thus, an entity type is effectively a subtype of any combination of its components,
+e.g. both &quot;player&quot; and &quot;bullet&quot; are subtypes of &quot;moveable&quot;.</p>
+<p>Dynec takes a different approach on entity typing.
+Dynec requires the type of an entity (its &quot;archeytpe&quot;) to be
+<em>known</em> during creation and <em>immutable</em> after creation (&quot;statically archetyped&quot;).
+A reference to an entity always contains the archetype.</p>
+<p>Dynec still supports adding/removing components for an entity,
+but this is implemented by making the component optional (effectively <code>Option&lt;Comp&gt;</code>)
+instead of changing its archetype.
+Adding/removing a component would not affect
+systems iterating over all entities of its archetype.</p>
+<p>To iterate over entities with only a specific component,
+the suggested approach is to split the components
+to a separate entity with a new archetype
+and iterate over entities with that archetype instead.
+(It is also possible to iterate over entities with a specific component,
+but it is less efficient than iterate over all entities of the same component,
+and joining multiple components is not supported)</p>
 <p>Archetypes are typically represented as an unconstructable type (an empty enum)
-that is referenced as a type parameter in system declarations.
+referenced as a type parameter in system declarations.
+Therefore, multiple systems can reuse the same generic function
+where the archetype is a type parameter,
+achieving something similar to the &quot;subtyping&quot; approach.
+Nevertheless, Dynec discourages treating archetypes as subtypes
+and encourages splitting shared components to an entity.
 Therefore, it is possible to reuse the same function
-for multiple systems by leaving the archetype as a type parameter.
-There is a convenience macro to achieve this:</p>
+for multiple systems by leaving the archetype as a type parameter.</p>
+<p>An archetype can be declared through the <a href="../dynec/macro.archetype.html"><code>dynec::archetype</code></a> macro:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use dynec::archetype;
-
-archetype! {
+</span>dynec::archetype! {
     /// A building entity can store goods inside.
     pub Building;
 
@@ -172,8 +179,8 @@ archetype! {
 }
 <span class="boring">}
 </span></code></pre></pre>
-<p>The <a href="https://sof3.github.io/dynec/master/dynec/macro.archetype.html"><code>archetype!</code> macro</a> just declares an empty enum
-that implements <a href="https://sof3.github.io/dynec/master/dynec/archetype/trait.Archetype.html"><code>Archetype</code></a>.</p>
+<p>There is nothing magical here;
+each line just declares an empty enum and implements <a href="../dynec/archetype/trait.Archetype.html"><code>Archetype</code></a> for it.</p>
 
                     </main>
 

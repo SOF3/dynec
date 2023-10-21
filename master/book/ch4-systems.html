@@ -135,8 +135,8 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="systems"><a class="header" href="#systems">Systems</a></h1>
-<p>Systems contain the actual code that process components.</p>
-<p>Systems can be easily created using the <a href="https://sof3.github.io/dynec/master/dynec/attr.system.html"><code>#[system]</code></a> macro:</p>
+<p>Systems contain the actual code that process components.
+A system can be created using the <a href="https://sof3.github.io/dynec/master/dynec/attr.system.html"><code>#[system]</code></a> macro:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use dynec::system;
@@ -152,7 +152,7 @@ fn hello_world() {
 with the associated functions <code>hello_world::call()</code> and <code>hello_world.build()</code>.
 <code>call</code> calls the original function directly,
 while <code>build()</code> creates a system descriptor that can be passed to a world builder.</p>
-<p>We can package this system into a &quot;bundle&quot;</p>
+<p>We can package this system into a &quot;bundle&quot;:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>use dynec::world;
@@ -161,13 +161,13 @@ pub struct MyBundle;
 
 impl world::Bundle for Bundle {
     fn register(&amp;mut self, builder: &amp;mut world::Builder) {
-        builder.schedule(Box::new(hello_world.build()));
+        builder.schedule(hello_world.build());
         // schedule more systems here
     }
 }
 <span class="boring">}
 </span></code></pre></pre>
-<p>Then users can add the whole bundle into their world:</p>
+<p>Then users can add the bundle into their world:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>let mut world = dynec::new([
@@ -176,7 +176,7 @@ impl world::Bundle for Bundle {
 ]);
 <span class="boring">}
 </span></code></pre></pre>
-<p>Alternatively, for non-distribution scenarios (e.g. unit testing),
+<p>Alternatively, in unit tests,
 the <a href="https://sof3.github.io/dynec/master/dynec/macro.system_test.html"><code>system_test!</code></a> macro can be used:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -194,10 +194,16 @@ Run this in your program main loop:</p>
 })
 <span class="boring">}
 </span></code></pre></pre>
+<h2 id="ticking"><a class="header" href="#ticking">Ticking</a></h2>
 <p>Since dynec is just a platform-agnostic ECS framework,
-it does not integrate with any GUI frameworks to execute the main loop directly.
+it does not integrate with any GUI or scheduler frameworks to execute the main loop.
 Usually it is executed at the same rate as the world simulation, screen rendering
 or turns (for turn-based games), depending on your requirements.</p>
+<p>It is advisable to keep latency-sensitive operations out of the main loop,
+i.e. do not process them directly with the Dynec scheduler
+so that the world tick rate does not become a necessary latency bottleneck.
+Dynec systems are designed for ticked simulation, not event handling;
+event handlers may interact with the ticked world through non-blocking channels.</p>
 
                     </main>
 

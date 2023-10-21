@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"macro":["impl_accessor_set_for_tuple","impl_accessor_set_for_tuple_accumulate"]};

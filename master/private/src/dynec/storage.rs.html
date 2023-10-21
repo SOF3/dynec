@@ -191,19 +191,6 @@
 <a href="#191" id="191">191</a>
 <a href="#192" id="192">192</a>
 <a href="#193" id="193">193</a>
-<a href="#194" id="194">194</a>
-<a href="#195" id="195">195</a>
-<a href="#196" id="196">196</a>
-<a href="#197" id="197">197</a>
-<a href="#198" id="198">198</a>
-<a href="#199" id="199">199</a>
-<a href="#200" id="200">200</a>
-<a href="#201" id="201">201</a>
-<a href="#202" id="202">202</a>
-<a href="#203" id="203">203</a>
-<a href="#204" id="204">204</a>
-<a href="#205" id="205">205</a>
-<a href="#206" id="206">206</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! A storage is the data structure where components of the same type for all entities are stored.
 
 </span><span class="kw">use </span><span class="kw">crate</span>::entity;
@@ -223,33 +210,9 @@
 </span><span class="kw">mod </span>tests;
 
 <span class="doccomment">/// A storage for storing component data.
-///
-/// # Safety
-/// Implementors of this trait must ensure that
-/// [`get`](Self::get) and [`get_mut`](Self::get_mut) are consistent and [injective][injective].
-/// In other words, for any `a: Self::RawEntity`,
-/// `get(a)` and `get_mut(a)` return the same value (only differing by mutability),
-/// and for any `b: Self::RawEntity` where `a != b`, `get(a)` must not alias `get(b)`.
-///
-/// This implies the implementation is not safe if
-/// [`Eq`] and [`Ord`] are incorrectly implemented for `Self::RawEntity`,
-/// which is why [`entity::Raw`] is an unsafe trait
-/// that strictly requires complete equivalence and ordering.
-/// (Imagine if `RawEntity` is [`f64`], and `a` and `b` are both [`f64::NAN`];
-/// then `a != b` but `get_mut(a)` would still alias `get_mut(b)`)
-///
-/// [injective]: https://en.wikipedia.org/wiki/Injective_function
-</span><span class="kw">pub unsafe trait </span>Storage: Default + Send + Sync + <span class="lifetime">&#39;static </span>{
-    <span class="doccomment">/// The type of entity ID used for identification.
-    </span><span class="kw">type </span>RawEntity: entity::Raw;
-    <span class="doccomment">/// The component type stored.
-    </span><span class="kw">type </span>Comp: Send + Sync;
-
+</span><span class="kw">pub trait </span>Storage: Access + Default + Send + Sync + <span class="lifetime">&#39;static </span>{
     <span class="doccomment">/// Gets a shared reference to the component for a specific entity if it is present.
     </span><span class="kw">fn </span>get(<span class="kw-2">&amp;</span><span class="self">self</span>, id: <span class="self">Self</span>::RawEntity) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="self">Self</span>::Comp&gt;;
-
-    <span class="doccomment">/// Gets a mutable reference to the component for a specific entity if it is present.
-    </span><span class="kw">fn </span>get_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>, id: <span class="self">Self</span>::RawEntity) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;mut </span><span class="self">Self</span>::Comp&gt;;
 
     <span class="doccomment">/// Sets or removes the component for a specific entity,
     /// returning the original value if it was present.
@@ -271,12 +234,9 @@
     /// where `slice` is the slice of components in the chunk,
     /// and `index` is the entity index of `slice[0]`.
     /// `slice` is always nonempty.
+    ///
+    /// Non-chunked storages should implement this function by returning a chunk for each entity.
     </span><span class="kw">fn </span>iter_chunks(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self</span>::IterChunks&lt;<span class="lifetime">&#39;_</span>&gt;;
-
-    <span class="doccomment">/// Return value of [`iter_mut`](Self::iter_mut).
-    </span><span class="kw">type </span>IterMut&lt;<span class="lifetime">&#39;t</span>&gt;: Iterator&lt;Item = (<span class="self">Self</span>::RawEntity, <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span><span class="self">Self</span>::Comp)&gt; + <span class="lifetime">&#39;t</span>;
-    <span class="doccomment">/// Returns a mutable iterator over the storage, ordered by entity index order.
-    </span><span class="kw">fn </span>iter_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::IterMut&lt;<span class="lifetime">&#39;_</span>&gt;;
 
     <span class="doccomment">/// Return value of [`iter_chunks_mut`](Self::iter_chunks_mut).
     </span><span class="kw">type </span>IterChunksMut&lt;<span class="lifetime">&#39;t</span>&gt;: Iterator&lt;Item = ChunkMut&lt;<span class="lifetime">&#39;t</span>, <span class="self">Self</span>&gt;&gt; + <span class="lifetime">&#39;t</span>;
@@ -286,21 +246,16 @@
     /// where `slice` is the slice of components in the chunk,
     /// and `index` is the entity index of `slice[0]`.
     /// `slice` is always nonempty.
+    ///
+    /// Non-chunked storages should implement this function by returning a chunk for each entity.
     </span><span class="kw">fn </span>iter_chunks_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::IterChunksMut&lt;<span class="lifetime">&#39;_</span>&gt;;
 
-    <span class="doccomment">/// Return value of [`partition_at`](Self::partition_at).
-    </span><span class="kw">type </span>Partition&lt;<span class="lifetime">&#39;u</span>&gt;: Partition&lt;<span class="lifetime">&#39;u</span>, <span class="self">Self</span>::RawEntity, <span class="self">Self</span>::Comp&gt;
+    <span class="doccomment">/// Return value of [`as_partition`](Self::as_partition).
+    </span><span class="kw">type </span>Partition&lt;<span class="lifetime">&#39;u</span>&gt;: Partition&lt;<span class="lifetime">&#39;u</span>, RawEntity = <span class="self">Self</span>::RawEntity, Comp = <span class="self">Self</span>::Comp&gt;
     <span class="kw">where
         </span><span class="self">Self</span>: <span class="lifetime">&#39;u</span>;
     <span class="doccomment">/// Converts the storage to a [`Partition`] that covers the whole storage (similar to `slice[..]`).
     </span><span class="kw">fn </span>as_partition(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::Partition&lt;<span class="lifetime">&#39;_</span>&gt;;
-    <span class="doccomment">/// Splits the storage into two partitions for parallel iterable access.
-    </span><span class="kw">fn </span>partition_at(
-        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
-        offset: <span class="self">Self</span>::RawEntity,
-    ) -&gt; (<span class="self">Self</span>::Partition&lt;<span class="lifetime">&#39;_</span>&gt;, <span class="self">Self</span>::Partition&lt;<span class="lifetime">&#39;_</span>&gt;) {
-        <span class="self">self</span>.as_partition().partition_at(offset)
-    }
 }
 
 <span class="doccomment">/// Borrows a slice of a storage, analogously `&amp;&#39;t mut Storage[..]`.
@@ -308,48 +263,65 @@
 /// This trait does not provide `set` because
 /// adding/removing items may cause rebalances in the tree implementation
 /// and result in dangling references in other partitions that are not `&amp;mut`-locked.
-</span><span class="kw">pub trait </span>Partition&lt;<span class="lifetime">&#39;t</span>, E: entity::Raw, C: Send + Sync + <span class="lifetime">&#39;static</span>&gt;: Send + Sync + Sized {
+</span><span class="kw">pub trait </span>Partition&lt;<span class="lifetime">&#39;t</span>&gt;: Access + Send + Sync + Sized + <span class="lifetime">&#39;t </span>{
     <span class="doccomment">/// Return value of [`by_ref`](Self::by_ref).
-    </span><span class="kw">type </span>ByRef&lt;<span class="lifetime">&#39;u</span>&gt;: Partition&lt;<span class="lifetime">&#39;u</span>, E, C&gt;
+    </span><span class="kw">type </span>ByRef&lt;<span class="lifetime">&#39;u</span>&gt;: Partition&lt;<span class="lifetime">&#39;u</span>, RawEntity = <span class="self">Self</span>::RawEntity, Comp = <span class="self">Self</span>::Comp&gt;
     <span class="kw">where
         </span><span class="self">Self</span>: <span class="lifetime">&#39;u</span>;
     <span class="doccomment">/// Re-borrows the partition with reduced lifetime.
     ///
-    /// This is useful for calling [`iter_mut`](Self::iter_mut)
-    /// and [`partition_at`](Self::partition_at),
+    /// This is useful for calling [`into_iter_mut`](Self::into_iter_mut)
+    /// and [`split_at`](Self::split_at),
     /// which take `self` as receiver to preserve the lifetime.
     </span><span class="kw">fn </span>by_ref(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::ByRef&lt;<span class="lifetime">&#39;_</span>&gt;;
-
-    <span class="doccomment">/// Gets a mutable reference to the component for a specific entity if it is present.
-    </span><span class="kw">fn </span>get_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>, entity: E) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;mut </span>C&gt;;
-
-    <span class="doccomment">/// Return value of [`iter_mut`](Self::iter_mut).
-    </span><span class="kw">type </span>IterMut: Iterator&lt;Item = (E, <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>C)&gt;;
-    <span class="doccomment">/// Returns a mutable iterator over the storage, ordered by entity index order.
-    </span><span class="kw">fn </span>iter_mut(<span class="self">self</span>) -&gt; <span class="self">Self</span>::IterMut;
 
     <span class="doccomment">/// Splits the partition further into two subpartitions.
     /// `entity` must be `&gt; 0` and `&lt; partition_length`,
     /// i.e. the expected key ranges of both partitions must be nonempty.
     /// (It is allowed to have a nonempty range which does not contain any existing keys)
-    </span><span class="kw">fn </span>partition_at(<span class="self">self</span>, entity: E) -&gt; (<span class="self">Self</span>, <span class="self">Self</span>);
+    </span><span class="kw">fn </span>split_at(<span class="kw-2">mut </span><span class="self">self</span>, entity: <span class="self">Self</span>::RawEntity) -&gt; (<span class="self">Self</span>, <span class="self">Self</span>) {
+        <span class="kw">let </span>right = <span class="self">self</span>.split_out(entity);
+        (<span class="self">self</span>, right)
+    }
+
+    <span class="doccomment">/// Splits the partition further into two subpartitions,
+    /// replacing `self` with the left partition.
+    ///
+    /// `entity` must be `&gt; 0` and `&lt; partition_length`,
+    /// i.e. the expected key ranges of both partitions must be nonempty.
+    /// (It is allowed to have a nonempty range which does not contain any existing keys)
+    </span><span class="kw">fn </span>split_out(<span class="kw-2">&amp;mut </span><span class="self">self</span>, entity: <span class="self">Self</span>::RawEntity) -&gt; <span class="self">Self</span>;
+
+    <span class="doccomment">/// Return value of [`into_iter_mut`](Self::into_iter_mut).
+    </span><span class="kw">type </span>IntoIterMut: Iterator&lt;Item = (<span class="self">Self</span>::RawEntity, <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span><span class="self">Self</span>::Comp)&gt;;
+    <span class="doccomment">/// Same as [`iter_mut`](Access::iter_mut), but moves the partition object into the iterator.
+    </span><span class="kw">fn </span>into_iter_mut(<span class="self">self</span>) -&gt; <span class="self">Self</span>::IntoIterMut;
+
+    <span class="doccomment">/// Same as [`get_mut`](Access::get_mut), but returns a reference with lifetime `&#39;t`.
+    </span><span class="kw">fn </span>into_mut(<span class="self">self</span>, entity: <span class="self">Self</span>::RawEntity) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span><span class="self">Self</span>::Comp&gt;;
+}
+
+<span class="doccomment">/// Mutable access functions for a storage, generalizing [`Storage`] and [`Partition`].
+</span><span class="kw">pub trait </span>Access {
+    <span class="doccomment">/// The type of entity ID used for identification.
+    </span><span class="kw">type </span>RawEntity: entity::Raw;
+    <span class="doccomment">/// The component type stored.
+    </span><span class="kw">type </span>Comp: Send + Sync + <span class="lifetime">&#39;static</span>;
+
+    <span class="doccomment">/// Gets a mutable reference to the component for a specific entity if it is present.
+    </span><span class="kw">fn </span>get_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>, entity: <span class="self">Self</span>::RawEntity) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;mut </span><span class="self">Self</span>::Comp&gt;;
+
+    <span class="doccomment">/// Return value of [`iter_mut`](Self::iter_mut).
+    </span><span class="kw">type </span>IterMut&lt;<span class="lifetime">&#39;u</span>&gt;: Iterator&lt;Item = (<span class="self">Self</span>::RawEntity, <span class="kw-2">&amp;</span><span class="lifetime">&#39;u </span><span class="kw-2">mut </span><span class="self">Self</span>::Comp)&gt; + <span class="lifetime">&#39;u
+    </span><span class="kw">where
+        </span><span class="self">Self</span>: <span class="lifetime">&#39;u</span>;
+    <span class="doccomment">/// Returns a mutable iterator over the storage, ordered by entity index order.
+    </span><span class="kw">fn </span>iter_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::IterMut&lt;<span class="lifetime">&#39;_</span>&gt;;
 }
 
 <span class="doccomment">/// Provides chunked access capabilities,
 /// i.e. the storage can always return a slice for contiguous present components.
-///
-/// # Safety
-/// Implementors of this trait must ensure that
-/// [`get_chunk`](Self::get_chunk) and [`get_chunk_mut`](Self::get_chunk_mut) are consistent,
-/// and non-overlapping ranges map to non-overlapping slices.
-/// In other words, for any `a, b: Self::RawEntity` where `a &lt; b`,
-/// `get_chunk(a, b)` and `get_chunk_mut(a, b)` return the same slice
-/// (only differing by mutability),
-/// and for any `c, d: Self::RawEntity` where `b &lt;= c` `c &lt; d`,
-/// `get_chunk(a, b)` must not alias `get_chunk(c, d)`.
-///
-/// [injective]: https://en.wikipedia.org/wiki/Injective_function
-</span><span class="kw">pub unsafe trait </span>Chunked: Storage {
+</span><span class="kw">pub trait </span>Chunked: Storage + AccessChunked {
     <span class="doccomment">/// Gets a shared reference to a slice of components.
     ///
     /// Returns `None` if any of the components in the range is missing.
@@ -357,6 +329,14 @@
     /// Panics if `start &gt; end`.
     </span><span class="kw">fn </span>get_chunk(<span class="kw-2">&amp;</span><span class="self">self</span>, start: <span class="self">Self</span>::RawEntity, end: <span class="self">Self</span>::RawEntity) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>[<span class="self">Self</span>::Comp]&gt;;
 
+    <span class="doccomment">/// Return value of [`as_partition_chunk`](Self::as_partition_chunk).
+    </span><span class="kw">type </span>PartitionChunked&lt;<span class="lifetime">&#39;u</span>&gt;: PartitionChunked&lt;<span class="lifetime">&#39;u</span>, RawEntity = <span class="self">Self</span>::RawEntity, Comp = <span class="self">Self</span>::Comp&gt;;
+    <span class="doccomment">/// Converts the storage to a [`PartitionChunked`] that covers the whole storage (similar to `slice[..]`).
+    </span><span class="kw">fn </span>as_partition_chunk(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::PartitionChunked&lt;<span class="lifetime">&#39;_</span>&gt;;
+}
+
+<span class="doccomment">/// Mutable chunk access functions for a storage, generalizing [`Chunked`] and [`PartitionChunked`].
+</span><span class="kw">pub trait </span>AccessChunked: Access {
     <span class="doccomment">/// Gets a mutable reference to a slice of components.
     ///
     /// Returns `None` if any of the components in the range is missing.
@@ -367,11 +347,6 @@
         start: <span class="self">Self</span>::RawEntity,
         end: <span class="self">Self</span>::RawEntity,
     ) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;mut </span>[<span class="self">Self</span>::Comp]&gt;;
-
-    <span class="doccomment">/// Return value of [`as_partition_chunk`](Self::as_partition_chunk).
-    </span><span class="kw">type </span>PartitionChunked&lt;<span class="lifetime">&#39;u</span>&gt;: PartitionChunked&lt;<span class="lifetime">&#39;u</span>, <span class="self">Self</span>::RawEntity, <span class="self">Self</span>::Comp&gt;;
-    <span class="doccomment">/// Converts the storage to a [`PartitionChunked`] that covers the whole storage (similar to `slice[..]`).
-    </span><span class="kw">fn </span>as_partition_chunk(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::PartitionChunked&lt;<span class="lifetime">&#39;_</span>&gt;;
 }
 
 <span class="doccomment">/// Borrows a slice of a chunked storage, analogously `&amp;&#39;t mut Chunked[..]`.
@@ -379,18 +354,17 @@
 /// This trait does not provide `set` because
 /// adding/removing items may cause rebalances in the tree implementation
 /// and result in dangling references in other partitions that are not `&amp;mut`-locked.
-</span><span class="kw">pub trait </span>PartitionChunked&lt;<span class="lifetime">&#39;t</span>, E: entity::Raw, C: Send + Sync + <span class="lifetime">&#39;static</span>&gt;:
-    Partition&lt;<span class="lifetime">&#39;t</span>, E, C&gt;
-{
-    <span class="doccomment">/// Gets a mutable reference to a slice of components.
-    ///
-    /// Returns `None` if any of the components in the range is missing.
-    ///
-    /// Panics if `start &gt; end`.
-    </span><span class="kw">fn </span>get_chunk_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>, start: E, end: E) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;mut </span>[C]&gt;;
+</span><span class="kw">pub trait </span>PartitionChunked&lt;<span class="lifetime">&#39;t</span>&gt;: Partition&lt;<span class="lifetime">&#39;t</span>&gt; + AccessChunked {
+    <span class="doccomment">/// Gets a mutable reference to a slice of components,
+    /// preserving the lifetime `&#39;t` of this partition object.
+    </span><span class="kw">fn </span>into_chunk_mut(
+        <span class="self">self</span>,
+        start: <span class="self">Self</span>::RawEntity,
+        end: <span class="self">Self</span>::RawEntity,
+    ) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>[<span class="self">Self</span>::Comp]&gt;;
 
     <span class="doccomment">/// Return value of [`into_iter_chunks_mut`](Self::into_iter_chunks_mut).
-    </span><span class="kw">type </span>IntoIterChunksMut: Iterator&lt;Item = (E, <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>[C])&gt;;
+    </span><span class="kw">type </span>IntoIterChunksMut: Iterator&lt;Item = (<span class="self">Self</span>::RawEntity, <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>[<span class="self">Self</span>::Comp])&gt;;
     <span class="doccomment">/// Returns a mutable iterator over the storage, ordered by entity index order.
     </span><span class="kw">fn </span>into_iter_chunks_mut(<span class="self">self</span>) -&gt; <span class="self">Self</span>::IntoIterChunksMut;
 }

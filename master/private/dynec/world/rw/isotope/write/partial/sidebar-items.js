@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"opaque":[""],"struct":["Getter"]};
+window.SIDEBAR_ITEMS = {"opaque":[""],"struct":["Storages"],"type":["WriteIsotopePartial"]};

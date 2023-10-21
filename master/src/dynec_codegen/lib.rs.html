@@ -68,11 +68,13 @@
 <a href="#68" id="68">68</a>
 <a href="#69" id="69">69</a>
 <a href="#70" id="70">70</a>
+<a href="#71" id="71">71</a>
 </pre></div><pre class="rust"><code><span class="attr">#![feature(extract_if)]
 
 </span><span class="kw">use </span>proc_macro::TokenStream;
 
-<span class="kw">mod </span>accessors;
+<span class="kw">mod </span>util;
+
 <span class="kw">mod </span>archetype;
 <span class="kw">mod </span>comp;
 <span class="kw">mod </span>comps;
@@ -82,11 +84,11 @@
 <span class="kw">mod </span>system;
 <span class="kw">mod </span>tracer;
 <span class="kw">mod </span>tracer_def;
-<span class="kw">mod </span>util;
+<span class="kw">mod </span>zip;
 
 <span class="attr">#[proc_macro]
-</span><span class="kw">pub fn </span>accessors(input: TokenStream) -&gt; TokenStream {
-    accessors::imp(input.into()).unwrap_or_else(|err| err.to_compile_error()).into()
+</span><span class="kw">pub fn </span>zip(input: TokenStream) -&gt; TokenStream {
+    zip::imp(input.into()).unwrap_or_else(|err| err.to_compile_error()).into()
 }
 
 <span class="attr">#[proc_macro]

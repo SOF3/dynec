@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["isotope","partition","simple"],"struct":["Components"]};
+window.SIDEBAR_ITEMS = {"mod":["isotope","simple"],"struct":["Components"]};

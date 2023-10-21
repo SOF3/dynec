@@ -107,13 +107,36 @@
 <a href="#107" id="107">107</a>
 <a href="#108" id="108">108</a>
 <a href="#109" id="109">109</a>
+<a href="#110" id="110">110</a>
+<a href="#111" id="111">111</a>
+<a href="#112" id="112">112</a>
+<a href="#113" id="113">113</a>
+<a href="#114" id="114">114</a>
+<a href="#115" id="115">115</a>
+<a href="#116" id="116">116</a>
+<a href="#117" id="117">117</a>
+<a href="#118" id="118">118</a>
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
 
 <span class="kw">use </span><span class="kw">crate</span>::comp::discrim::{FullMap, Mapped <span class="kw">as _</span>};
 <span class="kw">use </span><span class="kw">crate</span>::comp::Discrim;
 <span class="kw">use </span><span class="kw">crate</span>::entity::ealloc;
+<span class="kw">use </span><span class="kw">crate</span>::system::access::StorageMap;
 <span class="kw">use </span><span class="kw">crate</span>::world::rw::isotope;
 <span class="kw">use crate</span>::{comp, storage, system, world, Archetype};
+
+<span class="doccomment">/// Provides access to an isotope component in a specific archetype.
+///
+/// Getters require a mutable receiver to allow lazy initialization of new discriminants.
+/// Consider [splitting](system::AccessIsotope::split) accessors,
+/// which returns a [`system::AccessSingle`] with a shared receiver.
+/// If it can be asserted that no uninitialized discriminants will be encountered,
+/// use with [`known_discrims`](system::AccessIsotope::known_discrims).
+</span><span class="kw">pub type </span>ReadIsotopeFull&lt;<span class="lifetime">&#39;t</span>, A, C&gt; = system::AccessIsotope&lt;A, C, Storages&lt;<span class="lifetime">&#39;t</span>, A, C&gt;&gt;;
 
 <span class="kw">impl </span>world::Components {
     <span class="doccomment">/// Immutably access all discriminants of an isotope storage,
@@ -123,7 +146,7 @@
     /// in order to lazily initialize new isotopes,
     /// but multiple immutable accessors can still run concurrently
     /// with lock contention only occurring when new discriminants are encountered.
-    /// See the documentation of [`ReadIsotope`](system::ReadIsotope) for details.
+    /// See the documentation of [`ReadIsotopeFull`](system::ReadIsotopeFull) for details.
     ///
     /// # Panics
     /// - if the archetyped component is not used in any systems.
@@ -131,8 +154,8 @@
     </span><span class="kw">pub fn </span>read_full_isotope_storage&lt;A, C&gt;(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         snapshot: ealloc::Snapshot&lt;A::RawEntity&gt;,
-    ) -&gt; <span class="kw">impl </span>system::ReadIsotope&lt;A, C&gt; + <span class="lifetime">&#39;_
-    </span><span class="kw">where
+    ) -&gt; ReadIsotopeFull&lt;A, C&gt;
+    <span class="kw">where
         </span>A: Archetype,
         C: comp::Isotope&lt;A&gt;,
     {
@@ -151,13 +174,16 @@
                 .collect()
         };
 
-        isotope::Base {
-            getter: Getter { full_map: storage_map, accessor_storages, snapshot, _ph: PhantomData },
-        }
+        system::AccessIsotope::new(Storages {
+            full_map: storage_map,
+            accessor_storages,
+            snapshot,
+            _ph: PhantomData,
+        })
     }
 }
 
-<span class="kw">struct </span>Getter&lt;<span class="lifetime">&#39;u</span>, A, C&gt;
+<span class="kw">pub struct </span>Storages&lt;<span class="lifetime">&#39;u</span>, A, C&gt;
 <span class="kw">where
     </span>A: Archetype,
     C: comp::Isotope&lt;A&gt;,
@@ -168,7 +194,7 @@
     _ph:               PhantomData&lt;(A, C)&gt;,
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;u</span>, A, C&gt; isotope::read::StorageGet&lt;A, C&gt; <span class="kw">for </span>Getter&lt;<span class="lifetime">&#39;u</span>, A, C&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">&#39;u</span>, A, C&gt; StorageMap&lt;A, C&gt; <span class="kw">for </span>Storages&lt;<span class="lifetime">&#39;u</span>, A, C&gt;
 <span class="kw">where
     </span>A: Archetype,
     C: comp::Isotope&lt;A&gt;,

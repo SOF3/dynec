@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"opaque":[""],"trait":["Atomic","Raw"],"type":["Primitive"]};
+window.SIDEBAR_ITEMS = {"macro":["impl_raw"],"opaque":[""],"trait":["Atomic","Raw"],"type":["Primitive"]};

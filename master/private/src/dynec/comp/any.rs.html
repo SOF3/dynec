@@ -157,6 +157,26 @@
 <a href="#157" id="157">157</a>
 <a href="#158" id="158">158</a>
 <a href="#159" id="159">159</a>
+<a href="#160" id="160">160</a>
+<a href="#161" id="161">161</a>
+<a href="#162" id="162">162</a>
+<a href="#163" id="163">163</a>
+<a href="#164" id="164">164</a>
+<a href="#165" id="165">165</a>
+<a href="#166" id="166">166</a>
+<a href="#167" id="167">167</a>
+<a href="#168" id="168">168</a>
+<a href="#169" id="169">169</a>
+<a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
+<a href="#172" id="172">172</a>
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Utilities for dynamic dispatch related to components.
 
 </span><span class="kw">use </span>std::any::{<span class="self">self</span>, Any};
@@ -265,7 +285,7 @@
 }
 
 <span class="macro">macro_rules! </span>impl_simple_init_fn {
-    ($(<span class="macro-nonterminal">$deps</span>:ident),* $(,)<span class="question-mark">?</span>) =&gt; {
+    ($(<span class="macro-nonterminal">$deps</span>:ident)<span class="kw-2">*</span>) =&gt; {
         <span class="kw">impl</span>&lt;
             A: Archetype, C: comp::SimpleOrIsotope&lt;A&gt;,
             $(<span class="macro-nonterminal">$deps</span>: comp::Simple&lt;A&gt;,)*
@@ -301,17 +321,37 @@
 }
 
 <span class="macro">macro_rules! </span>impl_simple_init_fn_accumulate {
-    () =&gt; {
-        <span class="macro">impl_simple_init_fn!</span>();
+    (<span class="macro-nonterminal">$feature</span>:literal <span class="macro-nonterminal">$first</span>:ident $(<span class="macro-nonterminal">$rest</span>:tt)<span class="kw-2">*</span>) =&gt; {
+        <span class="macro">impl_simple_init_fn_accumulate!</span>(<span class="macro-nonterminal">$feature </span>$(<span class="macro-nonterminal">$rest</span>)<span class="kw-2">*</span>);
+        <span class="attr">#[cfg(feature = <span class="macro-nonterminal">$feature</span>)]
+        </span><span class="macro">impl_simple_init_fn_accumulate!</span>(@MIXED <span class="macro-nonterminal">$first </span>$(<span class="macro-nonterminal">$rest</span>)<span class="kw-2">*</span>);
     };
-    (<span class="macro-nonterminal">$first</span>:ident $(, <span class="macro-nonterminal">$rest</span>:ident)* $(,)<span class="question-mark">?</span>) =&gt; {
-        <span class="macro">impl_simple_init_fn_accumulate!</span>($(<span class="macro-nonterminal">$rest</span>),<span class="kw-2">*</span>);
-        <span class="macro">impl_simple_init_fn!</span>(<span class="macro-nonterminal">$first </span>$(, <span class="macro-nonterminal">$rest</span>)<span class="kw-2">*</span>);
-    }
+    (<span class="macro-nonterminal">$outer_feature</span>:literal <span class="macro-nonterminal">$inner_feature</span>:literal $(<span class="macro-nonterminal">$rest</span>:tt)<span class="kw-2">*</span>) =&gt; {
+        <span class="macro">impl_simple_init_fn_accumulate!</span>(<span class="macro-nonterminal">$inner_feature </span>$(<span class="macro-nonterminal">$rest</span>)<span class="kw-2">*</span>);
+    };
+    (<span class="macro-nonterminal">$outer_feature</span>:literal @ALWAYS $(<span class="macro-nonterminal">$rest</span>:tt)<span class="kw-2">*</span>) =&gt; {
+        <span class="macro">impl_simple_init_fn_accumulate!</span>(@ALWAYS $(<span class="macro-nonterminal">$rest</span>)<span class="kw-2">*</span>);
+    };
+    (@ALWAYS <span class="macro-nonterminal">$first</span>:ident $(<span class="macro-nonterminal">$rest</span>:tt)<span class="kw-2">*</span>) =&gt; {
+        <span class="macro">impl_simple_init_fn_accumulate!</span>(@ALWAYS $(<span class="macro-nonterminal">$rest</span>)<span class="kw-2">*</span>);
+        <span class="macro">impl_simple_init_fn!</span>(<span class="macro-nonterminal">$first </span>$(<span class="macro-nonterminal">$rest</span>)<span class="kw-2">*</span>);
+    };
+    (@ALWAYS) =&gt; {
+        <span class="attr">#[allow(unused_variables)]
+        </span><span class="kw">const _</span>: () = {
+            <span class="macro">impl_simple_init_fn!</span>();
+        };
+    };
+    (@MIXED $(<span class="macro-nonterminal">$idents_front</span>:ident)* $(<span class="macro-nonterminal">$feature</span>:literal $(<span class="macro-nonterminal">$idents_feature</span>:ident)<span class="kw-2">*</span>)* @ALWAYS $(<span class="macro-nonterminal">$idents_always</span>:ident)<span class="kw-2">*</span>) =&gt; {
+        <span class="macro">impl_simple_init_fn!</span>($(<span class="macro-nonterminal">$idents_front</span>)* $($(<span class="macro-nonterminal">$idents_feature</span>)<span class="kw-2">*</span>)* $(<span class="macro-nonterminal">$idents_always</span>)<span class="kw-2">*</span>);
+    };
 }
 <span class="macro">impl_simple_init_fn_accumulate!</span>(
-    P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20, P21,
-    P22, P23, P24, P25, P26, P27, P28, P29, P30, P31, P32,
+    <span class="string">&quot;tuple-impl-32-init-fn&quot; </span>T1 T2 T3 T4 T5 T6 T7 T8
+    <span class="string">&quot;tuple-impl-24-init-fn&quot; </span>T9 T10 T11 T12 T13 T14 T15 T16
+    <span class="string">&quot;tuple-impl-16-init-fn&quot; </span>T17 T18 T19 T20 T21 T22 T23 T24
+    <span class="string">&quot;tuple-impl-8-init-fn&quot; </span>T25 T26 T27 T28
+    @ALWAYS T29 T30 T31 T32
 );
 
 <span class="attr">#[cfg(test)]

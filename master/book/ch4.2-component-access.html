@@ -136,9 +136,9 @@
                     <main>
                         <h1 id="component-access"><a class="header" href="#component-access">Component access</a></h1>
 <p>As the name &quot;ECS&quot; implies,
-the most important feature is to access the &quot;E&quot; and &quot;C&quot; from the &quot;S&quot;.</p>
+the most important feature is to manipulate the &quot;E&quot; and &quot;C&quot; from the &quot;S&quot;.</p>
 <h2 id="accessing-simple-components"><a class="header" href="#accessing-simple-components">Accessing simple components</a></h2>
-<p>Simple components can be accessed with <a href="https://sof3.github.io/dynec/master/dynec/system/trait.ReadSimple.html"><code>ReadSimple</code></a> or <a href="https://sof3.github.io/dynec/master/dynec/system/trait.WriteSimple.html"><code>WriteSimple</code></a>.
+<p>Simple components can be accessed through <a href="../dynec/system/type.ReadSimple.html"><code>ReadSimple</code></a> or <a href="../dynec/system/type.WriteSimple.html"><code>WriteSimple</code></a>.
 First we declare the components we need, similar to in the previous chapters:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -158,10 +158,112 @@ Therefore we request reading velocity and writing position:</p>
 </span><span class="boring">fn main() {
 </span>#[system]
 fn motion(
-    mut position_acc: impl system::WriteSimple&lt;Bullet, Position&gt;,
-    velcity_acc: impl system::ReadSimple&lt;Bullet, Velocity&gt;,
+    mut position_acc: system::WriteSimple&lt;Bullet, Position&gt;,
+    velocity_acc: system::ReadSimple&lt;Bullet, Velocity&gt;,
 ) {
-
+    // work with position_acc and velocity_acc
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>We will go through how to work with the data later.</p>
+<p>When a system that requests <code>WriteSimple&lt;A, C&gt;</code> is running for some <code>A</code> and <code>C</code>,
+all other systems that request <code>ReadSimple&lt;A, C&gt;</code> or <code>WriteSimple&lt;A, C&gt;</code>
+cannot run until the system is complete.
+Therefore, if you only need to read the data,
+use <code>ReadSimple</code> instead of <code>WriteSimple</code> even though
+the latter provides all abilities that the former can provide.</p>
+<h2 id="accessing-isotope-components"><a class="header" href="#accessing-isotope-components">Accessing isotope components</a></h2>
+<p>Isotope components are slightly more complex.
+A system may request access to
+some (&quot;partial access&quot;) or all (&quot;full access&quot;) discriminants for an isotope component.</p>
+<p>Full access allows the system to read/write any discriminants for the isotope type,
+and lazily initializes new discriminants if they were not encountered before.
+Therefore, when a system using <code>WriteIsotopeFull</code> is running,
+all other systems that access the same component in any way (read/write and full/partial)
+cannot run until the system is complete;
+when a system using <code>ReadIsotopeFull</code> is running,
+all other systems that use <code>WriteIsotopeFull</code> or <code>WriteIsotopePartial</code>
+on the same component cannot run until the system is complete.</p>
+<p>The usage syntax of full accessors is similar to simple accessors:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[system]
+fn add(
+    weights: ReadIsotopeFull&lt;Bullet, IngredientWeight&gt;,
+    mut volumes: WriteIsotopeFull&lt;Bullet, IngredientVolume&gt;,
+) {
+    // ...
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>Partial access only requests specific discriminants for the isotope type.
+The requested discriminants are specified through an attribute:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[system]
+fn add(
+    #[dynec(param)] &amp;element: &amp;Element,
+    #[dynec(isotope(discrim = [element]))]
+    weights: ReadIsotopePartial&lt;Bullet, IngredientWeight, [Element; 1]&gt;,
+    #[dynec(isotope(discrim = [element]))]
+    mut volumes: WriteIsotopePartial&lt;Bullet, IngredientVolume, [Element; 1]&gt;,
+) {
+    // ...
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p>The <code>discrim</code> attribute option lets us specify which discriminants to access.
+The expression can reference the initial values of parameter states.
+However, mutating parameter states will <em>not</em> change
+the discriminants requested by the isotope.
+The third type parameter to <code>ReadIsotopePartial</code>/<code>WriteIsotopePartial</code>
+is the type of the expression passed to <code>discrim</code>.</p>
+<p>Since a partial accessor can only interact with specific discriminants,
+multiple systems using <code>WriteIsotopePartial</code> on the same component type
+can run concurrently if they request a disjoint set of discriminants.</p>
+<h2 id="iterating-over-entities"><a class="header" href="#iterating-over-entities">Iterating over entities</a></h2>
+<p>The recommended way to process all entities with accessors is
+to use the <a href="../dynec/system/iter/struct.EntityIterator.html"><code>EntityIterator</code></a> API.
+<code>EntityIterator</code> contains the list of initialized entities
+stored in an efficient lookup format,
+useful for performing bulk operations over all entities.</p>
+<p>An <code>EntityIterator</code> can be joined with multiple accessors
+to execute code on each entity efficiently:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[system]
+fn move_entities(
+    entities: system::EntityIterator&lt;Bullet&gt;,
+    position_acc: system::WriteSimple&lt;Bullet, Position&gt;,
+    velocity_acc: system::WriteSimple&lt;Bullet, Velocity&gt;,
+) {
+    for (_entity, (position, velocity)) in entities.entities_with((
+        &amp;mut position_acc,
+        &amp;velocity_acc,
+    )) {
+        *position += velocity;
+    }
+}
+<span class="boring">}
+</span></code></pre></pre>
+<p><code>entities_with</code> also supports isotope accessors,
+but they must be split for a specific discriminant first:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[system]
+fn move_entities(
+    #[dynec(param)] &amp;element: &amp;Element,
+    entities: system::EntityIterator&lt;Bullet&gt;,
+    velocity_acc: system::WriteSimple&lt;Bullet, Velocity&gt;,
+    #[dynec(isotope(discrim = [element]))]
+    weights_acc: system::ReadIsotopePartial&lt;Bullet, IngredientWeight, [Element; 1]&gt;,
+) {
+    for (_entity, (position, weight)) in entities.entities_with((
+        &amp;mut position_acc,
+        &amp;weights_acc.split([element])[0],
+    )) {
+        *velocity += weight;
+    }
 }
 <span class="boring">}
 </span></code></pre></pre>

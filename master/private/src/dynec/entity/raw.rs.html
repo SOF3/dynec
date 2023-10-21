@@ -123,8 +123,15 @@
 <a href="#123" id="123">123</a>
 <a href="#124" id="124">124</a>
 <a href="#125" id="125">125</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>std::num::NonZeroU32;
-<span class="kw">use </span>std::sync::atomic::{AtomicU32, Ordering};
+<a href="#126" id="126">126</a>
+<a href="#127" id="127">127</a>
+<a href="#128" id="128">128</a>
+<a href="#129" id="129">129</a>
+<a href="#130" id="130">130</a>
+<a href="#131" id="131">131</a>
+<a href="#132" id="132">132</a>
+<a href="#133" id="133">133</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span>std::sync::atomic;
 <span class="kw">use </span>std::{fmt, ops};
 
 <span class="kw">use </span><span class="kw">crate</span>::util::UnsafeEqOrd;
@@ -177,39 +184,6 @@
     </span><span class="kw">fn </span>range(range: ops::Range&lt;<span class="self">Self</span>&gt;) -&gt; <span class="self">Self</span>::Range;
 }
 
-<span class="kw">impl </span>Raw <span class="kw">for </span>NonZeroU32 {
-    <span class="kw">type </span>Atomic = AtomicU32;
-
-    <span class="kw">fn </span>new() -&gt; <span class="self">Self</span>::Atomic { AtomicU32::new(<span class="number">1</span>) }
-
-    <span class="kw">fn </span>add(<span class="self">self</span>, count: usize) -&gt; <span class="self">Self </span>{
-        <span class="kw">let </span>count: u32 = count.try_into().expect(<span class="string">&quot;count is too large&quot;</span>);
-        NonZeroU32::new(<span class="self">self</span>.get() + count).expect(<span class="string">&quot;integer overflow&quot;</span>)
-    }
-
-    <span class="kw">fn </span>sub(<span class="self">self</span>, other: <span class="self">Self</span>) -&gt; usize {
-        (<span class="self">self</span>.get() - other.get()).try_into().expect(<span class="string">&quot;usize &gt;= u32&quot;</span>)
-    }
-
-    <span class="kw">fn </span>approx_midpoint(<span class="self">self</span>, other: <span class="self">Self</span>) -&gt; <span class="self">Self </span>{
-        NonZeroU32::new((<span class="self">self</span>.get() + other.get()) / <span class="number">2</span>)
-            .expect(<span class="string">&quot;get() &gt;= 1, get() + get() &gt;= 2, half &gt;= 1&quot;</span>)
-    }
-
-    <span class="kw">fn </span>from_primitive(i: Primitive) -&gt; <span class="self">Self </span>{
-        i.try_into().ok().and_then(<span class="self">Self</span>::new).expect(<span class="string">&quot;Invalid usize&quot;</span>)
-    }
-
-    <span class="kw">fn </span>to_primitive(<span class="self">self</span>) -&gt; Primitive { <span class="self">self</span>.get().try_into().expect(<span class="string">&quot;Too many entities&quot;</span>) }
-
-    <span class="kw">type </span>Range = <span class="kw">impl </span>Iterator&lt;Item = <span class="self">Self</span>&gt;;
-    <span class="kw">fn </span>range(range: ops::Range&lt;<span class="self">Self</span>&gt;) -&gt; <span class="self">Self</span>::Range {
-        (range.start.get()..range.end.get()).map(|v| {
-            NonZeroU32::new(v).expect(<span class="string">&quot;zero does not appear between two non-zero unsigned integers&quot;</span>)
-        })
-    }
-}
-
 <span class="doccomment">/// An atomic variant of [`Raw`].
 </span><span class="kw">pub trait </span>Atomic&lt;E: Raw&gt;: Send + Sync + <span class="lifetime">&#39;static </span>{
     <span class="doccomment">/// Equivalent to `AtomicUsize::fetch_add(self, count, Ordering::SeqCst)`
@@ -225,26 +199,68 @@
     </span><span class="kw">fn </span>load_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; E;
 }
 
-<span class="kw">impl </span>Atomic&lt;NonZeroU32&gt; <span class="kw">for </span>AtomicU32 {
-    <span class="kw">fn </span>fetch_add(<span class="kw-2">&amp;</span><span class="self">self</span>, count: usize) -&gt; NonZeroU32 {
-        <span class="kw">let </span>original = AtomicU32::fetch_add(
-            <span class="self">self</span>,
-            count.try_into().expect(<span class="string">&quot;count is too large&quot;</span>),
-            Ordering::SeqCst,
-        );
-        NonZeroU32::new(original).expect(<span class="string">&quot;integer overflow&quot;</span>)
-    }
+<span class="macro">macro_rules! </span>impl_raw {
+    (<span class="macro-nonterminal">$base</span>:ty, <span class="macro-nonterminal">$atomic</span>:ty, <span class="macro-nonterminal">$primitive</span>:ty) =&gt; {
+        <span class="kw">impl </span>Raw <span class="kw">for </span><span class="macro-nonterminal">$base </span>{
+            <span class="kw">type </span>Atomic = <span class="macro-nonterminal">$atomic</span>;
 
-    <span class="kw">fn </span>load(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; NonZeroU32 {
-        <span class="kw">let </span>original = AtomicU32::load(<span class="self">self</span>, Ordering::SeqCst);
-        NonZeroU32::new(original).expect(<span class="string">&quot;invalid state&quot;</span>)
-    }
+            <span class="kw">fn </span>new() -&gt; <span class="self">Self</span>::Atomic { &lt;<span class="macro-nonterminal">$atomic</span>&gt;::new(<span class="number">1</span>) }
 
-    <span class="kw">fn </span>load_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; NonZeroU32 {
-        <span class="kw">let </span>original = <span class="kw-2">*</span>AtomicU32::get_mut(<span class="self">self</span>);
-        NonZeroU32::new(original).expect(<span class="string">&quot;invalid state&quot;</span>)
-    }
+            <span class="kw">fn </span>add(<span class="self">self</span>, count: usize) -&gt; <span class="self">Self </span>{
+                <span class="kw">let </span>count: <span class="macro-nonterminal">$primitive </span>= count.try_into().expect(<span class="string">&quot;count is too large&quot;</span>);
+                &lt;<span class="macro-nonterminal">$base</span>&gt;::new(<span class="self">self</span>.get() + count).expect(<span class="string">&quot;integer overflow&quot;</span>)
+            }
+
+            <span class="kw">fn </span>sub(<span class="self">self</span>, other: <span class="self">Self</span>) -&gt; usize {
+                (<span class="self">self</span>.get() - other.get()).try_into().expect(<span class="string">&quot;usize should be sufficiently large&quot;</span>)
+            }
+
+            <span class="kw">fn </span>approx_midpoint(<span class="self">self</span>, other: <span class="self">Self</span>) -&gt; <span class="self">Self </span>{
+                &lt;<span class="macro-nonterminal">$base</span>&gt;::new((<span class="self">self</span>.get() + other.get()) / <span class="number">2</span>)
+                    .expect(<span class="string">&quot;get() &gt;= 1, get() + get() &gt;= 2, half &gt;= 1&quot;</span>)
+            }
+
+            <span class="kw">fn </span>from_primitive(i: Primitive) -&gt; <span class="self">Self </span>{
+                i.try_into().ok().and_then(<span class="self">Self</span>::new).expect(<span class="string">&quot;Invalid usize&quot;</span>)
+            }
+
+            <span class="kw">fn </span>to_primitive(<span class="self">self</span>) -&gt; Primitive { <span class="self">self</span>.get().try_into().expect(<span class="string">&quot;Too many entities&quot;</span>) }
+
+            <span class="kw">type </span>Range = <span class="kw">impl </span>Iterator&lt;Item = <span class="self">Self</span>&gt;;
+            <span class="kw">fn </span>range(range: ops::Range&lt;<span class="self">Self</span>&gt;) -&gt; <span class="self">Self</span>::Range {
+                (range.start.get()..range.end.get()).map(|v| {
+                    &lt;<span class="macro-nonterminal">$base</span>&gt;::new(v)
+                        .expect(<span class="string">&quot;zero does not appear between two non-zero unsigned integers&quot;</span>)
+                })
+            }
+        }
+
+        <span class="kw">impl </span>Atomic&lt;<span class="macro-nonterminal">$base</span>&gt; <span class="kw">for </span><span class="macro-nonterminal">$atomic </span>{
+            <span class="kw">fn </span>fetch_add(<span class="kw-2">&amp;</span><span class="self">self</span>, count: usize) -&gt; <span class="macro-nonterminal">$base </span>{
+                <span class="kw">let </span>original = &lt;<span class="macro-nonterminal">$atomic</span>&gt;::fetch_add(
+                    <span class="self">self</span>,
+                    count.try_into().expect(<span class="string">&quot;count is too large&quot;</span>),
+                    atomic::Ordering::SeqCst,
+                );
+                &lt;<span class="macro-nonterminal">$base</span>&gt;::new(original).expect(<span class="string">&quot;integer overflow&quot;</span>)
+            }
+
+            <span class="kw">fn </span>load(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="macro-nonterminal">$base </span>{
+                <span class="kw">let </span>original = &lt;<span class="macro-nonterminal">$atomic</span>&gt;::load(<span class="self">self</span>, atomic::Ordering::SeqCst);
+                &lt;<span class="macro-nonterminal">$base</span>&gt;::new(original).expect(<span class="string">&quot;invalid state&quot;</span>)
+            }
+
+            <span class="kw">fn </span>load_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="macro-nonterminal">$base </span>{
+                <span class="kw">let </span>original = <span class="kw-2">*</span>&lt;<span class="macro-nonterminal">$atomic</span>&gt;::get_mut(<span class="self">self</span>);
+                &lt;<span class="macro-nonterminal">$base</span>&gt;::new(original).expect(<span class="string">&quot;invalid state&quot;</span>)
+            }
+        }
+    };
 }
+
+<span class="macro">impl_raw!</span>(std::num::NonZeroU16, std::sync::atomic::AtomicU16, u16);
+<span class="macro">impl_raw!</span>(std::num::NonZeroU32, std::sync::atomic::AtomicU32, u32);
+<span class="macro">impl_raw!</span>(std::num::NonZeroU64, std::sync::atomic::AtomicU64, u64);
 
 <span class="doccomment">/// The primitive scalar type.
 </span><span class="kw">pub type </span>Primitive = usize;

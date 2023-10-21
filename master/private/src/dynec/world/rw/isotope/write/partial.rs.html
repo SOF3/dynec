@@ -127,18 +127,46 @@
 <a href="#127" id="127">127</a>
 <a href="#128" id="128">128</a>
 <a href="#129" id="129">129</a>
+<a href="#130" id="130">130</a>
+<a href="#131" id="131">131</a>
+<a href="#132" id="132">132</a>
+<a href="#133" id="133">133</a>
+<a href="#134" id="134">134</a>
+<a href="#135" id="135">135</a>
+<a href="#136" id="136">136</a>
+<a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a>
+<a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::marker::PhantomData;
 
 <span class="kw">use </span><span class="kw">crate</span>::comp::discrim::{<span class="self">self</span>, Mapped <span class="kw">as _</span>};
 <span class="kw">use </span><span class="kw">crate</span>::entity::ealloc;
+<span class="kw">use </span><span class="kw">crate</span>::system::access::{PartialStorageMap, StorageMap, StorageMapMut};
 <span class="kw">use </span><span class="kw">crate</span>::world::rw::isotope;
 <span class="kw">use crate</span>::{comp, system, world, Archetype};
+
+<span class="doccomment">/// Provides access to an isotope component in a specific archetype.
+///
+/// `DiscrimSetKey` is the type used to index the discriminant,
+/// depending on the type of discriminant set given.
+/// For vec and array discriminant sets, this should be `usize`.
+/// For partial isotope access, `K` is usually `usize`.
+/// For full isotope access, `K` is the discriminant type.
+///
+/// To share the same API as [`ReadIsotopeFull`](system::ReadIsotopeFull),
+/// immutable getters still require `&amp;mut self`,
+/// but there are `*_ref` variants for these functions that just require `&amp;self`.
+</span><span class="kw">pub type </span>WriteIsotopePartial&lt;A, C, DiscrimSet = Vec&lt;&lt;C <span class="kw">as </span>comp::Isotope&lt;A&gt;&gt;::Discrim&gt;&gt; =
+    system::AccessIsotope&lt;A, C, Storages&lt;A, C, DiscrimSet&gt;&gt;;
 
 <span class="kw">impl </span>world::Components {
     <span class="doccomment">/// Mutably access the requested discriminants of an isotope storage,
     /// lazily initializing new isotopes in `discrims` immediately.
     ///
-    /// The return value implements [`ReadIsotopeRef`](system::ReadIsotopeRef),
+    /// The return value provides `*_ref` getters,
     /// allowing shared read-only use of this accessor on multiple workers.
     ///
     /// # Panics
@@ -148,10 +176,8 @@
         <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="self">self</span>,
         discrims: <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span>DiscrimSet,
         snapshot: ealloc::Snapshot&lt;A::RawEntity&gt;,
-    ) -&gt; <span class="kw">impl </span>system::ReadIsotopeRef&lt;A, C, DiscrimSet::Key&gt;
-           + system::WriteIsotope&lt;A, C, DiscrimSet::Key&gt;
-           + <span class="lifetime">&#39;t
-    </span><span class="kw">where
+    ) -&gt; WriteIsotopePartial&lt;A, C, DiscrimSet&gt;
+    <span class="kw">where
         </span>A: Archetype,
         C: comp::Isotope&lt;A&gt;,
         DiscrimSet: discrim::Set&lt;C::Discrim&gt;,
@@ -167,11 +193,11 @@
             })
         };
 
-        isotope::Base { getter: Getter::&lt;A, C, DiscrimSet&gt; { storages, _ph: PhantomData } }
+        system::AccessIsotope::new(Storages::&lt;A, C, DiscrimSet&gt; { storages, _ph: PhantomData })
     }
 }
 
-<span class="kw">struct </span>Getter&lt;A, C, DiscrimSet&gt;
+<span class="kw">pub struct </span>Storages&lt;A, C, DiscrimSet&gt;
 <span class="kw">where
     </span>A: Archetype,
     C: comp::Isotope&lt;A&gt;,
@@ -181,7 +207,7 @@
     _ph:      PhantomData&lt;(A, C)&gt;,
 }
 
-<span class="kw">impl</span>&lt;A, C, DiscrimSet&gt; isotope::read::StorageGet&lt;A, C&gt; <span class="kw">for </span>Getter&lt;A, C, DiscrimSet&gt;
+<span class="kw">impl</span>&lt;A, C, DiscrimSet&gt; StorageMap&lt;A, C&gt; <span class="kw">for </span>Storages&lt;A, C, DiscrimSet&gt;
 <span class="kw">where
     </span>A: Archetype,
     C: comp::Isotope&lt;A&gt;,
@@ -218,7 +244,7 @@
     }
 }
 
-<span class="kw">impl</span>&lt;A, C, DiscrimSet&gt; isotope::read::StorageGetRef&lt;A, C&gt; <span class="kw">for </span>Getter&lt;A, C, DiscrimSet&gt;
+<span class="kw">impl</span>&lt;A, C, DiscrimSet&gt; PartialStorageMap&lt;A, C&gt; <span class="kw">for </span>Storages&lt;A, C, DiscrimSet&gt;
 <span class="kw">where
     </span>A: Archetype,
     C: comp::Isotope&lt;A&gt;,
@@ -232,7 +258,7 @@
     }
 }
 
-<span class="kw">impl</span>&lt;A, C, DiscrimSet&gt; isotope::write::StorageGetMut&lt;A, C&gt; <span class="kw">for </span>Getter&lt;A, C, DiscrimSet&gt;
+<span class="kw">impl</span>&lt;A, C, DiscrimSet&gt; StorageMapMut&lt;A, C&gt; <span class="kw">for </span>Storages&lt;A, C, DiscrimSet&gt;
 <span class="kw">where
     </span>A: Archetype,
     C: comp::Isotope&lt;A&gt;,

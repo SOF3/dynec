@@ -823,33 +823,99 @@
 <a href="#823" id="823">823</a>
 <a href="#824" id="824">824</a>
 <a href="#825" id="825">825</a>
-</pre></div><pre class="rust"><code><span class="doccomment">/// Declares a composite struct that implements
-/// [`Accessor`](crate::system::Accessor) and [`Chunked`](crate::system::ChunkedAccessor)
-/// by delegation to all fields and reconstructing the same struct with different types.
+<a href="#826" id="826">826</a>
+<a href="#827" id="827">827</a>
+<a href="#828" id="828">828</a>
+<a href="#829" id="829">829</a>
+<a href="#830" id="830">830</a>
+<a href="#831" id="831">831</a>
+<a href="#832" id="832">832</a>
+<a href="#833" id="833">833</a>
+<a href="#834" id="834">834</a>
+<a href="#835" id="835">835</a>
+<a href="#836" id="836">836</a>
+<a href="#837" id="837">837</a>
+<a href="#838" id="838">838</a>
+<a href="#839" id="839">839</a>
+<a href="#840" id="840">840</a>
+<a href="#841" id="841">841</a>
+<a href="#842" id="842">842</a>
+<a href="#843" id="843">843</a>
+<a href="#844" id="844">844</a>
+<a href="#845" id="845">845</a>
+<a href="#846" id="846">846</a>
+<a href="#847" id="847">847</a>
+<a href="#848" id="848">848</a>
+<a href="#849" id="849">849</a>
+<a href="#850" id="850">850</a>
+<a href="#851" id="851">851</a>
+<a href="#852" id="852">852</a>
+<a href="#853" id="853">853</a>
+<a href="#854" id="854">854</a>
+<a href="#855" id="855">855</a>
+<a href="#856" id="856">856</a>
+<a href="#857" id="857">857</a>
+<a href="#858" id="858">858</a>
+<a href="#859" id="859">859</a>
+<a href="#860" id="860">860</a>
+<a href="#861" id="861">861</a>
+<a href="#862" id="862">862</a>
+<a href="#863" id="863">863</a>
+<a href="#864" id="864">864</a>
+<a href="#865" id="865">865</a>
+<a href="#866" id="866">866</a>
+<a href="#867" id="867">867</a>
+<a href="#868" id="868">868</a>
+<a href="#869" id="869">869</a>
+<a href="#870" id="870">870</a>
+<a href="#871" id="871">871</a>
+<a href="#872" id="872">872</a>
+<a href="#873" id="873">873</a>
+<a href="#874" id="874">874</a>
+<a href="#875" id="875">875</a>
+<a href="#876" id="876">876</a>
+<a href="#877" id="877">877</a>
+<a href="#878" id="878">878</a>
+<a href="#879" id="879">879</a>
+<a href="#880" id="880">880</a>
+<a href="#881" id="881">881</a>
+<a href="#882" id="882">882</a>
+<a href="#883" id="883">883</a>
+<a href="#884" id="884">884</a>
+<a href="#885" id="885">885</a>
+<a href="#886" id="886">886</a>
+<a href="#887" id="887">887</a>
+<a href="#888" id="888">888</a>
+<a href="#889" id="889">889</a>
+<a href="#890" id="890">890</a>
+<a href="#891" id="891">891</a>
+<a href="#892" id="892">892</a>
+<a href="#893" id="893">893</a>
+<a href="#894" id="894">894</a>
+<a href="#895" id="895">895</a>
+<a href="#896" id="896">896</a>
+<a href="#897" id="897">897</a>
+<a href="#898" id="898">898</a>
+<a href="#899" id="899">899</a>
+<a href="#900" id="900">900</a>
+<a href="#901" id="901">901</a>
+<a href="#902" id="902">902</a>
+<a href="#903" id="903">903</a>
+<a href="#904" id="904">904</a>
+<a href="#905" id="905">905</a>
+<a href="#906" id="906">906</a>
+<a href="#907" id="907">907</a>
+<a href="#908" id="908">908</a>
+<a href="#909" id="909">909</a>
+<a href="#910" id="910">910</a>
+<a href="#911" id="911">911</a>
+</pre></div><pre class="rust"><code><span class="doccomment">/// Declares archetypes.
 ///
 /// # Example
 /// ```
-/// dynec::accessors! {
-///     /// This is an example accessor set struct.
-///     /// We can document it and apply attributes on it.
-///     #[allow(dead_code)]
-///     pub Foo {
-///         /// This documents the field.
-///         pub(crate) bar,
-///         qux,
-///     }
-/// }
-/// ```
-</span><span class="attr">#[doc(inline)]
-</span><span class="kw">pub use </span>dynec_codegen::accessors;
-
-<span class="attr">#[cfg(test)]
-</span><span class="kw">mod </span>accessors_tests {}
-
-<span class="doccomment">/// Declares archetypes.
+/// use std::collections::BTreeSet;
+/// use std::num::NonZeroU16;
 ///
-/// # Example
-/// ```
 /// dynec::archetype! {
 ///     /// This is an example archetype.
 ///     /// We can document it and apply attributes on it.
@@ -860,6 +926,9 @@
 ///     /// separated by semicolons.
 ///     /// The trailing semicolon is optional.
 ///     pub(crate) Bar;
+///
+///     /// Options can be applied in parentheses.
+///     pub Qux(raw_entity = NonZeroU16, recycler = BTreeSet&lt;NonZeroU16&gt;);
 /// }
 ///
 /// static_assertions::assert_impl_all!(Foo: dynec::Archetype);
@@ -867,11 +936,30 @@
 /// ```
 ///
 /// Since documentation, attributes, visibility and the trailing semicolon are optional,
-/// private undocumented archetypes can be declared in a single line as well:
+/// a private undocumented archetype can be declared in a single line as well:
+///
 /// ```
 /// dynec::archetype!(Foo);
 /// static_assertions::assert_impl_all!(Foo: dynec::Archetype);
 /// ```
+///
+/// # Options
+/// Options are applied in parentheses after an archetype identifier.
+/// Multiple options are separated by commas.
+///
+/// ## `raw_entity = $ty`
+/// Selects the [backing type for entity ID](crate::entity::Raw) for entities of this archetype.
+/// The default value is [`NonZeroU32`](std::num::NonZeroU32).
+///
+/// ## `recycler = $ty`
+/// Selects the data structure used in the recycling entity allocator to
+/// [recycle](crate::entity::ealloc::Recycler) freed IDs.
+/// The default value is [`Vec&lt;#raw_entity&gt;`](Vec).
+///
+/// ## `shard_assigner = $ty`
+/// Selects the [strategy to assign](crate::entity::ealloc::ShardAssigner) available entity IDs
+/// to different hsards.
+/// The default value is [`ThreadRngShardAssigner`](crate::entity::ealloc::ThreadRngShardAssigner).
 </span><span class="attr">#[doc(inline)]
 </span><span class="kw">pub use </span>dynec_codegen::archetype;
 
@@ -1063,7 +1151,7 @@
 /// fn test_system(#[dynec(global)] _qux: &amp;Qux) {}
 ///
 /// let mut builder = dynec::world::Builder::new(1);
-/// builder.schedule(Box::new(test_system.build()));
+/// builder.schedule(test_system.build());
 /// builder.build();
 /// ```
 </span><span class="attr">#[doc(inline)]
@@ -1189,22 +1277,24 @@
 /// ```
 ///
 /// ## Simple components
-/// Parameters in the form `impl ReadSimple&lt;A, C&gt;` or `impl WriteSimple&lt;A, C&gt;`,
+/// Parameters of type `ReadSimple&lt;A, C&gt;` or `WriteSimple&lt;A, C&gt;`,
 /// request access to a [simple component](crate::comp::Simple) of type `C`
-/// from entities of the [archetype](crate::Archetype) `A`,
-/// exposed through a type that implements [`system::ReadSimple`](crate::system::ReadSimple)
-/// or [`system::WriteSimple`](crate::system::WriteSimple).
+/// from entities of the [archetype](crate::Archetype) `A`.
 /// The latter provides mutable and exclusive access to the component storages.
 ///
-/// ### Using other bounds
-/// Other trait bounds for the parameter are also allowed,
-/// but the macro would not be able to infer type parameters and mutability.
+/// ### Using other aliases
+/// Using type aliases/renamed imports for the types is also allowed,
+/// but the macro would be unable to infer type parameters and mutability.
 /// In such cases, they must be indicated explicitly in the attribute.
 /// See the syntax reference below for details.
 ///
-/// ### Uninitialized entity references.
-/// Entity creation ordering is automatically enforced if `C` contains entity references,
-/// Use the `maybe_uninit` attribute to remove this ordering.
+/// ### Uninitialized entity references
+/// If `C` contains [references](crate::entity::Referrer) to entities of some archetype `T`,
+/// the scheduler automatically enforces that the system runs before
+/// any systems that create entities of archetype `T`,
+/// because components for entities created through [`EntityCreator`](crate::system::EntityCreator)
+/// are uninitialized until the current cycle completes.
+/// Use the `maybe_uninit` attribute to remove this ordering limitation.
 ///
 /// See [`EntityCreationPartition`](crate::system::partition::EntityCreationPartition#component-accessors)
 /// for more information.
@@ -1214,10 +1304,10 @@
 /// # /*
 /// #[dynec(simple(
 ///     // Optional, specifies the archetype and component explicitly.
-///     // Only required when the parameter type is not `impl ReadSimple`/`impl WriteSimple`.
+///     // Only required when the parameter type is not `ReadSimple`/`WriteSimple`.
 ///     arch = $ty, comp = $ty,
 ///     // Optional, indicates that the component access is exclusive explicitly.
-///     // Only required when the parameter type is not `impl WriteSimple`.
+///     // Only required when the parameter type is not `WriteSimple`.
 ///     mut,
 ///     // Optional, acknowledges that the entities of the specified archetypes
 ///     // contained in the simple components may be uninitialized.
@@ -1227,17 +1317,16 @@
 /// ```
 ///
 /// ## Isotope components
-/// Parameters in the form `impl ReadIsotope&lt;A, C&gt;` or `impl WriteIsotope&lt;A, C&gt;`,
+/// Parameters of type [`(Read|Write)Isotope(Full|Partial)`](mod@crate::system#types)
 /// request access to an [isotope component](crate::comp::Isotope) of type `C`
-/// from entities of the [archetype](crate::Archetype) `A`,
-/// exposed through a type that implements [`system::ReadIsotope`](crate::system::ReadIsotope)
-/// or [`system::WriteIsotope`](crate::system::WriteIsotope).
-/// The latter provides mutable and exclusive access to the component storages.
+/// from entities of the [archetype](crate::Archetype) `A`.
+/// The `Write` variants provide mutable and exclusive access to the component storages.
 ///
 /// ### Partial isotope access
-/// By default, all discriminants of the isotope component are requested,
-/// such that writes are exclusive with all systems that read any part of the discriminants.
-/// The accessor can be made partial instead:
+/// If [`ReadIsotopePartial`](crate::system::ReadIsotopePartial) or
+/// [`WriteIsotopePartial`](crate::system::WriteIsotopePartial) is used,
+/// the system only requests access to specific discriminants of the isotope component.
+/// The actual discriminants are specified with an attribute:
 ///
 /// ```
 /// # /*
@@ -1245,26 +1334,31 @@
 /// # */
 /// ```
 ///
-/// The expression `discrim_set` implements
-/// &lt;code&gt;[discrim::Set](crate::comp::discrim::Set)&lt;C::[Discrim](crate::comp::Discrim)&gt;&lt;/code&gt;,
-/// which is the set of discriminants that this system uses.
-/// The expression can reference local and param states directly.
-/// However, since it is only evaluated once before the first run of the system,
-/// subsequent writes to the states have no effect on the resolved discriminant set.
+/// The expression `discrim_set` contains the set of discriminants requested by this system
+/// contained in an implementation of
+/// &lt;code&gt;[discrim::Set](crate::comp::discrim::Set)&amp;lt;C::[Discrim](crate::comp::Discrim)&amp;gt;&lt;/code&gt;,
+/// which is typically an array or a [`Vec`].
+/// The expression may reference param states directly.
+/// The expression is only evaluated once before the first run of the system,
+/// so it will not react to subsequent changes to the param states.
 ///
 /// `K` is the type of the [key](crate::comp::discrim::Set::Key) to index the discriminant set.
 ///
 /// See the documentation of [`discrim::Set`](crate::comp::discrim::Set) for more information.
 ///
-/// ### Using other bounds
-/// Other trait bounds for the parameter are also allowed,
-/// but the macro would not be able to infer type parameters and mutability.
+/// ### Using other aliases
+/// Using type aliases/renamed imports for the types is also allowed,
+/// but the macro would be unable to infer type parameters and mutability.
 /// In such cases, they must be indicated explicitly in the attribute.
 /// See the syntax reference below for details.
 ///
-/// ### Uninitialized entity references.
-/// Entity creation ordering is automatically enforced if `C` contains entity references,
-/// Use the `maybe_uninit` attribute to remove this ordering.
+/// ### Uninitialized entity references
+/// If `C` contains [references](crate::entity::Referrer) to entities of some archetype `T`,
+/// the scheduler automatically enforces that the system runs before
+/// any systems that create entities of archetype `T`,
+/// because components for entities created through [`EntityCreator`](crate::system::EntityCreator)
+/// are uninitialized until the current cycle completes.
+/// Use the `maybe_uninit` attribute to remove this ordering limitation.
 ///
 /// See [`EntityCreationPartition`](crate::system::partition::EntityCreationPartition#component-accessors)
 /// for more information.
@@ -1273,13 +1367,16 @@
 /// ```
 /// # /*
 /// #[dynec(isotope(
-///     // Optional, indicates that this accessor only uses the given subset of discriminants.
+///     // Required if and only if the type is ReadIsotopePartial or WriteIsotopePartial.
 ///     discrim = $expr,
-///     // Optional, must be the same as the `Key` associated type of the `discrim` expression.
-///     // Only required when the parameter type is not `impl ReadIsotope`/`impl WriteIsotope`.
-///     discrim_key = $ty,
+///     // Optional, must be the same as the type of the `discrim` expression.
+///     // Only required when the parameter type is not `ReadIsotopePartial`/`WriteIsotopePartial`.
+///     // Note that `ReadIsotopePartial`/`WriteIsotopePartial` have an optional third type parameter
+///     // that expects the same type as `discrim_set`,
+///     // which is `Vec&lt;C::Discrim&gt;` by default.
+///     discrim_set = $ty,
 ///     // Optional, specifies the archetype and component explicitly.
-///     // Only required when the parameter type is not `impl ReadIsotope`/`impl WriteIsotope`.
+///     // Only required when the parameter type is not `(Read|Write)Isotope(Full|Partial)`.
 ///     arch = $ty, comp = $ty,
 ///     // Optional, indicates that the component access is exclusive explicitly.
 ///     // Only required when the parameter type is not `impl WriteSimple`.
@@ -1292,7 +1389,7 @@
 /// ```
 ///
 /// ## Entity creation
-/// Parameters that require an implementation of [`EntityCreator`](crate::system::EntityCreator)
+/// Parameters that require an [`EntityCreator`](crate::system::EntityCreator)
 /// can be used to create entities.
 /// The archetype of created entities is specified in the type bounds.
 /// Note that entity creation is asynchronous to ensure synchronization,
@@ -1326,7 +1423,7 @@
 /// ```
 ///
 /// ## Entity deletion
-/// Parameters that require an implementation of [`EntityDeleter`](crate::system::EntityDeleter)
+/// Parameters that require an [`EntityDeleter`](crate::system::EntityDeleter)
 /// can be used to delete entities.
 /// The archetype of deleted entities is specified in the type bounds.
 /// Note that `EntityDeleter` can only be used to mark entities as &quot;deleting&quot;;
@@ -1336,9 +1433,11 @@
 /// It is advisable to execute finalizer-removing systems
 /// after systems that mark entities for deletion finish executing.
 /// This allows deletion to happen in the same cycle,
-/// thus slightly improving entity deletion performance
+/// thus slightly reducing entity deletion latency
 /// (but this is not supposed to be critical anyway).
-/// Nevertheless, unlike entity creation, entity deletion does not have an automatic partition.
+/// Nevertheless, unlike entity creation,
+/// the scheduler does not automatically enforce ordering between
+/// finalizer-manipulating systems and entity-deleting systems.
 ///
 /// ### Syntax reference
 /// ```
@@ -1346,6 +1445,22 @@
 /// /// This attribute is not required unless `EntityDeleter` is aliased.
 /// #[dynec(entity_deleter(
 ///     // Optional, specifies the archetype if `EntityDeleter` is aliased.
+///     arch = $ty,
+/// ))]
+/// # */
+/// ```
+///
+/// ## Entity iterator
+/// Parameters that require an [`EntityIterator`](crate::system::EntityIterator)
+/// can be used to iterate over entities and zip multiple component iterators.
+/// See the documentation for `EntityIterator` for details.
+///
+/// ### Syntax reference
+/// ```
+/// # /*
+/// /// This attribute is not required unless `EntityIterator` is aliased.
+/// #[dynec(entity_iterator(
+///     // Optional, specifies the archetype if `EntityIterator` is aliased.
 ///     arch = $ty,
 /// ))]
 /// # */
@@ -1385,13 +1500,13 @@
 ///     #[dynec(local(initial = 0))] counter: &amp;mut u16,
 ///     #[dynec(param)] &amp;skill_id: &amp;SkillType,
 ///     #[dynec(global)] title: &amp;mut Title,
-///     x: impl system::WriteSimple&lt;Player, PositionX&gt;,
-///     y: impl system::WriteSimple&lt;Player, PositionY&gt;,
-///     dir: impl system::ReadSimple&lt;Player, Direction&gt;,
-///     #[dynec(isotope(discrim = [skill_id]))] skill: impl system::ReadIsotope&lt;
+///     x: system::WriteSimple&lt;Player, PositionX&gt;,
+///     y: system::WriteSimple&lt;Player, PositionY&gt;,
+///     dir: system::ReadSimple&lt;Player, Direction&gt;,
+///     #[dynec(isotope(discrim = [skill_id]))] skill: system::ReadIsotopePartial&lt;
 ///         Player,
 ///         SkillLevel,
-///         usize,
+///         [SkillType; 1],
 ///     &gt;,
 /// ) {
 ///     *counter += 1;
@@ -1611,7 +1726,7 @@
     ) =&gt; {{
         <span class="kw">let </span><span class="kw-2">mut </span>builder = <span class="macro-nonterminal">$crate::world::Builder::new</span>(<span class="number">0</span>);
         $(
-            builder.schedule(Box::new(<span class="macro-nonterminal">$systems</span>));
+            builder.schedule(<span class="macro-nonterminal">$systems</span>);
         )*
 
         <span class="attr">#[allow(unused_mut)]
@@ -1624,6 +1739,34 @@
         )*
 
         world
+    }}
+}
+
+<span class="doccomment">/// Similar to [`system_test`], but returns the entities in the form
+/// `(world, (ent1, ent2, ...))`
+</span><span class="attr">#[macro_export]
+</span><span class="macro">macro_rules! </span>system_test_exported {
+    (
+        $(<span class="macro-nonterminal">$systems</span>:expr),* ;
+        $(
+            $(<span class="kw">let </span><span class="macro-nonterminal">$var</span>:ident :)<span class="question-mark">? </span><span class="macro-nonterminal">$arch</span>:ty = ($(<span class="macro-nonterminal">$components</span>:tt)<span class="kw-2">*</span>);
+        )*
+    ) =&gt; {{
+        <span class="kw">let </span><span class="kw-2">mut </span>builder = <span class="macro-nonterminal">$crate::world::Builder::new</span>(<span class="number">0</span>);
+        $(
+            builder.schedule(<span class="macro-nonterminal">$systems</span>);
+        )*
+
+        <span class="attr">#[allow(unused_mut)]
+        </span><span class="kw">let </span><span class="kw-2">mut </span>world = builder.build();
+
+        $(
+            $(<span class="kw">let </span><span class="macro-nonterminal">$var </span>= )<span class="question-mark">? </span>world.create::&lt;<span class="macro-nonterminal">$arch</span>&gt;(
+                <span class="macro-nonterminal">$</span><span class="macro">crate::comps!</span>[@(<span class="macro-nonterminal">$</span><span class="kw">crate</span>) <span class="macro-nonterminal">$arch </span>=&gt; $(<span class="macro-nonterminal">$components</span>)<span class="kw-2">*</span>]
+            );
+        )*
+
+        (world, ($($(<span class="macro-nonterminal">$var</span>,)<span class="question-mark">?</span>)<span class="kw-2">*</span>))
     }}
 }
 
@@ -1648,4 +1791,33 @@
         };
     };
 }
+
+<span class="doccomment">/// Declares a composite struct that implements
+/// [`IntoZip`](crate::system::iter::IntoZip), [`Zip`](crate::system::iter::Zip)
+/// and [`ZipChunked`](crate::system::iter::ZipChunked)
+/// by delegation to all fields and reconstructing the same struct with different types.
+///
+/// All fields accept arbitrary types, similar to a tuple,
+/// and are projected to the corresponding storages upon entity iteration.
+///
+/// # Example
+/// ```
+/// #![feature(return_position_impl_trait_in_trait)]
+///
+/// dynec::zip! {
+///     /// This is an example zip struct.
+///     /// We can document it and apply attributes on it.
+///     #[allow(dead_code)]
+///     pub Foo {
+///         /// This documents the field.
+///         pub(crate) bar,
+///         qux,
+///     }
+/// }
+/// ```
+</span><span class="attr">#[doc(inline)]
+</span><span class="kw">pub use </span>dynec_codegen::zip;
+
+<span class="attr">#[cfg(test)]
+</span><span class="kw">mod </span>zip_tests {}
 </code></pre></div></section></main></body></html>

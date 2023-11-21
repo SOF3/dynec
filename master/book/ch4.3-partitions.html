@@ -202,13 +202,37 @@ fn render_progress(
 ) {
     progress.set_progress(clock.ticks);
 }
+
+// Other systems not related to `ClockUpdatedPartition`.
+#[system]
+fn other_systems() {}
 <span class="boring">}
 </span></code></pre></pre>
 <p>Thus, <code>update_clock</code> is already executed when <code>ClockUpdatedPartition</code> is complete.
 Then <code>render_status</code> and <code>render_progress</code> are only executed
 after the partition is complete,
-so they render the value of the updated clock.</p>
+so they render the value of the updated clock.
+This is illustrated by the following diagram:</p>
+<pre><code class="language-mermaid">---
+displayMode: compact
+---
+gantt
+    dateFormat s
+    axisFormat %S
+    tickInterval 1s
+    section Worker 1
+        other_systems   :0, 0.5s
+        render_status   :1, 1s
+    section Worker 2
+        update_clock    :0, 1s
+        render_progress :1, 0.5s
+    ClockUpdatedPartition :milestone, 1, 1
+</code></pre>
+<p>In this example, Worker 1 cannot start executing <code>render_status</code>
+even though it is idle,
+until all dependencies for <code>ClockUpdatedPartition</code> have completed.</p>
 <p>If the scheduler detected a cyclic dependency,
+e.g. if <code>update_clock</code> declares <code>ClockUpdatedPartition</code>
 it panics with an error like this:</p>
 <pre><code class="language-text">Scheduled systems have a cyclic dependency: thread-safe system #0 (main::update_clock) -&gt; partition #0 (main::ClockUpdatedPartition) -&gt; thread-safe system #0 (main::update_clock)
 </code></pre>
@@ -250,5 +274,7 @@ it panics with an error like this:</p>
         <script src="book.js" type="text/javascript" charset="utf-8"></script>
 
         <!-- Custom JS scripts -->
+        <script type="text/javascript" src="mermaid.min.js"></script>
+        <script type="text/javascript" src="mermaid-init.js"></script>
     </body>
 </html>

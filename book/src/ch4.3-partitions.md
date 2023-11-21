@@ -69,14 +69,41 @@ fn render_progress(
 ) {
     progress.set_progress(clock.ticks);
 }
+
+// Other systems not related to `ClockUpdatedPartition`.
+#[system]
+fn other_systems() {}
 ```
 
 Thus, `update_clock` is already executed when `ClockUpdatedPartition` is complete.
 Then `render_status` and `render_progress` are only executed
 after the partition is complete,
 so they render the value of the updated clock.
+This is illustrated by the following diagram:
+
+```mermaid
+---
+displayMode: compact
+---
+gantt
+    dateFormat s
+    axisFormat %S
+    tickInterval 1s
+    section Worker 1
+        other_systems   :0, 0.5s
+        render_status   :1, 1s
+    section Worker 2
+        update_clock    :0, 1s
+        render_progress :1, 0.5s
+    ClockUpdatedPartition :milestone, 1, 1
+```
+
+In this example, Worker 1 cannot start executing `render_status`
+even though it is idle,
+until all dependencies for `ClockUpdatedPartition` have completed.
 
 If the scheduler detected a cyclic dependency,
+e.g. if `update_clock` declares `ClockUpdatedPartition`
 it panics with an error like this:
 
 ```text

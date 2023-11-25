@@ -82,7 +82,7 @@ fn isotope_partial_builder(
             ));
         }
 
-        let &arch = args.get(0).expect("args.len() >= 2");
+        let &arch = args.first().expect("args.len() >= 2");
         let &comp = args.get(1).expect("args.len() >= 2");
         let discrim_set = args.get(2).map(|&ty| Box::new(ty.clone())).ok_or(args_span);
 

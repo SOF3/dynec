@@ -191,7 +191,6 @@ fn build_initials(
                 (node, WakeupState::Pending)
             }
             (node @ Node::Partition(_), 0) => (node, WakeupState::Completed),
-            _ => unreachable!(), // TODO remove this line when feature(precise_pointer_size_matching) is stable
         })
         .collect();
 

@@ -163,7 +163,6 @@
     allow(dead_code)
 )]
 #![cfg_attr(doc, warn(missing_docs))]
-#![feature(return_position_impl_trait_in_trait)]
 #![feature(type_alias_impl_trait, impl_trait_in_assoc_type)]
 #![feature(maybe_uninit_uninit_array, maybe_uninit_array_assume_init)]
 #![feature(never_type)]

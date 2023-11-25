@@ -97,9 +97,7 @@ where
     type IterValues<'t> = impl Iterator<Item = (Self::Key, C::Discrim, &'t Self::IterValue)> + 't
     where
         Self: 't;
-    fn iter_values(&self) -> Self::IterValues<'_> {
-        self.storages.iter_mapped().map(|(key, discrim, storage)| (key, discrim, storage))
-    }
+    fn iter_values(&self) -> Self::IterValues<'_> { self.storages.iter_mapped() }
 }
 
 impl<A, C, DiscrimSet> PartialStorageMap<A, C> for Storages<A, C, DiscrimSet>

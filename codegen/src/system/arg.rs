@@ -139,9 +139,10 @@ fn entity_iterator_partial_builder() -> PartialArgTypeBuilder {
     })
 }
 
-const USAGE_INFERENCE_ERROR: &str =
-    "Cannot infer parameter usage. Specify explicitly with `#[dynec(...)]`, or use the form `impl \
-     system::(Read|Write)(Simple|Isotope)<Arch, Comp>` or `impl system::Entity(Creator|Deleter)`.";
+const USAGE_INFERENCE_ERROR: &str = "Cannot infer parameter usage. Specify explicitly with \
+                                     `#[dynec(...)]`, or use the form `impl \
+                                     system::(Read|Write)(Simple|IsotopeFull|IsotopePartial)<Arch, \
+                                     Comp>` or `impl system::Entity(Creator|Deleter)`.";
 
 pub(super) fn infer_arg_type(param: &mut syn::PatType) -> Result<ArgType> {
     let mut maybe_partial: Option<MaybePartial> = None;

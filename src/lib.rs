@@ -168,6 +168,8 @@
 #![feature(never_type)]
 #![feature(sync_unsafe_cell)]
 #![feature(slice_take)]
+#![feature(get_many_mut)]
+#![feature(array_try_from_fn, array_try_map)]
 
 /// Internal re-exports used in macros.
 #[doc(hidden)]

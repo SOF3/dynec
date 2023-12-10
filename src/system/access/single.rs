@@ -184,6 +184,17 @@ where
         self.storage.get_mut(entity.id())
     }
 
+    /// Returns mutable references to the components for the specified entities.
+    ///
+    /// Returns `None` if any component is not present in the entity
+    /// or if the same entity is passed multiple times.
+    pub fn try_get_many_mut<const N: usize>(
+        &mut self,
+        entities: [impl entity::Ref<Archetype = A>; N],
+    ) -> Option<[&mut C; N]> {
+        self.storage.get_many_mut(entities.map(|entity| entity.id()))
+    }
+
     /// Iterates over mutable references to all initialized components in this storage.
     pub fn iter_mut<'t>(
         &'t mut self,

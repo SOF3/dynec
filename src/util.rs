@@ -145,9 +145,22 @@ unsafe impl UnsafeEqOrd for usize {}
 /// Transforms a value behind a mutable reference with a function that moves it.
 ///
 /// The placeholder value will be left at the position of `ref_` if the transform function panics.
-pub fn transform_mut<T, R>(ref_: &mut T, placeholder: T, transform: impl FnOnce(T) -> (T, R)) -> R {
+pub(crate) fn transform_mut<T, R>(
+    ref_: &mut T,
+    placeholder: T,
+    transform: impl FnOnce(T) -> (T, R),
+) -> R {
     let old = mem::replace(ref_, placeholder);
     let (new, ret) = transform(old);
     *ref_ = new;
     ret
+}
+
+pub(crate) fn is_all_distinct_quadtime<T: PartialEq>(slice: &[T]) -> bool {
+    for (i, item) in slice.iter().enumerate() {
+        if !slice[(i + 1)..].iter().all(|other| item == other) {
+            return false;
+        }
+    }
+    true
 }

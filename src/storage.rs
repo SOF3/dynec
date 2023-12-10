@@ -106,6 +106,12 @@ pub trait Partition<'t>: Access + Send + Sync + Sized + 't {
 
     /// Same as [`get_mut`](Access::get_mut), but returns a reference with lifetime `'t`.
     fn into_mut(self, entity: Self::RawEntity) -> Option<&'t mut Self::Comp>;
+
+    /// Same as [`get_many_mut`](Access::get_many_mut), but returns a reference with lifetime `'t`.
+    fn into_many_mut<const N: usize>(
+        self,
+        entities: [Self::RawEntity; N],
+    ) -> Option<[&'t mut Self::Comp; N]>;
 }
 
 /// Mutable access functions for a storage, generalizing [`Storage`] and [`Partition`].
@@ -117,6 +123,15 @@ pub trait Access {
 
     /// Gets a mutable reference to the component for a specific entity if it is present.
     fn get_mut(&mut self, entity: Self::RawEntity) -> Option<&mut Self::Comp>;
+
+    /// Gets mutable references to the components for specific entities if they are present.
+    ///
+    /// Returns `None` if any entity is uninitialized
+    /// or if any entity appeared in `entities` more than once.
+    fn get_many_mut<const N: usize>(
+        &mut self,
+        entities: [Self::RawEntity; N],
+    ) -> Option<[&mut Self::Comp; N]>;
 
     /// Return value of [`iter_mut`](Self::iter_mut).
     type IterMut<'u>: Iterator<Item = (Self::RawEntity, &'u mut Self::Comp)> + 'u

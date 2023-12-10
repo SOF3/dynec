@@ -357,6 +357,7 @@
 <a href="#357" id="357">357</a>
 <a href="#358" id="358">358</a>
 <a href="#359" id="359">359</a>
+<a href="#360" id="360">360</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>matches2::option_match;
 <span class="kw">use </span>proc_macro2::Span;
 <span class="kw">use </span>syn::spanned::Spanned;
@@ -498,9 +499,10 @@
     })
 }
 
-<span class="kw">const </span>USAGE_INFERENCE_ERROR: <span class="kw-2">&amp;</span>str =
-    <span class="string">&quot;Cannot infer parameter usage. Specify explicitly with `#[dynec(...)]`, or use the form `impl \
-     system::(Read|Write)(Simple|Isotope)&lt;Arch, Comp&gt;` or `impl system::Entity(Creator|Deleter)`.&quot;</span>;
+<span class="kw">const </span>USAGE_INFERENCE_ERROR: <span class="kw-2">&amp;</span>str = <span class="string">&quot;Cannot infer parameter usage. Specify explicitly with \
+                                     `#[dynec(...)]`, or use the form `impl \
+                                     system::(Read|Write)(Simple|IsotopeFull|IsotopePartial)&lt;Arch, \
+                                     Comp&gt;` or `impl system::Entity(Creator|Deleter)`.&quot;</span>;
 
 <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>infer_arg_type(param: <span class="kw-2">&amp;mut </span>syn::PatType) -&gt; <span class="prelude-ty">Result</span>&lt;ArgType&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>maybe_partial: <span class="prelude-ty">Option</span>&lt;MaybePartial&gt; = <span class="prelude-val">None</span>;

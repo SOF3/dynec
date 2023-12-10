@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["GlobalBuilder"],"fn":["populate_default_globals"],"struct":["Builder"],"type":["GlobalBuilderMap"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"derive":["Ref"],"mod":["deletion","ealloc","generation","maybe","raw","rctrack","referrer","sealed"],"struct":["Entity","TempRef","TempRefChunk","Weak"],"trait":["Raw","Ref"]};

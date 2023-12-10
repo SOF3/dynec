@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["DbgTypeId","DoubleDeref","OwnedDeref"],"trait":["Ref","UnsafeEqOrd"]};

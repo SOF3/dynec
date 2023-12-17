@@ -74,6 +74,24 @@ impl<RawT: entity::Raw, C: Send + Sync + 'static> Access for VecStorage<RawT, C>
         }
     }
 
+    fn get_many_mut<const N: usize>(
+        &mut self,
+        entities: [RawT; N],
+    ) -> Option<[&mut Self::Comp; N]> {
+        let indices = entities.map(|id| id.to_primitive());
+
+        if !indices.iter().all(|&index| self.bit(index)) {
+            return None;
+        }
+
+        let values = self.data.get_many_mut(indices).ok()?;
+
+        Some(values.map(|value| {
+            // Safety: values correspond to indices checked above.
+            unsafe { value.assume_init_mut() }
+        }))
+    }
+
     type IterMut<'t> = impl Iterator<Item = (RawT, &'t mut C)> + 't;
     fn iter_mut(&mut self) -> Self::IterMut<'_> { iter_mut(0, &self.bits, &mut self.data) }
 }
@@ -186,6 +204,13 @@ impl<'t, RawT: entity::Raw, C: Send + Sync + 'static> Access for StoragePartitio
 
     fn get_mut(&mut self, entity: RawT) -> Option<&mut C> { self.by_ref().into_mut(entity) }
 
+    fn get_many_mut<const N: usize>(
+        &mut self,
+        entities: [RawT; N],
+    ) -> Option<[&mut Self::Comp; N]> {
+        self.by_ref().into_many_mut(entities)
+    }
+
     type IterMut<'u> = impl Iterator<Item = (RawT, &'u mut C)> + 'u where Self: 'u;
     fn iter_mut(&mut self) -> Self::IterMut<'_> { self.by_ref().into_iter_mut() }
 }
@@ -218,6 +243,26 @@ impl<'t, RawT: entity::Raw, C: Send + Sync + 'static> Partition<'t>
             }
             _ => None,
         }
+    }
+
+    fn into_many_mut<const N: usize>(
+        self,
+        entities: [Self::RawEntity; N],
+    ) -> Option<[&'t mut Self::Comp; N]> {
+        let indices: [usize; N] =
+            entities.try_map(|entity| match entity.to_primitive().checked_sub(self.offset) {
+                Some(index) => match self.bits.get(index) {
+                    Some(bit) if *bit => Some(index),
+                    _ => None,
+                },
+                None => panic!("Entity {entity:?} is not in the partition {:?}..", self.offset),
+            })?;
+        let values = self.data.get_many_mut(indices).ok()?;
+        Some(values.map(move |value| {
+            // Safety: all indices have been checked to be initialized
+            // before getting mapped into `indices`
+            unsafe { value.assume_init_mut() }
+        }))
     }
 
     fn split_out(&mut self, entity: RawT) -> Self {

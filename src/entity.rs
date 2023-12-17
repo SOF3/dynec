@@ -43,6 +43,9 @@ pub trait Ref: sealed::Sealed {
 
     /// The underlying entity ID referenced.
     fn id(&self) -> <Self::Archetype as Archetype>::RawEntity;
+
+    /// Converts this entity reference to a homogeneous temporary.
+    fn as_ref(&self) -> TempRef<'_, Self::Archetype> { TempRef::new(self.id()) }
 }
 
 /// A temporary, non-`'static` reference to an entity.

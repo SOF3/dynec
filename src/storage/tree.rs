@@ -1,9 +1,10 @@
 use std::cell::SyncUnsafeCell;
 use std::collections::BTreeMap;
-use std::slice;
+use std::ptr::NonNull;
+use std::{array, slice};
 
 use super::{Access, ChunkMut, ChunkRef, Partition, Storage};
-use crate::entity;
+use crate::{entity, util};
 
 /// A storage based on [`BTreeMap`].
 pub struct Tree<RawT: entity::Raw, C> {
@@ -24,6 +25,36 @@ impl<RawT: entity::Raw, C: Send + Sync + 'static> Access for Tree<RawT, C> {
 
     fn get_mut(&mut self, id: Self::RawEntity) -> Option<&mut C> {
         self.data.get_mut(&id).map(|cell| cell.get_mut())
+    }
+
+    fn get_many_mut<const N: usize>(
+        &mut self,
+        entities: [Self::RawEntity; N],
+    ) -> Option<[&mut Self::Comp; N]> {
+        let ptrs = entities.map(|entity| {
+            let datum = self.data.get(&entity)?;
+            let ptr = datum.get();
+            NonNull::new(ptr)
+        });
+
+        if !util::is_all_distinct_quadtime(&ptrs) {
+            return None;
+        }
+
+        if ptrs.iter().any(|ptr| ptr.is_none()) {
+            return None;
+        }
+
+        Some(ptrs.map(|ptr| {
+            let mut ptr = ptr.expect("checked all are not none");
+
+            unsafe {
+                // All pointers originated from a `&mut self`, so all possible aliases are in locals.
+                // We have checked that all `ptrs` are distinct,
+                // and since they come from UnsafeCell, they cannot overlap.
+                ptr.as_mut()
+            }
+        }))
     }
 
     type IterMut<'t> = impl Iterator<Item = (Self::RawEntity, &'t mut Self::Comp)> + 't;
@@ -111,6 +142,13 @@ impl<'t, RawT: entity::Raw, C: Send + Sync + 'static> Access for StoragePartitio
         }
     }
 
+    fn get_many_mut<const N: usize>(
+        &mut self,
+        entities: [RawT; N],
+    ) -> Option<[&mut Self::Comp; N]> {
+        self.by_ref().into_many_mut(entities)
+    }
+
     type IterMut<'u> = impl Iterator<Item = (Self::RawEntity, &'u mut Self::Comp)> + 'u where Self: 'u;
     fn iter_mut(&mut self) -> Self::IterMut<'_> { self.by_ref().into_iter_mut() }
 }
@@ -156,6 +194,36 @@ impl<'t, RawT: entity::Raw, C: Send + Sync + 'static> Partition<'t>
             // We already have `&mut self`, so no other threads are accessing this range.
             Some(&mut *cell.get())
         }
+    }
+
+    fn into_many_mut<const N: usize>(
+        self,
+        entities: [Self::RawEntity; N],
+    ) -> Option<[&'t mut Self::Comp; N]> {
+        for entity in entities {
+            self.assert_bounds(entity);
+        }
+
+        let ptrs = entities.map(|entity| {
+            let datum = self.data.get(&entity)?;
+            let ptr = datum.get();
+            NonNull::new(ptr)
+        });
+
+        if !util::is_all_distinct_quadtime(&ptrs) {
+            return None;
+        }
+
+        array::try_from_fn(|i| {
+            let mut ptr = ptrs[i]?;
+
+            unsafe {
+                // All pointers originated from a `&mut self`, so all possible aliases are in locals.
+                // We have checked that all `ptrs` are distinct,
+                // and since they come from UnsafeCell, they cannot overlap.
+                Some(ptr.as_mut())
+            }
+        })
     }
 
     fn split_out(&mut self, entity: RawT) -> Self {

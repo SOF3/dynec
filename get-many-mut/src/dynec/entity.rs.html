@@ -233,6 +233,9 @@
 <a href="#233" id="233">233</a>
 <a href="#234" id="234">234</a>
 <a href="#235" id="235">235</a>
+<a href="#236" id="236">236</a>
+<a href="#237" id="237">237</a>
+<a href="#238" id="238">238</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! An entity is a single object that owns components.
 //!
 //! Entities are reference-counted in debug mode,
@@ -278,6 +281,9 @@
 
     <span class="doccomment">/// The underlying entity ID referenced.
     </span><span class="kw">fn </span>id(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; &lt;<span class="self">Self</span>::Archetype <span class="kw">as </span>Archetype&gt;::RawEntity;
+
+    <span class="doccomment">/// Converts this entity reference to a homogeneous temporary.
+    </span><span class="kw">fn </span>as_ref(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; TempRef&lt;<span class="lifetime">&#39;_</span>, <span class="self">Self</span>::Archetype&gt; { TempRef::new(<span class="self">self</span>.id()) }
 }
 
 <span class="doccomment">/// A temporary, non-`&#39;static` reference to an entity.

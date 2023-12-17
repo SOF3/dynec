@@ -445,6 +445,51 @@
 <a href="#445" id="445">445</a>
 <a href="#446" id="446">446</a>
 <a href="#447" id="447">447</a>
+<a href="#448" id="448">448</a>
+<a href="#449" id="449">449</a>
+<a href="#450" id="450">450</a>
+<a href="#451" id="451">451</a>
+<a href="#452" id="452">452</a>
+<a href="#453" id="453">453</a>
+<a href="#454" id="454">454</a>
+<a href="#455" id="455">455</a>
+<a href="#456" id="456">456</a>
+<a href="#457" id="457">457</a>
+<a href="#458" id="458">458</a>
+<a href="#459" id="459">459</a>
+<a href="#460" id="460">460</a>
+<a href="#461" id="461">461</a>
+<a href="#462" id="462">462</a>
+<a href="#463" id="463">463</a>
+<a href="#464" id="464">464</a>
+<a href="#465" id="465">465</a>
+<a href="#466" id="466">466</a>
+<a href="#467" id="467">467</a>
+<a href="#468" id="468">468</a>
+<a href="#469" id="469">469</a>
+<a href="#470" id="470">470</a>
+<a href="#471" id="471">471</a>
+<a href="#472" id="472">472</a>
+<a href="#473" id="473">473</a>
+<a href="#474" id="474">474</a>
+<a href="#475" id="475">475</a>
+<a href="#476" id="476">476</a>
+<a href="#477" id="477">477</a>
+<a href="#478" id="478">478</a>
+<a href="#479" id="479">479</a>
+<a href="#480" id="480">480</a>
+<a href="#481" id="481">481</a>
+<a href="#482" id="482">482</a>
+<a href="#483" id="483">483</a>
+<a href="#484" id="484">484</a>
+<a href="#485" id="485">485</a>
+<a href="#486" id="486">486</a>
+<a href="#487" id="487">487</a>
+<a href="#488" id="488">488</a>
+<a href="#489" id="489">489</a>
+<a href="#490" id="490">490</a>
+<a href="#491" id="491">491</a>
+<a href="#492" id="492">492</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::iter;
 <span class="kw">use </span>std::marker::PhantomData;
 <span class="kw">use </span>std::mem::{<span class="self">self</span>, MaybeUninit};
@@ -519,6 +564,24 @@
         } <span class="kw">else </span>{
             <span class="prelude-val">None
         </span>}
+    }
+
+    <span class="kw">fn </span>get_many_mut&lt;<span class="kw">const </span>N: usize&gt;(
+        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+        entities: [RawT; N],
+    ) -&gt; <span class="prelude-ty">Option</span>&lt;[<span class="kw-2">&amp;mut </span><span class="self">Self</span>::Comp; N]&gt; {
+        <span class="kw">let </span>indices = entities.map(|id| id.to_primitive());
+
+        <span class="kw">if </span>!indices.iter().all(|<span class="kw-2">&amp;</span>index| <span class="self">self</span>.bit(index)) {
+            <span class="kw">return </span><span class="prelude-val">None</span>;
+        }
+
+        <span class="kw">let </span>values = <span class="self">self</span>.data.get_many_mut(indices).ok()<span class="question-mark">?</span>;
+
+        <span class="prelude-val">Some</span>(values.map(|value| {
+            <span class="comment">// Safety: values correspond to indices checked above.
+            </span><span class="kw">unsafe </span>{ value.assume_init_mut() }
+        }))
     }
 
     <span class="kw">type </span>IterMut&lt;<span class="lifetime">&#39;t</span>&gt; = <span class="kw">impl </span>Iterator&lt;Item = (RawT, <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>C)&gt; + <span class="lifetime">&#39;t</span>;
@@ -633,6 +696,13 @@
 
     <span class="kw">fn </span>get_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>, entity: RawT) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;mut </span>C&gt; { <span class="self">self</span>.by_ref().into_mut(entity) }
 
+    <span class="kw">fn </span>get_many_mut&lt;<span class="kw">const </span>N: usize&gt;(
+        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+        entities: [RawT; N],
+    ) -&gt; <span class="prelude-ty">Option</span>&lt;[<span class="kw-2">&amp;mut </span><span class="self">Self</span>::Comp; N]&gt; {
+        <span class="self">self</span>.by_ref().into_many_mut(entities)
+    }
+
     <span class="kw">type </span>IterMut&lt;<span class="lifetime">&#39;u</span>&gt; = <span class="kw">impl </span>Iterator&lt;Item = (RawT, <span class="kw-2">&amp;</span><span class="lifetime">&#39;u </span><span class="kw-2">mut </span>C)&gt; + <span class="lifetime">&#39;u </span><span class="kw">where </span><span class="self">Self</span>: <span class="lifetime">&#39;u</span>;
     <span class="kw">fn </span>iter_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::IterMut&lt;<span class="lifetime">&#39;_</span>&gt; { <span class="self">self</span>.by_ref().into_iter_mut() }
 }
@@ -665,6 +735,26 @@
             }
             <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
         }
+    }
+
+    <span class="kw">fn </span>into_many_mut&lt;<span class="kw">const </span>N: usize&gt;(
+        <span class="self">self</span>,
+        entities: [<span class="self">Self</span>::RawEntity; N],
+    ) -&gt; <span class="prelude-ty">Option</span>&lt;[<span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span><span class="self">Self</span>::Comp; N]&gt; {
+        <span class="kw">let </span>indices: [usize; N] =
+            entities.try_map(|entity| <span class="kw">match </span>entity.to_primitive().checked_sub(<span class="self">self</span>.offset) {
+                <span class="prelude-val">Some</span>(index) =&gt; <span class="kw">match </span><span class="self">self</span>.bits.get(index) {
+                    <span class="prelude-val">Some</span>(bit) <span class="kw">if </span><span class="kw-2">*</span>bit =&gt; <span class="prelude-val">Some</span>(index),
+                    <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
+                },
+                <span class="prelude-val">None </span>=&gt; <span class="macro">panic!</span>(<span class="string">&quot;Entity {entity:?} is not in the partition {:?}..&quot;</span>, <span class="self">self</span>.offset),
+            })<span class="question-mark">?</span>;
+        <span class="kw">let </span>values = <span class="self">self</span>.data.get_many_mut(indices).ok()<span class="question-mark">?</span>;
+        <span class="prelude-val">Some</span>(values.map(<span class="kw">move </span>|value| {
+            <span class="comment">// Safety: all indices have been checked to be initialized
+            // before getting mapped into `indices`
+            </span><span class="kw">unsafe </span>{ value.assume_init_mut() }
+        }))
     }
 
     <span class="kw">fn </span>split_out(<span class="kw-2">&amp;mut </span><span class="self">self</span>, entity: RawT) -&gt; <span class="self">Self </span>{

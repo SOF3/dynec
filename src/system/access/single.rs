@@ -234,6 +234,25 @@ where
             ),
         }
     }
+
+    /// Returns mutable references to the component for the specified entities.
+    ///
+    /// # Panics
+    /// Panics if `entities` contains duplicate items.
+    pub fn get_many_mut<const N: usize>(
+        &mut self,
+        entities: [impl entity::Ref<Archetype = A>; N],
+    ) -> [&mut C; N] {
+        match self.try_get_many_mut(entities) {
+            Some(comps) => comps,
+            None => panic!(
+                "Parameter contains duplicate entities, or component {}/{} implements comp::Must \
+                 but is not present",
+                any::type_name::<A>(),
+                any::type_name::<C>(),
+            ),
+        }
+    }
 }
 
 #[derive_trait(pub Set{

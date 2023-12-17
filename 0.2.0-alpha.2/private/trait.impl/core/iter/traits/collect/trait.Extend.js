@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"dynec":[["impl&lt;D: <a class=\"trait\" href=\"dynec/comp/discrim/trait.Discrim.html\" title=\"trait dynec::comp::discrim::Discrim\">Discrim</a>, T&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/iter/traits/collect/trait.Extend.html\" title=\"trait core::iter::traits::collect::Extend\">Extend</a>&lt;<a class=\"primitive\" href=\"https://doc.rust-lang.org/nightly/std/primitive.tuple.html\">(D, T)</a>&gt; for <a class=\"struct\" href=\"dynec/comp/discrim/struct.BoundedVecMap.html\" title=\"struct dynec::comp::discrim::BoundedVecMap\">BoundedVecMap</a>&lt;D, T&gt;"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

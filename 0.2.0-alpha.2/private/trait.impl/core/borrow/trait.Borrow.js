@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"dynec":[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/borrow/trait.Borrow.html\" title=\"trait core::borrow::Borrow\">Borrow</a>&lt;<a class=\"struct\" href=\"https://doc.rust-lang.org/nightly/core/any/struct.TypeId.html\" title=\"struct core::any::TypeId\">TypeId</a>&gt; for <a class=\"struct\" href=\"dynec/util/struct.DbgTypeId.html\" title=\"struct dynec::util::DbgTypeId\">DbgTypeId</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

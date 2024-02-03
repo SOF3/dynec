@@ -1,4 +1,5 @@
 #![feature(extract_if)]
+#![allow(dead_code)]
 
 use proc_macro::TokenStream;
 

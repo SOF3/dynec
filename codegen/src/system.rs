@@ -22,7 +22,6 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
         return Err(Error::new_spanned(&input.sig.output, "system functions must return unit"));
     }
 
-    // 1. Parse item-level attributes.
     let item = item::Agg::parse(ident, args)?;
     let item::Agg { crate_name, name, state_maybe_uninit, deps, .. } = item;
 
@@ -384,6 +383,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             #[automatically_derived]
             impl #ident {
                 #build_fn
+                #[allow(clippy::too_many_arguments)]
                 #call_fn
             }
 
@@ -393,6 +393,7 @@ pub(crate) fn imp(args: TokenStream, input: TokenStream) -> Result<TokenStream> 
             #impl_referrer_for_local_state
 
             // The actual function is moved here.
+            #(#other_attrs)*
             fn __dynec_original(#(#input_args),*) {
                 #fn_body
             }

@@ -315,7 +315,7 @@ impl Parse for Named<AssocFnOpt> {
     }
 }
 
-#[allow(clippy::enum_variant_names)] // TODO remove this when we add more implementations
+#[allow(clippy::enum_variant_names)]
 enum AssocFnParamOpt {
     LogSkip,
     LogElapsedDuration,

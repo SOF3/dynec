@@ -2,7 +2,8 @@ use std::collections::BTreeSet;
 use std::sync::Arc;
 use std::{iter, ops};
 
-use parking_lot::Mutex;
+use parking_lot::lock_api::ArcMutexGuard;
+use parking_lot::{Mutex, RawMutex};
 
 use super::{iter_gaps, Ealloc, Shard, ShardAssigner, Snapshot};
 use crate::entity::raw::Atomic;
@@ -72,7 +73,11 @@ impl<RawT: Raw, T: Recycler<RawT>, S: ShardAssigner> Recycling<RawT, T, S> {
 impl<RawT: Raw, T: Recycler<RawT>, S: ShardAssigner> Ealloc for Recycling<RawT, T, S> {
     type Raw = RawT;
     type AllocHint = T::Hint;
-    type Shard = impl Shard<Raw = RawT, Hint = T::Hint>;
+    type Shard = RecyclingShard<
+        Arc<RawT::Atomic>,
+        ArcMutexGuard<RawMutex, T>,
+        ArcMutexGuard<RawMutex, Vec<RawT>>,
+    >;
 
     fn new(num_shards: usize) -> Self { Self::new_with_shard_assigner(num_shards, S::default()) }
 
@@ -81,13 +86,10 @@ impl<RawT: Raw, T: Recycler<RawT>, S: ShardAssigner> Ealloc for Recycling<RawT, 
 
         vec.extend(
             iter::zip(self.recycler_shards.iter(), self.reuse_queue_shards.iter())
-                .map(|(recycler, reuse_queue)| -> Self::Shard {
-                    // The return type hint here is used to constrain the TAIT, don't delete it.
-                    RecyclingShard {
-                        global_gauge: Arc::clone(&self.global_gauge),
-                        recycler:     Arc::clone(recycler).lock_arc(),
-                        reuse_queue:  Arc::clone(reuse_queue).lock_arc(),
-                    }
+                .map(|(recycler, reuse_queue)| RecyclingShard {
+                    global_gauge: Arc::clone(&self.global_gauge),
+                    recycler:     Arc::clone(recycler).lock_arc(),
+                    reuse_queue:  Arc::clone(reuse_queue).lock_arc(),
                 })
                 .map(f),
         );

@@ -1,6 +1,7 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="`bitvec`"><title>bitvec - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="bitvec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../bitvec/index.html">bitvec</a><span class="version">1.0.1</span></h2></div><div class="sidebar-elems"><ul class="block">
-            <li><a id="all-types" href="all.html">All Items</a></li></ul><section><ul class="block"><li><a href="#modules">Modules</a></li><li><a href="#macros">Macros</a></li></ul></section></div></nav><main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Crate <a class="mod" href="#">bitvec</a><button id="copy-path" title="Copy item path to clipboard"><img src="../static.files/clipboard-7571035ce49a181d.svg" width="19" height="18" alt="Copy item path"></button></h1><span class="out-of-band"><a class="src" href="../src/bitvec/lib.rs.html#1-77">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><div style="text-align: center;" align="center">
-<h2 id="bitvec"><a href="#bitvec"><code>bitvec</code></a></h2><h3 id="a-magnifying-glass-for-memory-"><a href="#a-magnifying-glass-for-memory-">A Magnifying Glass for Memory <!-- omit in toc --></a></h3>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="`bitvec`"><title>bitvec - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="bitvec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-4c98445ec4002617.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../bitvec/index.html">bitvec</a><span class="version">1.0.1</span></h2></div><div class="sidebar-elems"><ul class="block">
+            <li><a id="all-types" href="all.html">All Items</a></li></ul><section><ul class="block"><li><a href="#modules">Modules</a></li><li><a href="#macros">Macros</a></li></ul></section></div></nav><div class="sidebar-resizer"></div>
+    <main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../bitvec/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Crate <a class="mod" href="#">bitvec</a><button id="copy-path" title="Copy item path to clipboard"><img src="../static.files/clipboard-7571035ce49a181d.svg" width="19" height="18" alt="Copy item path"></button></h1><span class="out-of-band"><a class="src" href="../src/bitvec/lib.rs.html#1-77">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><div style="text-align: center;" align="center">
+<h2 id="bitvec"><a class="doc-anchor" href="#bitvec">§</a><code>bitvec</code></h2><h3 id="a-magnifying-glass-for-memory-"><a class="doc-anchor" href="#a-magnifying-glass-for-memory-">§</a>A Magnifying Glass for Memory <!-- omit in toc --></h3>
 <p><a href="https://crates.io/crates/bitvec" title="Crate listing"><img src="https://img.shields.io/crates/v/bitvec.svg?logo=rust&amp;style=for-the-badge" alt="Crate" title="Crate badge" /></a>
 <a href="https://docs.rs/bitvec/latest/bitvec" title="Crate documentation"><img src="https://img.shields.io/docsrs/bitvec/latest.svg?style=for-the-badge" alt="Documentation" title="Documentation badge" /></a>
 <a href="https://github.com/bitvecto-rs/bitvec/blob/main/LICENSE.txt" title="Project license"><img src="https://img.shields.io/crates/l/bitvec.svg?style=for-the-badge" alt="License" title="License badge" /></a></p>
@@ -23,7 +24,7 @@
 <li><a href="#feature-flags">Feature Flags</a></li>
 <li><a href="#deeper-reading">Deeper Reading</a></li>
 </ol>
-<h3 id="summary"><a href="#summary">Summary</a></h3>
+<h3 id="summary"><a class="doc-anchor" href="#summary">§</a>Summary</h3>
 <p><code>bitvec</code> provides a foundational API for bitfields in Rust. It specializes
 standard-library data structures (slices, arrays, and vectors of <code>bool</code>) to use
 one-bit-per-<code>bool</code> storage, similar to <a href="https://en.cppreference.com/w/cpp/utility/bitset"><code>std::bitset&lt;N&gt;</code></a> and
@@ -32,7 +33,7 @@ one-bit-per-<code>bool</code> storage, similar to <a href="https://en.cppreferen
 integer storage, like <a href="https://www.erlang.org/doc/programming_examples/bit_syntax.html">binaries</a> in Erlang.</p>
 <p>If you need to view memory as bit-addressed instead of byte-addressed, then
 <code>bitvec</code> is the fastest, most complete, and Rust-idiomatic crate for you.</p>
-<h3 id="introduction"><a href="#introduction">Introduction</a></h3>
+<h3 id="introduction"><a class="doc-anchor" href="#introduction">§</a>Introduction</h3>
 <p>Computers do not operate on bits. The memory bus is byte-addressed, and
 processors operate on register words, which are typically four to eight bytes,
 or even wider. This means that when programmers wish to operate on individual
@@ -50,7 +51,7 @@ would get from writing shift/mask instructions manually. It leverages Rust’s
 powerful reference and type systems to create a system that seamlessly bridges
 single-bit addressing, precise control of in-memory layout, and Rust-native
 ownership and borrowing mechanisms.</p>
-<h3 id="highlights"><a href="#highlights">Highlights</a></h3>
+<h3 id="highlights"><a class="doc-anchor" href="#highlights">§</a>Highlights</h3>
 <p><code>bitvec</code> has a number of unique capabilities related to its place as a Rust
 library and as a bit-addressing system.</p>
 <ul>
@@ -74,7 +75,7 @@ or <code>Arc</code>.</li>
 <li><code>BitSlice</code> cannot implement <code>IndexMut</code>, so <code>bitslice[index] = true;</code> does not
 work.</li>
 </ul>
-<h3 id="usage"><a href="#usage">Usage</a></h3>
+<h3 id="usage"><a class="doc-anchor" href="#usage">§</a>Usage</h3>
 <p><strong>Minimum Supported Rust Version</strong>: 1.56.0</p>
 <p><code>bitvec</code> strives to follow the sequence APIs in the standard library. However,
 as most of its functionality is a reïmplementation that does not require the
@@ -109,7 +110,7 @@ its contents:</p>
 instantiations of <code>bitvec</code> type parameters, and use that rather than attempting
 to remain generic over an <code>&lt;T: BitStore, O: BitOrder&gt;</code> pair throughout your
 project.</p>
-<h3 id="examples"><a href="#examples">Examples</a></h3>
+<h3 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h3>
 <div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>bitvec::prelude::<span class="kw-2">*</span>;
 
 <span class="comment">// All data-types have macro
@@ -188,7 +189,7 @@ integer memory) or the <code>BitArray</code> value type. In addition, the presen
 dynamic allocator enables the <code>BitBox</code> and <code>BitVec</code> buffer types, which can be
 used for more advanced buffer manipulation:</p>
 
-<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[cfg(feature = <span class="string">&quot;alloc&quot;</span>)]
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
 </span><span class="kw">fn </span>main() {
 
 <span class="kw">use </span>bitvec::prelude::<span class="kw-2">*</span>;
@@ -225,14 +226,14 @@ reference:</p>
 <p>The <code>bitvec</code> data types implement a complete replacement for their
 standard-library counterparts, including all of the inherent methods, traits,
 and operator behaviors.</p>
-<h3 id="user-stories"><a href="#user-stories">User Stories</a></h3>
+<h3 id="user-stories"><a class="doc-anchor" href="#user-stories">§</a>User Stories</h3>
 <p>Uses of <code>bitvec</code> generally fall into three major genres.</p>
 <ul>
 <li>compact, fast, <code>usize =&gt; bit</code> collections</li>
 <li>truncated integer storage</li>
 <li>precise control of memory layout</li>
 </ul>
-<h4 id="bit-collections"><a href="#bit-collections">Bit Collections</a></h4>
+<h4 id="bit-collections"><a class="doc-anchor" href="#bit-collections">§</a>Bit Collections</h4>
 <p>At its most basic, <code>bitvec</code> provides sequence types analogous to the standard
 library’s <code>bool</code> collections. The default behavior is optimized for fast memory
 access and simple codegen, and can compact <code>[bool]</code> or <code>Vec&lt;bool&gt;</code> with minimal
@@ -253,7 +254,7 @@ Translate any existing types as follows:</p>
 <li><code>Box&lt;[bool]&gt;</code> becomes <code>BitBox</code></li>
 </ul>
 <p>and then follow any compiler errors that arise.</p>
-<h4 id="bit-field-memory-access"><a href="#bit-field-memory-access">Bit-Field Memory Access</a></h4>
+<h4 id="bit-field-memory-access"><a class="doc-anchor" href="#bit-field-memory-access">§</a>Bit-Field Memory Access</h4>
 <p>A single bit of information has very few uses. <code>bitvec</code> also enables you to
 store integers wider than a single bit, by selecting a bit-slice and using the
 <a href="https://docs.rs/bitvec/latest/bitvec/field/trait.BitField.html"><code>BitField</code></a> trait on it. You can store and retrieve both unsigned and signed
@@ -268,7 +269,7 @@ and end points. You can use <a href="https://crates.io/crates/deku"><code>deku</
 with bit-field memory storage.</p>
 <p>However, if you are de/serializing buffers for transport, then you fall into the
 third category.</p>
-<h4 id="transport-protocols"><a href="#transport-protocols">Transport Protocols</a></h4>
+<h4 id="transport-protocols"><a class="doc-anchor" href="#transport-protocols">§</a>Transport Protocols</h4>
 <p>Many protocols use sub-element fields in order to save space in transport; for
 example, TCP headers have single-bit and 4-bit fields in order to pack all the
 needed information into a desirable amount of space. In C or Erlang, these TCP
@@ -285,7 +286,7 @@ disassembler replaced its manual shift/mask implementation with <code>bitvec</co
 indexing, taking the bit numbers directly from the datasheet, and observed that
 their code was both easier to maintain and also had better performance as a
 result!</p>
-<h3 id="feature-flags"><a href="#feature-flags">Feature Flags</a></h3>
+<h3 id="feature-flags"><a class="doc-anchor" href="#feature-flags">§</a>Feature Flags</h3>
 <p><code>bitvec</code> has a few Cargo features that govern its API surface. The default
 feature set is:</p>
 <div class="example-wrap"><pre class="language-toml"><code>[dependencies.bitvec]
@@ -323,7 +324,7 @@ collections.</p>
 <code>std::error::Error</code> for the various error types. It is otherwise unnecessary.</p>
 </li>
 </ul>
-<h3 id="deeper-reading"><a href="#deeper-reading">Deeper Reading</a></h3>
+<h3 id="deeper-reading"><a class="doc-anchor" href="#deeper-reading">§</a>Deeper Reading</h3>
 <p>The <a href="https://docs.rs/bitvec/latest/bitvec">API Documentation</a> explores <code>bitvec</code>’s usage and implementation in
 great detail. In particular, you should read the documentation for the
 <a href="https://docs.rs/bitvec/latest/bitvec/order/index.html"><code>order</code></a>, <a href="https://docs.rs/bitvec/latest/bitvec/store/index.html"><code>store</code></a>, and <a href="https://docs.rs/bitvec/latest/bitvec/field/index.html"><code>field</code></a> modules, as well as the <a href="https://docs.rs/bitvec/latest/bitvec/slice/struct.BitSlice.html"><code>BitSlice</code></a> and
@@ -338,4 +339,4 @@ does, how it works, and how it can be useful to you.</p>
 <!-- Badges -->
 <!-- Documentation -->
 <!-- External References -->
-</div></details><h2 id="modules" class="small-section-header"><a href="#modules">Modules</a></h2><ul class="item-table"><li><div class="item-name"><a class="mod" href="access/index.html" title="mod bitvec::access">access</a></div><div class="desc docblock-short">Memory Bus Access Management</div></li><li><div class="item-name"><a class="mod" href="array/index.html" title="mod bitvec::array">array</a></div><div class="desc docblock-short">Statically-Allocated, Fixed-Size, Bit Buffer</div></li><li><div class="item-name"><a class="mod" href="boxed/index.html" title="mod bitvec::boxed">boxed</a></div><div class="desc docblock-short">Heap-Allocated, Fixed-Size, Bit Buffer</div></li><li><div class="item-name"><a class="mod" href="domain/index.html" title="mod bitvec::domain">domain</a></div><div class="desc docblock-short">Memory Region Description</div></li><li><div class="item-name"><a class="mod" href="field/index.html" title="mod bitvec::field">field</a></div><div class="desc docblock-short">Bit-Field Memory Slots</div></li><li><div class="item-name"><a class="mod" href="index/index.html" title="mod bitvec::index">index</a></div><div class="desc docblock-short">Bit Indices</div></li><li><div class="item-name"><a class="mod" href="macros/index.html" title="mod bitvec::macros">macros</a></div><div class="desc docblock-short">Constructor Macros</div></li><li><div class="item-name"><a class="mod" href="mem/index.html" title="mod bitvec::mem">mem</a></div><div class="desc docblock-short">Memory Element Descriptions</div></li><li><div class="item-name"><a class="mod" href="order/index.html" title="mod bitvec::order">order</a></div><div class="desc docblock-short">In-Element Bit Ordering</div></li><li><div class="item-name"><a class="mod" href="prelude/index.html" title="mod bitvec::prelude">prelude</a></div><div class="desc docblock-short">Symbol Export</div></li><li><div class="item-name"><a class="mod" href="ptr/index.html" title="mod bitvec::ptr">ptr</a></div><div class="desc docblock-short">Raw Pointer Implementation</div></li><li><div class="item-name"><a class="mod" href="slice/index.html" title="mod bitvec::slice">slice</a></div><div class="desc docblock-short">Bit-Addressable Memory Regions</div></li><li><div class="item-name"><a class="mod" href="store/index.html" title="mod bitvec::store">store</a></div><div class="desc docblock-short">Storage Memory Description</div></li><li><div class="item-name"><a class="mod" href="vec/index.html" title="mod bitvec::vec">vec</a></div><div class="desc docblock-short">Dynamically-Allocated, Adjustable-Size, Bit Buffer</div></li><li><div class="item-name"><a class="mod" href="view/index.html" title="mod bitvec::view">view</a></div><div class="desc docblock-short">Bit View Adapters</div></li></ul><h2 id="macros" class="small-section-header"><a href="#macros">Macros</a></h2><ul class="item-table"><li><div class="item-name"><a class="macro" href="macro.BitArr.html" title="macro bitvec::BitArr">BitArr</a></div><div class="desc docblock-short">Bit-Array Type Definition</div></li><li><div class="item-name"><a class="macro" href="macro.bitarr.html" title="macro bitvec::bitarr">bitarr</a></div><div class="desc docblock-short">Bit-Array Value Constructor</div></li><li><div class="item-name"><a class="macro" href="macro.bitbox.html" title="macro bitvec::bitbox">bitbox</a></div><div class="desc docblock-short">Boxed Bit-Slice Constructor</div></li><li><div class="item-name"><a class="macro" href="macro.bits.html" title="macro bitvec::bits">bits</a></div><div class="desc docblock-short">Bit-Slice Region Constructor</div></li><li><div class="item-name"><a class="macro" href="macro.bitvec.html" title="macro bitvec::bitvec">bitvec</a></div><div class="desc docblock-short">Bit-Vector Constructor</div></li></ul></section></div></main></body></html>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="mod" href="access/index.html" title="mod bitvec::access">access</a></div><div class="desc docblock-short">Memory Bus Access Management</div></li><li><div class="item-name"><a class="mod" href="array/index.html" title="mod bitvec::array">array</a></div><div class="desc docblock-short">Statically-Allocated, Fixed-Size, Bit Buffer</div></li><li><div class="item-name"><a class="mod" href="boxed/index.html" title="mod bitvec::boxed">boxed</a></div><div class="desc docblock-short">Heap-Allocated, Fixed-Size, Bit Buffer</div></li><li><div class="item-name"><a class="mod" href="domain/index.html" title="mod bitvec::domain">domain</a></div><div class="desc docblock-short">Memory Region Description</div></li><li><div class="item-name"><a class="mod" href="field/index.html" title="mod bitvec::field">field</a></div><div class="desc docblock-short">Bit-Field Memory Slots</div></li><li><div class="item-name"><a class="mod" href="index/index.html" title="mod bitvec::index">index</a></div><div class="desc docblock-short">Bit Indices</div></li><li><div class="item-name"><a class="mod" href="macros/index.html" title="mod bitvec::macros">macros</a></div><div class="desc docblock-short">Constructor Macros</div></li><li><div class="item-name"><a class="mod" href="mem/index.html" title="mod bitvec::mem">mem</a></div><div class="desc docblock-short">Memory Element Descriptions</div></li><li><div class="item-name"><a class="mod" href="order/index.html" title="mod bitvec::order">order</a></div><div class="desc docblock-short">In-Element Bit Ordering</div></li><li><div class="item-name"><a class="mod" href="prelude/index.html" title="mod bitvec::prelude">prelude</a></div><div class="desc docblock-short">Symbol Export</div></li><li><div class="item-name"><a class="mod" href="ptr/index.html" title="mod bitvec::ptr">ptr</a></div><div class="desc docblock-short">Raw Pointer Implementation</div></li><li><div class="item-name"><a class="mod" href="slice/index.html" title="mod bitvec::slice">slice</a></div><div class="desc docblock-short">Bit-Addressable Memory Regions</div></li><li><div class="item-name"><a class="mod" href="store/index.html" title="mod bitvec::store">store</a></div><div class="desc docblock-short">Storage Memory Description</div></li><li><div class="item-name"><a class="mod" href="vec/index.html" title="mod bitvec::vec">vec</a></div><div class="desc docblock-short">Dynamically-Allocated, Adjustable-Size, Bit Buffer</div></li><li><div class="item-name"><a class="mod" href="view/index.html" title="mod bitvec::view">view</a></div><div class="desc docblock-short">Bit View Adapters</div></li></ul><h2 id="macros" class="section-header">Macros<a href="#macros" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="macro" href="macro.BitArr.html" title="macro bitvec::BitArr">BitArr</a></div><div class="desc docblock-short">Bit-Array Type Definition</div></li><li><div class="item-name"><a class="macro" href="macro.bitarr.html" title="macro bitvec::bitarr">bitarr</a></div><div class="desc docblock-short">Bit-Array Value Constructor</div></li><li><div class="item-name"><a class="macro" href="macro.bitbox.html" title="macro bitvec::bitbox">bitbox</a></div><div class="desc docblock-short">Boxed Bit-Slice Constructor</div></li><li><div class="item-name"><a class="macro" href="macro.bits.html" title="macro bitvec::bits">bits</a></div><div class="desc docblock-short">Bit-Slice Region Constructor</div></li><li><div class="item-name"><a class="macro" href="macro.bitvec.html" title="macro bitvec::bitvec">bitvec</a></div><div class="desc docblock-short">Bit-Vector Constructor</div></li></ul></section></div></main></body></html>

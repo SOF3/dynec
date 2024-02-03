@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitvec-1.0.1/src/domain.rs`."><title>domain.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="bitvec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitvec-1.0.1/src/domain.rs`."><title>domain.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="bitvec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../bitvec/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -1137,7 +1139,7 @@
 <a href="#1137" id="1137">1137</a>
 <a href="#1138" id="1138">1138</a>
 <a href="#1139" id="1139">1139</a>
-</pre></div><pre class="rust"><code><span class="attr">#![doc = <span class="macro">include_str!</span>(<span class="string">&quot;../doc/domain.md&quot;</span>)]
+</pre></div><pre class="rust"><code><span class="attr">#![doc = <span class="macro">include_str!</span>(<span class="string">"../doc/domain.md"</span>)]
 
 </span><span class="kw">use </span>core::{
 	any,
@@ -1197,20 +1199,20 @@
 	store::BitStore,
 };
 
-<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../doc/domain/BitDomain.md&quot;</span>)]
-</span><span class="kw">pub enum </span>BitDomain&lt;<span class="lifetime">&#39;a</span>, M = Const, T = usize, O = Lsb0&gt;
+<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">"../doc/domain/BitDomain.md"</span>)]
+</span><span class="kw">pub enum </span>BitDomain&lt;<span class="lifetime">'a</span>, M = Const, T = usize, O = Lsb0&gt;
 <span class="kw">where
 	</span>M: Mutability,
-	T: <span class="lifetime">&#39;a </span>+ BitStore,
+	T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
-	Address&lt;M, BitSlice&lt;T, O&gt;&gt;: Referential&lt;<span class="lifetime">&#39;a</span>&gt;,
-	Address&lt;M, BitSlice&lt;T::Unalias, O&gt;&gt;: Referential&lt;<span class="lifetime">&#39;a</span>&gt;,
+	Address&lt;M, BitSlice&lt;T, O&gt;&gt;: Referential&lt;<span class="lifetime">'a</span>&gt;,
+	Address&lt;M, BitSlice&lt;T::Unalias, O&gt;&gt;: Referential&lt;<span class="lifetime">'a</span>&gt;,
 {
 	<span class="doccomment">/// Indicates that a bit-slice’s contents are entirely in the interior
 	/// indices of a single memory element.
 	///
 	/// The contained value is always the bit-slice that created this view.
-	</span>Enclave(Reference&lt;<span class="lifetime">&#39;a</span>, M, BitSlice&lt;T, O&gt;&gt;),
+	</span>Enclave(Reference&lt;<span class="lifetime">'a</span>, M, BitSlice&lt;T, O&gt;&gt;),
 	<span class="doccomment">/// Indicates that a bit-slice’s contents touch an element edge.
 	///
 	/// This splits the bit-slice into three partitions, each of which may be
@@ -1223,7 +1225,7 @@
 		///
 		/// This does not modify its aliasing status, as it will already be
 		/// appropriately marked before this view is constructed.
-		</span>head: Reference&lt;<span class="lifetime">&#39;a</span>, M, BitSlice&lt;T, O&gt;&gt;,
+		</span>head: Reference&lt;<span class="lifetime">'a</span>, M, BitSlice&lt;T, O&gt;&gt;,
 		<span class="doccomment">/// Any bits that wholly-fill elements in the interior of the bit-slice.
 		///
 		/// This is marked as unaliased, because it is statically impossible for
@@ -1240,30 +1242,30 @@
 		/// - `BitStore::Unalias` only modifies unsynchronized types. `Cell` and
 		///   atomic types unalias to themselves, and retain their original
 		///   behavior.
-		</span>body: Reference&lt;<span class="lifetime">&#39;a</span>, M, BitSlice&lt;T::Unalias, O&gt;&gt;,
+		</span>body: Reference&lt;<span class="lifetime">'a</span>, M, BitSlice&lt;T::Unalias, O&gt;&gt;,
 		<span class="doccomment">/// Any bits that partially-fill the last element of the underlying
 		/// storage region.
 		///
 		/// This does not modify its aliasing status, as it will already be
 		/// appropriately marked before this view is constructed.
-		</span>tail: Reference&lt;<span class="lifetime">&#39;a</span>, M, BitSlice&lt;T, O&gt;&gt;,
+		</span>tail: Reference&lt;<span class="lifetime">'a</span>, M, BitSlice&lt;T, O&gt;&gt;,
 	},
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, M, T, O&gt; BitDomain&lt;<span class="lifetime">&#39;a</span>, M, T, O&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, M, T, O&gt; BitDomain&lt;<span class="lifetime">'a</span>, M, T, O&gt;
 <span class="kw">where
 	</span>M: Mutability,
-	T: <span class="lifetime">&#39;a </span>+ BitStore,
+	T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
-	Address&lt;M, BitSlice&lt;T, O&gt;&gt;: Referential&lt;<span class="lifetime">&#39;a</span>&gt;,
-	Address&lt;M, BitSlice&lt;T::Unalias, O&gt;&gt;: Referential&lt;<span class="lifetime">&#39;a</span>&gt;,
+	Address&lt;M, BitSlice&lt;T, O&gt;&gt;: Referential&lt;<span class="lifetime">'a</span>&gt;,
+	Address&lt;M, BitSlice&lt;T::Unalias, O&gt;&gt;: Referential&lt;<span class="lifetime">'a</span>&gt;,
 {
 	<span class="doccomment">/// Attempts to unpack the bit-domain as an [`Enclave`] variant. This is
 	/// just a shorthand for explicit destructuring.
 	///
 	/// [`Enclave`]: Self::Enclave
 	</span><span class="attr">#[inline]
-	</span><span class="kw">pub fn </span>enclave(<span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Reference&lt;<span class="lifetime">&#39;a</span>, M, BitSlice&lt;T, O&gt;&gt;&gt; {
+	</span><span class="kw">pub fn </span>enclave(<span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Reference&lt;<span class="lifetime">'a</span>, M, BitSlice&lt;T, O&gt;&gt;&gt; {
 		<span class="kw">match </span><span class="self">self </span>{
 			<span class="self">Self</span>::Enclave(bits) =&gt; <span class="prelude-val">Some</span>(bits),
 			<span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
@@ -1278,9 +1280,9 @@
 	</span><span class="kw">pub fn </span>region(
 		<span class="self">self</span>,
 	) -&gt; <span class="prelude-ty">Option</span>&lt;(
-		Reference&lt;<span class="lifetime">&#39;a</span>, M, BitSlice&lt;T, O&gt;&gt;,
-		Reference&lt;<span class="lifetime">&#39;a</span>, M, BitSlice&lt;T::Unalias, O&gt;&gt;,
-		Reference&lt;<span class="lifetime">&#39;a</span>, M, BitSlice&lt;T, O&gt;&gt;,
+		Reference&lt;<span class="lifetime">'a</span>, M, BitSlice&lt;T, O&gt;&gt;,
+		Reference&lt;<span class="lifetime">'a</span>, M, BitSlice&lt;T::Unalias, O&gt;&gt;,
+		Reference&lt;<span class="lifetime">'a</span>, M, BitSlice&lt;T, O&gt;&gt;,
 	)&gt; {
 		<span class="kw">match </span><span class="self">self </span>{
 			<span class="self">Self</span>::Region { head, body, tail } =&gt; <span class="prelude-val">Some</span>((head, body, tail)),
@@ -1289,15 +1291,15 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, M, T, O&gt; Default <span class="kw">for </span>BitDomain&lt;<span class="lifetime">&#39;a</span>, M, T, O&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, M, T, O&gt; Default <span class="kw">for </span>BitDomain&lt;<span class="lifetime">'a</span>, M, T, O&gt;
 <span class="kw">where
 	</span>M: Mutability,
-	T: <span class="lifetime">&#39;a </span>+ BitStore,
+	T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
-	Address&lt;M, BitSlice&lt;T, O&gt;&gt;: Referential&lt;<span class="lifetime">&#39;a</span>&gt;,
-	Address&lt;M, BitSlice&lt;T::Unalias, O&gt;&gt;: Referential&lt;<span class="lifetime">&#39;a</span>&gt;,
-	Reference&lt;<span class="lifetime">&#39;a</span>, M, BitSlice&lt;T, O&gt;&gt;: Default,
-	Reference&lt;<span class="lifetime">&#39;a</span>, M, BitSlice&lt;T::Unalias, O&gt;&gt;: Default,
+	Address&lt;M, BitSlice&lt;T, O&gt;&gt;: Referential&lt;<span class="lifetime">'a</span>&gt;,
+	Address&lt;M, BitSlice&lt;T::Unalias, O&gt;&gt;: Referential&lt;<span class="lifetime">'a</span>&gt;,
+	Reference&lt;<span class="lifetime">'a</span>, M, BitSlice&lt;T, O&gt;&gt;: Default,
+	Reference&lt;<span class="lifetime">'a</span>, M, BitSlice&lt;T::Unalias, O&gt;&gt;: Default,
 {
 	<span class="attr">#[inline]
 	</span><span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
@@ -1309,41 +1311,41 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, M, T, O&gt; Debug <span class="kw">for </span>BitDomain&lt;<span class="lifetime">&#39;a</span>, M, T, O&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, M, T, O&gt; Debug <span class="kw">for </span>BitDomain&lt;<span class="lifetime">'a</span>, M, T, O&gt;
 <span class="kw">where
 	</span>M: Mutability,
-	T: <span class="lifetime">&#39;a </span>+ BitStore,
+	T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
-	Address&lt;M, BitSlice&lt;T, O&gt;&gt;: Referential&lt;<span class="lifetime">&#39;a</span>&gt;,
-	Address&lt;M, BitSlice&lt;T::Unalias, O&gt;&gt;: Referential&lt;<span class="lifetime">&#39;a</span>&gt;,
-	Reference&lt;<span class="lifetime">&#39;a</span>, M, BitSlice&lt;T, O&gt;&gt;: Debug,
-	Reference&lt;<span class="lifetime">&#39;a</span>, M, BitSlice&lt;T::Unalias, O&gt;&gt;: Debug,
+	Address&lt;M, BitSlice&lt;T, O&gt;&gt;: Referential&lt;<span class="lifetime">'a</span>&gt;,
+	Address&lt;M, BitSlice&lt;T::Unalias, O&gt;&gt;: Referential&lt;<span class="lifetime">'a</span>&gt;,
+	Reference&lt;<span class="lifetime">'a</span>, M, BitSlice&lt;T, O&gt;&gt;: Debug,
+	Reference&lt;<span class="lifetime">'a</span>, M, BitSlice&lt;T::Unalias, O&gt;&gt;: Debug,
 {
 	<span class="attr">#[inline]
 	</span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
 		<span class="macro">write!</span>(
 			fmt,
-			<span class="string">&quot;BitDomain::&lt;{} {}, {}&gt;::&quot;</span>,
+			<span class="string">"BitDomain::&lt;{} {}, {}&gt;::"</span>,
 			M::RENDER,
 			any::type_name::&lt;T::Mem&gt;(),
 			any::type_name::&lt;O&gt;(),
 		)<span class="question-mark">?</span>;
 		<span class="kw">match </span><span class="self">self </span>{
 			<span class="self">Self</span>::Enclave(elem) =&gt; {
-				fmt.debug_tuple(<span class="string">&quot;Enclave&quot;</span>).field(elem).finish()
+				fmt.debug_tuple(<span class="string">"Enclave"</span>).field(elem).finish()
 			},
 			<span class="self">Self</span>::Region { head, body, tail } =&gt; fmt
-				.debug_struct(<span class="string">&quot;Region&quot;</span>)
-				.field(<span class="string">&quot;head&quot;</span>, head)
-				.field(<span class="string">&quot;body&quot;</span>, body)
-				.field(<span class="string">&quot;tail&quot;</span>, tail)
+				.debug_struct(<span class="string">"Region"</span>)
+				.field(<span class="string">"head"</span>, head)
+				.field(<span class="string">"body"</span>, body)
+				.field(<span class="string">"tail"</span>, tail)
 				.finish(),
 		}
 	}
 }
 
 <span class="attr">#[cfg(not(tarpaulin_include))]
-</span><span class="kw">impl</span>&lt;T, O&gt; Clone <span class="kw">for </span>BitDomain&lt;<span class="lifetime">&#39;_</span>, Const, T, O&gt;
+</span><span class="kw">impl</span>&lt;T, O&gt; Clone <span class="kw">for </span>BitDomain&lt;<span class="lifetime">'_</span>, Const, T, O&gt;
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
@@ -1354,21 +1356,21 @@
 	</span>}
 }
 
-<span class="kw">impl</span>&lt;T, O&gt; Copy <span class="kw">for </span>BitDomain&lt;<span class="lifetime">&#39;_</span>, Const, T, O&gt;
+<span class="kw">impl</span>&lt;T, O&gt; Copy <span class="kw">for </span>BitDomain&lt;<span class="lifetime">'_</span>, Const, T, O&gt;
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
 {
 }
 
-<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../doc/domain/Domain.md&quot;</span>)]
-</span><span class="kw">pub enum </span>Domain&lt;<span class="lifetime">&#39;a</span>, M = Const, T = usize, O = Lsb0&gt;
+<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">"../doc/domain/Domain.md"</span>)]
+</span><span class="kw">pub enum </span>Domain&lt;<span class="lifetime">'a</span>, M = Const, T = usize, O = Lsb0&gt;
 <span class="kw">where
 	</span>M: Mutability,
-	T: <span class="lifetime">&#39;a </span>+ BitStore,
+	T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
-	Address&lt;M, T&gt;: Referential&lt;<span class="lifetime">&#39;a</span>&gt;,
-	Address&lt;M, [T::Unalias]&gt;: SliceReferential&lt;<span class="lifetime">&#39;a</span>&gt;,
+	Address&lt;M, T&gt;: Referential&lt;<span class="lifetime">'a</span>&gt;,
+	Address&lt;M, [T::Unalias]&gt;: SliceReferential&lt;<span class="lifetime">'a</span>&gt;,
 {
 	<span class="doccomment">/// Indicates that a bit-slice’s contents are entirely in the interior
 	/// indices of a single memory element.
@@ -1376,7 +1378,7 @@
 	/// The contained reference is only able to observe the bits governed by the
 	/// generating bit-slice. Other handles to the element may exist, and may
 	/// write to bits outside the range that this reference can observe.
-	</span>Enclave(PartialElement&lt;<span class="lifetime">&#39;a</span>, M, T, O&gt;),
+	</span>Enclave(PartialElement&lt;<span class="lifetime">'a</span>, M, T, O&gt;),
 	<span class="doccomment">/// Indicates that a bit-slice’s contents touch an element edge.
 	///
 	/// This splits the bit-slice into three partitions, each of which may be
@@ -1386,7 +1388,7 @@
 	</span>Region {
 		<span class="doccomment">/// The first element in the bit-slice’s underlying storage, if it is
 		/// only partially used.
-		</span>head: <span class="prelude-ty">Option</span>&lt;PartialElement&lt;<span class="lifetime">&#39;a</span>, M, T, O&gt;&gt;,
+		</span>head: <span class="prelude-ty">Option</span>&lt;PartialElement&lt;<span class="lifetime">'a</span>, M, T, O&gt;&gt;,
 		<span class="doccomment">/// All fully-used elements in the bit-slice’s underlying storage.
 		///
 		/// This is marked as unaliased, because it is statically impossible for
@@ -1394,27 +1396,27 @@
 		/// conflicting access to the region of memory it describes. As such,
 		/// even a bit-slice that was marked as `::Alias` can revert this
 		/// protection on the known-unaliased interior.
-		</span>body: Reference&lt;<span class="lifetime">&#39;a</span>, M, [T::Unalias]&gt;,
+		</span>body: Reference&lt;<span class="lifetime">'a</span>, M, [T::Unalias]&gt;,
 		<span class="doccomment">/// The last element in the bit-slice’s underlying storage, if it is
 		/// only partially used.
-		</span>tail: <span class="prelude-ty">Option</span>&lt;PartialElement&lt;<span class="lifetime">&#39;a</span>, M, T, O&gt;&gt;,
+		</span>tail: <span class="prelude-ty">Option</span>&lt;PartialElement&lt;<span class="lifetime">'a</span>, M, T, O&gt;&gt;,
 	},
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, M, T, O&gt; Domain&lt;<span class="lifetime">&#39;a</span>, M, T, O&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, M, T, O&gt; Domain&lt;<span class="lifetime">'a</span>, M, T, O&gt;
 <span class="kw">where
 	</span>M: Mutability,
-	T: <span class="lifetime">&#39;a </span>+ BitStore,
+	T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
-	Address&lt;M, T&gt;: Referential&lt;<span class="lifetime">&#39;a</span>&gt;,
-	Address&lt;M, [T::Unalias]&gt;: SliceReferential&lt;<span class="lifetime">&#39;a</span>&gt;,
+	Address&lt;M, T&gt;: Referential&lt;<span class="lifetime">'a</span>&gt;,
+	Address&lt;M, [T::Unalias]&gt;: SliceReferential&lt;<span class="lifetime">'a</span>&gt;,
 {
 	<span class="doccomment">/// Attempts to unpack the bit-domain as an [`Enclave`] variant. This is
 	/// just a shorthand for explicit destructuring.
 	///
 	/// [`Enclave`]: Self::Enclave
 	</span><span class="attr">#[inline]
-	</span><span class="kw">pub fn </span>enclave(<span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;PartialElement&lt;<span class="lifetime">&#39;a</span>, M, T, O&gt;&gt; {
+	</span><span class="kw">pub fn </span>enclave(<span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;PartialElement&lt;<span class="lifetime">'a</span>, M, T, O&gt;&gt; {
 		<span class="kw">match </span><span class="self">self </span>{
 			<span class="self">Self</span>::Enclave(elem) =&gt; <span class="prelude-val">Some</span>(elem),
 			<span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
@@ -1429,9 +1431,9 @@
 	</span><span class="kw">pub fn </span>region(
 		<span class="self">self</span>,
 	) -&gt; <span class="prelude-ty">Option</span>&lt;(
-		<span class="prelude-ty">Option</span>&lt;PartialElement&lt;<span class="lifetime">&#39;a</span>, M, T, O&gt;&gt;,
-		Reference&lt;<span class="lifetime">&#39;a</span>, M, [T::Unalias]&gt;,
-		<span class="prelude-ty">Option</span>&lt;PartialElement&lt;<span class="lifetime">&#39;a</span>, M, T, O&gt;&gt;,
+		<span class="prelude-ty">Option</span>&lt;PartialElement&lt;<span class="lifetime">'a</span>, M, T, O&gt;&gt;,
+		Reference&lt;<span class="lifetime">'a</span>, M, [T::Unalias]&gt;,
+		<span class="prelude-ty">Option</span>&lt;PartialElement&lt;<span class="lifetime">'a</span>, M, T, O&gt;&gt;,
 	)&gt; {
 		<span class="kw">match </span><span class="self">self </span>{
 			<span class="self">Self</span>::Region { head, body, tail } =&gt; <span class="prelude-val">Some</span>((head, body, tail)),
@@ -1444,13 +1446,13 @@
 	/// This transform replaces each memory reference with an equivalent
 	/// `BitSlice` reference.
 	</span><span class="attr">#[inline]
-	</span><span class="kw">pub fn </span>into_bit_domain(<span class="self">self</span>) -&gt; BitDomain&lt;<span class="lifetime">&#39;a</span>, M, T, O&gt;
+	</span><span class="kw">pub fn </span>into_bit_domain(<span class="self">self</span>) -&gt; BitDomain&lt;<span class="lifetime">'a</span>, M, T, O&gt;
 	<span class="kw">where
-		</span>Address&lt;M, BitSlice&lt;T, O&gt;&gt;: Referential&lt;<span class="lifetime">&#39;a</span>&gt;,
-		Address&lt;M, BitSlice&lt;T::Unalias, O&gt;&gt;: Referential&lt;<span class="lifetime">&#39;a</span>&gt;,
-		Reference&lt;<span class="lifetime">&#39;a</span>, M, BitSlice&lt;T, O&gt;&gt;: Default,
-		Reference&lt;<span class="lifetime">&#39;a</span>, M, BitSlice&lt;T::Unalias, O&gt;&gt;:
-			TryFrom&lt;Reference&lt;<span class="lifetime">&#39;a</span>, M, [T::Unalias]&gt;&gt;,
+		</span>Address&lt;M, BitSlice&lt;T, O&gt;&gt;: Referential&lt;<span class="lifetime">'a</span>&gt;,
+		Address&lt;M, BitSlice&lt;T::Unalias, O&gt;&gt;: Referential&lt;<span class="lifetime">'a</span>&gt;,
+		Reference&lt;<span class="lifetime">'a</span>, M, BitSlice&lt;T, O&gt;&gt;: Default,
+		Reference&lt;<span class="lifetime">'a</span>, M, BitSlice&lt;T::Unalias, O&gt;&gt;:
+			TryFrom&lt;Reference&lt;<span class="lifetime">'a</span>, M, [T::Unalias]&gt;&gt;,
 	{
 		<span class="kw">match </span><span class="self">self </span>{
 			<span class="self">Self</span>::Enclave(elem) =&gt; BitDomain::Enclave(elem.into_bitslice()),
@@ -1460,18 +1462,18 @@
 					PartialElement::into_bitslice,
 				),
 				body: body.try_into().unwrap_or_else(|<span class="kw">_</span>| {
-					<span class="kw">match </span><span class="macro">option_env!</span>(<span class="string">&quot;CARGO_PKG_REPOSITORY&quot;</span>) {
+					<span class="kw">match </span><span class="macro">option_env!</span>(<span class="string">"CARGO_PKG_REPOSITORY"</span>) {
 						<span class="prelude-val">Some</span>(env) =&gt; <span class="macro">unreachable!</span>(
-							<span class="string">&quot;Construction of a slice with length {} should not \
+							<span class="string">"Construction of a slice with length {} should not \
 							 be possible. If this assumption is outdated, \
-							 please file an issue at {}&quot;</span>,
+							 please file an issue at {}"</span>,
 							(isize::MIN <span class="kw">as </span>usize) &gt;&gt; <span class="number">3</span>,
 							env,
 						),
 						<span class="prelude-val">None </span>=&gt; <span class="macro">unreachable!</span>(
-							<span class="string">&quot;Construction of a slice with length {} should not \
+							<span class="string">"Construction of a slice with length {} should not \
 							 be possible. If this assumption is outdated, \
-							 please consider filing an issue&quot;</span>,
+							 please consider filing an issue"</span>,
 							(isize::MIN <span class="kw">as </span>usize) &gt;&gt; <span class="number">3
 						</span>),
 					}
@@ -1492,16 +1494,16 @@ are only constructed from `&amp;BitSlice` and `&amp;mut BitSlice`, respectively.
 
 However, the Rust trait system does not have a way to express a closed set, so
 **/
-</span><span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, M, T, O&gt; Domain&lt;<span class="lifetime">&#39;a</span>, M, T, O&gt;
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, M, T, O&gt; Domain&lt;<span class="lifetime">'a</span>, M, T, O&gt;
 <span class="kw">where
 	</span>M: Mutability,
-	T: <span class="lifetime">&#39;a </span>+ BitStore,
+	T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
-	Address&lt;M, T&gt;: Referential&lt;<span class="lifetime">&#39;a</span>&gt;,
+	Address&lt;M, T&gt;: Referential&lt;<span class="lifetime">'a</span>&gt;,
 	Address&lt;M, [T::Unalias]&gt;:
-		SliceReferential&lt;<span class="lifetime">&#39;a</span>, ElementAddr = Address&lt;M, T::Unalias&gt;&gt;,
-	Address&lt;M, BitSlice&lt;T, O&gt;&gt;: Referential&lt;<span class="lifetime">&#39;a</span>&gt;,
-	Reference&lt;<span class="lifetime">&#39;a</span>, M, [T::Unalias]&gt;: Default,
+		SliceReferential&lt;<span class="lifetime">'a</span>, ElementAddr = Address&lt;M, T::Unalias&gt;&gt;,
+	Address&lt;M, BitSlice&lt;T, O&gt;&gt;: Referential&lt;<span class="lifetime">'a</span>&gt;,
+	Reference&lt;<span class="lifetime">'a</span>, M, [T::Unalias]&gt;: Default,
 {
 	<span class="doccomment">/// Creates a new `Domain` over a bit-slice.
 	///
@@ -1513,8 +1515,8 @@ However, the Rust trait system does not have a way to express a closed set, so
 	/// ## Returns
 	///
 	/// A `Domain` description of the raw memory governed by `bits`.
-	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>new(bits: Reference&lt;<span class="lifetime">&#39;a</span>, M, BitSlice&lt;T, O&gt;&gt;) -&gt; <span class="self">Self
-	</span><span class="kw">where </span>BitSpan&lt;M, T, O&gt;: From&lt;Reference&lt;<span class="lifetime">&#39;a</span>, M, BitSlice&lt;T, O&gt;&gt;&gt; {
+	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>new(bits: Reference&lt;<span class="lifetime">'a</span>, M, BitSlice&lt;T, O&gt;&gt;) -&gt; <span class="self">Self
+	</span><span class="kw">where </span>BitSpan&lt;M, T, O&gt;: From&lt;Reference&lt;<span class="lifetime">'a</span>, M, BitSlice&lt;T, O&gt;&gt;&gt; {
 		<span class="kw">let </span>bitspan = bits.conv::&lt;BitSpan&lt;M, T, O&gt;&gt;();
 		<span class="kw">let </span>(head, elts, tail) =
 			(bitspan.head(), bitspan.elements(), bitspan.tail());
@@ -1646,14 +1648,14 @@ However, the Rust trait system does not have a way to express a closed set, so
 	}
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, M, T, O&gt; Default <span class="kw">for </span>Domain&lt;<span class="lifetime">&#39;a</span>, M, T, O&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, M, T, O&gt; Default <span class="kw">for </span>Domain&lt;<span class="lifetime">'a</span>, M, T, O&gt;
 <span class="kw">where
 	</span>M: Mutability,
-	T: <span class="lifetime">&#39;a </span>+ BitStore,
+	T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
-	Address&lt;M, T&gt;: Referential&lt;<span class="lifetime">&#39;a</span>&gt;,
-	Address&lt;M, [T::Unalias]&gt;: SliceReferential&lt;<span class="lifetime">&#39;a</span>&gt;,
-	Reference&lt;<span class="lifetime">&#39;a</span>, M, [T::Unalias]&gt;: Default,
+	Address&lt;M, T&gt;: Referential&lt;<span class="lifetime">'a</span>&gt;,
+	Address&lt;M, [T::Unalias]&gt;: SliceReferential&lt;<span class="lifetime">'a</span>&gt;,
+	Reference&lt;<span class="lifetime">'a</span>, M, [T::Unalias]&gt;: Default,
 {
 	<span class="attr">#[inline]
 	</span><span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
@@ -1665,40 +1667,40 @@ However, the Rust trait system does not have a way to express a closed set, so
 	}
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, M, T, O&gt; Debug <span class="kw">for </span>Domain&lt;<span class="lifetime">&#39;a</span>, M, T, O&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, M, T, O&gt; Debug <span class="kw">for </span>Domain&lt;<span class="lifetime">'a</span>, M, T, O&gt;
 <span class="kw">where
 	</span>M: Mutability,
-	T: <span class="lifetime">&#39;a </span>+ BitStore,
+	T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
-	Address&lt;M, T&gt;: Referential&lt;<span class="lifetime">&#39;a</span>&gt;,
-	Address&lt;M, [T::Unalias]&gt;: SliceReferential&lt;<span class="lifetime">&#39;a</span>&gt;,
-	Reference&lt;<span class="lifetime">&#39;a</span>, M, [T::Unalias]&gt;: Debug,
+	Address&lt;M, T&gt;: Referential&lt;<span class="lifetime">'a</span>&gt;,
+	Address&lt;M, [T::Unalias]&gt;: SliceReferential&lt;<span class="lifetime">'a</span>&gt;,
+	Reference&lt;<span class="lifetime">'a</span>, M, [T::Unalias]&gt;: Debug,
 {
 	<span class="attr">#[inline]
 	</span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
 		<span class="macro">write!</span>(
 			fmt,
-			<span class="string">&quot;Domain::&lt;{} {}, {}&gt;::&quot;</span>,
+			<span class="string">"Domain::&lt;{} {}, {}&gt;::"</span>,
 			M::RENDER,
 			any::type_name::&lt;T&gt;(),
 			any::type_name::&lt;O&gt;(),
 		)<span class="question-mark">?</span>;
 		<span class="kw">match </span><span class="self">self </span>{
 			<span class="self">Self</span>::Enclave(elem) =&gt; {
-				fmt.debug_tuple(<span class="string">&quot;Enclave&quot;</span>).field(elem).finish()
+				fmt.debug_tuple(<span class="string">"Enclave"</span>).field(elem).finish()
 			},
 			<span class="self">Self</span>::Region { head, body, tail } =&gt; fmt
-				.debug_struct(<span class="string">&quot;Region&quot;</span>)
-				.field(<span class="string">&quot;head&quot;</span>, head)
-				.field(<span class="string">&quot;body&quot;</span>, body)
-				.field(<span class="string">&quot;tail&quot;</span>, tail)
+				.debug_struct(<span class="string">"Region"</span>)
+				.field(<span class="string">"head"</span>, head)
+				.field(<span class="string">"body"</span>, body)
+				.field(<span class="string">"tail"</span>, tail)
 				.finish(),
 		}
 	}
 }
 
 <span class="attr">#[cfg(not(tarpaulin_include))]
-</span><span class="kw">impl</span>&lt;T, O&gt; Clone <span class="kw">for </span>Domain&lt;<span class="lifetime">&#39;_</span>, Const, T, O&gt;
+</span><span class="kw">impl</span>&lt;T, O&gt; Clone <span class="kw">for </span>Domain&lt;<span class="lifetime">'_</span>, Const, T, O&gt;
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
@@ -1709,7 +1711,7 @@ However, the Rust trait system does not have a way to express a closed set, so
 	</span>}
 }
 
-<span class="kw">impl</span>&lt;T, O&gt; Iterator <span class="kw">for </span>Domain&lt;<span class="lifetime">&#39;_</span>, Const, T, O&gt;
+<span class="kw">impl</span>&lt;T, O&gt; Iterator <span class="kw">for </span>Domain&lt;<span class="lifetime">'_</span>, Const, T, O&gt;
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
@@ -1739,7 +1741,7 @@ However, the Rust trait system does not have a way to express a closed set, so
 	}
 }
 
-<span class="kw">impl</span>&lt;T, O&gt; DoubleEndedIterator <span class="kw">for </span>Domain&lt;<span class="lifetime">&#39;_</span>, Const, T, O&gt;
+<span class="kw">impl</span>&lt;T, O&gt; DoubleEndedIterator <span class="kw">for </span>Domain&lt;<span class="lifetime">'_</span>, Const, T, O&gt;
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
@@ -1767,7 +1769,7 @@ However, the Rust trait system does not have a way to express a closed set, so
 	}
 }
 
-<span class="kw">impl</span>&lt;T, O&gt; ExactSizeIterator <span class="kw">for </span>Domain&lt;<span class="lifetime">&#39;_</span>, Const, T, O&gt;
+<span class="kw">impl</span>&lt;T, O&gt; ExactSizeIterator <span class="kw">for </span>Domain&lt;<span class="lifetime">'_</span>, Const, T, O&gt;
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
@@ -1783,14 +1785,14 @@ However, the Rust trait system does not have a way to express a closed set, so
 	}
 }
 
-<span class="kw">impl</span>&lt;T, O&gt; FusedIterator <span class="kw">for </span>Domain&lt;<span class="lifetime">&#39;_</span>, Const, T, O&gt;
+<span class="kw">impl</span>&lt;T, O&gt; FusedIterator <span class="kw">for </span>Domain&lt;<span class="lifetime">'_</span>, Const, T, O&gt;
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
 {
 }
 
-<span class="kw">impl</span>&lt;T, O&gt; Copy <span class="kw">for </span>Domain&lt;<span class="lifetime">&#39;_</span>, Const, T, O&gt;
+<span class="kw">impl</span>&lt;T, O&gt; Copy <span class="kw">for </span>Domain&lt;<span class="lifetime">'_</span>, Const, T, O&gt;
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
@@ -1800,7 +1802,7 @@ However, the Rust trait system does not have a way to express a closed set, so
 <span class="doccomment">/// Implements numeric formatting by rendering each element.
 </span><span class="macro">macro_rules! </span>fmt {
 	($(<span class="macro-nonterminal">$fmt</span>:ty =&gt; <span class="macro-nonterminal">$fwd</span>:ident),+ $(,)<span class="question-mark">?</span>) =&gt; { $(
-		<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O&gt; <span class="macro-nonterminal">$fmt </span><span class="kw">for </span>Domain&lt;<span class="lifetime">&#39;a</span>, Const, T, O&gt;
+		<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O&gt; <span class="macro-nonterminal">$fmt </span><span class="kw">for </span>Domain&lt;<span class="lifetime">'a</span>, Const, T, O&gt;
 		<span class="kw">where
 			</span>O: BitOrder,
 			T: BitStore,
@@ -1823,11 +1825,11 @@ However, the Rust trait system does not have a way to express a closed set, so
 	UpperHex =&gt; fmt_upper_hex,
 }
 
-<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../doc/domain/PartialElement.md&quot;</span>)]
-</span><span class="kw">pub struct </span>PartialElement&lt;<span class="lifetime">&#39;a</span>, M, T, O&gt;
+<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">"../doc/domain/PartialElement.md"</span>)]
+</span><span class="kw">pub struct </span>PartialElement&lt;<span class="lifetime">'a</span>, M, T, O&gt;
 <span class="kw">where
 	</span>M: Mutability,
-	T: <span class="lifetime">&#39;a </span>+ BitStore,
+	T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 {
 	<span class="doccomment">/// The address of the memory element being partially viewed.
@@ -1849,13 +1851,13 @@ However, the Rust trait system does not have a way to express a closed set, so
 	<span class="doccomment">/// Preserve the originating bit-order
 	</span>_ord: PhantomData&lt;O&gt;,
 	<span class="doccomment">/// This type acts as-if it were a shared-mutable reference.
-	</span>_ref: PhantomData&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T::Access&gt;,
+	</span>_ref: PhantomData&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>T::Access&gt;,
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, M, T, O&gt; PartialElement&lt;<span class="lifetime">&#39;a</span>, M, T, O&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, M, T, O&gt; PartialElement&lt;<span class="lifetime">'a</span>, M, T, O&gt;
 <span class="kw">where
 	</span>M: Mutability,
-	T: <span class="lifetime">&#39;a </span>+ BitStore,
+	T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 {
 	<span class="doccomment">/// Constructs a new partial-element guarded reference.
@@ -1930,8 +1932,8 @@ However, the Rust trait system does not have a way to express a closed set, so
 
 	<span class="doccomment">/// Converts the partial element into a bit-slice over its governed bits.
 	</span><span class="attr">#[inline]
-	</span><span class="kw">pub fn </span>into_bitslice(<span class="self">self</span>) -&gt; Reference&lt;<span class="lifetime">&#39;a</span>, M, BitSlice&lt;T, O&gt;&gt;
-	<span class="kw">where </span>Address&lt;M, BitSlice&lt;T, O&gt;&gt;: Referential&lt;<span class="lifetime">&#39;a</span>&gt; {
+	</span><span class="kw">pub fn </span>into_bitslice(<span class="self">self</span>) -&gt; Reference&lt;<span class="lifetime">'a</span>, M, BitSlice&lt;T, O&gt;&gt;
+	<span class="kw">where </span>Address&lt;M, BitSlice&lt;T, O&gt;&gt;: Referential&lt;<span class="lifetime">'a</span>&gt; {
 		<span class="kw">unsafe </span>{
 			BitSpan::new_unchecked(
 				<span class="self">self</span>.elem,
@@ -1943,11 +1945,11 @@ However, the Rust trait system does not have a way to express a closed set, so
 	}
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O&gt; PartialElement&lt;<span class="lifetime">&#39;a</span>, Mut, T, O&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O&gt; PartialElement&lt;<span class="lifetime">'a</span>, Mut, T, O&gt;
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
-	Address&lt;Mut, T&gt;: Referential&lt;<span class="lifetime">&#39;a</span>&gt;,
+	Address&lt;Mut, T&gt;: Referential&lt;<span class="lifetime">'a</span>&gt;,
 {
 	<span class="doccomment">/// Stores a value through `self` after masking away extra bits.
 	///
@@ -2011,11 +2013,11 @@ However, the Rust trait system does not have a way to express a closed set, so
 	}
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, M, T, O&gt; PartialElement&lt;<span class="lifetime">&#39;a</span>, M, T, O&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, M, T, O&gt; PartialElement&lt;<span class="lifetime">'a</span>, M, T, O&gt;
 <span class="kw">where
 	</span>M: Mutability,
 	O: BitOrder,
-	T: <span class="lifetime">&#39;a </span>+ BitStore + radium::Radium,
+	T: <span class="lifetime">'a </span>+ BitStore + radium::Radium,
 {
 	<span class="doccomment">/// Performs a store operation on a partial-element whose bits might be
 	/// observed by another handle.
@@ -2029,11 +2031,11 @@ However, the Rust trait system does not have a way to express a closed set, so
 }
 
 <span class="attr">#[cfg(not(tarpaulin_include))]
-</span><span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O&gt; Clone <span class="kw">for </span>PartialElement&lt;<span class="lifetime">&#39;a</span>, Const, T, O&gt;
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O&gt; Clone <span class="kw">for </span>PartialElement&lt;<span class="lifetime">'a</span>, Const, T, O&gt;
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
-	Address&lt;Const, T&gt;: Referential&lt;<span class="lifetime">&#39;a</span>&gt;,
+	Address&lt;Const, T&gt;: Referential&lt;<span class="lifetime">'a</span>&gt;,
 {
 	<span class="attr">#[inline]
 	</span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
@@ -2041,35 +2043,35 @@ However, the Rust trait system does not have a way to express a closed set, so
 	</span>}
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, M, T, O&gt; Debug <span class="kw">for </span>PartialElement&lt;<span class="lifetime">&#39;a</span>, M, T, O&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, M, T, O&gt; Debug <span class="kw">for </span>PartialElement&lt;<span class="lifetime">'a</span>, M, T, O&gt;
 <span class="kw">where
 	</span>M: Mutability,
-	T: <span class="lifetime">&#39;a </span>+ BitStore,
+	T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 {
 	<span class="attr">#[inline]
 	</span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
 		<span class="macro">write!</span>(
 			fmt,
-			<span class="string">&quot;PartialElement&lt;{} {}, {}&gt;&quot;</span>,
+			<span class="string">"PartialElement&lt;{} {}, {}&gt;"</span>,
 			M::RENDER,
 			any::type_name::&lt;T&gt;(),
 			any::type_name::&lt;O&gt;(),
 		)<span class="question-mark">?</span>;
-		fmt.debug_struct(<span class="string">&quot;&quot;</span>)
-			.field(<span class="string">&quot;elem&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.load_value())
-			.field(<span class="string">&quot;mask&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.mask.fmt_display())
-			.field(<span class="string">&quot;head&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.head.fmt_display())
-			.field(<span class="string">&quot;tail&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.tail.fmt_display())
+		fmt.debug_struct(<span class="string">""</span>)
+			.field(<span class="string">"elem"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.load_value())
+			.field(<span class="string">"mask"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.mask.fmt_display())
+			.field(<span class="string">"head"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.head.fmt_display())
+			.field(<span class="string">"tail"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.tail.fmt_display())
 			.finish()
 	}
 }
 
 <span class="attr">#[cfg(not(tarpaulin_include))]
-</span><span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, M, T, O&gt; Hash <span class="kw">for </span>PartialElement&lt;<span class="lifetime">&#39;a</span>, M, T, O&gt;
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, M, T, O&gt; Hash <span class="kw">for </span>PartialElement&lt;<span class="lifetime">'a</span>, M, T, O&gt;
 <span class="kw">where
 	</span>M: Mutability,
-	T: <span class="lifetime">&#39;a </span>+ BitStore,
+	T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 {
 	<span class="attr">#[inline]
@@ -2082,7 +2084,7 @@ However, the Rust trait system does not have a way to express a closed set, so
 	}
 }
 
-<span class="kw">impl</span>&lt;T, O&gt; Copy <span class="kw">for </span>PartialElement&lt;<span class="lifetime">&#39;_</span>, Const, T, O&gt;
+<span class="kw">impl</span>&lt;T, O&gt; Copy <span class="kw">for </span>PartialElement&lt;<span class="lifetime">'_</span>, Const, T, O&gt;
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
@@ -2216,17 +2218,17 @@ However, the Rust trait system does not have a way to express a closed set, so
 	}
 
 	<span class="attr">#[test]
-	#[cfg(feature = <span class="string">&quot;alloc&quot;</span>)]
+	#[cfg(feature = <span class="string">"alloc"</span>)]
 	</span><span class="kw">fn </span>render() {
-		<span class="attr">#[cfg(not(feature = <span class="string">&quot;std&quot;</span>))]
+		<span class="attr">#[cfg(not(feature = <span class="string">"std"</span>))]
 		</span><span class="kw">use </span>alloc::format;
 
 		<span class="kw">let </span>data = BitArray::&lt;u32, Msb0&gt;::new(random());
 
-		<span class="kw">let </span>render = <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, data.bit_domain());
+		<span class="kw">let </span>render = <span class="macro">format!</span>(<span class="string">"{:?}"</span>, data.bit_domain());
 		<span class="kw">let </span>expected = <span class="macro">format!</span>(
-			<span class="string">&quot;BitDomain::&lt;*const u32, {}&gt;::Region {{ head: {:?}, body: {:?}, \
-			 tail: {:?} }}&quot;</span>,
+			<span class="string">"BitDomain::&lt;*const u32, {}&gt;::Region {{ head: {:?}, body: {:?}, \
+			 tail: {:?} }}"</span>,
 			any::type_name::&lt;Msb0&gt;(),
 			BitSlice::&lt;u32, Msb0&gt;::empty(),
 			data.as_bitslice(),
@@ -2234,26 +2236,26 @@ However, the Rust trait system does not have a way to express a closed set, so
 		);
 		<span class="macro">assert_eq!</span>(render, expected);
 
-		<span class="kw">let </span>render = <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, data[<span class="number">2 </span>.. <span class="number">30</span>].bit_domain());
+		<span class="kw">let </span>render = <span class="macro">format!</span>(<span class="string">"{:?}"</span>, data[<span class="number">2 </span>.. <span class="number">30</span>].bit_domain());
 		<span class="kw">let </span>expected = <span class="macro">format!</span>(
-			<span class="string">&quot;BitDomain::&lt;*const u32, {}&gt;::Enclave({:?})&quot;</span>,
+			<span class="string">"BitDomain::&lt;*const u32, {}&gt;::Enclave({:?})"</span>,
 			any::type_name::&lt;Msb0&gt;(),
 			<span class="kw-2">&amp;</span>data[<span class="number">2 </span>.. <span class="number">30</span>],
 		);
 		<span class="macro">assert_eq!</span>(render, expected);
 
-		<span class="kw">let </span>render = <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, data.domain());
+		<span class="kw">let </span>render = <span class="macro">format!</span>(<span class="string">"{:?}"</span>, data.domain());
 		<span class="kw">let </span>expected = <span class="macro">format!</span>(
-			<span class="string">&quot;Domain::&lt;*const u32, {}&gt;::Region {{ head: None, body: {:?}, tail: \
-			 None }}&quot;</span>,
+			<span class="string">"Domain::&lt;*const u32, {}&gt;::Region {{ head: None, body: {:?}, tail: \
+			 None }}"</span>,
 			any::type_name::&lt;Msb0&gt;(),
 			data.as_raw_slice(),
 		);
 		<span class="macro">assert_eq!</span>(render, expected);
 
-		<span class="kw">let </span>render = <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, data[<span class="number">2 </span>.. <span class="number">30</span>].domain());
+		<span class="kw">let </span>render = <span class="macro">format!</span>(<span class="string">"{:?}"</span>, data[<span class="number">2 </span>.. <span class="number">30</span>].domain());
 		<span class="kw">let </span>expected = <span class="macro">format!</span>(
-			<span class="string">&quot;Domain::&lt;*const u32, {}&gt;::Enclave&quot;</span>,
+			<span class="string">"Domain::&lt;*const u32, {}&gt;::Enclave"</span>,
 			any::type_name::&lt;Msb0&gt;(),
 		);
 		<span class="macro">assert!</span>(render.starts_with(<span class="kw-2">&amp;</span>expected));
@@ -2262,12 +2264,12 @@ However, the Rust trait system does not have a way to express a closed set, so
 			.domain()
 			.enclave()
 			.unwrap();
-		<span class="kw">let </span>render = <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, partial);
+		<span class="kw">let </span>render = <span class="macro">format!</span>(<span class="string">"{:?}"</span>, partial);
 		<span class="macro">assert_eq!</span>(
 			render,
 			<span class="macro">format!</span>(
-				<span class="string">&quot;PartialElement&lt;*const u8, {}&gt; {{ elem: 60, mask: {}, head: \
-				 {}, tail: {} }}&quot;</span>,
+				<span class="string">"PartialElement&lt;*const u8, {}&gt; {{ elem: 60, mask: {}, head: \
+				 {}, tail: {} }}"</span>,
 				any::type_name::&lt;Lsb0&gt;(),
 				partial.mask,
 				partial.head,

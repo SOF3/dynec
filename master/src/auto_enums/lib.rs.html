@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/auto_enums-0.8.3/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="auto_enums" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/auto_enums-0.8.5/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="auto_enums" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../auto_enums/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -917,6 +919,12 @@
 <a href="#917" id="917">917</a>
 <a href="#918" id="918">918</a>
 <a href="#919" id="919">919</a>
+<a href="#920" id="920">920</a>
+<a href="#921" id="921">921</a>
+<a href="#922" id="922">922</a>
+<a href="#923" id="923">923</a>
+<a href="#924" id="924">924</a>
+<a href="#925" id="925">925</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0 OR MIT
 
 </span><span class="doccomment">/*!
@@ -924,7 +932,7 @@ A library for to allow multiple return types by automatically generated enum.
 
 This crate is a procedural macro implementation of the features discussions
 in [rust-lang/rfcs#2414]. This idea is also known as
-[&quot;Anonymous sum types&quot;][rust-lang/rfcs#294].
+["Anonymous sum types"][rust-lang/rfcs#294].
 
 This library provides the following attribute macros:
 
@@ -939,7 +947,7 @@ This library provides the following attribute macros:
 
 # `#[auto_enum]`
 
-`#[auto_enum]`&#39;s basic feature is to wrap the value returned by the obvious
+`#[auto_enum]`'s basic feature is to wrap the value returned by the obvious
 branches (`match`, `if`, `return`, etc..) by an enum that implemented the
 specified traits.
 
@@ -1061,7 +1069,7 @@ struct Type {
 
 impl Type {
     #[auto_enum(Iterator)]
-    fn method(&amp;self) -&gt; impl Iterator&lt;Item = ()&gt; + &#39;_ {
+    fn method(&amp;self) -&gt; impl Iterator&lt;Item = ()&gt; + '_ {
         if self.child.is_empty() {
             Some(()).into_iter()
         } else {
@@ -1248,7 +1256,7 @@ to use empty `#[auto_enum]` for functions except nightly.
   #[auto_enum(Debug, Display)]
   fn func(x: i32) -&gt; Result&lt;i32, impl Debug + Display&gt; {
       if x == 0 {
-          Err(&quot;`x` is zero&quot;)?;
+          Err("`x` is zero")?;
       }
 
       // The last branch of the function is not parsed.
@@ -1291,7 +1299,7 @@ to use empty `#[auto_enum]` for functions except nightly.
       #[auto_enum(Debug, Display)]
       let f = |x| {
           if x == 0 {
-              Err(&quot;`x` is zero&quot;)?
+              Err("`x` is zero")?
           }
 
           // The last branch of the function is not interpreted as a branch.
@@ -1417,7 +1425,7 @@ fn foo(x: i32) -&gt; impl Iterator&lt;Item = i32&gt; {
 }
 ```
 
-The default name of the macro is `&quot;marker&quot;`, but you can change it by
+The default name of the macro is `"marker"`, but you can change it by
 `marker` option.
 
 ```rust
@@ -1532,7 +1540,7 @@ Note that some traits have aliases.
 - [`ExactSizeIterator`](https://doc.rust-lang.org/std/iter/trait.ExactSizeIterator.html) - [example](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/iter/exact_size_iterator.rs) | [generated code](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/iter/exact_size_iterator.expanded.rs)
 - [`FusedIterator`](https://doc.rust-lang.org/std/iter/trait.FusedIterator.html) - [example](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/iter/fused_iterator.rs) | [generated code](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/iter/fused_iterator.expanded.rs)
 - [`Extend`](https://doc.rust-lang.org/std/iter/trait.Extend.html) - [example](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/iter/extend.rs) | [generated code](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/iter/extend.expanded.rs)
-- [`TrustedLen`](https://doc.rust-lang.org/std/iter/trait.TrustedLen.html) *(requires `&quot;trusted_len&quot;` and `&quot;unstable&quot;` crate features)* - [example](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/iter/trusted_len.rs) | [generated code](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/iter/trusted_len.expanded.rs)
+- [`TrustedLen`](https://doc.rust-lang.org/std/iter/trait.TrustedLen.html) *(requires `"trusted_len"` and `"unstable"` crate features)* - [example](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/iter/trusted_len.rs) | [generated code](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/iter/trusted_len.expanded.rs)
 
 *See also [iter-enum] crate.*
 
@@ -1540,7 +1548,7 @@ Note that some traits have aliases.
 
 - [`Future`](https://doc.rust-lang.org/std/future/trait.Future.html) - [example](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/future.rs) | [generated code](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/future.expanded.rs)
 
-### `std::io` *(requires `&quot;std&quot;` crate feature)*
+### `std::io` *(requires `"std"` crate feature)*
 
 - [`Read`](https://doc.rust-lang.org/std/io/trait.Read.html) (alias: `io::Read`) - [example](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/io/read.rs) | [generated code](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/io/read.expanded.rs)
 - [`BufRead`](https://doc.rust-lang.org/std/io/trait.BufRead.html) (alias: `io::BufRead`) - [example](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/io/buf_read.rs) | [generated code](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/io/buf_read.expanded.rs)
@@ -1551,35 +1559,35 @@ Note that some traits have aliases.
 
 ### `[std|core]::ops`
 
-- [`Deref`](https://doc.rust-lang.org/std/ops/trait.Deref.html) *(requires `&quot;ops&quot;` crate feature)*
-- [`DerefMut`](https://doc.rust-lang.org/std/ops/trait.DerefMut.html) *(requires `&quot;ops&quot;` crate feature)*
-- [`Index`](https://doc.rust-lang.org/std/ops/trait.Index.html) *(requires `&quot;ops&quot;` crate feature)*
-- [`IndexMut`](https://doc.rust-lang.org/std/ops/trait.IndexMut.html) *(requires `&quot;ops&quot;` crate feature)*
-- [`RangeBounds`](https://doc.rust-lang.org/std/ops/trait.RangeBounds.html) *(requires `&quot;ops&quot;` crate feature)*
-- [`Fn`](https://doc.rust-lang.org/std/ops/trait.Fn.html) *(requires `&quot;fn_traits&quot;` and `&quot;unstable&quot;` crate features)*
-- [`FnMut`](https://doc.rust-lang.org/std/ops/trait.FnMut.html) *(requires `&quot;fn_traits&quot;` and `&quot;unstable&quot;` crate features)*
-- [`FnOnce`](https://doc.rust-lang.org/std/ops/trait.FnOnce.html) *(requires `&quot;fn_traits&quot;` and `&quot;unstable&quot;` crate features)*
-- [`Coroutine`](https://doc.rust-lang.org/nightly/std/ops/trait.Coroutine.html) *(requires `&quot;coroutine_trait&quot;` and `&quot;unstable&quot;` crate features)*
+- [`Deref`](https://doc.rust-lang.org/std/ops/trait.Deref.html) *(requires `"ops"` crate feature)*
+- [`DerefMut`](https://doc.rust-lang.org/std/ops/trait.DerefMut.html) *(requires `"ops"` crate feature)*
+- [`Index`](https://doc.rust-lang.org/std/ops/trait.Index.html) *(requires `"ops"` crate feature)*
+- [`IndexMut`](https://doc.rust-lang.org/std/ops/trait.IndexMut.html) *(requires `"ops"` crate feature)*
+- [`RangeBounds`](https://doc.rust-lang.org/std/ops/trait.RangeBounds.html) *(requires `"ops"` crate feature)*
+- [`Fn`](https://doc.rust-lang.org/std/ops/trait.Fn.html) *(requires `"fn_traits"` and `"unstable"` crate features)*
+- [`FnMut`](https://doc.rust-lang.org/std/ops/trait.FnMut.html) *(requires `"fn_traits"` and `"unstable"` crate features)*
+- [`FnOnce`](https://doc.rust-lang.org/std/ops/trait.FnOnce.html) *(requires `"fn_traits"` and `"unstable"` crate features)*
+- [`Coroutine`](https://doc.rust-lang.org/nightly/std/ops/trait.Coroutine.html) *(requires `"coroutine_trait"` and `"unstable"` crate features)*
 
 ### `[std|core]::convert`
 
-- [`AsRef`](https://doc.rust-lang.org/std/convert/trait.AsRef.html) *(requires `&quot;convert&quot;` crate feature)*
-- [`AsMut`](https://doc.rust-lang.org/std/convert/trait.AsMut.html) *(requires `&quot;convert&quot;` crate feature)*
+- [`AsRef`](https://doc.rust-lang.org/std/convert/trait.AsRef.html) *(requires `"convert"` crate feature)*
+- [`AsMut`](https://doc.rust-lang.org/std/convert/trait.AsMut.html) *(requires `"convert"` crate feature)*
 
 ### `[std|core]::fmt`
 
 - [`Debug`](https://doc.rust-lang.org/std/fmt/trait.Debug.html) (alias: `fmt::Debug`) - [example](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/debug.rs) | [generated code](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/debug.expanded.rs)
 - [`Display`](https://doc.rust-lang.org/std/fmt/trait.Display.html) (alias: `fmt::Display`)
-- [`fmt::Binary`](https://doc.rust-lang.org/std/fmt/trait.Binary.html) *(requires `&quot;fmt&quot;` crate feature)*
-- [`fmt::LowerExp`](https://doc.rust-lang.org/std/fmt/trait.LowerExp.html) *(requires `&quot;fmt&quot;` crate feature)*
-- [`fmt::LowerHex`](https://doc.rust-lang.org/std/fmt/trait.LowerHex.html) *(requires `&quot;fmt&quot;` crate feature)*
-- [`fmt::Octal`](https://doc.rust-lang.org/std/fmt/trait.Octal.html) *(requires `&quot;fmt&quot;` crate feature)*
-- [`fmt::Pointer`](https://doc.rust-lang.org/std/fmt/trait.Pointer.html) *(requires `&quot;fmt&quot;` crate feature)*
-- [`fmt::UpperExp`](https://doc.rust-lang.org/std/fmt/trait.UpperExp.html) *(requires `&quot;fmt&quot;` crate feature)*
-- [`fmt::UpperHex`](https://doc.rust-lang.org/std/fmt/trait.UpperHex.html) *(requires `&quot;fmt&quot;` crate feature)*
+- [`fmt::Binary`](https://doc.rust-lang.org/std/fmt/trait.Binary.html) *(requires `"fmt"` crate feature)*
+- [`fmt::LowerExp`](https://doc.rust-lang.org/std/fmt/trait.LowerExp.html) *(requires `"fmt"` crate feature)*
+- [`fmt::LowerHex`](https://doc.rust-lang.org/std/fmt/trait.LowerHex.html) *(requires `"fmt"` crate feature)*
+- [`fmt::Octal`](https://doc.rust-lang.org/std/fmt/trait.Octal.html) *(requires `"fmt"` crate feature)*
+- [`fmt::Pointer`](https://doc.rust-lang.org/std/fmt/trait.Pointer.html) *(requires `"fmt"` crate feature)*
+- [`fmt::UpperExp`](https://doc.rust-lang.org/std/fmt/trait.UpperExp.html) *(requires `"fmt"` crate feature)*
+- [`fmt::UpperHex`](https://doc.rust-lang.org/std/fmt/trait.UpperHex.html) *(requires `"fmt"` crate feature)*
 - [`fmt::Write`](https://doc.rust-lang.org/std/fmt/trait.Write.html)
 
-### `std::error` *(requires `&quot;std&quot;` crate feature)*
+### `std::error` *(requires `"std"` crate feature)*
 
 - [`Error`](https://doc.rust-lang.org/std/error/trait.Error.html) - [example](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/error.rs) | [generated code](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/std/error.expanded.rs)
 
@@ -1603,7 +1611,7 @@ fn func(x: i32) -&gt; impl ParallelIterator {
 }
 ```
 
-### [futures v0.3][futures03] *(requires `&quot;futures03&quot;` crate feature)*
+### [futures v0.3][futures03] *(requires `"futures03"` crate feature)*
 
 - [`futures03::Stream`](https://docs.rs/futures/0.3/futures/stream/trait.Stream.html) - [example](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/futures/stream.rs) | [generated code](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/futures/stream.expanded.rs)
 - [`futures03::Sink`](https://docs.rs/futures/0.3/futures/sink/trait.Sink.html) - [example](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/futures/sink.rs) | [generated code](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/futures/sink.expanded.rs)
@@ -1612,53 +1620,57 @@ fn func(x: i32) -&gt; impl ParallelIterator {
 - [`futures03::AsyncSeek`](https://docs.rs/futures/0.3/futures/io/trait.AsyncSeek.html) - [example](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/futures/async_seek.rs) | [generated code](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/futures/async_seek.expanded.rs)
 - [`futures03::AsyncBufRead`](https://docs.rs/futures/0.3/futures/io/trait.AsyncBufRead.html) - [example](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/futures/async_buf_read.rs) | [generated code](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/futures/async_buf_read.expanded.rs)
 
-### [futures v0.1][futures01] *(requires `&quot;futures01&quot;` crate feature)*
+### [futures v0.1][futures01] *(requires `"futures01"` crate feature)*
 
 - [`futures01::Future`](https://docs.rs/futures/0.1/futures/future/trait.Future.html)
 - [`futures01::Stream`](https://docs.rs/futures/0.1/futures/stream/trait.Stream.html)
 - [`futures01::Sink`](https://docs.rs/futures/0.1/futures/sink/trait.Sink.html)
 
-### [rayon] *(requires `&quot;rayon&quot;` crate feature)*
+### [rayon] *(requires `"rayon"` crate feature)*
 
 - [`rayon::ParallelIterator`](https://docs.rs/rayon/1/rayon/iter/trait.ParallelIterator.html) - [example](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/rayon/parallel_iterator.rs) | [generated code](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/rayon/parallel_iterator.expanded.rs)
 - [`rayon::IndexedParallelIterator`](https://docs.rs/rayon/1/rayon/iter/trait.IndexedParallelIterator.html) - [example](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/rayon/indexed_parallel_iterator.rs) | [generated code](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/rayon/indexed_parallel_iterator.expanded.rs)
 - [`rayon::ParallelExtend`](https://docs.rs/rayon/1/rayon/iter/trait.ParallelExtend.html) - [example](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/rayon/parallel_extend.rs) | [generated code](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/rayon/parallel_extend.expanded.rs)
 
-### [serde] *(requires `&quot;serde&quot;` crate feature)*
+### [serde] *(requires `"serde"` crate feature)*
 
 - [`serde::Serialize`](https://docs.rs/serde/1/serde/trait.Serialize.html) - [example](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/serde/serialize.rs) | [generated code](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/serde/serialize.expanded.rs)
 
-### [tokio v1][tokio1] *(requires `&quot;tokio1&quot;` crate feature)*
+### [tokio v1][tokio1] *(requires `"tokio1"` crate feature)*
 
 - [`tokio1::AsyncRead`](https://docs.rs/tokio/1/tokio/io/trait.AsyncRead.html) - [example](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/tokio/async_read.rs) | [generated code](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/tokio/async_read.expanded.rs)
 - [`tokio1::AsyncWrite`](https://docs.rs/tokio/1/tokio/io/trait.AsyncWrite.html) - [example](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/tokio/async_write.rs) | [generated code](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/tokio/async_write.expanded.rs)
 - [`tokio1::AsyncSeek`](https://docs.rs/tokio/1/tokio/io/trait.AsyncSeek.html) - [example](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/tokio/async_seek.rs) | [generated code](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/tokio/async_seek.expanded.rs)
 - [`tokio1::AsyncBufRead`](https://docs.rs/tokio/1/tokio/io/trait.AsyncBufRead.html) - [example](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/tokio/async_buf_read.rs) | [generated code](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/tokio/async_buf_read.expanded.rs)
 
-### [tokio v0.3][tokio03] *(requires `&quot;tokio03&quot;` crate feature)*
+### [tokio v0.3][tokio03] *(requires `"tokio03"` crate feature)*
 
 - [`tokio03::AsyncRead`](https://docs.rs/tokio/0.3/tokio/io/trait.AsyncRead.html)
 - [`tokio03::AsyncWrite`](https://docs.rs/tokio/0.3/tokio/io/trait.AsyncWrite.html)
 - [`tokio03::AsyncSeek`](https://docs.rs/tokio/0.3/tokio/io/trait.AsyncSeek.html)
 - [`tokio03::AsyncBufRead`](https://docs.rs/tokio/0.3/tokio/io/trait.AsyncBufRead.html)
 
-### [tokio v0.2][tokio02] *(requires `&quot;tokio02&quot;` crate feature)*
+### [tokio v0.2][tokio02] *(requires `"tokio02"` crate feature)*
 
 - [`tokio02::AsyncRead`](https://docs.rs/tokio/0.2/tokio/io/trait.AsyncRead.html)
 - [`tokio02::AsyncWrite`](https://docs.rs/tokio/0.2/tokio/io/trait.AsyncWrite.html)
 - [`tokio02::AsyncSeek`](https://docs.rs/tokio/0.2/tokio/io/trait.AsyncSeek.html)
 - [`tokio02::AsyncBufRead`](https://docs.rs/tokio/0.2/tokio/io/trait.AsyncBufRead.html)
 
-### [tokio v0.1][tokio01] *(requires `&quot;tokio01&quot;` crate feature)*
+### [tokio v0.1][tokio01] *(requires `"tokio01"` crate feature)*
 
 - [`tokio01::AsyncRead`](https://docs.rs/tokio/0.1/tokio/io/trait.AsyncRead.html)
 - [`tokio01::AsyncWrite`](https://docs.rs/tokio/0.1/tokio/io/trait.AsyncWrite.html)
 
+### [http_body v1][http_body1] *(requires `"http_body1"` crate feature)*
+
+- [`http_body1::Body`](https://docs.rs/http-body/1/http_body/trait.Body.html) - [example](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/http_body/body.rs) | [generated code](https://github.com/taiki-e/auto_enums/blob/HEAD/tests/expand/external/http_body/body.expanded.rs)
+
 ## Inherent methods
 
-These don&#39;t derive traits, but derive inherent methods instead.
+These don't derive traits, but derive inherent methods instead.
 
-- `Transpose` *(requires `&quot;transpose_methods&quot;` crate feature)* - this derives the following conversion methods.
+- `Transpose` *(requires `"transpose_methods"` crate feature)* - this derives the following conversion methods.
 
   - `transpose` — convert from `enum&lt;Option&lt;T1&gt;,..&gt;` to `Option&lt;enum&lt;T1,..&gt;&gt;`
 
@@ -1686,13 +1698,13 @@ These don&#39;t derive traits, but derive inherent methods instead.
 # Optional features
 
 - **`std`** *(enabled by default)*
-  - Enable to use `std` library&#39;s traits.
+  - Enable to use `std` library's traits.
 - **`ops`**
-  - Enable to use `[std|core]::ops`&#39;s `Deref`, `DerefMut`, `Index`, `IndexMut`, and `RangeBounds` traits.
+  - Enable to use `[std|core]::ops`'s `Deref`, `DerefMut`, `Index`, `IndexMut`, and `RangeBounds` traits.
 - **`convert`**
-  - Enable to use `[std|core]::convert`&#39;s `AsRef` and `AsMut` traits.
+  - Enable to use `[std|core]::convert`'s `AsRef` and `AsMut` traits.
 - **`fmt`**
-  - Enable to use `[std|core]::fmt`&#39;s traits other than `Debug`, `Display` and `Write`.
+  - Enable to use `[std|core]::fmt`'s traits other than `Debug`, `Display` and `Write`.
 - **`transpose_methods`**
   - Enable to use `transpose*` methods.
 - **`futures03`**
@@ -1711,11 +1723,13 @@ These don&#39;t derive traits, but derive inherent methods instead.
   - Enable to use [tokio v0.2][tokio02] traits.
 - **`tokio01`**
   - Enable to use [tokio v0.1][tokio01] traits.
+- **`http_body1`**
+  - Enable to use [http_body v1][http_body1] traits.
 - **`coroutine_trait`**
   - Enable to use `[std|core]::ops::Coroutine` trait.
   - Note that this feature is unstable and may cause incompatible changes between patch versions.
 - **`fn_traits`**
-  - Enable to use `[std|core]::ops`&#39;s `Fn`, `FnMut`, and `FnOnce` traits.
+  - Enable to use `[std|core]::ops`'s `Fn`, `FnMut`, and `FnOnce` traits.
   - Note that this feature is unstable and may cause incompatible changes between patch versions.
 - **`trusted_len`**
   - Enable to use `[std|core]::iter::TrustedLen` trait.
@@ -1732,7 +1746,7 @@ Examples:
 ```rust
 use auto_enums::auto_enum;
 
-#[auto_enum] // there is no need to specify std library&#39;s traits
+#[auto_enum] // there is no need to specify std library's traits
 fn func1(x: i32) -&gt; impl Iterator&lt;Item = i32&gt; {
     match x {
         0 =&gt; 1..10,
@@ -1778,6 +1792,7 @@ Please be careful if you return another traits with the same name.
 [tokio02]: https://docs.rs/tokio/0.2
 [tokio03]: https://docs.rs/tokio/0.3
 [tokio1]: https://docs.rs/tokio/1
+[http_body1]: https://docs.rs/http-body/1
 */
 
 </span><span class="attr">#![doc(test(
@@ -1788,26 +1803,25 @@ Please be careful if you return another traits with the same name.
     )
 ))]
 #![forbid(unsafe_code)]
-#![warn(rust_2018_idioms, single_use_lifetimes, unreachable_pub, clippy::pedantic)]
-#![allow(clippy::doc_markdown, clippy::too_many_lines, clippy::manual_assert)]
+#![allow(clippy::doc_link_with_quotes)]
 
-#[cfg(all(feature = <span class="string">&quot;coroutine_trait&quot;</span>, not(feature = <span class="string">&quot;unstable&quot;</span>)))]
+#[cfg(all(feature = <span class="string">"coroutine_trait"</span>, not(feature = <span class="string">"unstable"</span>)))]
 </span><span class="macro">compile_error!</span>(
-    <span class="string">&quot;The `coroutine_trait` feature requires the `unstable` feature as an explicit opt-in to unstable features&quot;
+    <span class="string">"The `coroutine_trait` feature requires the `unstable` feature as an explicit opt-in to unstable features"
 </span>);
 
-<span class="attr">#[cfg(all(feature = <span class="string">&quot;fn_traits&quot;</span>, not(feature = <span class="string">&quot;unstable&quot;</span>)))]
+<span class="attr">#[cfg(all(feature = <span class="string">"fn_traits"</span>, not(feature = <span class="string">"unstable"</span>)))]
 </span><span class="macro">compile_error!</span>(
-    <span class="string">&quot;The `fn_traits` feature requires the `unstable` feature as an explicit opt-in to unstable features&quot;
+    <span class="string">"The `fn_traits` feature requires the `unstable` feature as an explicit opt-in to unstable features"
 </span>);
 
-<span class="attr">#[cfg(all(feature = <span class="string">&quot;trusted_len&quot;</span>, not(feature = <span class="string">&quot;unstable&quot;</span>)))]
+<span class="attr">#[cfg(all(feature = <span class="string">"trusted_len"</span>, not(feature = <span class="string">"unstable"</span>)))]
 </span><span class="macro">compile_error!</span>(
-    <span class="string">&quot;The `trusted_len` feature requires the `unstable` feature as an explicit opt-in to unstable features&quot;
+    <span class="string">"The `trusted_len` feature requires the `unstable` feature as an explicit opt-in to unstable features"
 </span>);
 
 <span class="attr">#[cfg(doctest)]
-#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../README.md&quot;</span>)]
+#[doc = <span class="macro">include_str!</span>(<span class="string">"../README.md"</span>)]
 </span><span class="kw">const </span>_README: () = ();
 
 <span class="attr">#[macro_use]

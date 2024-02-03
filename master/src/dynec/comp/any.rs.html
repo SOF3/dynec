@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/comp/any.rs`."><title>any.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="dynec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/comp/any.rs`."><title>any.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="dynec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../dynec/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -212,12 +214,12 @@
     </span><span class="kw">pub fn </span>insert_simple&lt;C: comp::Simple&lt;A&gt;&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, comp: C) {
         <span class="kw">let </span>prev = <span class="self">self</span>.simple.insert(DbgTypeId::of::&lt;C&gt;(), Box::new(comp));
         <span class="kw">if </span>prev.is_some() {
-            <span class="macro">panic!</span>(<span class="string">&quot;Cannot insert the same simple component into the same comp::Map twice&quot;</span>);
+            <span class="macro">panic!</span>(<span class="string">"Cannot insert the same simple component into the same comp::Map twice"</span>);
         }
     }
 
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>remove_simple&lt;C: comp::Simple&lt;A&gt;&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;C&gt; {
-        <span class="prelude-val">Some</span>(<span class="kw-2">*</span><span class="self">self</span>.simple.remove(<span class="kw-2">&amp;</span>DbgTypeId::of::&lt;C&gt;())<span class="question-mark">?</span>.downcast().expect(<span class="string">&quot;TypeId mismatch&quot;</span>))
+        <span class="prelude-val">Some</span>(<span class="kw-2">*</span><span class="self">self</span>.simple.remove(<span class="kw-2">&amp;</span>DbgTypeId::of::&lt;C&gt;())<span class="question-mark">?</span>.downcast().expect(<span class="string">"TypeId mismatch"</span>))
     }
 
     <span class="doccomment">/// Inserts an isotope component into the map.
@@ -226,13 +228,13 @@
         entry
             .or_insert_with(|| Box::&lt;IsotopeMap&lt;A, C&gt;&gt;::default())
             .downcast_mut::&lt;IsotopeMap&lt;A, C&gt;&gt;()
-            .expect(<span class="string">&quot;TypeId mismatch&quot;</span>)
+            .expect(<span class="string">"TypeId mismatch"</span>)
             .push((discrim, comp));
     }
 
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>remove_isotope&lt;C: comp::Isotope&lt;A&gt;&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; IsotopeMap&lt;A, C&gt; {
         <span class="kw">match </span><span class="self">self</span>.isotope.remove(<span class="kw-2">&amp;</span>DbgTypeId::of::&lt;C&gt;()) {
-            <span class="prelude-val">Some</span>(map) =&gt; <span class="kw-2">*</span>map.downcast().expect(<span class="string">&quot;TypeId mismatch&quot;</span>),
+            <span class="prelude-val">Some</span>(map) =&gt; <span class="kw-2">*</span>map.downcast().expect(<span class="string">"TypeId mismatch"</span>),
             <span class="prelude-val">None </span>=&gt; Vec::new(),
         }
     }
@@ -251,31 +253,31 @@
 <span class="doccomment">/// Describes how to instantiate a component based on other component types.
 </span><span class="kw">pub struct </span>Initer&lt;A: Archetype, C: comp::SimpleOrIsotope&lt;A&gt;&gt; {
     <span class="doccomment">/// The component function.
-    </span><span class="kw">pub </span>f: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span><span class="kw">dyn </span>InitFn&lt;A, C&gt;,
+    </span><span class="kw">pub </span>f: <span class="kw-2">&amp;</span><span class="lifetime">'static </span><span class="kw">dyn </span>InitFn&lt;A, C&gt;,
 }
 
 <span class="doccomment">/// A function used for [`comp::InitStrategy::Auto`].
 ///
 /// This trait is blanket-implemented for all functions that take up to 32 simple component
 /// parameters and output the component value.
-</span><span class="kw">pub trait </span>InitFn&lt;A: Archetype, C: comp::SimpleOrIsotope&lt;A&gt;&gt;: Send + Sync + <span class="lifetime">&#39;static </span>{
+</span><span class="kw">pub trait </span>InitFn&lt;A: Archetype, C: comp::SimpleOrIsotope&lt;A&gt;&gt;: Send + Sync + <span class="lifetime">'static </span>{
     <span class="doccomment">/// Calls the underlying function, building the arguments.
-    </span><span class="kw">fn </span>init(<span class="kw-2">&amp;</span><span class="self">self</span>, dep_getter: DepGetter&lt;<span class="lifetime">&#39;_</span>, A&gt;) -&gt; C;
+    </span><span class="kw">fn </span>init(<span class="kw-2">&amp;</span><span class="self">self</span>, dep_getter: DepGetter&lt;<span class="lifetime">'_</span>, A&gt;) -&gt; C;
 
     <span class="doccomment">/// Returns the component types required by this function.
     </span><span class="kw">fn </span>deps(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; DepList;
 }
 
-<span class="kw">pub struct </span>DepGetter&lt;<span class="lifetime">&#39;t</span>, A: Archetype&gt; {
-    <span class="kw">pub</span>(<span class="kw">crate</span>) inner:  <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw">dyn </span>DepGetterInner&lt;A&gt;,
+<span class="kw">pub struct </span>DepGetter&lt;<span class="lifetime">'t</span>, A: Archetype&gt; {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) inner:  <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw">dyn </span>DepGetterInner&lt;A&gt;,
     <span class="kw">pub</span>(<span class="kw">crate</span>) entity: A::RawEntity,
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>, A: Archetype&gt; Clone <span class="kw">for </span>DepGetter&lt;<span class="lifetime">&#39;t</span>, A&gt; {
+<span class="kw">impl</span>&lt;<span class="lifetime">'t</span>, A: Archetype&gt; Clone <span class="kw">for </span>DepGetter&lt;<span class="lifetime">'t</span>, A&gt; {
     <span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{ <span class="kw-2">*</span><span class="self">self </span>}
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>, A: Archetype&gt; Copy <span class="kw">for </span>DepGetter&lt;<span class="lifetime">&#39;t</span>, A&gt; {}
+<span class="kw">impl</span>&lt;<span class="lifetime">'t</span>, A: Archetype&gt; Copy <span class="kw">for </span>DepGetter&lt;<span class="lifetime">'t</span>, A&gt; {}
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">trait </span>DepGetterInner&lt;A: Archetype&gt; {
     <span class="kw">fn </span>get(
@@ -294,14 +296,14 @@
         ) -&gt; C {
             <span class="kw">fn </span>init(
                 <span class="kw-2">&amp;</span><span class="self">self</span>,
-                <span class="attr">#[allow(unused_variables)] </span>dep_getter: DepGetter&lt;<span class="lifetime">&#39;_</span>, A&gt;,
+                <span class="attr">#[allow(unused_variables)] </span>dep_getter: DepGetter&lt;<span class="lifetime">'_</span>, A&gt;,
             ) -&gt; C {
                 (<span class="self">self</span>)(
                     $(
                         <span class="kw">match </span>dep_getter.inner.get(DbgTypeId::of::&lt;<span class="macro-nonterminal">$deps</span>&gt;()).get_any(dep_getter.entity) {
-                            <span class="prelude-val">Some</span>(comp) =&gt; comp.downcast_ref::&lt;<span class="macro-nonterminal">$deps</span>&gt;().expect(<span class="string">&quot;TypeId mismatch&quot;</span>),
+                            <span class="prelude-val">Some</span>(comp) =&gt; comp.downcast_ref::&lt;<span class="macro-nonterminal">$deps</span>&gt;().expect(<span class="string">"TypeId mismatch"</span>),
                             <span class="prelude-val">None </span>=&gt; <span class="macro">panic!</span>(
-                                <span class="string">&quot;Cannot create an entity of type `{}` without explicitly passing a component of type `{}`, or `{}` to invoke its auto-initializer&quot;</span>,
+                                <span class="string">"Cannot create an entity of type `{}` without explicitly passing a component of type `{}`, or `{}` to invoke its auto-initializer"</span>,
                                 any::type_name::&lt;A&gt;(),
                                 any::type_name::&lt;C&gt;(),
                                 any::type_name::&lt;<span class="macro-nonterminal">$deps</span>&gt;(),
@@ -347,10 +349,10 @@
     };
 }
 <span class="macro">impl_simple_init_fn_accumulate!</span>(
-    <span class="string">&quot;tuple-impl-32-init-fn&quot; </span>T1 T2 T3 T4 T5 T6 T7 T8
-    <span class="string">&quot;tuple-impl-24-init-fn&quot; </span>T9 T10 T11 T12 T13 T14 T15 T16
-    <span class="string">&quot;tuple-impl-16-init-fn&quot; </span>T17 T18 T19 T20 T21 T22 T23 T24
-    <span class="string">&quot;tuple-impl-8-init-fn&quot; </span>T25 T26 T27 T28
+    <span class="string">"tuple-impl-32-init-fn" </span>T1 T2 T3 T4 T5 T6 T7 T8
+    <span class="string">"tuple-impl-24-init-fn" </span>T9 T10 T11 T12 T13 T14 T15 T16
+    <span class="string">"tuple-impl-16-init-fn" </span>T17 T18 T19 T20 T21 T22 T23 T24
+    <span class="string">"tuple-impl-8-init-fn" </span>T25 T26 T27 T28
     @ALWAYS T29 T30 T31 T32
 );
 

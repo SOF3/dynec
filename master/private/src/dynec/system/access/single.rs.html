@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/system/access/single.rs`."><title>single.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="dynec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/system/access/single.rs`."><title>single.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="dynec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../../dynec/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -514,7 +516,7 @@
     }
 
     <span class="doccomment">/// Iterates over all initialized components in this storage.
-    </span><span class="kw">pub fn </span>iter&lt;<span class="lifetime">&#39;t</span>&gt;(<span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="self">self</span>) -&gt; <span class="kw">impl </span>Iterator&lt;Item = (entity::TempRef&lt;<span class="lifetime">&#39;t</span>, A&gt;, <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span>C)&gt; + <span class="lifetime">&#39;t </span>{
+    </span><span class="kw">pub fn </span>iter&lt;<span class="lifetime">'t</span>&gt;(<span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="self">self</span>) -&gt; <span class="kw">impl </span>Iterator&lt;Item = (entity::TempRef&lt;<span class="lifetime">'t</span>, A&gt;, <span class="kw-2">&amp;</span><span class="lifetime">'t </span>C)&gt; + <span class="lifetime">'t </span>{
         <span class="self">self</span>.storage.iter().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
     }
 }
@@ -539,12 +541,12 @@
     ///
     /// # Panics
     /// This function panics if the entity is not fully initialized yet.
-    /// This happens when an entity is newly created and the cycle hasn&#39;t joined yet.
+    /// This happens when an entity is newly created and the cycle hasn't joined yet.
     </span><span class="kw">pub fn </span>get(<span class="kw-2">&amp;</span><span class="self">self</span>, entity: <span class="kw">impl </span>entity::Ref&lt;Archetype = A&gt;) -&gt; <span class="kw-2">&amp;</span>C {
         <span class="kw">match </span><span class="self">self</span>.try_get(entity) {
             <span class="prelude-val">Some</span>(comp) =&gt; comp,
             <span class="prelude-val">None </span>=&gt; <span class="macro">panic!</span>(
-                <span class="string">&quot;Component {}/{} implements comp::Must but is not present&quot;</span>,
+                <span class="string">"Component {}/{} implements comp::Must but is not present"</span>,
                 any::type_name::&lt;A&gt;(),
                 any::type_name::&lt;C&gt;()
             ),
@@ -558,10 +560,10 @@
     ///
     /// Requires [`comp::Must&lt;A&gt;`] because this iterator assumes that
     /// existence in `snapshot` implies existence in storage.
-    </span><span class="kw">pub fn </span>par_iter&lt;<span class="lifetime">&#39;t</span>&gt;(
-        <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="self">self</span>,
-        snapshot: <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span>ealloc::Snapshot&lt;&lt;A <span class="kw">as </span>Archetype&gt;::RawEntity&gt;,
-    ) -&gt; <span class="kw">impl </span>ParallelIterator&lt;Item = (entity::TempRef&lt;<span class="lifetime">&#39;t</span>, A&gt;, <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span>C)&gt; {
+    </span><span class="kw">pub fn </span>par_iter&lt;<span class="lifetime">'t</span>&gt;(
+        <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="self">self</span>,
+        snapshot: <span class="kw-2">&amp;</span><span class="lifetime">'t </span>ealloc::Snapshot&lt;&lt;A <span class="kw">as </span>Archetype&gt;::RawEntity&gt;,
+    ) -&gt; <span class="kw">impl </span>ParallelIterator&lt;Item = (entity::TempRef&lt;<span class="lifetime">'t</span>, A&gt;, <span class="kw-2">&amp;</span><span class="lifetime">'t </span>C)&gt; {
         rayon::iter::split(snapshot.as_slice(), |slice| slice.split()).flat_map_iter(|slice| {
             slice.iter_chunks().flat_map(&lt;&lt;A <span class="kw">as </span>Archetype&gt;::RawEntity <span class="kw">as </span>entity::Raw&gt;::range).map(
                 |id| {
@@ -595,7 +597,7 @@
     /// that includes an uninitialized entity,
     /// so panic is basically impossible if [`comp::Must`] was implemented correctly.
     </span><span class="kw">pub fn </span>get_chunk(<span class="kw-2">&amp;</span><span class="self">self</span>, chunk: entity::TempRefChunk&lt;A&gt;) -&gt; <span class="kw-2">&amp;</span>[C] {
-        <span class="self">self</span>.storage.get_chunk(chunk.start, chunk.end).expect(<span class="string">&quot;chunk is not completely filled&quot;</span>)
+        <span class="self">self</span>.storage.get_chunk(chunk.start, chunk.end).expect(<span class="string">"chunk is not completely filled"</span>)
     }
 }
 
@@ -616,12 +618,12 @@
     ///
     /// This returns a [rayon `ParallelIterator`](rayon::iter::ParallelIterator)
     /// that processes different chunks of entities
-    </span><span class="kw">pub fn </span>par_iter_chunks&lt;<span class="lifetime">&#39;t</span>&gt;(
-        <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="self">self</span>,
-        snapshot: <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span>ealloc::Snapshot&lt;&lt;A <span class="kw">as </span>Archetype&gt;::RawEntity&gt;,
-    ) -&gt; <span class="kw">impl </span>ParallelIterator&lt;Item = (entity::TempRefChunk&lt;<span class="lifetime">&#39;t</span>, A&gt;, <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span>[C])&gt; {
+    </span><span class="kw">pub fn </span>par_iter_chunks&lt;<span class="lifetime">'t</span>&gt;(
+        <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="self">self</span>,
+        snapshot: <span class="kw-2">&amp;</span><span class="lifetime">'t </span>ealloc::Snapshot&lt;&lt;A <span class="kw">as </span>Archetype&gt;::RawEntity&gt;,
+    ) -&gt; <span class="kw">impl </span>ParallelIterator&lt;Item = (entity::TempRefChunk&lt;<span class="lifetime">'t</span>, A&gt;, <span class="kw-2">&amp;</span><span class="lifetime">'t </span>[C])&gt; {
         rayon::iter::split(snapshot.as_slice(), |slice| slice.split()).flat_map_iter(|slice| {
-            <span class="comment">// we don&#39;t need to split over the holes in parallel,
+            <span class="comment">// we don't need to split over the holes in parallel,
             // because splitting the total space is more important than splitting the holes
             </span>slice.iter_chunks().map(|chunk| {
                 <span class="kw">let </span>chunk = entity::TempRefChunk::new(chunk.start, chunk.end);
@@ -667,9 +669,9 @@
     }
 
     <span class="doccomment">/// Iterates over mutable references to all initialized components in this storage.
-    </span><span class="kw">pub fn </span>iter_mut&lt;<span class="lifetime">&#39;t</span>&gt;(
-        <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span><span class="self">self</span>,
-    ) -&gt; <span class="kw">impl </span>Iterator&lt;Item = (entity::TempRef&lt;<span class="lifetime">&#39;t</span>, A&gt;, <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>C)&gt; + <span class="lifetime">&#39;t </span>{
+    </span><span class="kw">pub fn </span>iter_mut&lt;<span class="lifetime">'t</span>&gt;(
+        <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span><span class="self">self</span>,
+    ) -&gt; <span class="kw">impl </span>Iterator&lt;Item = (entity::TempRef&lt;<span class="lifetime">'t</span>, A&gt;, <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span>C)&gt; + <span class="lifetime">'t </span>{
         <span class="self">self</span>.storage.iter_mut().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
     }
 }
@@ -694,12 +696,12 @@
     ///
     /// # Panics
     /// This function panics if the entity is not fully initialized yet.
-    /// This happens when an entity is newly created and the cycle hasn&#39;t joined yet.
+    /// This happens when an entity is newly created and the cycle hasn't joined yet.
     </span><span class="kw">pub fn </span>get_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>, entity: <span class="kw">impl </span>entity::Ref&lt;Archetype = A&gt;) -&gt; <span class="kw-2">&amp;mut </span>C {
         <span class="kw">match </span><span class="self">self</span>.try_get_mut(entity) {
             <span class="prelude-val">Some</span>(comp) =&gt; comp,
             <span class="prelude-val">None </span>=&gt; <span class="macro">panic!</span>(
-                <span class="string">&quot;Component {}/{} implements comp::Must but is not present&quot;</span>,
+                <span class="string">"Component {}/{} implements comp::Must but is not present"</span>,
                 any::type_name::&lt;A&gt;(),
                 any::type_name::&lt;C&gt;(),
             ),
@@ -717,8 +719,8 @@
         <span class="kw">match </span><span class="self">self</span>.try_get_many_mut(entities) {
             <span class="prelude-val">Some</span>(comps) =&gt; comps,
             <span class="prelude-val">None </span>=&gt; <span class="macro">panic!</span>(
-                <span class="string">&quot;Parameter contains duplicate entities, or component {}/{} implements comp::Must \
-                 but is not present&quot;</span>,
+                <span class="string">"Parameter contains duplicate entities, or component {}/{} implements comp::Must \
+                 but is not present"</span>,
                 any::type_name::&lt;A&gt;(),
                 any::type_name::&lt;C&gt;(),
             ),
@@ -761,7 +763,7 @@
     /// by calling [`split_at`](Single::split_at) on the returned value.
     </span><span class="kw">pub fn </span>as_partition(
         <span class="kw-2">&amp;mut </span><span class="self">self</span>,
-    ) -&gt; Single&lt;A, C, util::OwnedDeref&lt;&lt;StorageRef::Target <span class="kw">as </span>Storage&gt;::Partition&lt;<span class="lifetime">&#39;_</span>&gt;&gt;&gt; {
+    ) -&gt; Single&lt;A, C, util::OwnedDeref&lt;&lt;StorageRef::Target <span class="kw">as </span>Storage&gt;::Partition&lt;<span class="lifetime">'_</span>&gt;&gt;&gt; {
         Single { storage: util::OwnedDeref(<span class="self">self</span>.storage.as_partition()), _ph: PhantomData }
     }
 }
@@ -782,10 +784,10 @@
     <span class="doccomment">/// Iterates over all entities in parallel.
     ///
     /// This returns a rayon [`ParallelIterator`] that processes different entities.
-    </span><span class="kw">pub fn </span>par_iter_mut&lt;<span class="lifetime">&#39;t</span>&gt;(
-        <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span><span class="self">self</span>,
-        snapshot: <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span>ealloc::Snapshot&lt;&lt;A <span class="kw">as </span>Archetype&gt;::RawEntity&gt;,
-    ) -&gt; <span class="kw">impl </span>ParallelIterator&lt;Item = (entity::TempRef&lt;<span class="lifetime">&#39;t</span>, A&gt;, <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>C)&gt; {
+    </span><span class="kw">pub fn </span>par_iter_mut&lt;<span class="lifetime">'t</span>&gt;(
+        <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span><span class="self">self</span>,
+        snapshot: <span class="kw-2">&amp;</span><span class="lifetime">'t </span>ealloc::Snapshot&lt;&lt;A <span class="kw">as </span>Archetype&gt;::RawEntity&gt;,
+    ) -&gt; <span class="kw">impl </span>ParallelIterator&lt;Item = (entity::TempRef&lt;<span class="lifetime">'t</span>, A&gt;, <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span>C)&gt; {
         rayon::iter::split((<span class="self">self</span>.as_partition(), snapshot.as_slice()), |(partition, slice)| {
             <span class="kw">let </span><span class="prelude-val">Some</span>(midpt) = slice.midpoint_for_split() <span class="kw">else </span>{ <span class="kw">return </span>((partition, slice), <span class="prelude-val">None</span>) };
             <span class="kw">let </span>(slice_left, slice_right) = slice.split_at(midpt);
@@ -796,11 +798,11 @@
     }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>, A, C, StorageT&gt; Single&lt;A, C, util::OwnedDeref&lt;StorageT&gt;&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'t</span>, A, C, StorageT&gt; Single&lt;A, C, util::OwnedDeref&lt;StorageT&gt;&gt;
 <span class="kw">where
     </span>A: Archetype,
     C: comp::SimpleOrIsotope&lt;A&gt;,
-    StorageT: storage::Partition&lt;<span class="lifetime">&#39;t</span>, RawEntity = A::RawEntity, Comp = C&gt;,
+    StorageT: storage::Partition&lt;<span class="lifetime">'t</span>, RawEntity = A::RawEntity, Comp = C&gt;,
 {
     <span class="doccomment">/// Splits the accessor into two partitions.
     ///
@@ -822,32 +824,32 @@
     }
 
     <span class="doccomment">/// Gets the component value of an entity accessible by this partition,
-    /// preserving the lifetime `&#39;t` of this partition object.
-    </span><span class="kw">pub fn </span>try_into_mut(<span class="self">self</span>, entity: <span class="kw">impl </span>entity::Ref&lt;Archetype = A&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>C&gt; {
+    /// preserving the lifetime `'t` of this partition object.
+    </span><span class="kw">pub fn </span>try_into_mut(<span class="self">self</span>, entity: <span class="kw">impl </span>entity::Ref&lt;Archetype = A&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span>C&gt; {
         <span class="self">self</span>.storage.<span class="number">0</span>.into_mut(entity.id())
     }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>, A, C, StorageT&gt; Single&lt;A, C, util::OwnedDeref&lt;StorageT&gt;&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'t</span>, A, C, StorageT&gt; Single&lt;A, C, util::OwnedDeref&lt;StorageT&gt;&gt;
 <span class="kw">where
     </span>A: Archetype,
     C: comp::SimpleOrIsotope&lt;A&gt; + comp::Must&lt;A&gt;,
-    StorageT: storage::Partition&lt;<span class="lifetime">&#39;t</span>, RawEntity = A::RawEntity, Comp = C&gt;,
+    StorageT: storage::Partition&lt;<span class="lifetime">'t</span>, RawEntity = A::RawEntity, Comp = C&gt;,
 {
     <span class="doccomment">/// Gets the component value of an entity accessible by this partition,
-    /// preserving the lifetime `&#39;t` of this partition object.
+    /// preserving the lifetime `'t` of this partition object.
     ///
     /// This function is infallible, assuming [`comp::Must`] is only implemented
     /// for components with [`Required`](comp::Presence::Required) presence.
     ///
     /// # Panics
     /// This function panics if the entity is not fully initialized yet.
-    /// This happens when an entity is newly created and the cycle hasn&#39;t joined yet.
-    </span><span class="kw">pub fn </span>into_mut(<span class="self">self</span>, entity: <span class="kw">impl </span>entity::Ref&lt;Archetype = A&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>C {
+    /// This happens when an entity is newly created and the cycle hasn't joined yet.
+    </span><span class="kw">pub fn </span>into_mut(<span class="self">self</span>, entity: <span class="kw">impl </span>entity::Ref&lt;Archetype = A&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span>C {
         <span class="kw">match </span><span class="self">self</span>.try_into_mut(entity) {
             <span class="prelude-val">Some</span>(comp) =&gt; comp,
             <span class="prelude-val">None </span>=&gt; <span class="macro">panic!</span>(
-                <span class="string">&quot;Component {}/{} implements comp::Must but is not present&quot;</span>,
+                <span class="string">"Component {}/{} implements comp::Must but is not present"</span>,
                 any::type_name::&lt;A&gt;(),
                 any::type_name::&lt;C&gt;(),
             ),
@@ -855,7 +857,7 @@
     }
 
     <span class="doccomment">/// Iterates over mutable references to all initialized components in this partition.
-    </span><span class="kw">pub fn </span>into_iter_mut(<span class="self">self</span>) -&gt; <span class="kw">impl </span>Iterator&lt;Item = (entity::TempRef&lt;<span class="lifetime">&#39;t</span>, A&gt;, <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>C)&gt; {
+    </span><span class="kw">pub fn </span>into_iter_mut(<span class="self">self</span>) -&gt; <span class="kw">impl </span>Iterator&lt;Item = (entity::TempRef&lt;<span class="lifetime">'t</span>, A&gt;, <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span>C)&gt; {
         <span class="self">self</span>.storage.<span class="number">0</span>.into_iter_mut().map(|(entity, data)| (entity::TempRef::new(entity), data))
     }
 }
@@ -872,7 +874,7 @@
     C: comp::SimpleOrIsotope&lt;A&gt; + comp::Must&lt;A&gt;,
     StorageRef: ops::DerefMut + Sync,
     StorageRef::Target: storage::Chunked&lt;RawEntity = &lt;A <span class="kw">as </span>Archetype&gt;::RawEntity, Comp = C&gt;,
-    <span class="kw">for</span>&lt;<span class="lifetime">&#39;u</span>&gt; &lt;StorageRef::Target <span class="kw">as </span>Storage&gt;::Partition&lt;<span class="lifetime">&#39;u</span>&gt;: storage::PartitionChunked&lt;<span class="lifetime">&#39;u</span>&gt;,
+    <span class="kw">for</span>&lt;<span class="lifetime">'u</span>&gt; &lt;StorageRef::Target <span class="kw">as </span>Storage&gt;::Partition&lt;<span class="lifetime">'u</span>&gt;: storage::PartitionChunked&lt;<span class="lifetime">'u</span>&gt;,
 {
     <span class="doccomment">/// Returns the chunk of components as a mutable slice.
     ///
@@ -882,16 +884,16 @@
     /// users should not obtain an [`entity::TempRefChunk`] that includes an uninitialized entity,
     /// so panic is practically impossible.
     </span><span class="kw">pub fn </span>get_chunk_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>, chunk: entity::TempRefChunk&lt;A&gt;) -&gt; <span class="kw-2">&amp;</span>[C] {
-        <span class="self">self</span>.storage.get_chunk(chunk.start, chunk.end).expect(<span class="string">&quot;chunk is not completely filled&quot;</span>)
+        <span class="self">self</span>.storage.get_chunk(chunk.start, chunk.end).expect(<span class="string">"chunk is not completely filled"</span>)
     }
 
     <span class="doccomment">/// Iterates over all entity chunks in parallel.
     ///
     /// This returns a rayon [`ParallelIterator`] that processes different chunks of entities.
-    </span><span class="kw">pub fn </span>par_iter_chunks_mut&lt;<span class="lifetime">&#39;t</span>&gt;(
-        <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span><span class="self">self</span>,
-        snapshot: <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span>ealloc::Snapshot&lt;&lt;A <span class="kw">as </span>Archetype&gt;::RawEntity&gt;,
-    ) -&gt; <span class="kw">impl </span>ParallelIterator&lt;Item = (entity::TempRefChunk&lt;<span class="lifetime">&#39;t</span>, A&gt;, <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>[C])&gt; {
+    </span><span class="kw">pub fn </span>par_iter_chunks_mut&lt;<span class="lifetime">'t</span>&gt;(
+        <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span><span class="self">self</span>,
+        snapshot: <span class="kw-2">&amp;</span><span class="lifetime">'t </span>ealloc::Snapshot&lt;&lt;A <span class="kw">as </span>Archetype&gt;::RawEntity&gt;,
+    ) -&gt; <span class="kw">impl </span>ParallelIterator&lt;Item = (entity::TempRefChunk&lt;<span class="lifetime">'t</span>, A&gt;, <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span>[C])&gt; {
         rayon::iter::split((<span class="self">self</span>.as_partition(), snapshot.as_slice()), |(partition, slice)| {
             <span class="kw">let </span><span class="prelude-val">Some</span>(midpt) = slice.midpoint_for_split() <span class="kw">else </span>{ <span class="kw">return </span>((partition, slice), <span class="prelude-val">None</span>) };
             <span class="kw">let </span>(slice_left, slice_right) = slice.split_at(midpt);
@@ -902,25 +904,25 @@
     }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>, A, C, StorageT&gt; Single&lt;A, C, util::OwnedDeref&lt;StorageT&gt;&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'t</span>, A, C, StorageT&gt; Single&lt;A, C, util::OwnedDeref&lt;StorageT&gt;&gt;
 <span class="kw">where
     </span>A: Archetype,
     C: comp::SimpleOrIsotope&lt;A&gt; + comp::Must&lt;A&gt;,
-    StorageT: storage::PartitionChunked&lt;<span class="lifetime">&#39;t</span>, RawEntity = A::RawEntity, Comp = C&gt;,
+    StorageT: storage::PartitionChunked&lt;<span class="lifetime">'t</span>, RawEntity = A::RawEntity, Comp = C&gt;,
 {
     <span class="doccomment">/// Returns the chunk of components as a mutable slice,
-    /// preserving the lifetime `&#39;t` of this partition object.
+    /// preserving the lifetime `'t` of this partition object.
     ///
     /// # Panics
     /// This function panics if any component in the chunk is missing.
     /// In general, if [`comp::Must`] is implemented correctly,
     /// users should not obtain an [`entity::TempRefChunk`] that includes an uninitialized entity,
     /// so panic is practically impossible.
-    </span><span class="kw">pub fn </span>into_chunk_mut(<span class="self">self</span>, chunk: entity::TempRefChunk&lt;A&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>[C] {
+    </span><span class="kw">pub fn </span>into_chunk_mut(<span class="self">self</span>, chunk: entity::TempRefChunk&lt;A&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span>[C] {
         <span class="kw">match </span><span class="self">self</span>.storage.<span class="number">0</span>.into_chunk_mut(chunk.start, chunk.end) {
             <span class="prelude-val">Some</span>(comp) =&gt; comp,
             <span class="prelude-val">None </span>=&gt; <span class="macro">panic!</span>(
-                <span class="string">&quot;Component {}/{} implements comp::Must but is not present&quot;</span>,
+                <span class="string">"Component {}/{} implements comp::Must but is not present"</span>,
                 any::type_name::&lt;A&gt;(),
                 any::type_name::&lt;C&gt;()
             ),
@@ -930,7 +932,7 @@
     <span class="doccomment">/// Iterates over mutable references to all initialized components in this storage.
     </span><span class="kw">pub fn </span>into_iter_chunks_mut(
         <span class="self">self</span>,
-    ) -&gt; <span class="kw">impl </span>Iterator&lt;Item = (entity::TempRefChunk&lt;<span class="lifetime">&#39;t</span>, A&gt;, <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>[C])&gt; {
+    ) -&gt; <span class="kw">impl </span>Iterator&lt;Item = (entity::TempRefChunk&lt;<span class="lifetime">'t</span>, A&gt;, <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span>[C])&gt; {
         <span class="self">self</span>.storage
             .<span class="number">0
             </span>.into_iter_chunks_mut()

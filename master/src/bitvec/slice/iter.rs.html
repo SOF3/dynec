@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitvec-1.0.1/src/slice/iter.rs`."><title>iter.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="bitvec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitvec-1.0.1/src/slice/iter.rs`."><title>iter.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="bitvec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../bitvec/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -2593,7 +2595,7 @@
 <a href="#2593" id="2593">2593</a>
 <a href="#2594" id="2594">2594</a>
 <a href="#2595" id="2595">2595</a>
-</pre></div><pre class="rust"><code><span class="attr">#![doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/slice/iter.md&quot;</span>)]
+</pre></div><pre class="rust"><code><span class="attr">#![doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/slice/iter.md"</span>)]
 
 </span><span class="kw">use </span>core::{
 	cmp,
@@ -2634,12 +2636,12 @@
 
 <span class="doccomment">/// [Original](https://doc.rust-lang.org/core/iter/trait.IntoIterator.html#impl-IntoIterator-1)
 </span><span class="attr">#[cfg(not(tarpaulin_include))]
-</span><span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O&gt; IntoIterator <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt;
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O&gt; IntoIterator <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 {
-	<span class="kw">type </span>IntoIter = Iter&lt;<span class="lifetime">&#39;a</span>, T, O&gt;;
+	<span class="kw">type </span>IntoIter = Iter&lt;<span class="lifetime">'a</span>, T, O&gt;;
 	<span class="kw">type </span>Item = &lt;<span class="self">Self</span>::IntoIter <span class="kw">as </span>Iterator&gt;::Item;
 
 	<span class="attr">#[inline]
@@ -2650,12 +2652,12 @@
 
 <span class="doccomment">/// [Original](https://doc.rust-lang.org/core/iter/trait.IntoIterator.html#impl-IntoIterator-3)
 </span><span class="attr">#[cfg(not(tarpaulin_include))]
-</span><span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O&gt; IntoIterator <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt;
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O&gt; IntoIterator <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 {
-	<span class="kw">type </span>IntoIter = IterMut&lt;<span class="lifetime">&#39;a</span>, T, O&gt;;
+	<span class="kw">type </span>IntoIter = IterMut&lt;<span class="lifetime">'a</span>, T, O&gt;;
 	<span class="kw">type </span>Item = &lt;<span class="self">Self</span>::IntoIter <span class="kw">as </span>Iterator&gt;::Item;
 
 	<span class="attr">#[inline]
@@ -2665,10 +2667,10 @@
 }
 
 <span class="attr">#[repr(transparent)]
-#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/slice/iter/Iter.md&quot;</span>)]
-</span><span class="kw">pub struct </span>Iter&lt;<span class="lifetime">&#39;a</span>, T, O&gt;
+#[doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/slice/iter/Iter.md"</span>)]
+</span><span class="kw">pub struct </span>Iter&lt;<span class="lifetime">'a</span>, T, O&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 {
 	<span class="doccomment">/// A dual-pointer range of the bit-slice undergoing iteration.
@@ -2678,16 +2680,16 @@
 	/// faster performance when iterating.
 	</span>range: BitPtrRange&lt;Const, T, O&gt;,
 	<span class="doccomment">/// `Iter` is semantically equivalent to a `&amp;BitSlice`.
-	</span>_ref:  PhantomData&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt;&gt;,
+	</span>_ref:  PhantomData&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt;&gt;,
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O&gt; Iter&lt;<span class="lifetime">&#39;a</span>, T, O&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O&gt; Iter&lt;<span class="lifetime">'a</span>, T, O&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 {
 	<span class="attr">#[allow(missing_docs, clippy::missing_docs_in_private_items)]
-	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>new(slice: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt;) -&gt; <span class="self">Self </span>{
+	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>new(slice: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt;) -&gt; <span class="self">Self </span>{
 		<span class="self">Self </span>{
 			range: slice.as_bitptr_range(),
 			_ref:  PhantomData,
@@ -2718,15 +2720,15 @@
 	/// ```
 	</span><span class="attr">#[inline]
 	#[allow(missing_docs, clippy::missing_docs_in_private_items)]
-	</span><span class="kw">pub fn </span>as_bitslice(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt; {
+	</span><span class="kw">pub fn </span>as_bitslice(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt; {
 		<span class="kw">unsafe </span>{ <span class="self">self</span>.range.clone().into_bitspan().into_bitslice_ref() }
 	}
 
 	<span class="attr">#[inline]
 	#[cfg(not(tarpaulin_include))]
-	#[deprecated = <span class="string">&quot;use `.as_bitslice()` instead&quot;</span>]
+	#[deprecated = <span class="string">"use `.as_bitslice()` instead"</span>]
 	#[allow(missing_docs, clippy::missing_docs_in_private_items)]
-	</span><span class="kw">pub fn </span>as_slice(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt; {
+	</span><span class="kw">pub fn </span>as_slice(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt; {
 		<span class="self">self</span>.as_bitslice()
 	}
 
@@ -2735,7 +2737,7 @@
 	///
 	/// This allows the iterator to be used in APIs that expect ordinary
 	/// references. It reads from the proxy and provides an equivalent
-	/// `&amp;&#39;static bool`. The address value of the yielded reference is not
+	/// `&amp;'static bool`. The address value of the yielded reference is not
 	/// related to the addresses covered by the `BitSlice` buffer in any way.
 	///
 	/// ## Examples
@@ -2752,7 +2754,7 @@
 	///
 	/// [0]: crate::ptr::BitRef
 	</span><span class="attr">#[inline]
-	</span><span class="kw">pub fn </span>by_refs(<span class="self">self</span>) -&gt; BitRefIter&lt;<span class="lifetime">&#39;a</span>, T, O&gt; {
+	</span><span class="kw">pub fn </span>by_refs(<span class="self">self</span>) -&gt; BitRefIter&lt;<span class="lifetime">'a</span>, T, O&gt; {
 		<span class="self">self</span>.by_vals().map(|bit| <span class="kw">match </span>bit {
 			<span class="bool-val">true </span>=&gt; <span class="kw-2">&amp;</span><span class="bool-val">true</span>,
 			<span class="bool-val">false </span>=&gt; <span class="kw-2">&amp;</span><span class="bool-val">false</span>,
@@ -2793,7 +2795,7 @@
 	///
 	/// [0]: crate::ptr::BitRef
 	</span><span class="attr">#[inline]
-	</span><span class="kw">pub fn </span>by_vals(<span class="self">self</span>) -&gt; BitValIter&lt;<span class="lifetime">&#39;a</span>, T, O&gt; {
+	</span><span class="kw">pub fn </span>by_vals(<span class="self">self</span>) -&gt; BitValIter&lt;<span class="lifetime">'a</span>, T, O&gt; {
 		BitValIter {
 			range: <span class="self">self</span>.range,
 			_life: PhantomData,
@@ -2814,16 +2816,16 @@
 	/// [0]: crate::ptr::BitRef
 	</span><span class="attr">#[inline]
 	#[cfg(not(tarpaulin_include))]
-	#[deprecated = <span class="string">&quot;`Iterator::copied` does not exist on this type. Use \
-	                `.by_vals()` instead&quot;</span>]
-	</span><span class="kw">pub fn </span>copied(<span class="self">self</span>) -&gt; BitValIter&lt;<span class="lifetime">&#39;a</span>, T, O&gt; {
+	#[deprecated = <span class="string">"`Iterator::copied` does not exist on this type. Use \
+	                `.by_vals()` instead"</span>]
+	</span><span class="kw">pub fn </span>copied(<span class="self">self</span>) -&gt; BitValIter&lt;<span class="lifetime">'a</span>, T, O&gt; {
 		<span class="self">self</span>.by_vals()
 	}
 }
 
 <span class="doccomment">/// [Original](https://doc.rust-lang.org/core/slice/struct.Iter.html#impl-Clone)
 </span><span class="attr">#[cfg(not(tarpaulin_include))]
-</span><span class="kw">impl</span>&lt;T, O&gt; Clone <span class="kw">for </span>Iter&lt;<span class="lifetime">&#39;_</span>, T, O&gt;
+</span><span class="kw">impl</span>&lt;T, O&gt; Clone <span class="kw">for </span>Iter&lt;<span class="lifetime">'_</span>, T, O&gt;
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
@@ -2839,7 +2841,7 @@
 
 <span class="doccomment">/// [Original](https://doc.rust-lang.org/core/slice/struct.Iter.html#impl-AsRef%3C%5BT%5D%3E)
 </span><span class="attr">#[cfg(not(tarpaulin_include))]
-</span><span class="kw">impl</span>&lt;T, O&gt; AsRef&lt;BitSlice&lt;T, O&gt;&gt; <span class="kw">for </span>Iter&lt;<span class="lifetime">&#39;_</span>, T, O&gt;
+</span><span class="kw">impl</span>&lt;T, O&gt; AsRef&lt;BitSlice&lt;T, O&gt;&gt; <span class="kw">for </span>Iter&lt;<span class="lifetime">'_</span>, T, O&gt;
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
@@ -2852,22 +2854,22 @@
 
 <span class="doccomment">/// [Original](https://doc.rust-lang.org/core/slice/struct.Iter.html#impl-Debug)
 </span><span class="attr">#[cfg(not(tarpaulin_include))]
-</span><span class="kw">impl</span>&lt;T, O&gt; Debug <span class="kw">for </span>Iter&lt;<span class="lifetime">&#39;_</span>, T, O&gt;
+</span><span class="kw">impl</span>&lt;T, O&gt; Debug <span class="kw">for </span>Iter&lt;<span class="lifetime">'_</span>, T, O&gt;
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
 {
 	<span class="attr">#[inline]
 	</span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
-		fmt.debug_tuple(<span class="string">&quot;Iter&quot;</span>).field(<span class="kw-2">&amp;</span><span class="self">self</span>.as_bitslice()).finish()
+		fmt.debug_tuple(<span class="string">"Iter"</span>).field(<span class="kw-2">&amp;</span><span class="self">self</span>.as_bitslice()).finish()
 	}
 }
 
 <span class="attr">#[repr(transparent)]
-#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/slice/iter/IterMut.md&quot;</span>)]
-</span><span class="kw">pub struct </span>IterMut&lt;<span class="lifetime">&#39;a</span>, T, O&gt;
+#[doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/slice/iter/IterMut.md"</span>)]
+</span><span class="kw">pub struct </span>IterMut&lt;<span class="lifetime">'a</span>, T, O&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 {
 	<span class="doccomment">/// A dual-pointer range of the bit-slice undergoing iteration.
@@ -2877,16 +2879,16 @@
 	/// faster performance when iterating.
 	</span>range: BitPtrRange&lt;Mut, T::Alias, O&gt;,
 	<span class="doccomment">/// `IterMut` is semantically equivalent to an aliased `&amp;mut BitSlice`.
-	</span>_ref:  PhantomData&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;&gt;,
+	</span>_ref:  PhantomData&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;&gt;,
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O&gt; IterMut&lt;<span class="lifetime">&#39;a</span>, T, O&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O&gt; IterMut&lt;<span class="lifetime">'a</span>, T, O&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 {
 	<span class="attr">#[allow(missing_docs, clippy::missing_docs_in_private_items)]
-	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>new(slice: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt;) -&gt; <span class="self">Self </span>{
+	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>new(slice: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt;) -&gt; <span class="self">Self </span>{
 		<span class="self">Self </span>{
 			range: slice.alias_mut().as_mut_bitptr_range(),
 			_ref:  PhantomData,
@@ -2918,15 +2920,15 @@
 	/// ```
 	</span><span class="attr">#[inline]
 	#[cfg(not(tarpaulin_include))]
-	</span><span class="kw">pub fn </span>into_bitslice(<span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt; {
+	</span><span class="kw">pub fn </span>into_bitslice(<span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt; {
 		<span class="kw">unsafe </span>{ <span class="self">self</span>.range.into_bitspan().into_bitslice_mut() }
 	}
 
 	<span class="attr">#[inline]
 	#[cfg(not(tarpaulin_include))]
-	#[deprecated = <span class="string">&quot;use `.into_bitslice()` instead&quot;</span>]
+	#[deprecated = <span class="string">"use `.into_bitslice()` instead"</span>]
 	#[allow(missing_docs, clippy::missing_docs_in_private_items)]
-	</span><span class="kw">pub fn </span>into_slice(<span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt; {
+	</span><span class="kw">pub fn </span>into_slice(<span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt; {
 		<span class="self">self</span>.into_bitslice()
 	}
 
@@ -2964,7 +2966,7 @@
 
 	<span class="attr">#[inline]
 	#[cfg(not(tarpaulin_include))]
-	#[deprecated = <span class="string">&quot;use `.as_bitslice()` instead&quot;</span>]
+	#[deprecated = <span class="string">"use `.as_bitslice()` instead"</span>]
 	#[allow(missing_docs, clippy::missing_docs_in_private_items)]
 	</span><span class="kw">pub fn </span>as_slice(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>BitSlice&lt;T::Alias, O&gt; {
 		<span class="self">self</span>.as_bitslice()
@@ -2973,7 +2975,7 @@
 
 <span class="doccomment">/// [Original](https://doc.rust-lang.org/core/slice/struct.IterMut.html#impl-AsRef%3C%5BT%5D%3E)
 </span><span class="attr">#[cfg(not(tarpaulin_include))]
-</span><span class="kw">impl</span>&lt;T, O&gt; AsRef&lt;BitSlice&lt;T::Alias, O&gt;&gt; <span class="kw">for </span>IterMut&lt;<span class="lifetime">&#39;_</span>, T, O&gt;
+</span><span class="kw">impl</span>&lt;T, O&gt; AsRef&lt;BitSlice&lt;T::Alias, O&gt;&gt; <span class="kw">for </span>IterMut&lt;<span class="lifetime">'_</span>, T, O&gt;
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
@@ -2986,14 +2988,14 @@
 
 <span class="doccomment">/// [Original](https://doc.rust-lang.org/core/slice/struct.IterMut.html#impl-Debug)
 </span><span class="attr">#[cfg(not(tarpaulin_include))]
-</span><span class="kw">impl</span>&lt;T, O&gt; Debug <span class="kw">for </span>IterMut&lt;<span class="lifetime">&#39;_</span>, T, O&gt;
+</span><span class="kw">impl</span>&lt;T, O&gt; Debug <span class="kw">for </span>IterMut&lt;<span class="lifetime">'_</span>, T, O&gt;
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
 {
 	<span class="attr">#[inline]
 	</span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
-		fmt.debug_tuple(<span class="string">&quot;IterMut&quot;</span>)
+		fmt.debug_tuple(<span class="string">"IterMut"</span>)
 			.field(<span class="kw-2">&amp;</span><span class="self">self</span>.as_bitslice())
 			.finish()
 	}
@@ -3004,9 +3006,9 @@
 	($(<span class="macro-nonterminal">$iter</span>:ident =&gt; <span class="macro-nonterminal">$item</span>:ty);+ $(;)<span class="question-mark">?</span>) =&gt; { $(
 		<span class="doccomment">/// [Original](https://doc.rust-lang.org/core/slice/struct.Iter.html#impl-Iterator) and
 		/// [Original](https://doc.rust-lang.org/core/slice/struct.IterMut.html#impl-Iterator)
-		</span><span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O&gt; Iterator <span class="kw">for </span><span class="macro-nonterminal">$iter</span>&lt;<span class="lifetime">&#39;a</span>, T, O&gt;
+		</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O&gt; Iterator <span class="kw">for </span><span class="macro-nonterminal">$iter</span>&lt;<span class="lifetime">'a</span>, T, O&gt;
 		<span class="kw">where
-			</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+			</span>T: <span class="lifetime">'a </span>+ BitStore,
 			O: BitOrder,
 		{
 			<span class="kw">type </span>Item = <span class="macro-nonterminal">$item</span>;
@@ -3026,9 +3028,9 @@
 
 		<span class="doccomment">/// [Original](https://doc.rust-lang.org/core/slice/struct.Iter.html#impl-DoubleEndedIterator) and
 		/// [Original](https://doc.rust-lang.org/core/slice/struct.IterMut.html#impl-DoubleEndedIterator)
-		</span><span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O&gt; DoubleEndedIterator <span class="kw">for </span><span class="macro-nonterminal">$iter</span>&lt;<span class="lifetime">&#39;a</span>, T, O&gt;
+		</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O&gt; DoubleEndedIterator <span class="kw">for </span><span class="macro-nonterminal">$iter</span>&lt;<span class="lifetime">'a</span>, T, O&gt;
 		<span class="kw">where
-			</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+			</span>T: <span class="lifetime">'a </span>+ BitStore,
 			O: BitOrder,
 		{
 			<span class="attr">#[inline]
@@ -3048,7 +3050,7 @@
 
 		<span class="doccomment">/// [Original](https://doc.rust-lang.org/core/slice/struct.Iter.html#impl-ExactSizeIterator) and
 		/// [Original](https://doc.rust-lang.org/core/slice/struct.IterMut.html#impl-ExactSizeIterator)
-		</span><span class="kw">impl</span>&lt;T, O&gt; ExactSizeIterator <span class="kw">for </span><span class="macro-nonterminal">$iter</span>&lt;<span class="lifetime">&#39;_</span>, T, O&gt;
+		</span><span class="kw">impl</span>&lt;T, O&gt; ExactSizeIterator <span class="kw">for </span><span class="macro-nonterminal">$iter</span>&lt;<span class="lifetime">'_</span>, T, O&gt;
 		<span class="kw">where
 			</span>T: BitStore,
 			O: BitOrder,
@@ -3061,7 +3063,7 @@
 
 		<span class="doccomment">/// [Original](https://doc.rust-lang.org/core/slice/struct.Iter.html#impl-FusedIterator) and
 		/// [Original](https://doc.rust-lang.org/core/slice/struct.IterMut.html#impl-FusedIterator)
-		</span><span class="kw">impl</span>&lt;T, O&gt; FusedIterator <span class="kw">for </span><span class="macro-nonterminal">$iter</span>&lt;<span class="lifetime">&#39;_</span>, T, O&gt;
+		</span><span class="kw">impl</span>&lt;T, O&gt; FusedIterator <span class="kw">for </span><span class="macro-nonterminal">$iter</span>&lt;<span class="lifetime">'_</span>, T, O&gt;
 		<span class="kw">where
 			</span>T: BitStore,
 			O: BitOrder,
@@ -3071,17 +3073,17 @@
 		<span class="doccomment">/// [Original](https://doc.rust-lang.org/core/slice/struct.Iter.html#impl-Send) and
 		/// [Original](https://doc.rust-lang.org/core/slice/struct.IterMut.html#impl-Send)
 		</span><span class="comment">// #[allow(clippy::non_send_fields_in_send_ty)]
-		</span><span class="kw">unsafe impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O&gt; Send <span class="kw">for </span><span class="macro-nonterminal">$iter</span>&lt;<span class="lifetime">&#39;a</span>, T, O&gt;
+		</span><span class="kw">unsafe impl</span>&lt;<span class="lifetime">'a</span>, T, O&gt; Send <span class="kw">for </span><span class="macro-nonterminal">$iter</span>&lt;<span class="lifetime">'a</span>, T, O&gt;
 		<span class="kw">where
 			</span>T: BitStore,
 			O: BitOrder,
-			<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt;: Send,
+			<span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt;: Send,
 		{
 		}
 
 		<span class="doccomment">/// [Original](https://doc.rust-lang.org/core/slice/struct.Iter.html#impl-Sync) and
 		/// [Original](https://doc.rust-lang.org/core/slice/struct.IterMut.html#impl-Sync)
-		</span><span class="kw">unsafe impl</span>&lt;T, O&gt; Sync <span class="kw">for </span><span class="macro-nonterminal">$iter</span>&lt;<span class="lifetime">&#39;_</span>, T, O&gt;
+		</span><span class="kw">unsafe impl</span>&lt;T, O&gt; Sync <span class="kw">for </span><span class="macro-nonterminal">$iter</span>&lt;<span class="lifetime">'_</span>, T, O&gt;
 		<span class="kw">where
 			</span>T: BitStore,
 			O: BitOrder,
@@ -3092,8 +3094,8 @@
 }
 
 <span class="macro">iter! </span>{
-	Iter =&gt; &lt;usize <span class="kw">as </span>BitSliceIndex&lt;<span class="lifetime">&#39;a</span>, T, O&gt;&gt;::Immut;
-	IterMut =&gt; &lt;usize <span class="kw">as </span>BitSliceIndex&lt;<span class="lifetime">&#39;a</span>, T::Alias, O&gt;&gt;::Mut;
+	Iter =&gt; &lt;usize <span class="kw">as </span>BitSliceIndex&lt;<span class="lifetime">'a</span>, T, O&gt;&gt;::Immut;
+	IterMut =&gt; &lt;usize <span class="kw">as </span>BitSliceIndex&lt;<span class="lifetime">'a</span>, T::Alias, O&gt;&gt;::Mut;
 }
 
 <span class="doccomment">/// Builds an iterator implementation for grouping iterators.
@@ -3107,9 +3109,9 @@
 		<span class="macro-nonterminal">$nth_back</span>:item
 		<span class="macro-nonterminal">$len</span>:item
 	}) =&gt; {
-		<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O&gt; Iterator <span class="kw">for </span><span class="macro-nonterminal">$iter</span>&lt;<span class="lifetime">&#39;a</span>, T, O&gt;
+		<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O&gt; Iterator <span class="kw">for </span><span class="macro-nonterminal">$iter</span>&lt;<span class="lifetime">'a</span>, T, O&gt;
 		<span class="kw">where
-			</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+			</span>T: <span class="lifetime">'a </span>+ BitStore,
 			O: BitOrder,
 		{
 			<span class="kw">type </span>Item = <span class="macro-nonterminal">$item</span>;
@@ -3123,7 +3125,7 @@
 			</span><span class="macro">easy_iter!</span>();
 		}
 
-		<span class="kw">impl</span>&lt;T, O&gt; DoubleEndedIterator <span class="kw">for </span><span class="macro-nonterminal">$iter</span>&lt;<span class="lifetime">&#39;_</span>, T, O&gt;
+		<span class="kw">impl</span>&lt;T, O&gt; DoubleEndedIterator <span class="kw">for </span><span class="macro-nonterminal">$iter</span>&lt;<span class="lifetime">'_</span>, T, O&gt;
 		<span class="kw">where
 			</span>T: BitStore,
 			O: BitOrder,
@@ -3135,7 +3137,7 @@
 			</span><span class="macro-nonterminal">$nth_back
 		</span>}
 
-		<span class="kw">impl</span>&lt;T, O&gt; ExactSizeIterator <span class="kw">for </span><span class="macro-nonterminal">$iter</span>&lt;<span class="lifetime">&#39;_</span>, T, O&gt;
+		<span class="kw">impl</span>&lt;T, O&gt; ExactSizeIterator <span class="kw">for </span><span class="macro-nonterminal">$iter</span>&lt;<span class="lifetime">'_</span>, T, O&gt;
 		<span class="kw">where
 			</span>T: BitStore,
 			O: BitOrder,
@@ -3144,7 +3146,7 @@
 			</span><span class="macro-nonterminal">$len
 		</span>}
 
-		<span class="kw">impl</span>&lt;T, O&gt; FusedIterator <span class="kw">for </span><span class="macro-nonterminal">$iter</span>&lt;<span class="lifetime">&#39;_</span>, T, O&gt;
+		<span class="kw">impl</span>&lt;T, O&gt; FusedIterator <span class="kw">for </span><span class="macro-nonterminal">$iter</span>&lt;<span class="lifetime">'_</span>, T, O&gt;
 		<span class="kw">where
 			</span>T: BitStore,
 			O: BitOrder,
@@ -3154,18 +3156,18 @@
 }
 
 <span class="doccomment">/// An iterator over `BitSlice` that yields `&amp;bool` directly.
-</span><span class="kw">pub type </span>BitRefIter&lt;<span class="lifetime">&#39;a</span>, T, O&gt; = Map&lt;BitValIter&lt;<span class="lifetime">&#39;a</span>, T, O&gt;, <span class="kw">fn</span>(bool) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>bool&gt;;
+</span><span class="kw">pub type </span>BitRefIter&lt;<span class="lifetime">'a</span>, T, O&gt; = Map&lt;BitValIter&lt;<span class="lifetime">'a</span>, T, O&gt;, <span class="kw">fn</span>(bool) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>bool&gt;;
 
 <span class="doccomment">/// An iterator over `BitSlice` that yields `bool` directly.
-</span><span class="kw">pub struct </span>BitValIter&lt;<span class="lifetime">&#39;a</span>, T, O&gt;
+</span><span class="kw">pub struct </span>BitValIter&lt;<span class="lifetime">'a</span>, T, O&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 {
 	<span class="doccomment">/// The start and end bit-pointers in the iteration region.
 	</span>range: BitPtrRange&lt;Const, T, O&gt;,
 	<span class="doccomment">/// Hold the lifetime of the source region, so that this does not cause UAF.
-	</span>_life: PhantomData&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt;&gt;,
+	</span>_life: PhantomData&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt;&gt;,
 }
 
 <span class="macro">group!</span>(BitValIter =&gt; bool {
@@ -3191,19 +3193,19 @@
 });
 
 <span class="attr">#[derive(Clone, Debug)]
-#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/slice/iter/Windows.md&quot;</span>)]
-</span><span class="kw">pub struct </span>Windows&lt;<span class="lifetime">&#39;a</span>, T, O&gt;
+#[doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/slice/iter/Windows.md"</span>)]
+</span><span class="kw">pub struct </span>Windows&lt;<span class="lifetime">'a</span>, T, O&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 {
 	<span class="doccomment">/// The source bit-slice.
-	</span>slice: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt;,
+	</span>slice: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt;,
 	<span class="doccomment">/// The width of the produced windows.
 	</span>width: usize,
 }
 
-<span class="macro">group!</span>(Windows =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt; {
+<span class="macro">group!</span>(Windows =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt; {
 	<span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt; {
 		<span class="kw">if </span><span class="self">self</span>.width &gt; <span class="self">self</span>.slice.len() {
 			<span class="self">self</span>.slice = Default::default();
@@ -3267,19 +3269,19 @@
 });
 
 <span class="attr">#[derive(Clone, Debug)]
-#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/slice/iter/Chunks.md&quot;</span>)]
-</span><span class="kw">pub struct </span>Chunks&lt;<span class="lifetime">&#39;a</span>, T, O&gt;
+#[doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/slice/iter/Chunks.md"</span>)]
+</span><span class="kw">pub struct </span>Chunks&lt;<span class="lifetime">'a</span>, T, O&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 {
 	<span class="doccomment">/// The source bit-slice.
-	</span>slice: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt;,
+	</span>slice: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt;,
 	<span class="doccomment">/// The width of the produced chunks.
 	</span>width: usize,
 }
 
-<span class="macro">group!</span>(Chunks =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt; {
+<span class="macro">group!</span>(Chunks =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt; {
 	<span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt; {
 		<span class="kw">let </span>len = <span class="self">self</span>.slice.len();
 		<span class="kw">if </span>len == <span class="number">0 </span>{
@@ -3352,19 +3354,19 @@
 });
 
 <span class="attr">#[derive(Debug)]
-#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/slice/iter/ChunksMut.md&quot;</span>)]
-</span><span class="kw">pub struct </span>ChunksMut&lt;<span class="lifetime">&#39;a</span>, T, O&gt;
+#[doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/slice/iter/ChunksMut.md"</span>)]
+</span><span class="kw">pub struct </span>ChunksMut&lt;<span class="lifetime">'a</span>, T, O&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 {
 	<span class="doccomment">/// The source bit-slice, marked with the alias tainting.
-	</span>slice: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;,
+	</span>slice: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;,
 	<span class="doccomment">/// The width of the produced chunks.
 	</span>width: usize,
 }
 
-<span class="macro">group!</span>(ChunksMut =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt; {
+<span class="macro">group!</span>(ChunksMut =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt; {
 	<span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt; {
 		<span class="kw">let </span>slice = mem::take(<span class="kw-2">&amp;mut </span><span class="self">self</span>.slice);
 		<span class="kw">let </span>len = slice.len();
@@ -3438,28 +3440,28 @@
 });
 
 <span class="attr">#[derive(Clone, Debug)]
-#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/slice/iter/ChunksExact.md&quot;</span>)]
-</span><span class="kw">pub struct </span>ChunksExact&lt;<span class="lifetime">&#39;a</span>, T, O&gt;
+#[doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/slice/iter/ChunksExact.md"</span>)]
+</span><span class="kw">pub struct </span>ChunksExact&lt;<span class="lifetime">'a</span>, T, O&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 {
 	<span class="doccomment">/// The source bit-slice.
-	</span>slice: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt;,
+	</span>slice: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt;,
 	<span class="doccomment">/// Any remnant of the source bit-slice that will not be yielded as a chunk.
-	</span>extra: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt;,
+	</span>extra: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt;,
 	<span class="doccomment">/// The width of the produced chunks.
 	</span>width: usize,
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O&gt; ChunksExact&lt;<span class="lifetime">&#39;a</span>, T, O&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O&gt; ChunksExact&lt;<span class="lifetime">'a</span>, T, O&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 {
 	<span class="attr">#[allow(missing_docs, clippy::missing_docs_in_private_items)]
-	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>new(slice: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt;, width: usize) -&gt; <span class="self">Self </span>{
-		<span class="macro">assert_ne!</span>(width, <span class="number">0</span>, <span class="string">&quot;Chunk width cannot be 0&quot;</span>);
+	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>new(slice: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt;, width: usize) -&gt; <span class="self">Self </span>{
+		<span class="macro">assert_ne!</span>(width, <span class="number">0</span>, <span class="string">"Chunk width cannot be 0"</span>);
 		<span class="kw">let </span>len = slice.len();
 		<span class="kw">let </span>rem = len % width;
 		<span class="kw">let </span>(slice, extra) = <span class="kw">unsafe </span>{ slice.split_at_unchecked(len - rem) };
@@ -3477,12 +3479,12 @@
 	/// [`ChunksExact::remainder`](core::slice::ChunksExact::remainder)
 	</span><span class="attr">#[inline]
 	#[cfg(not(tarpaulin_include))]
-	</span><span class="kw">pub fn </span>remainder(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt; {
+	</span><span class="kw">pub fn </span>remainder(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt; {
 		<span class="self">self</span>.extra
 	}
 }
 
-<span class="macro">group!</span>(ChunksExact =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt; {
+<span class="macro">group!</span>(ChunksExact =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt; {
 	<span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt; {
 		<span class="kw">if </span><span class="self">self</span>.slice.len() &lt; <span class="self">self</span>.width {
 			<span class="kw">return </span><span class="prelude-val">None</span>;
@@ -3540,28 +3542,28 @@
 });
 
 <span class="attr">#[derive(Debug)]
-#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/slice/iter/ChunksExactMut.md&quot;</span>)]
-</span><span class="kw">pub struct </span>ChunksExactMut&lt;<span class="lifetime">&#39;a</span>, T, O&gt;
+#[doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/slice/iter/ChunksExactMut.md"</span>)]
+</span><span class="kw">pub struct </span>ChunksExactMut&lt;<span class="lifetime">'a</span>, T, O&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 {
 	<span class="doccomment">/// The source bit-slice, marked with the alias tainting.
-	</span>slice: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;,
+	</span>slice: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;,
 	<span class="doccomment">/// Any remnant of the source bit-slice that will not be yielded as a chunk.
-	</span>extra: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;,
+	</span>extra: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;,
 	<span class="doccomment">/// The width of the produced chunks.
 	</span>width: usize,
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O&gt; ChunksExactMut&lt;<span class="lifetime">&#39;a</span>, T, O&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O&gt; ChunksExactMut&lt;<span class="lifetime">'a</span>, T, O&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 {
 	<span class="attr">#[allow(missing_docs, clippy::missing_docs_in_private_items)]
-	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>new(slice: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt;, width: usize) -&gt; <span class="self">Self </span>{
-		<span class="macro">assert_ne!</span>(width, <span class="number">0</span>, <span class="string">&quot;Chunk width cannot be 0&quot;</span>);
+	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>new(slice: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt;, width: usize) -&gt; <span class="self">Self </span>{
+		<span class="macro">assert_ne!</span>(width, <span class="number">0</span>, <span class="string">"Chunk width cannot be 0"</span>);
 		<span class="kw">let </span>len = slice.len();
 		<span class="kw">let </span>rem = len % width;
 		<span class="kw">let </span>(slice, extra) = <span class="kw">unsafe </span>{ slice.split_at_unchecked_mut(len - rem) };
@@ -3582,7 +3584,7 @@
 	/// [0]: core::slice::ChunksExactMut::into_remainder
 	</span><span class="attr">#[inline]
 	#[cfg(not(tarpaulin_include))]
-	</span><span class="kw">pub fn </span>into_remainder(<span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt; {
+	</span><span class="kw">pub fn </span>into_remainder(<span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt; {
 		<span class="self">self</span>.extra
 	}
 
@@ -3603,12 +3605,12 @@
 	/// assert!(chunks.take_remainder().is_empty());
 	/// ```
 	</span><span class="attr">#[inline]
-	</span><span class="kw">pub fn </span>take_remainder(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt; {
+	</span><span class="kw">pub fn </span>take_remainder(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt; {
 		mem::take(<span class="kw-2">&amp;mut </span><span class="self">self</span>.extra)
 	}
 }
 
-<span class="macro">group!</span>(ChunksExactMut =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt; {
+<span class="macro">group!</span>(ChunksExactMut =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt; {
 	<span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt; {
 		<span class="kw">let </span>slice = mem::take(<span class="kw-2">&amp;mut </span><span class="self">self</span>.slice);
 		<span class="kw">if </span>slice.len() &lt; <span class="self">self</span>.width {
@@ -3667,19 +3669,19 @@
 });
 
 <span class="attr">#[derive(Clone, Debug)]
-#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/slice/iter/RChunks.md&quot;</span>)]
-</span><span class="kw">pub struct </span>RChunks&lt;<span class="lifetime">&#39;a</span>, T, O&gt;
+#[doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/slice/iter/RChunks.md"</span>)]
+</span><span class="kw">pub struct </span>RChunks&lt;<span class="lifetime">'a</span>, T, O&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 {
 	<span class="doccomment">/// The source bit-slice.
-	</span>slice: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt;,
+	</span>slice: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt;,
 	<span class="doccomment">/// The width of the produced chunks.
 	</span>width: usize,
 }
 
-<span class="macro">group!</span>(RChunks =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt; {
+<span class="macro">group!</span>(RChunks =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt; {
 	<span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt; {
 		<span class="kw">let </span>len = <span class="self">self</span>.slice.len();
 		<span class="kw">if </span>len == <span class="number">0 </span>{
@@ -3767,19 +3769,19 @@
 });
 
 <span class="attr">#[derive(Debug)]
-#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/slice/iter/RChunksMut.md&quot;</span>)]
-</span><span class="kw">pub struct </span>RChunksMut&lt;<span class="lifetime">&#39;a</span>, T, O&gt;
+#[doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/slice/iter/RChunksMut.md"</span>)]
+</span><span class="kw">pub struct </span>RChunksMut&lt;<span class="lifetime">'a</span>, T, O&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 {
 	<span class="doccomment">/// The source bit-slice, marked with the alias tainting.
-	</span>slice: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;,
+	</span>slice: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;,
 	<span class="doccomment">/// The width of the produced chunks.
 	</span>width: usize,
 }
 
-<span class="macro">group!</span>(RChunksMut =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt; {
+<span class="macro">group!</span>(RChunksMut =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt; {
 	<span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt; {
 		<span class="kw">let </span>slice = mem::take(<span class="kw-2">&amp;mut </span><span class="self">self</span>.slice);
 		<span class="kw">let </span>len = slice.len();
@@ -3850,28 +3852,28 @@
 });
 
 <span class="attr">#[derive(Clone, Debug)]
-#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/slice/iter/RChunksExact.md&quot;</span>)]
-</span><span class="kw">pub struct </span>RChunksExact&lt;<span class="lifetime">&#39;a</span>, T, O&gt;
+#[doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/slice/iter/RChunksExact.md"</span>)]
+</span><span class="kw">pub struct </span>RChunksExact&lt;<span class="lifetime">'a</span>, T, O&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 {
 	<span class="doccomment">/// The source bit-slice.
-	</span>slice: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt;,
+	</span>slice: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt;,
 	<span class="doccomment">/// Any remnant of the source bit-slice that will not be yielded as a chunk.
-	</span>extra: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt;,
+	</span>extra: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt;,
 	<span class="doccomment">/// The width of the produced chunks.
 	</span>width: usize,
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O&gt; RChunksExact&lt;<span class="lifetime">&#39;a</span>, T, O&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O&gt; RChunksExact&lt;<span class="lifetime">'a</span>, T, O&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 {
 	<span class="attr">#[allow(missing_docs, clippy::missing_docs_in_private_items)]
-	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>new(slice: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt;, width: usize) -&gt; <span class="self">Self </span>{
-		<span class="macro">assert_ne!</span>(width, <span class="number">0</span>, <span class="string">&quot;Chunk width cannot be 0&quot;</span>);
+	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>new(slice: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt;, width: usize) -&gt; <span class="self">Self </span>{
+		<span class="macro">assert_ne!</span>(width, <span class="number">0</span>, <span class="string">"Chunk width cannot be 0"</span>);
 		<span class="kw">let </span>(extra, slice) =
 			<span class="kw">unsafe </span>{ slice.split_at_unchecked(slice.len() % width) };
 		<span class="self">Self </span>{
@@ -3888,12 +3890,12 @@
 	/// [`RChunksExact::remainder`](core::slice::RChunksExact::remainder)
 	</span><span class="attr">#[inline]
 	#[cfg(not(tarpaulin_include))]
-	</span><span class="kw">pub fn </span>remainder(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt; {
+	</span><span class="kw">pub fn </span>remainder(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt; {
 		<span class="self">self</span>.extra
 	}
 }
 
-<span class="macro">group!</span>(RChunksExact =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt; {
+<span class="macro">group!</span>(RChunksExact =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt; {
 	<span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt; {
 		<span class="kw">let </span>len = <span class="self">self</span>.slice.len();
 		<span class="kw">if </span>len &lt; <span class="self">self</span>.width {
@@ -3952,28 +3954,28 @@
 });
 
 <span class="attr">#[derive(Debug)]
-#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/slice/iter/RChunksExactMut.md&quot;</span>)]
-</span><span class="kw">pub struct </span>RChunksExactMut&lt;<span class="lifetime">&#39;a</span>, T, O&gt;
+#[doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/slice/iter/RChunksExactMut.md"</span>)]
+</span><span class="kw">pub struct </span>RChunksExactMut&lt;<span class="lifetime">'a</span>, T, O&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 {
 	<span class="doccomment">/// The source bit-slice, marked with the alias tainting.
-	</span>slice: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;,
+	</span>slice: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;,
 	<span class="doccomment">/// Any remnant of the source bit-slice that will not be yielded as a chunk.
-	</span>extra: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;,
+	</span>extra: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;,
 	<span class="doccomment">/// The width of the produced chunks.
 	</span>width: usize,
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O&gt; RChunksExactMut&lt;<span class="lifetime">&#39;a</span>, T, O&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O&gt; RChunksExactMut&lt;<span class="lifetime">'a</span>, T, O&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 {
 	<span class="attr">#[allow(missing_docs, clippy::missing_docs_in_private_items)]
-	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>new(slice: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt;, width: usize) -&gt; <span class="self">Self </span>{
-		<span class="macro">assert_ne!</span>(width, <span class="number">0</span>, <span class="string">&quot;Chunk width cannot be 0&quot;</span>);
+	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>new(slice: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt;, width: usize) -&gt; <span class="self">Self </span>{
+		<span class="macro">assert_ne!</span>(width, <span class="number">0</span>, <span class="string">"Chunk width cannot be 0"</span>);
 		<span class="kw">let </span>(extra, slice) =
 			<span class="kw">unsafe </span>{ slice.split_at_unchecked_mut(slice.len() % width) };
 		<span class="self">Self </span>{
@@ -3993,7 +3995,7 @@
 	/// [0]: core::slice::RChunksExactMut::into_remainder
 	</span><span class="attr">#[inline]
 	#[cfg(not(tarpaulin_include))]
-	</span><span class="kw">pub fn </span>into_remainder(<span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt; {
+	</span><span class="kw">pub fn </span>into_remainder(<span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt; {
 		<span class="self">self</span>.extra
 	}
 
@@ -4014,12 +4016,12 @@
 	/// assert!(chunks.take_remainder().is_empty());
 	/// ```
 	</span><span class="attr">#[inline]
-	</span><span class="kw">pub fn </span>take_remainder(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt; {
+	</span><span class="kw">pub fn </span>take_remainder(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt; {
 		mem::take(<span class="kw-2">&amp;mut </span><span class="self">self</span>.extra)
 	}
 }
 
-<span class="macro">group!</span>(RChunksExactMut =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt; {
+<span class="macro">group!</span>(RChunksExactMut =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt; {
 	<span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt; {
 		<span class="kw">let </span>slice = mem::take(<span class="kw-2">&amp;mut </span><span class="self">self</span>.slice);
 		<span class="kw">let </span>len = slice.len();
@@ -4083,18 +4085,18 @@
 <span class="doccomment">/// Creates the `new` function for the easy grouping iterators.
 </span><span class="macro">macro_rules! </span>new_group {
 	($(<span class="macro-nonterminal">$t</span>:ident $(<span class="macro-nonterminal">$m</span>:ident)<span class="question-mark">? </span>$(.<span class="macro-nonterminal">$a</span>:ident())<span class="question-mark">?</span>),+ $(,)<span class="question-mark">?</span>) =&gt; { $(
-		<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O&gt; <span class="macro-nonterminal">$t</span>&lt;<span class="lifetime">&#39;a</span>, T, O&gt;
+		<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O&gt; <span class="macro-nonterminal">$t</span>&lt;<span class="lifetime">'a</span>, T, O&gt;
 		<span class="kw">where
-			</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+			</span>T: <span class="lifetime">'a </span>+ BitStore,
 			O: BitOrder,
 		{
 			<span class="attr">#[inline]
 			#[allow(missing_docs, clippy::missing_docs_in_private_items)]
 			</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>new(
-				slice: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>$(<span class="macro-nonterminal">$m</span>)<span class="question-mark">? </span>BitSlice&lt;T, O&gt;,
+				slice: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>$(<span class="macro-nonterminal">$m</span>)<span class="question-mark">? </span>BitSlice&lt;T, O&gt;,
 				width: usize,
 			) -&gt; <span class="self">Self </span>{
-				<span class="macro">assert_ne!</span>(width, <span class="number">0</span>, <span class="string">&quot;view width cannot be 0&quot;</span>);
+				<span class="macro">assert_ne!</span>(width, <span class="number">0</span>, <span class="string">"view width cannot be 0"</span>);
 				<span class="kw">let </span>slice = slice$(.<span class="macro-nonterminal">$a</span>())<span class="question-mark">?</span>;
 				<span class="self">Self </span>{ slice, width }
 			}
@@ -4117,9 +4119,9 @@
 		<span class="macro-nonterminal">$item</span>:ty
 		$(<span class="kw">where </span><span class="macro-nonterminal">$alias</span>:ident)<span class="question-mark">? </span>{ <span class="macro-nonterminal">$next</span>:item <span class="macro-nonterminal">$next_back</span>:item }
 	) =&gt; {
-		<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O, P&gt; <span class="macro-nonterminal">$iter</span>&lt;<span class="lifetime">&#39;a</span>, T, O, P&gt;
+		<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O, P&gt; <span class="macro-nonterminal">$iter</span>&lt;<span class="lifetime">'a</span>, T, O, P&gt;
 		<span class="kw">where
-			</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+			</span>T: <span class="lifetime">'a </span>+ BitStore,
 			O: BitOrder,
 			P: FnMut(usize, <span class="kw-2">&amp;</span>bool) -&gt; bool,
 		{
@@ -4132,7 +4134,7 @@
 			}
 		}
 
-		<span class="kw">impl</span>&lt;T, O, P&gt; Debug <span class="kw">for </span><span class="macro-nonterminal">$iter</span>&lt;<span class="lifetime">&#39;_</span>, T, O, P&gt;
+		<span class="kw">impl</span>&lt;T, O, P&gt; Debug <span class="kw">for </span><span class="macro-nonterminal">$iter</span>&lt;<span class="lifetime">'_</span>, T, O, P&gt;
 		<span class="kw">where
 			</span>T: BitStore,
 			O: BitOrder,
@@ -4141,15 +4143,15 @@
 			<span class="attr">#[inline]
 			</span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
 				fmt.debug_struct(<span class="macro">stringify!</span>(<span class="macro-nonterminal">$iter</span>))
-					.field(<span class="string">&quot;slice&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.slice)
-					.field(<span class="string">&quot;done&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.done)
+					.field(<span class="string">"slice"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.slice)
+					.field(<span class="string">"done"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.done)
 					.finish()
 			}
 		}
 
-		<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O, P&gt; Iterator <span class="kw">for </span><span class="macro-nonterminal">$iter</span>&lt;<span class="lifetime">&#39;a</span>, T, O, P&gt;
+		<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O, P&gt; Iterator <span class="kw">for </span><span class="macro-nonterminal">$iter</span>&lt;<span class="lifetime">'a</span>, T, O, P&gt;
 		<span class="kw">where
-			</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+			</span>T: <span class="lifetime">'a </span>+ BitStore,
 			O: BitOrder,
 			P: FnMut(usize, <span class="kw-2">&amp;</span>bool) -&gt; bool,
 		{
@@ -4169,9 +4171,9 @@
 			}
 		}
 
-		<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O, P&gt; DoubleEndedIterator <span class="kw">for </span><span class="macro-nonterminal">$iter</span>&lt;<span class="lifetime">&#39;a</span>, T, O, P&gt;
+		<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O, P&gt; DoubleEndedIterator <span class="kw">for </span><span class="macro-nonterminal">$iter</span>&lt;<span class="lifetime">'a</span>, T, O, P&gt;
 		<span class="kw">where
-			</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+			</span>T: <span class="lifetime">'a </span>+ BitStore,
 			O: BitOrder,
 			P: FnMut(usize, <span class="kw-2">&amp;</span>bool) -&gt; bool,
 		{
@@ -4179,17 +4181,17 @@
 			</span><span class="macro-nonterminal">$next_back
 		</span>}
 
-		<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O, P&gt; FusedIterator <span class="kw">for </span><span class="macro-nonterminal">$iter</span>&lt;<span class="lifetime">&#39;a</span>, T, O, P&gt;
+		<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O, P&gt; FusedIterator <span class="kw">for </span><span class="macro-nonterminal">$iter</span>&lt;<span class="lifetime">'a</span>, T, O, P&gt;
 		<span class="kw">where
-			</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+			</span>T: <span class="lifetime">'a </span>+ BitStore,
 			O: BitOrder,
 			P: FnMut(usize, <span class="kw-2">&amp;</span>bool) -&gt; bool,
 		{
 		}
 
-		<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O, P&gt; SplitIter <span class="kw">for </span><span class="macro-nonterminal">$iter</span>&lt;<span class="lifetime">&#39;a</span>, T, O, P&gt;
+		<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O, P&gt; SplitIter <span class="kw">for </span><span class="macro-nonterminal">$iter</span>&lt;<span class="lifetime">'a</span>, T, O, P&gt;
 		<span class="kw">where
-			</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+			</span>T: <span class="lifetime">'a </span>+ BitStore,
 			O: BitOrder,
 			P: FnMut(usize, <span class="kw-2">&amp;</span>bool) -&gt; bool,
 		{
@@ -4208,24 +4210,24 @@
 }
 
 <span class="attr">#[derive(Clone)]
-#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/slice/iter/Split.md&quot;</span>)]
-</span><span class="kw">pub struct </span>Split&lt;<span class="lifetime">&#39;a</span>, T, O, P&gt;
+#[doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/slice/iter/Split.md"</span>)]
+</span><span class="kw">pub struct </span>Split&lt;<span class="lifetime">'a</span>, T, O, P&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 	P: FnMut(usize, <span class="kw-2">&amp;</span>bool) -&gt; bool,
 {
 	<span class="doccomment">/// The [`BitSlice`] being split.
 	///
 	/// [`BitSlice`]: crate::slice::BitSlice
-	</span>slice: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt;,
+	</span>slice: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt;,
 	<span class="doccomment">/// The function used to test whether a split should occur.
 	</span>pred:  P,
 	<span class="doccomment">/// Whether the split is finished.
 	</span>done:  bool,
 }
 
-<span class="macro">split!</span>(Split =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt; {
+<span class="macro">split!</span>(Split =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt; {
 	<span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt; {
 		<span class="kw">if </span><span class="self">self</span>.done {
 			<span class="kw">return </span><span class="prelude-val">None</span>;
@@ -4265,22 +4267,22 @@
 	}
 });
 
-<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/slice/iter/SplitMut.md&quot;</span>)]
-</span><span class="kw">pub struct </span>SplitMut&lt;<span class="lifetime">&#39;a</span>, T, O, P&gt;
+<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/slice/iter/SplitMut.md"</span>)]
+</span><span class="kw">pub struct </span>SplitMut&lt;<span class="lifetime">'a</span>, T, O, P&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 	P: FnMut(usize, <span class="kw-2">&amp;</span>bool) -&gt; bool,
 {
 	<span class="doccomment">/// The source bit-slice, marked with the alias tainting.
-	</span>slice: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;,
+	</span>slice: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;,
 	<span class="doccomment">/// The function that tests each bit for whether it is a split point.
 	</span>pred:  P,
 	<span class="doccomment">/// Marks whether iteration has concluded, without emptying the `slice`.
 	</span>done:  bool,
 }
 
-<span class="macro">split!</span>(SplitMut =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt; {
+<span class="macro">split!</span>(SplitMut =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt; {
 	<span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt; {
 		<span class="kw">if </span><span class="self">self</span>.done {
 			<span class="kw">return </span><span class="prelude-val">None</span>;
@@ -4331,22 +4333,22 @@
 });
 
 <span class="attr">#[derive(Clone)]
-#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/slice/iter/SplitInclusive.md&quot;</span>)]
-</span><span class="kw">pub struct </span>SplitInclusive&lt;<span class="lifetime">&#39;a</span>, T, O, P&gt;
+#[doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/slice/iter/SplitInclusive.md"</span>)]
+</span><span class="kw">pub struct </span>SplitInclusive&lt;<span class="lifetime">'a</span>, T, O, P&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 	P: FnMut(usize, <span class="kw-2">&amp;</span>bool) -&gt; bool,
 {
 	<span class="doccomment">/// The source bit-slice.
-	</span>slice: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt;,
+	</span>slice: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt;,
 	<span class="doccomment">/// The function that tests each bit for whether it is a split point.
 	</span>pred:  P,
 	<span class="doccomment">/// Marks whether iteration has concluded, without emptying the `slice`.
 	</span>done:  bool,
 }
 
-<span class="macro">split!</span>(SplitInclusive =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt; {
+<span class="macro">split!</span>(SplitInclusive =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt; {
 	<span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt; {
 		<span class="kw">if </span><span class="self">self</span>.done {
 			<span class="kw">return </span><span class="prelude-val">None</span>;
@@ -4392,22 +4394,22 @@
 	}
 });
 
-<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/slice/iter/SplitInclusiveMut.md&quot;</span>)]
-</span><span class="kw">pub struct </span>SplitInclusiveMut&lt;<span class="lifetime">&#39;a</span>, T, O, P&gt;
+<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/slice/iter/SplitInclusiveMut.md"</span>)]
+</span><span class="kw">pub struct </span>SplitInclusiveMut&lt;<span class="lifetime">'a</span>, T, O, P&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 	P: FnMut(usize, <span class="kw-2">&amp;</span>bool) -&gt; bool,
 {
 	<span class="doccomment">/// The source bit-slice, marked with the alias tainting.
-	</span>slice: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;,
+	</span>slice: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;,
 	<span class="doccomment">/// The function that tests each bit for whether it is a split point.
 	</span>pred:  P,
 	<span class="doccomment">/// Marks whether iteration has concluded, without emptying the `slice`.
 	</span>done:  bool,
 }
 
-<span class="macro">split!</span>(SplitInclusiveMut =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt; {
+<span class="macro">split!</span>(SplitInclusiveMut =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt; {
 	<span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt; {
 		<span class="kw">if </span><span class="self">self</span>.done {
 			<span class="kw">return </span><span class="prelude-val">None</span>;
@@ -4461,24 +4463,24 @@
 });
 
 <span class="attr">#[derive(Clone)]
-#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/slice/iter/RSplit.md&quot;</span>)]
-</span><span class="kw">pub struct </span>RSplit&lt;<span class="lifetime">&#39;a</span>, T, O, P&gt;
+#[doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/slice/iter/RSplit.md"</span>)]
+</span><span class="kw">pub struct </span>RSplit&lt;<span class="lifetime">'a</span>, T, O, P&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 	P: FnMut(usize, <span class="kw-2">&amp;</span>bool) -&gt; bool,
 {
 	<span class="doccomment">/// The source bit-slice.
-	</span>slice: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt;,
+	</span>slice: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt;,
 	<span class="doccomment">/// The function that tests each bit for whether it is a split point.
 	</span>pred:  P,
 	<span class="doccomment">/// Marks whether iteration has concluded, without emptying the `slice`.
 	</span>done:  bool,
 }
 
-<span class="macro">split!</span>(RSplit =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt; {
+<span class="macro">split!</span>(RSplit =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt; {
 	<span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt; {
-		<span class="kw">let </span><span class="kw-2">mut </span>split = Split::&lt;<span class="lifetime">&#39;a</span>, T, O, <span class="kw-2">&amp;mut </span>P&gt; {
+		<span class="kw">let </span><span class="kw-2">mut </span>split = Split::&lt;<span class="lifetime">'a</span>, T, O, <span class="kw-2">&amp;mut </span>P&gt; {
 			slice: mem::take(<span class="kw-2">&amp;mut </span><span class="self">self</span>.slice),
 			pred: <span class="kw-2">&amp;mut </span><span class="self">self</span>.pred,
 			done: <span class="self">self</span>.done,
@@ -4491,7 +4493,7 @@
 	}
 
 	<span class="kw">fn </span>next_back(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt; {
-		<span class="kw">let </span><span class="kw-2">mut </span>split = Split::&lt;<span class="lifetime">&#39;a</span>, T, O, <span class="kw-2">&amp;mut </span>P&gt; {
+		<span class="kw">let </span><span class="kw-2">mut </span>split = Split::&lt;<span class="lifetime">'a</span>, T, O, <span class="kw-2">&amp;mut </span>P&gt; {
 			slice: mem::take(<span class="kw-2">&amp;mut </span><span class="self">self</span>.slice),
 			pred: <span class="kw-2">&amp;mut </span><span class="self">self</span>.pred,
 			done: <span class="self">self</span>.done,
@@ -4504,24 +4506,24 @@
 	}
 });
 
-<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/slice/iter/RSplitMut.md&quot;</span>)]
-</span><span class="kw">pub struct </span>RSplitMut&lt;<span class="lifetime">&#39;a</span>, T, O, P&gt;
+<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/slice/iter/RSplitMut.md"</span>)]
+</span><span class="kw">pub struct </span>RSplitMut&lt;<span class="lifetime">'a</span>, T, O, P&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 	P: FnMut(usize, <span class="kw-2">&amp;</span>bool) -&gt; bool,
 {
 	<span class="doccomment">/// The source bit-slice, marked with the alias tainting.
-	</span>slice: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;,
+	</span>slice: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;,
 	<span class="doccomment">/// The function that tests each bit for whether it is a split point.
 	</span>pred:  P,
 	<span class="doccomment">/// Marks whether iteration has concluded, without emptying the `slice`.
 	</span>done:  bool,
 }
 
-<span class="macro">split!</span>(RSplitMut =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt; {
+<span class="macro">split!</span>(RSplitMut =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt; {
 	<span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt; {
-		<span class="kw">let </span><span class="kw-2">mut </span>split = SplitMut::&lt;<span class="lifetime">&#39;a</span>, T, O, <span class="kw-2">&amp;mut </span>P&gt; {
+		<span class="kw">let </span><span class="kw-2">mut </span>split = SplitMut::&lt;<span class="lifetime">'a</span>, T, O, <span class="kw-2">&amp;mut </span>P&gt; {
 			slice: mem::take(<span class="kw-2">&amp;mut </span><span class="self">self</span>.slice),
 			pred: <span class="kw-2">&amp;mut </span><span class="self">self</span>.pred,
 			done: <span class="self">self</span>.done,
@@ -4534,7 +4536,7 @@
 	}
 
 	<span class="kw">fn </span>next_back(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt; {
-		<span class="kw">let </span><span class="kw-2">mut </span>split = SplitMut::&lt;<span class="lifetime">&#39;a</span>, T, O, <span class="kw-2">&amp;mut </span>P&gt; {
+		<span class="kw">let </span><span class="kw-2">mut </span>split = SplitMut::&lt;<span class="lifetime">'a</span>, T, O, <span class="kw-2">&amp;mut </span>P&gt; {
 			slice: mem::take(<span class="kw-2">&amp;mut </span><span class="self">self</span>.slice),
 			pred: <span class="kw-2">&amp;mut </span><span class="self">self</span>.pred,
 			done: <span class="self">self</span>.done,
@@ -4555,55 +4557,55 @@
 }
 
 <span class="attr">#[derive(Clone)]
-#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/slice/iter/SplitN.md&quot;</span>)]
-</span><span class="kw">pub struct </span>SplitN&lt;<span class="lifetime">&#39;a</span>, T, O, P&gt;
+#[doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/slice/iter/SplitN.md"</span>)]
+</span><span class="kw">pub struct </span>SplitN&lt;<span class="lifetime">'a</span>, T, O, P&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 	P: FnMut(usize, <span class="kw-2">&amp;</span>bool) -&gt; bool,
 {
 	<span class="doccomment">/// The interior splitter.
-	</span>inner: Split&lt;<span class="lifetime">&#39;a</span>, T, O, P&gt;,
+	</span>inner: Split&lt;<span class="lifetime">'a</span>, T, O, P&gt;,
 	<span class="doccomment">/// The number of permissible splits remaining.
 	</span>count: usize,
 }
 
-<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/slice/iter/SplitNMut.md&quot;</span>)]
-</span><span class="kw">pub struct </span>SplitNMut&lt;<span class="lifetime">&#39;a</span>, T, O, P&gt;
+<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/slice/iter/SplitNMut.md"</span>)]
+</span><span class="kw">pub struct </span>SplitNMut&lt;<span class="lifetime">'a</span>, T, O, P&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 	P: FnMut(usize, <span class="kw-2">&amp;</span>bool) -&gt; bool,
 {
 	<span class="doccomment">/// The interior splitter.
-	</span>inner: SplitMut&lt;<span class="lifetime">&#39;a</span>, T, O, P&gt;,
+	</span>inner: SplitMut&lt;<span class="lifetime">'a</span>, T, O, P&gt;,
 	<span class="doccomment">/// The number of permissible splits remaining.
 	</span>count: usize,
 }
 
 <span class="attr">#[derive(Clone)]
-#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/slice/iter/RSplitN.md&quot;</span>)]
-</span><span class="kw">pub struct </span>RSplitN&lt;<span class="lifetime">&#39;a</span>, T, O, P&gt;
+#[doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/slice/iter/RSplitN.md"</span>)]
+</span><span class="kw">pub struct </span>RSplitN&lt;<span class="lifetime">'a</span>, T, O, P&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 	P: FnMut(usize, <span class="kw-2">&amp;</span>bool) -&gt; bool,
 {
 	<span class="doccomment">/// The interior splitter.
-	</span>inner: RSplit&lt;<span class="lifetime">&#39;a</span>, T, O, P&gt;,
+	</span>inner: RSplit&lt;<span class="lifetime">'a</span>, T, O, P&gt;,
 	<span class="doccomment">/// The number of permissible splits remaining.
 	</span>count: usize,
 }
 
-<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/slice/iter/RSplitNMut.md&quot;</span>)]
-</span><span class="kw">pub struct </span>RSplitNMut&lt;<span class="lifetime">&#39;a</span>, T, O, P&gt;
+<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/slice/iter/RSplitNMut.md"</span>)]
+</span><span class="kw">pub struct </span>RSplitNMut&lt;<span class="lifetime">'a</span>, T, O, P&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 	P: FnMut(usize, <span class="kw-2">&amp;</span>bool) -&gt; bool,
 {
 	<span class="doccomment">/// The interior splitter.
-	</span>inner: RSplitMut&lt;<span class="lifetime">&#39;a</span>, T, O, P&gt;,
+	</span>inner: RSplitMut&lt;<span class="lifetime">'a</span>, T, O, P&gt;,
 	<span class="doccomment">/// The number of permissible splits remaining.
 	</span>count: usize,
 }
@@ -4613,9 +4615,9 @@
 	($(
 		<span class="macro-nonterminal">$outer</span>:ident =&gt; <span class="macro-nonterminal">$inner</span>:ident =&gt; <span class="macro-nonterminal">$item</span>:ty $(<span class="kw">where </span><span class="macro-nonterminal">$alias</span>:ident)<span class="question-mark">?
 	</span>);+ $(;)<span class="question-mark">?</span>) =&gt; { $(
-		<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O, P&gt; <span class="macro-nonterminal">$outer</span>&lt;<span class="lifetime">&#39;a</span>, T, O, P&gt;
+		<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O, P&gt; <span class="macro-nonterminal">$outer</span>&lt;<span class="lifetime">'a</span>, T, O, P&gt;
 		<span class="kw">where
-			</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+			</span>T: <span class="lifetime">'a </span>+ BitStore,
 			O: BitOrder,
 			P: FnMut(usize, <span class="kw-2">&amp;</span>bool) -&gt; bool,
 		{
@@ -4627,13 +4629,13 @@
 				count: usize,
 			) -&gt; <span class="self">Self </span>{
 				<span class="self">Self </span>{
-					inner: &lt;<span class="macro-nonterminal">$inner</span>&lt;<span class="lifetime">&#39;a</span>, T, O, P&gt;&gt;::new(slice, pred),
+					inner: &lt;<span class="macro-nonterminal">$inner</span>&lt;<span class="lifetime">'a</span>, T, O, P&gt;&gt;::new(slice, pred),
 					count,
 				}
 			}
 		}
 
-		<span class="kw">impl</span>&lt;T, O, P&gt; Debug <span class="kw">for </span><span class="macro-nonterminal">$outer</span>&lt;<span class="lifetime">&#39;_</span>, T, O, P&gt;
+		<span class="kw">impl</span>&lt;T, O, P&gt; Debug <span class="kw">for </span><span class="macro-nonterminal">$outer</span>&lt;<span class="lifetime">'_</span>, T, O, P&gt;
 		<span class="kw">where
 			</span>T: BitStore,
 			O: BitOrder,
@@ -4642,20 +4644,20 @@
 			<span class="attr">#[inline]
 			</span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
 				fmt.debug_struct(<span class="macro">stringify!</span>(<span class="macro-nonterminal">$outer</span>))
-					.field(<span class="string">&quot;slice&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.inner.slice)
-					.field(<span class="string">&quot;count&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.count)
+					.field(<span class="string">"slice"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.inner.slice)
+					.field(<span class="string">"count"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.count)
 					.finish()
 			}
 		}
 
-		<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O, P&gt; Iterator <span class="kw">for </span><span class="macro-nonterminal">$outer</span>&lt;<span class="lifetime">&#39;a</span>, T, O, P&gt;
+		<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O, P&gt; Iterator <span class="kw">for </span><span class="macro-nonterminal">$outer</span>&lt;<span class="lifetime">'a</span>, T, O, P&gt;
 		<span class="kw">where
-			</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+			</span>T: <span class="lifetime">'a </span>+ BitStore,
 			O: BitOrder,
 			P: FnMut(usize, <span class="kw-2">&amp;</span>bool) -&gt; bool,
 			$( T::<span class="macro-nonterminal">$alias</span>: radium::Radium&lt;&lt;&lt;T <span class="kw">as </span>BitStore&gt;::Alias <span class="kw">as </span>BitStore&gt;::Mem&gt;, )<span class="question-mark">?
 		</span>{
-			<span class="kw">type </span>Item = &lt;<span class="macro-nonterminal">$inner </span>&lt;<span class="lifetime">&#39;a</span>, T, O, P&gt; <span class="kw">as </span>Iterator&gt;::Item;
+			<span class="kw">type </span>Item = &lt;<span class="macro-nonterminal">$inner </span>&lt;<span class="lifetime">'a</span>, T, O, P&gt; <span class="kw">as </span>Iterator&gt;::Item;
 
 			<span class="attr">#[inline]
 			</span><span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt; {
@@ -4679,7 +4681,7 @@
 			}
 		}
 
-		<span class="kw">impl</span>&lt;T, O, P&gt; FusedIterator <span class="kw">for </span><span class="macro-nonterminal">$outer</span>&lt;<span class="lifetime">&#39;_</span>, T, O, P&gt;
+		<span class="kw">impl</span>&lt;T, O, P&gt; FusedIterator <span class="kw">for </span><span class="macro-nonterminal">$outer</span>&lt;<span class="lifetime">'_</span>, T, O, P&gt;
 		<span class="kw">where
 			</span>T: BitStore,
 			O: BitOrder,
@@ -4691,34 +4693,34 @@
 }
 
 <span class="macro">split_n! </span>{
-	SplitN =&gt; Split =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt;;
-	SplitNMut =&gt; SplitMut =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;;
-	RSplitN =&gt; RSplit =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt;;
-	RSplitNMut =&gt; RSplitMut =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;;
+	SplitN =&gt; Split =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt;;
+	SplitNMut =&gt; SplitMut =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;;
+	RSplitN =&gt; RSplit =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt;;
+	RSplitNMut =&gt; RSplitMut =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;;
 }
 
 <span class="attr">#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
-#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/slice/iter/IterOnes.md&quot;</span>)]
-</span><span class="kw">pub struct </span>IterOnes&lt;<span class="lifetime">&#39;a</span>, T, O&gt;
+#[doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/slice/iter/IterOnes.md"</span>)]
+</span><span class="kw">pub struct </span>IterOnes&lt;<span class="lifetime">'a</span>, T, O&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 {
 	<span class="doccomment">/// The remaining bit-slice whose `1` bits are to be found.
-	</span>inner: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt;,
+	</span>inner: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt;,
 	<span class="doccomment">/// The offset from the front of the original bit-slice to the current
 	/// `.inner`.
 	</span>front: usize,
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O&gt; IterOnes&lt;<span class="lifetime">&#39;a</span>, T, O&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O&gt; IterOnes&lt;<span class="lifetime">'a</span>, T, O&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 {
 	<span class="attr">#[inline]
 	#[allow(missing_docs, clippy::missing_docs_in_private_items)]
-	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>new(slice: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt;) -&gt; <span class="self">Self </span>{
+	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>new(slice: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt;) -&gt; <span class="self">Self </span>{
 		<span class="self">Self </span>{
 			inner: slice,
 			front: <span class="number">0</span>,
@@ -4726,7 +4728,7 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;T, O&gt; Default <span class="kw">for </span>IterOnes&lt;<span class="lifetime">&#39;_</span>, T, O&gt;
+<span class="kw">impl</span>&lt;T, O&gt; Default <span class="kw">for </span>IterOnes&lt;<span class="lifetime">'_</span>, T, O&gt;
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
@@ -4740,7 +4742,7 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;T, O&gt; Iterator <span class="kw">for </span>IterOnes&lt;<span class="lifetime">&#39;_</span>, T, O&gt;
+<span class="kw">impl</span>&lt;T, O&gt; Iterator <span class="kw">for </span>IterOnes&lt;<span class="lifetime">'_</span>, T, O&gt;
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
@@ -4780,7 +4782,7 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;T, O&gt; DoubleEndedIterator <span class="kw">for </span>IterOnes&lt;<span class="lifetime">&#39;_</span>, T, O&gt;
+<span class="kw">impl</span>&lt;T, O&gt; DoubleEndedIterator <span class="kw">for </span>IterOnes&lt;<span class="lifetime">'_</span>, T, O&gt;
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
@@ -4811,7 +4813,7 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;T, O&gt; ExactSizeIterator <span class="kw">for </span>IterOnes&lt;<span class="lifetime">&#39;_</span>, T, O&gt;
+<span class="kw">impl</span>&lt;T, O&gt; ExactSizeIterator <span class="kw">for </span>IterOnes&lt;<span class="lifetime">'_</span>, T, O&gt;
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
@@ -4822,34 +4824,34 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;T, O&gt; FusedIterator <span class="kw">for </span>IterOnes&lt;<span class="lifetime">&#39;_</span>, T, O&gt;
+<span class="kw">impl</span>&lt;T, O&gt; FusedIterator <span class="kw">for </span>IterOnes&lt;<span class="lifetime">'_</span>, T, O&gt;
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
 {
 }
 
-<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/slice/iter/IterZeros.md&quot;</span>)]
+<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/slice/iter/IterZeros.md"</span>)]
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
-</span><span class="kw">pub struct </span>IterZeros&lt;<span class="lifetime">&#39;a</span>, T, O&gt;
+</span><span class="kw">pub struct </span>IterZeros&lt;<span class="lifetime">'a</span>, T, O&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 {
 	<span class="doccomment">/// The remaining bit-slice whose `0` bits are to be found.
-	</span>inner: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt;,
+	</span>inner: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt;,
 	<span class="doccomment">/// The offset from the front of the original bit-slice to the current
 	/// `.inner`.
 	</span>front: usize,
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O&gt; IterZeros&lt;<span class="lifetime">&#39;a</span>, T, O&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O&gt; IterZeros&lt;<span class="lifetime">'a</span>, T, O&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 {
 	<span class="attr">#[allow(missing_docs, clippy::missing_docs_in_private_items)]
-	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>new(slice: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt;) -&gt; <span class="self">Self </span>{
+	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>new(slice: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt;) -&gt; <span class="self">Self </span>{
 		<span class="self">Self </span>{
 			inner: slice,
 			front: <span class="number">0</span>,
@@ -4857,7 +4859,7 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;T, O&gt; Default <span class="kw">for </span>IterZeros&lt;<span class="lifetime">&#39;_</span>, T, O&gt;
+<span class="kw">impl</span>&lt;T, O&gt; Default <span class="kw">for </span>IterZeros&lt;<span class="lifetime">'_</span>, T, O&gt;
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
@@ -4871,7 +4873,7 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;T, O&gt; Iterator <span class="kw">for </span>IterZeros&lt;<span class="lifetime">&#39;_</span>, T, O&gt;
+<span class="kw">impl</span>&lt;T, O&gt; Iterator <span class="kw">for </span>IterZeros&lt;<span class="lifetime">'_</span>, T, O&gt;
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
@@ -4908,7 +4910,7 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;T, O&gt; DoubleEndedIterator <span class="kw">for </span>IterZeros&lt;<span class="lifetime">&#39;_</span>, T, O&gt;
+<span class="kw">impl</span>&lt;T, O&gt; DoubleEndedIterator <span class="kw">for </span>IterZeros&lt;<span class="lifetime">'_</span>, T, O&gt;
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
@@ -4939,7 +4941,7 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;T, O&gt; ExactSizeIterator <span class="kw">for </span>IterZeros&lt;<span class="lifetime">&#39;_</span>, T, O&gt;
+<span class="kw">impl</span>&lt;T, O&gt; ExactSizeIterator <span class="kw">for </span>IterZeros&lt;<span class="lifetime">'_</span>, T, O&gt;
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
@@ -4950,7 +4952,7 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;T, O&gt; FusedIterator <span class="kw">for </span>IterZeros&lt;<span class="lifetime">&#39;_</span>, T, O&gt;
+<span class="kw">impl</span>&lt;T, O&gt; FusedIterator <span class="kw">for </span>IterZeros&lt;<span class="lifetime">'_</span>, T, O&gt;
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
@@ -4976,20 +4978,20 @@ the source iterator must also be provided so that methods on it can be named.
 		=&gt; <span class="macro-nonterminal">$map</span>:path;
 	)+) =&gt; { $(
 		<span class="attr">#[repr(transparent)]
-		#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/slice/iter/NoAlias.md&quot;</span>)]
-		</span><span class="kw">pub struct </span><span class="macro-nonterminal">$to</span>&lt;<span class="lifetime">&#39;a</span>, T, O$(, <span class="macro-nonterminal">$p</span>)<span class="question-mark">?</span>&gt;
+		#[doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/slice/iter/NoAlias.md"</span>)]
+		</span><span class="kw">pub struct </span><span class="macro-nonterminal">$to</span>&lt;<span class="lifetime">'a</span>, T, O$(, <span class="macro-nonterminal">$p</span>)<span class="question-mark">?</span>&gt;
 		<span class="kw">where
-			</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+			</span>T: <span class="lifetime">'a </span>+ BitStore,
 			O: BitOrder,
 			$(<span class="macro-nonterminal">$p</span>: FnMut(usize, <span class="kw-2">&amp;</span>bool) -&gt; bool,)<span class="question-mark">?
 		</span>{
 			<span class="doccomment">/// The actual iterator that this wraps.
-			</span>inner: <span class="macro-nonterminal">$from</span>&lt;<span class="lifetime">&#39;a</span>, T, O$(, <span class="macro-nonterminal">$p</span>)<span class="question-mark">?</span>&gt;,
+			</span>inner: <span class="macro-nonterminal">$from</span>&lt;<span class="lifetime">'a</span>, T, O$(, <span class="macro-nonterminal">$p</span>)<span class="question-mark">?</span>&gt;,
 		}
 
-		<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O$(, <span class="macro-nonterminal">$p</span>)<span class="question-mark">?</span>&gt; <span class="macro-nonterminal">$from</span>&lt;<span class="lifetime">&#39;a</span>, T, O$(, <span class="macro-nonterminal">$p</span>)<span class="question-mark">?</span>&gt;
+		<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O$(, <span class="macro-nonterminal">$p</span>)<span class="question-mark">?</span>&gt; <span class="macro-nonterminal">$from</span>&lt;<span class="lifetime">'a</span>, T, O$(, <span class="macro-nonterminal">$p</span>)<span class="question-mark">?</span>&gt;
 		<span class="kw">where
-			</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+			</span>T: <span class="lifetime">'a </span>+ BitStore,
 			O: BitOrder,
 			$(<span class="macro-nonterminal">$p</span>: FnMut(usize, <span class="kw-2">&amp;</span>bool) -&gt; bool,)<span class="question-mark">?
 		</span>{
@@ -5020,16 +5022,16 @@ the source iterator must also be provided so that methods on it can be named.
 			/// [`T::Alias`]: crate::store::BitStore::Alias
 			/// [`T::Mem`]: crate::store::BitStore::Mem
 			</span><span class="attr">#[inline]
-			#[must_use = <span class="string">&quot;You must consume this object, preferably immediately \
-			              upon creation&quot;</span>]
-			</span><span class="kw">pub unsafe fn </span>remove_alias(<span class="self">self</span>) -&gt; <span class="macro-nonterminal">$to</span>&lt;<span class="lifetime">&#39;a</span>, T, O$(, <span class="macro-nonterminal">$p</span>)<span class="question-mark">?</span>&gt; {
+			#[must_use = <span class="string">"You must consume this object, preferably immediately \
+			              upon creation"</span>]
+			</span><span class="kw">pub unsafe fn </span>remove_alias(<span class="self">self</span>) -&gt; <span class="macro-nonterminal">$to</span>&lt;<span class="lifetime">'a</span>, T, O$(, <span class="macro-nonterminal">$p</span>)<span class="question-mark">?</span>&gt; {
 				<span class="macro-nonterminal">$to </span>{ inner: <span class="self">self </span>}
 			}
 		}
 
-		<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O$(, <span class="macro-nonterminal">$p</span>)<span class="question-mark">?</span>&gt; Iterator <span class="kw">for </span><span class="macro-nonterminal">$to</span>&lt;<span class="lifetime">&#39;a</span>, T, O$(, <span class="macro-nonterminal">$p</span>)<span class="question-mark">?</span>&gt;
+		<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O$(, <span class="macro-nonterminal">$p</span>)<span class="question-mark">?</span>&gt; Iterator <span class="kw">for </span><span class="macro-nonterminal">$to</span>&lt;<span class="lifetime">'a</span>, T, O$(, <span class="macro-nonterminal">$p</span>)<span class="question-mark">?</span>&gt;
 		<span class="kw">where
-			</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+			</span>T: <span class="lifetime">'a </span>+ BitStore,
 			O: BitOrder,
 			$(<span class="macro-nonterminal">$p</span>: FnMut(usize, <span class="kw-2">&amp;</span>bool) -&gt; bool,)<span class="question-mark">?
 		</span>{
@@ -5061,12 +5063,12 @@ the source iterator must also be provided so that methods on it can be named.
 			}
 		}
 
-		<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O$(, <span class="macro-nonterminal">$p</span>)<span class="question-mark">?</span>&gt; DoubleEndedIterator <span class="kw">for </span><span class="macro-nonterminal">$to</span>&lt;<span class="lifetime">&#39;a</span>, T, O$(, <span class="macro-nonterminal">$p</span>)<span class="question-mark">?</span>&gt;
+		<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O$(, <span class="macro-nonterminal">$p</span>)<span class="question-mark">?</span>&gt; DoubleEndedIterator <span class="kw">for </span><span class="macro-nonterminal">$to</span>&lt;<span class="lifetime">'a</span>, T, O$(, <span class="macro-nonterminal">$p</span>)<span class="question-mark">?</span>&gt;
 		<span class="kw">where
-			</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+			</span>T: <span class="lifetime">'a </span>+ BitStore,
 			O: BitOrder,
 			$(<span class="macro-nonterminal">$p</span>: FnMut(usize, <span class="kw-2">&amp;</span>bool) -&gt; bool,)<span class="question-mark">?
-			</span><span class="macro-nonterminal">$from</span>&lt;<span class="lifetime">&#39;a</span>, T, O$(, <span class="macro-nonterminal">$p</span>)<span class="question-mark">?</span>&gt;: DoubleEndedIterator&lt;Item = <span class="macro-nonterminal">$alias</span>&gt;,
+			</span><span class="macro-nonterminal">$from</span>&lt;<span class="lifetime">'a</span>, T, O$(, <span class="macro-nonterminal">$p</span>)<span class="question-mark">?</span>&gt;: DoubleEndedIterator&lt;Item = <span class="macro-nonterminal">$alias</span>&gt;,
 		{
 			<span class="attr">#[inline]
 			</span><span class="kw">fn </span>next_back(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt; {
@@ -5079,12 +5081,12 @@ the source iterator must also be provided so that methods on it can be named.
 			}
 		}
 
-		<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O$(, <span class="macro-nonterminal">$p</span>)<span class="question-mark">?</span>&gt; ExactSizeIterator <span class="kw">for </span><span class="macro-nonterminal">$to</span>&lt;<span class="lifetime">&#39;a</span>, T, O$(, <span class="macro-nonterminal">$p</span>)<span class="question-mark">?</span>&gt;
+		<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O$(, <span class="macro-nonterminal">$p</span>)<span class="question-mark">?</span>&gt; ExactSizeIterator <span class="kw">for </span><span class="macro-nonterminal">$to</span>&lt;<span class="lifetime">'a</span>, T, O$(, <span class="macro-nonterminal">$p</span>)<span class="question-mark">?</span>&gt;
 		<span class="kw">where
-			</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+			</span>T: <span class="lifetime">'a </span>+ BitStore,
 			O: BitOrder,
 			$(<span class="macro-nonterminal">$p</span>: FnMut(usize, <span class="kw-2">&amp;</span>bool) -&gt; bool,)<span class="question-mark">?
-			</span><span class="macro-nonterminal">$from</span>&lt;<span class="lifetime">&#39;a</span>, T, O$(, <span class="macro-nonterminal">$p</span>)<span class="question-mark">?</span>&gt;: ExactSizeIterator,
+			</span><span class="macro-nonterminal">$from</span>&lt;<span class="lifetime">'a</span>, T, O$(, <span class="macro-nonterminal">$p</span>)<span class="question-mark">?</span>&gt;: ExactSizeIterator,
 		{
 			<span class="attr">#[inline]
 			</span><span class="kw">fn </span>len(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; usize {
@@ -5092,69 +5094,69 @@ the source iterator must also be provided so that methods on it can be named.
 			}
 		}
 
-		<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O$(, <span class="macro-nonterminal">$p</span>)<span class="question-mark">?</span>&gt; FusedIterator <span class="kw">for </span><span class="macro-nonterminal">$to</span>&lt;<span class="lifetime">&#39;a</span>, T, O$(, <span class="macro-nonterminal">$p</span>)<span class="question-mark">?</span>&gt;
+		<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O$(, <span class="macro-nonterminal">$p</span>)<span class="question-mark">?</span>&gt; FusedIterator <span class="kw">for </span><span class="macro-nonterminal">$to</span>&lt;<span class="lifetime">'a</span>, T, O$(, <span class="macro-nonterminal">$p</span>)<span class="question-mark">?</span>&gt;
 		<span class="kw">where
-			</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+			</span>T: <span class="lifetime">'a </span>+ BitStore,
 			O: BitOrder,
 			$(<span class="macro-nonterminal">$p</span>: FnMut(usize, <span class="kw-2">&amp;</span>bool) -&gt; bool,)<span class="question-mark">?
-			</span><span class="macro-nonterminal">$from</span>&lt;<span class="lifetime">&#39;a</span>, T, O$(, <span class="macro-nonterminal">$p</span>)<span class="question-mark">?</span>&gt;: FusedIterator,
+			</span><span class="macro-nonterminal">$from</span>&lt;<span class="lifetime">'a</span>, T, O$(, <span class="macro-nonterminal">$p</span>)<span class="question-mark">?</span>&gt;: FusedIterator,
 		{
 		}
 	)+ };
 }
 
 <span class="macro">noalias! </span>{
-	IterMut =&gt; &lt;usize <span class="kw">as </span>BitSliceIndex&lt;<span class="lifetime">&#39;a</span>, T::Alias, O&gt;&gt;::Mut
-	=&gt; IterMutNoAlias =&gt; &lt;usize <span class="kw">as </span>BitSliceIndex&lt;<span class="lifetime">&#39;a</span>, T, O&gt;&gt;::Mut
+	IterMut =&gt; &lt;usize <span class="kw">as </span>BitSliceIndex&lt;<span class="lifetime">'a</span>, T::Alias, O&gt;&gt;::Mut
+	=&gt; IterMutNoAlias =&gt; &lt;usize <span class="kw">as </span>BitSliceIndex&lt;<span class="lifetime">'a</span>, T, O&gt;&gt;::Mut
 	=&gt; BitRef::remove_alias;
 
-	ChunksMut =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;
-	=&gt; ChunksMutNoAlias =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt;
+	ChunksMut =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;
+	=&gt; ChunksMutNoAlias =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt;
 	=&gt; BitSlice::unalias_mut;
 
-	ChunksExactMut =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;
-	=&gt; ChunksExactMutNoAlias =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt;
+	ChunksExactMut =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;
+	=&gt; ChunksExactMutNoAlias =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt;
 	=&gt; BitSlice::unalias_mut;
 
-	RChunksMut =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;
-	=&gt; RChunksMutNoAlias =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt;
+	RChunksMut =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;
+	=&gt; RChunksMutNoAlias =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt;
 	=&gt; BitSlice::unalias_mut;
 
-	RChunksExactMut =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;
-	=&gt; RChunksExactMutNoAlias =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt;
+	RChunksExactMut =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;
+	=&gt; RChunksExactMutNoAlias =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt;
 	=&gt; BitSlice::unalias_mut;
 
-	SplitMut (P) =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;
-	=&gt; SplitMutNoAlias =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt;
+	SplitMut (P) =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;
+	=&gt; SplitMutNoAlias =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt;
 	=&gt; BitSlice::unalias_mut;
 
-	SplitInclusiveMut (P) =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;
-	=&gt; SplitInclusiveMutNoAlias =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt;
+	SplitInclusiveMut (P) =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;
+	=&gt; SplitInclusiveMutNoAlias =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt;
 	=&gt; BitSlice::unalias_mut;
 
-	RSplitMut (P) =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;
-	=&gt; RSplitMutNoAlias =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt;
+	RSplitMut (P) =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;
+	=&gt; RSplitMutNoAlias =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt;
 	=&gt; BitSlice::unalias_mut;
 
-	SplitNMut (P) =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;
-	=&gt; SplitNMutNoAlias =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt;
+	SplitNMut (P) =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;
+	=&gt; SplitNMutNoAlias =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt;
 	=&gt; BitSlice::unalias_mut;
 
-	RSplitNMut (P) =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;
-	=&gt; RSplitNMutNoAlias =&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt;
+	RSplitNMut (P) =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T::Alias, O&gt;
+	=&gt; RSplitNMutNoAlias =&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt;
 	=&gt; BitSlice::unalias_mut;
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O&gt; ChunksExactMutNoAlias&lt;<span class="lifetime">&#39;a</span>, T, O&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O&gt; ChunksExactMutNoAlias&lt;<span class="lifetime">'a</span>, T, O&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 {
 	<span class="doccomment">/// See [`ChunksExactMut::into_remainder()`][0].
 	///
 	/// [0]: crate::slice::ChunksExactMut::into_remainder
 	</span><span class="attr">#[inline]
-	</span><span class="kw">pub fn </span>into_remainder(<span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt; {
+	</span><span class="kw">pub fn </span>into_remainder(<span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt; {
 		<span class="kw">unsafe </span>{ BitSlice::unalias_mut(<span class="self">self</span>.inner.into_remainder()) }
 	}
 
@@ -5162,21 +5164,21 @@ the source iterator must also be provided so that methods on it can be named.
 	///
 	/// [0]: crate::slice::ChunksExactMut::take_remainder
 	</span><span class="attr">#[inline]
-	</span><span class="kw">pub fn </span>take_remainder(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt; {
+	</span><span class="kw">pub fn </span>take_remainder(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt; {
 		<span class="kw">unsafe </span>{ BitSlice::unalias_mut(<span class="self">self</span>.inner.take_remainder()) }
 	}
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O&gt; RChunksExactMutNoAlias&lt;<span class="lifetime">&#39;a</span>, T, O&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O&gt; RChunksExactMutNoAlias&lt;<span class="lifetime">'a</span>, T, O&gt;
 <span class="kw">where
-	</span>T: <span class="lifetime">&#39;a </span>+ BitStore,
+	</span>T: <span class="lifetime">'a </span>+ BitStore,
 	O: BitOrder,
 {
 	<span class="doccomment">/// See [`RChunksExactMut::into_remainder()`][0]
 	///
 	/// [0]: crate::slice::RChunksExactMut::into_remainder
 	</span><span class="attr">#[inline]
-	</span><span class="kw">pub fn </span>into_remainder(<span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt; {
+	</span><span class="kw">pub fn </span>into_remainder(<span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt; {
 		<span class="kw">unsafe </span>{ BitSlice::unalias_mut(<span class="self">self</span>.inner.into_remainder()) }
 	}
 
@@ -5184,7 +5186,7 @@ the source iterator must also be provided so that methods on it can be named.
 	///
 	/// [0]:  crate::slice::RChunksExactMut::take_remainder
 	</span><span class="attr">#[inline]
-	</span><span class="kw">pub fn </span>take_remainder(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt; {
+	</span><span class="kw">pub fn </span>take_remainder(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt; {
 		<span class="kw">unsafe </span>{ BitSlice::unalias_mut(<span class="self">self</span>.inner.take_remainder()) }
 	}
 }

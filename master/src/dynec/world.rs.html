@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/world.rs`."><title>world.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="dynec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/world.rs`."><title>world.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="dynec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../dynec/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -439,7 +441,7 @@
         <span class="kw">match </span>std::thread::available_parallelism() {
             <span class="prelude-val">Ok</span>(c) =&gt; c.get(),
             <span class="prelude-val">Err</span>(err) =&gt; {
-                <span class="macro">log::error!</span>(<span class="string">&quot;Cannot detect number of CPUs ({err}), parallelism disabled&quot;</span>);
+                <span class="macro">log::error!</span>(<span class="string">"Cannot detect number of CPUs ({err}), parallelism disabled"</span>);
                 <span class="number">0
             </span>}
         },
@@ -518,11 +520,11 @@
         <span class="kw">let </span>ealloc = <span class="kw">match </span><span class="self">self</span>.ealloc_map.map.get_mut(<span class="kw-2">&amp;</span>TypeId::of::&lt;A&gt;()) {
             <span class="prelude-val">Some</span>(ealloc) =&gt; ealloc,
             <span class="prelude-val">None </span>=&gt; <span class="macro">panic!</span>(
-                <span class="string">&quot;Cannot create entity for archetype {} because it is not used in any systems&quot;</span>,
+                <span class="string">"Cannot create entity for archetype {} because it is not used in any systems"</span>,
                 any::type_name::&lt;A&gt;()
             ),
         };
-        <span class="kw">let </span>ealloc = ealloc.as_any_mut().downcast_mut::&lt;A::Ealloc&gt;().expect(<span class="string">&quot;TypeId mismatch&quot;</span>);
+        <span class="kw">let </span>ealloc = ealloc.as_any_mut().downcast_mut::&lt;A::Ealloc&gt;().expect(<span class="string">"TypeId mismatch"</span>);
         <span class="kw">let </span>id = ealloc.allocate(hint);
 
         <span class="kw">let </span>allocated = Entity::new_allocated(id);
@@ -540,7 +542,7 @@
         allocated
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>as_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; (WorldMut&lt;<span class="lifetime">&#39;_</span>&gt;, Vec&lt;(<span class="kw-2">&amp;</span>str, <span class="kw-2">&amp;mut </span><span class="kw">dyn </span>system::Descriptor)&gt;) {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>as_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; (WorldMut&lt;<span class="lifetime">'_</span>&gt;, Vec&lt;(<span class="kw-2">&amp;</span>str, <span class="kw-2">&amp;mut </span><span class="kw">dyn </span>system::Descriptor)&gt;) {
         <span class="kw">let </span>system_refs = <span class="self">self</span>.scheduler.get_system_refs();
 
         (
@@ -591,12 +593,12 @@
         <span class="kw">let </span>global = <span class="kw">match </span><span class="self">self</span>.sync_globals.sync_globals.get_mut(<span class="kw-2">&amp;</span>TypeId::of::&lt;G&gt;()) {
             <span class="prelude-val">Some</span>((<span class="kw">_</span>, global)) =&gt; global,
             <span class="prelude-val">None </span>=&gt; <span class="macro">panic!</span>(
-                <span class="string">&quot;The global state {} cannot be retrieved because it is not used in any systems, \
-                 or was registered as an unsync global instead of a sync global&quot;</span>,
+                <span class="string">"The global state {} cannot be retrieved because it is not used in any systems, \
+                 or was registered as an unsync global instead of a sync global"</span>,
                 any::type_name::&lt;G&gt;()
             ),
         };
-        global.get_mut().downcast_mut::&lt;G&gt;().expect(<span class="string">&quot;TypeId mismatch&quot;</span>)
+        global.get_mut().downcast_mut::&lt;G&gt;().expect(<span class="string">"TypeId mismatch"</span>)
     }
 
     <span class="doccomment">/// Gets a thread-unsafe global state in offline mode.
@@ -607,26 +609,26 @@
         <span class="kw">let </span>global = <span class="kw">match </span><span class="self">self</span>.unsync_globals.unsync_globals.get_mut(<span class="kw-2">&amp;</span>TypeId::of::&lt;G&gt;()) {
             <span class="prelude-val">Some</span>((<span class="kw">_</span>, global)) =&gt; global,
             <span class="prelude-val">None </span>=&gt; <span class="macro">panic!</span>(
-                <span class="string">&quot;The global state {} cannot be retrieved because it is not used in any systems, \
-                 or was registered as a sync global instead of an unsync global&quot;</span>,
+                <span class="string">"The global state {} cannot be retrieved because it is not used in any systems, \
+                 or was registered as a sync global instead of an unsync global"</span>,
                 any::type_name::&lt;G&gt;()
             ),
         };
-        global.downcast_mut::&lt;G&gt;().expect(<span class="string">&quot;TypeId mismatch&quot;</span>)
+        global.downcast_mut::&lt;G&gt;().expect(<span class="string">"TypeId mismatch"</span>)
     }
 }
 
 <span class="doccomment">/// Borrows a world mutably.
-</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>WorldMut&lt;<span class="lifetime">&#39;t</span>&gt; {
-    <span class="kw">pub</span>(<span class="kw">crate</span>) ealloc_map:     <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>ealloc::Map,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) components:     <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>Components,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) sync_globals:   <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>SyncGlobals,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) unsync_globals: <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>UnsyncGlobals,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) rctrack:        <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>rctrack::MaybeStoreMap,
+</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>WorldMut&lt;<span class="lifetime">'t</span>&gt; {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) ealloc_map:     <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span>ealloc::Map,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) components:     <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span>Components,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) sync_globals:   <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span>SyncGlobals,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) unsync_globals: <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span>UnsyncGlobals,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) rctrack:        <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span>rctrack::MaybeStoreMap,
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>&gt; WorldMut&lt;<span class="lifetime">&#39;t</span>&gt; {
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>as_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; WorldMut&lt;<span class="lifetime">&#39;_</span>&gt; {
+<span class="kw">impl</span>&lt;<span class="lifetime">'t</span>&gt; WorldMut&lt;<span class="lifetime">'t</span>&gt; {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>as_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; WorldMut&lt;<span class="lifetime">'_</span>&gt; {
         WorldMut {
             ealloc_map:     <span class="kw-2">&amp;mut *</span><span class="self">self</span>.ealloc_map,
             components:     <span class="kw-2">&amp;mut *</span><span class="self">self</span>.components,
@@ -650,8 +652,8 @@
     sync_globals.get_mut::&lt;generation::StoreMap&gt;().next::&lt;A&gt;(id.to_primitive());
 
     <span class="attr">#[cfg(any(
-        all(debug_assertions, feature = <span class="string">&quot;debug-entity-rc&quot;</span>),
-        all(not(debug_assertions), feature = <span class="string">&quot;release-entity-rc&quot;</span>),
+        all(debug_assertions, feature = <span class="string">"debug-entity-rc"</span>),
+        all(not(debug_assertions), feature = <span class="string">"release-entity-rc"</span>),
     ))]
     </span>{
         _rctrack.<span class="number">0</span>.set::&lt;A&gt;(id.to_primitive(), _rc);
@@ -674,7 +676,7 @@
 <span class="doccomment">/// Flags an entity for deletion, and deletes it immediately if there are no finalizers.
 </span><span class="kw">fn </span>flag_delete_entity&lt;A: Archetype&gt;(
     id: A::RawEntity,
-    world: WorldMut&lt;<span class="lifetime">&#39;_</span>&gt;,
+    world: WorldMut&lt;<span class="lifetime">'_</span>&gt;,
     systems: <span class="kw-2">&amp;mut </span>[(<span class="kw-2">&amp;</span>str, <span class="kw-2">&amp;mut </span><span class="kw">dyn </span>system::Descriptor)],
 ) -&gt; DeleteResult {
     <span class="kw">let </span>storage = world
@@ -682,7 +684,7 @@
         .archetype_mut::&lt;A&gt;()
         .simple_storages
         .get_mut(<span class="kw-2">&amp;</span>TypeId::of::&lt;deletion::Flag&gt;())
-        .expect(<span class="string">&quot;deletion::Flags storage is always available&quot;</span>);
+        .expect(<span class="string">"deletion::Flags storage is always available"</span>);
     storage.get_storage::&lt;deletion::Flag&gt;().set(id, <span class="prelude-val">Some</span>(deletion::Flag(())));
 
     try_real_delete_entity::&lt;A&gt;(id, world, systems)
@@ -692,13 +694,13 @@
 </span><span class="attr">#[allow(unused_variables, clippy::needless_pass_by_ref_mut)] </span><span class="comment">// only conditionally used
 </span><span class="kw">fn </span>try_real_delete_entity&lt;A: Archetype&gt;(
     entity: &lt;A <span class="kw">as </span>Archetype&gt;::RawEntity,
-    world: WorldMut&lt;<span class="lifetime">&#39;_</span>&gt;,
+    world: WorldMut&lt;<span class="lifetime">'_</span>&gt;,
     systems: <span class="kw-2">&amp;mut </span>[(<span class="kw-2">&amp;</span>str, <span class="kw-2">&amp;mut </span><span class="kw">dyn </span>system::Descriptor)],
 ) -&gt; DeleteResult {
     <span class="kw">let </span>storages = <span class="kw-2">&amp;mut </span>world.components.archetype_mut::&lt;A&gt;().simple_storages;
     <span class="kw">let </span>has_finalizer = storages.values_mut().any(|storage| {
         Arc::get_mut(<span class="kw-2">&amp;mut </span>storage.storage)
-            .expect(<span class="string">&quot;storage arc was leaked&quot;</span>)
+            .expect(<span class="string">"storage arc was leaked"</span>)
             .get_mut()
             .has_finalizer(entity)
     });
@@ -708,14 +710,14 @@
 
     <span class="kw">for </span>storage <span class="kw">in </span>storages.values_mut() {
         Arc::get_mut(<span class="kw-2">&amp;mut </span>storage.storage)
-            .expect(<span class="string">&quot;storage arc was leaked&quot;</span>)
+            .expect(<span class="string">"storage arc was leaked"</span>)
             .get_mut()
             .clear_entry(entity);
     }
 
     <span class="attr">#[cfg(any(
-        all(debug_assertions, feature = <span class="string">&quot;debug-entity-rc&quot;</span>),
-        all(not(debug_assertions), feature = <span class="string">&quot;release-entity-rc&quot;</span>),
+        all(debug_assertions, feature = <span class="string">"debug-entity-rc"</span>),
+        all(not(debug_assertions), feature = <span class="string">"release-entity-rc"</span>),
     ))]
     </span>{
         <span class="kw">use </span><span class="kw">crate</span>::util::DbgTypeId;
@@ -731,11 +733,11 @@
                 entity.to_primitive(),
             );
             <span class="macro">panic!</span>(
-                <span class="string">&quot;Detected dangling strong reference to entity {}#{entity:?} in {}. All strong \
+                <span class="string">"Detected dangling strong reference to entity {}#{entity:?} in {}. All strong \
                  references to an entity must be dropped before queuing for deletion and removing \
-                 all finalizers.&quot;</span>,
+                 all finalizers."</span>,
                 any::type_name::&lt;A&gt;(),
-                found.join(<span class="string">&quot;, &quot;</span>)
+                found.join(<span class="string">", "</span>)
             );
         }
     }
@@ -746,8 +748,8 @@
 }
 
 <span class="attr">#[cfg(any(
-    all(debug_assertions, feature = <span class="string">&quot;debug-entity-rc&quot;</span>),
-    all(not(debug_assertions), feature = <span class="string">&quot;release-entity-rc&quot;</span>),
+    all(debug_assertions, feature = <span class="string">"debug-entity-rc"</span>),
+    all(not(debug_assertions), feature = <span class="string">"release-entity-rc"</span>),
 ))]
 </span><span class="kw">fn </span>search_references(
     components: <span class="kw-2">&amp;mut </span>Components,
@@ -766,7 +768,7 @@
 
     <span class="kw">for </span>(name, system) <span class="kw">in </span>systems {
         <span class="kw">let </span><span class="kw-2">mut </span>object = system.visit_mut();
-        state._set_debug_name(<span class="macro">format!</span>(<span class="string">&quot;system {name}&quot;</span>));
+        state._set_debug_name(<span class="macro">format!</span>(<span class="string">"system {name}"</span>));
         object.<span class="number">0</span>.search_single_strong(<span class="kw-2">&amp;mut </span>state);
     }
 
@@ -783,7 +785,7 @@
                 .map(|(global_ty, (vtable, value))| (global_ty, vtable, <span class="kw-2">&amp;mut **</span>value)),
         );
     <span class="kw">for </span>(global_ty, vtable, value) <span class="kw">in </span>globals {
-        state._set_debug_name(<span class="macro">format!</span>(<span class="string">&quot;global state {global_ty}&quot;</span>));
+        state._set_debug_name(<span class="macro">format!</span>(<span class="string">"global state {global_ty}"</span>));
         vtable.search_single_strong(value, <span class="kw-2">&amp;mut </span>state);
     }
 

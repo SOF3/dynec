@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `codegen/src/system.rs`."><title>system.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="dynec_codegen" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `codegen/src/system.rs`."><title>system.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="dynec_codegen" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../dynec_codegen/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -419,6 +421,7 @@
 <a href="#419" id="419">419</a>
 <a href="#420" id="420">420</a>
 <a href="#421" id="421">421</a>
+<a href="#422" id="422">422</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>proc_macro2::TokenStream;
 <span class="kw">use </span>quote::quote;
 <span class="kw">use </span>syn::parse::ParseStream;
@@ -440,11 +443,10 @@
     <span class="kw">let </span>other_attrs = <span class="kw-2">&amp;</span>input.attrs;
 
     <span class="kw">if </span>!<span class="macro">matches!</span>(input.sig.output, syn::ReturnType::Default) {
-        <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new_spanned(<span class="kw-2">&amp;</span>input.sig.output, <span class="string">&quot;system functions must return unit&quot;</span>));
+        <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new_spanned(<span class="kw-2">&amp;</span>input.sig.output, <span class="string">"system functions must return unit"</span>));
     }
 
-    <span class="comment">// 1. Parse item-level attributes.
-    </span><span class="kw">let </span>item = item::Agg::parse(ident, args)<span class="question-mark">?</span>;
+    <span class="kw">let </span>item = item::Agg::parse(ident, args)<span class="question-mark">?</span>;
     <span class="kw">let </span>item::Agg { crate_name, name, state_maybe_uninit, deps, .. } = item;
 
     <span class="comment">// 2. Parse parameters.
@@ -475,7 +477,7 @@
     <span class="kw">for </span>(param_index, param) <span class="kw">in </span>input.sig.inputs.iter_mut().enumerate() {
         <span class="kw">let </span>param = <span class="kw">match </span>param {
             syn::FnArg::Receiver(receiver) =&gt; {
-                <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new_spanned(receiver, <span class="string">&quot;system functions must not be a method&quot;</span>))
+                <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new_spanned(receiver, <span class="string">"system functions must not be a method"</span>))
             }
             syn::FnArg::Typed(typed) =&gt; typed,
         };
@@ -496,9 +498,9 @@
                     syn::Pat::Ident(ident) =&gt; ident.ident.clone(),
                     syn::Pat::Reference(pat) =&gt; <span class="kw">match </span><span class="kw-2">&amp;*</span>pat.pat {
                         syn::Pat::Ident(ident) =&gt; ident.ident.clone(),
-                        <span class="kw">_ </span>=&gt; <span class="macro">quote::format_ident!</span>(<span class="string">&quot;__dynec_local_{}&quot;</span>, param_index),
+                        <span class="kw">_ </span>=&gt; <span class="macro">quote::format_ident!</span>(<span class="string">"__dynec_local_{}"</span>, param_index),
                     },
-                    <span class="kw">_ </span>=&gt; <span class="macro">quote::format_ident!</span>(<span class="string">&quot;__dynec_local_{}&quot;</span>, param_index),
+                    <span class="kw">_ </span>=&gt; <span class="macro">quote::format_ident!</span>(<span class="string">"__dynec_local_{}"</span>, param_index),
                 };
 
                 <span class="kw">let </span>param_ty = <span class="kw">match </span><span class="kw-2">&amp;*</span>param.ty {
@@ -506,7 +508,7 @@
                     <span class="kw">_ </span>=&gt; {
                         <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new_spanned(
                             <span class="kw-2">&amp;</span>param.ty,
-                            <span class="string">&quot;#[local] and #[param] can only be used on reference type parameters&quot;</span>,
+                            <span class="string">"#[local] and #[param] can only be used on reference type parameters"</span>,
                         ))
                     }
                 };
@@ -535,8 +537,8 @@
                 <span class="kw">if </span>thread_local &amp;&amp; !item.system_thread_local {
                     <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new_spanned(
                         param,
-                        <span class="string">&quot;Thread-local global states can only be used in systems marked as \
-                         `#[dynec(thread_local)]`.&quot;</span>,
+                        <span class="string">"Thread-local global states can only be used in systems marked as \
+                         `#[dynec(thread_local)]`."</span>,
                     ));
                 }
 
@@ -550,7 +552,7 @@
                     <span class="kw">_ </span>=&gt; {
                         <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new_spanned(
                             <span class="kw-2">&amp;</span>param.ty,
-                            <span class="string">&quot;#[global] can only be used on reference type parameters&quot;</span>,
+                            <span class="string">"#[global] can only be used on reference type parameters"</span>,
                         ))
                     }
                 };
@@ -589,7 +591,7 @@
                     };
 
                     <span class="kw">let </span>discrim_ident =
-                        <span class="macro">quote::format_ident!</span>(<span class="string">&quot;__dynec_isotope_discrim_{}&quot;</span>, param_index);
+                        <span class="macro">quote::format_ident!</span>(<span class="string">"__dynec_isotope_discrim_{}"</span>, param_index);
                     isotope_discrim_idents.push(discrim_ident.clone());
                     isotope_discrim_tys.push(discrim_set);
                     isotope_discrim_values.push(discrim);
@@ -659,7 +661,7 @@
     <span class="kw">let </span>input_args: Vec&lt;<span class="kw">_</span>&gt; = input.sig.inputs.iter().collect();
 
     <span class="kw">let </span>input_proxy_args: Vec&lt;<span class="kw">_</span>&gt; =
-        (<span class="number">0</span>..input.sig.inputs.len()).map(|i| <span class="macro">quote::format_ident!</span>(<span class="string">&quot;arg_{}&quot;</span>, i)).collect();
+        (<span class="number">0</span>..input.sig.inputs.len()).map(|i| <span class="macro">quote::format_ident!</span>(<span class="string">"arg_{}"</span>, i)).collect();
 
     <span class="comment">// Destructure all local states into local variables.
     </span><span class="kw">let </span>destructure_local_states = <span class="macro">quote! </span>{
@@ -683,10 +685,10 @@
         <span class="attr">#[allow(non_camel_case_types)]
         </span><span class="kw">struct </span>__dynec_local_state {
             #(#local_state_entity_attrs #local_state_field_idents: #local_state_field_tys,)*
-            <span class="attr">#[not_entity = <span class="string">&quot;no entities can be assigned in discriminants because the world is not created yet.&quot;</span>]
+            <span class="attr">#[not_entity = <span class="string">"no entities can be assigned in discriminants because the world is not created yet."</span>]
             </span>__dynec_isotope_discrim_idents: __dynec_isotope_discrim_idents,
         }
-    }).expect(<span class="string">&quot;invalid struct expression&quot;</span>);
+    }).expect(<span class="string">"invalid struct expression"</span>);
     <span class="kw">let </span>impl_referrer_for_local_state = entity_ref::entity_ref(
         <span class="kw-2">&amp;mut </span>local_state_struct,
         crate_name.clone(),
@@ -775,7 +777,7 @@
                 <span class="macro">vec!</span>[#(#state_maybe_uninit),<span class="kw-2">*</span>]
             }
 
-            <span class="kw">fn </span>visit_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; #crate_name::entity::referrer::AsObject&lt;<span class="lifetime">&#39;_</span>&gt; {
+            <span class="kw">fn </span>visit_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; #crate_name::entity::referrer::AsObject&lt;<span class="lifetime">'_</span>&gt; {
                 #crate_name::entity::referrer::AsObject::of(<span class="self">self</span>)
             }
         }
@@ -805,7 +807,8 @@
             </span><span class="attr">#[automatically_derived]
             </span><span class="kw">impl </span>#ident {
                 #build_fn
-                #call_fn
+                <span class="attr">#[allow(clippy::too_many_arguments)]
+                </span>#call_fn
             }
 
             #isotope_discrim_idents_struct
@@ -814,7 +817,8 @@
             #impl_referrer_for_local_state
 
             <span class="comment">// The actual function is moved here.
-            </span><span class="kw">fn </span>__dynec_original(#(#input_args),<span class="kw-2">*</span>) {
+            </span>#(#other_attrs)*
+            <span class="kw">fn </span>__dynec_original(#(#input_args),<span class="kw-2">*</span>) {
                 #fn_body
             }
 
@@ -825,7 +829,7 @@
     };
 
     <span class="kw">if </span>item.debug_print {
-        <span class="macro">println!</span>(<span class="string">&quot;{}&quot;</span>, <span class="kw-2">&amp;</span>output);
+        <span class="macro">println!</span>(<span class="string">"{}"</span>, <span class="kw-2">&amp;</span>output);
     }
 
     <span class="prelude-val">Ok</span>(output)

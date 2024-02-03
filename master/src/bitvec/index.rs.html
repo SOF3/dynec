@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitvec-1.0.1/src/index.rs`."><title>index.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="bitvec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitvec-1.0.1/src/index.rs`."><title>index.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="bitvec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../bitvec/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -1347,7 +1349,7 @@
 <a href="#1347" id="1347">1347</a>
 <a href="#1348" id="1348">1348</a>
 <a href="#1349" id="1349">1349</a>
-</pre></div><pre class="rust"><code><span class="attr">#![doc = <span class="macro">include_str!</span>(<span class="string">&quot;../doc/index.md&quot;</span>)]
+</pre></div><pre class="rust"><code><span class="attr">#![doc = <span class="macro">include_str!</span>(<span class="string">"../doc/index.md"</span>)]
 
 </span><span class="kw">use </span>core::{
 	any,
@@ -1379,7 +1381,7 @@
 };
 
 <span class="attr">#[repr(transparent)]
-#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../doc/index/BitIdx.md&quot;</span>)]
+#[doc = <span class="macro">include_str!</span>(<span class="string">"../doc/index/BitIdx.md"</span>)]
 #[derive(Clone, Copy, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 </span><span class="kw">pub struct </span>BitIdx&lt;R = usize&gt;
 <span class="kw">where </span>R: BitRegister
@@ -1443,7 +1445,7 @@
 	</span><span class="kw">pub unsafe fn </span>new_unchecked(idx: u8) -&gt; <span class="self">Self </span>{
 		<span class="macro">debug_assert!</span>(
 			idx &lt; bits_of::&lt;R&gt;() <span class="kw">as </span>u8,
-			<span class="string">&quot;Bit index {} cannot exceed type width {}&quot;</span>,
+			<span class="string">"Bit index {} cannot exceed type width {}"</span>,
 			idx,
 			bits_of::&lt;R&gt;(),
 		);
@@ -1571,7 +1573,7 @@
 	+ ExactSizeIterator
 	+ FusedIterator {
 		<span class="kw">let </span>(from, upto) = (<span class="self">self</span>.into_inner(), upto.into_inner());
-		<span class="macro">debug_assert!</span>(from &lt;= upto, <span class="string">&quot;Ranges must run from low to high&quot;</span>);
+		<span class="macro">debug_assert!</span>(from &lt;= upto, <span class="string">"Ranges must run from low to high"</span>);
 		(from .. upto).map(|val| <span class="kw">unsafe </span>{ <span class="self">Self</span>::new_unchecked(val) })
 	}
 
@@ -1651,7 +1653,7 @@
 {
 	<span class="attr">#[inline]
 	</span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
-		<span class="macro">write!</span>(fmt, <span class="string">&quot;{:0&gt;1$b}&quot;</span>, <span class="self">self</span>.idx, R::INDX <span class="kw">as </span>usize)
+		<span class="macro">write!</span>(fmt, <span class="string">"{:0&gt;1$b}"</span>, <span class="self">self</span>.idx, R::INDX <span class="kw">as </span>usize)
 	}
 }
 
@@ -1660,7 +1662,7 @@
 {
 	<span class="attr">#[inline]
 	</span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
-		<span class="macro">write!</span>(fmt, <span class="string">&quot;BitIdx&lt;{}&gt;({})&quot;</span>, any::type_name::&lt;R&gt;(), <span class="self">self</span>)
+		<span class="macro">write!</span>(fmt, <span class="string">"BitIdx&lt;{}&gt;({})"</span>, any::type_name::&lt;R&gt;(), <span class="self">self</span>)
 	}
 }
 
@@ -1674,7 +1676,7 @@
 }
 
 <span class="attr">#[repr(transparent)]
-#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../doc/index/BitIdxError.md&quot;</span>)]
+#[doc = <span class="macro">include_str!</span>(<span class="string">"../doc/index/BitIdxError.md"</span>)]
 #[derive(Clone, Copy, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 </span><span class="kw">pub struct </span>BitIdxError&lt;R = usize&gt;
 <span class="kw">where </span>R: BitRegister
@@ -1707,7 +1709,7 @@
 	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>new(err: u8) -&gt; <span class="self">Self </span>{
 		<span class="macro">debug_assert!</span>(
 			err &gt;= bits_of::&lt;R&gt;() <span class="kw">as </span>u8,
-			<span class="string">&quot;Bit index {} is valid for type width {}&quot;</span>,
+			<span class="string">"Bit index {} is valid for type width {}"</span>,
 			err,
 			bits_of::&lt;R&gt;(),
 		);
@@ -1730,7 +1732,7 @@
 {
 	<span class="attr">#[inline]
 	</span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
-		<span class="macro">write!</span>(fmt, <span class="string">&quot;BitIdxError&lt;{}&gt;({})&quot;</span>, any::type_name::&lt;R&gt;(), <span class="self">self</span>.err)
+		<span class="macro">write!</span>(fmt, <span class="string">"BitIdxError&lt;{}&gt;({})"</span>, any::type_name::&lt;R&gt;(), <span class="self">self</span>.err)
 	}
 }
 
@@ -1742,7 +1744,7 @@
 	</span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
 		<span class="macro">write!</span>(
 			fmt,
-			<span class="string">&quot;the value {} is too large to index into {} ({} bits wide)&quot;</span>,
+			<span class="string">"the value {} is too large to index into {} ({} bits wide)"</span>,
 			<span class="self">self</span>.err,
 			any::type_name::&lt;R&gt;(),
 			bits_of::&lt;R&gt;(),
@@ -1750,11 +1752,11 @@
 	}
 }
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
 </span><span class="kw">impl</span>&lt;R&gt; std::error::Error <span class="kw">for </span>BitIdxError&lt;R&gt; <span class="kw">where </span>R: BitRegister {}
 
 <span class="attr">#[repr(transparent)]
-#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../doc/index/BitEnd.md&quot;</span>)]
+#[doc = <span class="macro">include_str!</span>(<span class="string">"../doc/index/BitEnd.md"</span>)]
 #[derive(Clone, Copy, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 </span><span class="kw">pub struct </span>BitEnd&lt;R = usize&gt;
 <span class="kw">where </span>R: BitRegister
@@ -1818,7 +1820,7 @@
 	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">unsafe fn </span>new_unchecked(end: u8) -&gt; <span class="self">Self </span>{
 		<span class="macro">debug_assert!</span>(
 			end &lt;= bits_of::&lt;R&gt;() <span class="kw">as </span>u8,
-			<span class="string">&quot;Bit tail {} cannot exceed type width {}&quot;</span>,
+			<span class="string">"Bit tail {} cannot exceed type width {}"</span>,
 			end,
 			bits_of::&lt;R&gt;(),
 		);
@@ -1920,7 +1922,7 @@
 {
 	<span class="attr">#[inline]
 	</span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
-		<span class="macro">write!</span>(fmt, <span class="string">&quot;{:0&gt;1$b}&quot;</span>, <span class="self">self</span>.end, R::INDX <span class="kw">as </span>usize + <span class="number">1</span>)
+		<span class="macro">write!</span>(fmt, <span class="string">"{:0&gt;1$b}"</span>, <span class="self">self</span>.end, R::INDX <span class="kw">as </span>usize + <span class="number">1</span>)
 	}
 }
 
@@ -1929,7 +1931,7 @@
 {
 	<span class="attr">#[inline]
 	</span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
-		<span class="macro">write!</span>(fmt, <span class="string">&quot;BitEnd&lt;{}&gt;({})&quot;</span>, any::type_name::&lt;R&gt;(), <span class="self">self</span>)
+		<span class="macro">write!</span>(fmt, <span class="string">"BitEnd&lt;{}&gt;({})"</span>, any::type_name::&lt;R&gt;(), <span class="self">self</span>)
 	}
 }
 
@@ -1943,7 +1945,7 @@
 }
 
 <span class="attr">#[repr(transparent)]
-#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../doc/index/BitPos.md&quot;</span>)]
+#[doc = <span class="macro">include_str!</span>(<span class="string">"../doc/index/BitPos.md"</span>)]
 </span><span class="comment">// #[rustc_layout_scalar_valid_range_end(R::BITS)]
 </span><span class="attr">#[derive(Clone, Copy, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 </span><span class="kw">pub struct </span>BitPos&lt;R = usize&gt;
@@ -2010,7 +2012,7 @@
 	</span><span class="kw">pub unsafe fn </span>new_unchecked(pos: u8) -&gt; <span class="self">Self </span>{
 		<span class="macro">debug_assert!</span>(
 			pos &lt; bits_of::&lt;R&gt;() <span class="kw">as </span>u8,
-			<span class="string">&quot;Bit position {} cannot exceed type width {}&quot;</span>,
+			<span class="string">"Bit position {} cannot exceed type width {}"</span>,
 			pos,
 			bits_of::&lt;R&gt;(),
 		);
@@ -2061,7 +2063,7 @@
 {
 	<span class="attr">#[inline]
 	</span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
-		<span class="macro">write!</span>(fmt, <span class="string">&quot;{:0&gt;1$b}&quot;</span>, <span class="self">self</span>.pos, R::INDX <span class="kw">as </span>usize)
+		<span class="macro">write!</span>(fmt, <span class="string">"{:0&gt;1$b}"</span>, <span class="self">self</span>.pos, R::INDX <span class="kw">as </span>usize)
 	}
 }
 
@@ -2070,7 +2072,7 @@
 {
 	<span class="attr">#[inline]
 	</span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
-		<span class="macro">write!</span>(fmt, <span class="string">&quot;BitPos&lt;{}&gt;({})&quot;</span>, any::type_name::&lt;R&gt;(), <span class="self">self</span>)
+		<span class="macro">write!</span>(fmt, <span class="string">"BitPos&lt;{}&gt;({})"</span>, any::type_name::&lt;R&gt;(), <span class="self">self</span>)
 	}
 }
 
@@ -2084,7 +2086,7 @@
 }
 
 <span class="attr">#[repr(transparent)]
-#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../doc/index/BitSel.md&quot;</span>)]
+#[doc = <span class="macro">include_str!</span>(<span class="string">"../doc/index/BitSel.md"</span>)]
 </span><span class="comment">// #[rustc_layout_scalar_valid_range_end(R::BITS)]
 </span><span class="attr">#[derive(Clone, Copy, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 </span><span class="kw">pub struct </span>BitSel&lt;R = usize&gt;
@@ -2134,7 +2136,7 @@
 	</span><span class="kw">pub unsafe fn </span>new_unchecked(sel: R) -&gt; <span class="self">Self </span>{
 		<span class="macro">debug_assert!</span>(
 			sel.count_ones() == <span class="number">1</span>,
-			<span class="string">&quot;Selections are required to have exactly one bit set: {:0&gt;1$b}&quot;</span>,
+			<span class="string">"Selections are required to have exactly one bit set: {:0&gt;1$b}"</span>,
 			sel,
 			bits_of::&lt;R&gt;() <span class="kw">as </span>usize,
 		);
@@ -2170,7 +2172,7 @@
 {
 	<span class="attr">#[inline]
 	</span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
-		<span class="macro">write!</span>(fmt, <span class="string">&quot;{:0&gt;1$b}&quot;</span>, <span class="self">self</span>.sel, bits_of::&lt;R&gt;() <span class="kw">as </span>usize)
+		<span class="macro">write!</span>(fmt, <span class="string">"{:0&gt;1$b}"</span>, <span class="self">self</span>.sel, bits_of::&lt;R&gt;() <span class="kw">as </span>usize)
 	}
 }
 
@@ -2179,7 +2181,7 @@
 {
 	<span class="attr">#[inline]
 	</span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
-		<span class="macro">write!</span>(fmt, <span class="string">&quot;BitSel&lt;{}&gt;({})&quot;</span>, any::type_name::&lt;R&gt;(), <span class="self">self</span>)
+		<span class="macro">write!</span>(fmt, <span class="string">"BitSel&lt;{}&gt;({})"</span>, any::type_name::&lt;R&gt;(), <span class="self">self</span>)
 	}
 }
 
@@ -2193,7 +2195,7 @@
 }
 
 <span class="attr">#[repr(transparent)]
-#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../doc/index/BitMask.md&quot;</span>)]
+#[doc = <span class="macro">include_str!</span>(<span class="string">"../doc/index/BitMask.md"</span>)]
 #[derive(Clone, Copy, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 </span><span class="kw">pub struct </span>BitMask&lt;R = usize&gt;
 <span class="kw">where </span>R: BitRegister
@@ -2298,7 +2300,7 @@
 {
 	<span class="attr">#[inline]
 	</span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
-		<span class="macro">write!</span>(fmt, <span class="string">&quot;{:0&gt;1$b}&quot;</span>, <span class="self">self</span>.mask, bits_of::&lt;R&gt;() <span class="kw">as </span>usize)
+		<span class="macro">write!</span>(fmt, <span class="string">"{:0&gt;1$b}"</span>, <span class="self">self</span>.mask, bits_of::&lt;R&gt;() <span class="kw">as </span>usize)
 	}
 }
 
@@ -2307,7 +2309,7 @@
 {
 	<span class="attr">#[inline]
 	</span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
-		<span class="macro">write!</span>(fmt, <span class="string">&quot;BitMask&lt;{}&gt;({})&quot;</span>, any::type_name::&lt;R&gt;(), <span class="self">self</span>)
+		<span class="macro">write!</span>(fmt, <span class="string">"BitMask&lt;{}&gt;({})"</span>, any::type_name::&lt;R&gt;(), <span class="self">self</span>)
 	}
 }
 
@@ -2389,7 +2391,7 @@
 		}
 		<span class="macro">assert!</span>(BitIdx::&lt;u32&gt;::new(<span class="number">32</span>).is_err());
 
-		<span class="attr">#[cfg(target_pointer_width = <span class="string">&quot;64&quot;</span>)]
+		<span class="attr">#[cfg(target_pointer_width = <span class="string">"64"</span>)]
 		</span>{
 			<span class="kw">for </span>n <span class="kw">in </span><span class="number">0 </span>.. <span class="number">64 </span>{
 				<span class="macro">assert!</span>(BitIdx::&lt;u64&gt;::new(n).is_ok());
@@ -2420,7 +2422,7 @@
 		}
 		<span class="macro">assert!</span>(BitEnd::&lt;u32&gt;::new(<span class="number">33</span>).is_none());
 
-		<span class="attr">#[cfg(target_pointer_width = <span class="string">&quot;64&quot;</span>)]
+		<span class="attr">#[cfg(target_pointer_width = <span class="string">"64"</span>)]
 		</span>{
 			<span class="kw">for </span>n <span class="kw">in </span><span class="number">0 </span>..= <span class="number">64 </span>{
 				<span class="macro">assert!</span>(BitEnd::&lt;u64&gt;::new(n).is_some());
@@ -2451,7 +2453,7 @@
 		}
 		<span class="macro">assert!</span>(BitPos::&lt;u32&gt;::new(<span class="number">32</span>).is_none());
 
-		<span class="attr">#[cfg(target_pointer_width = <span class="string">&quot;64&quot;</span>)]
+		<span class="attr">#[cfg(target_pointer_width = <span class="string">"64"</span>)]
 		</span>{
 			<span class="kw">for </span>n <span class="kw">in </span><span class="number">0 </span>.. <span class="number">64 </span>{
 				<span class="macro">assert!</span>(BitPos::&lt;u64&gt;::new(n).is_some());
@@ -2485,7 +2487,7 @@
 		<span class="macro">assert!</span>(BitSel::&lt;u32&gt;::new(<span class="number">0</span>).is_none());
 		<span class="macro">assert!</span>(BitSel::&lt;u32&gt;::new(<span class="number">3</span>).is_none());
 
-		<span class="attr">#[cfg(target_pointer_width = <span class="string">&quot;64&quot;</span>)]
+		<span class="attr">#[cfg(target_pointer_width = <span class="string">"64"</span>)]
 		</span>{
 			<span class="kw">for </span>n <span class="kw">in </span><span class="number">0 </span>.. <span class="number">64 </span>{
 				<span class="macro">assert!</span>(BitSel::&lt;u64&gt;::new(<span class="number">1 </span>&lt;&lt; n).is_some());
@@ -2611,87 +2613,87 @@
 	}
 
 	<span class="attr">#[test]
-	#[cfg(feature = <span class="string">&quot;alloc&quot;</span>)]
+	#[cfg(feature = <span class="string">"alloc"</span>)]
 	</span><span class="kw">fn </span>render() {
-		<span class="attr">#[cfg(not(feature = <span class="string">&quot;std&quot;</span>))]
+		<span class="attr">#[cfg(not(feature = <span class="string">"std"</span>))]
 		</span><span class="kw">use </span>alloc::format;
 
-		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, BitIdx::&lt;u8&gt;::MAX), <span class="string">&quot;BitIdx&lt;u8&gt;(111)&quot;</span>);
-		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, BitIdx::&lt;u16&gt;::MAX), <span class="string">&quot;BitIdx&lt;u16&gt;(1111)&quot;</span>);
-		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, BitIdx::&lt;u32&gt;::MAX), <span class="string">&quot;BitIdx&lt;u32&gt;(11111)&quot;</span>);
+		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{:?}"</span>, BitIdx::&lt;u8&gt;::MAX), <span class="string">"BitIdx&lt;u8&gt;(111)"</span>);
+		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{:?}"</span>, BitIdx::&lt;u16&gt;::MAX), <span class="string">"BitIdx&lt;u16&gt;(1111)"</span>);
+		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{:?}"</span>, BitIdx::&lt;u32&gt;::MAX), <span class="string">"BitIdx&lt;u32&gt;(11111)"</span>);
 
 		<span class="macro">assert_eq!</span>(
-			<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, BitIdx::&lt;u8&gt;::new(<span class="number">8</span>).unwrap_err()),
-			<span class="string">&quot;BitIdxError&lt;u8&gt;(8)&quot;
+			<span class="macro">format!</span>(<span class="string">"{:?}"</span>, BitIdx::&lt;u8&gt;::new(<span class="number">8</span>).unwrap_err()),
+			<span class="string">"BitIdxError&lt;u8&gt;(8)"
 		</span>);
 		<span class="macro">assert_eq!</span>(
-			<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, BitIdx::&lt;u16&gt;::new(<span class="number">16</span>).unwrap_err()),
-			<span class="string">&quot;BitIdxError&lt;u16&gt;(16)&quot;
+			<span class="macro">format!</span>(<span class="string">"{:?}"</span>, BitIdx::&lt;u16&gt;::new(<span class="number">16</span>).unwrap_err()),
+			<span class="string">"BitIdxError&lt;u16&gt;(16)"
 		</span>);
 		<span class="macro">assert_eq!</span>(
-			<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, BitIdx::&lt;u32&gt;::new(<span class="number">32</span>).unwrap_err()),
-			<span class="string">&quot;BitIdxError&lt;u32&gt;(32)&quot;
+			<span class="macro">format!</span>(<span class="string">"{:?}"</span>, BitIdx::&lt;u32&gt;::new(<span class="number">32</span>).unwrap_err()),
+			<span class="string">"BitIdxError&lt;u32&gt;(32)"
 		</span>);
 
-		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, BitEnd::&lt;u8&gt;::MAX), <span class="string">&quot;BitEnd&lt;u8&gt;(1000)&quot;</span>);
-		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, BitEnd::&lt;u16&gt;::MAX), <span class="string">&quot;BitEnd&lt;u16&gt;(10000)&quot;</span>);
-		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, BitEnd::&lt;u32&gt;::MAX), <span class="string">&quot;BitEnd&lt;u32&gt;(100000)&quot;</span>);
+		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{:?}"</span>, BitEnd::&lt;u8&gt;::MAX), <span class="string">"BitEnd&lt;u8&gt;(1000)"</span>);
+		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{:?}"</span>, BitEnd::&lt;u16&gt;::MAX), <span class="string">"BitEnd&lt;u16&gt;(10000)"</span>);
+		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{:?}"</span>, BitEnd::&lt;u32&gt;::MAX), <span class="string">"BitEnd&lt;u32&gt;(100000)"</span>);
 
-		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, BitPos::&lt;u8&gt;::MAX), <span class="string">&quot;BitPos&lt;u8&gt;(111)&quot;</span>);
-		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, BitPos::&lt;u16&gt;::MAX), <span class="string">&quot;BitPos&lt;u16&gt;(1111)&quot;</span>);
-		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, BitPos::&lt;u32&gt;::MAX), <span class="string">&quot;BitPos&lt;u32&gt;(11111)&quot;</span>);
-
-		<span class="macro">assert_eq!</span>(
-			<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, BitSel::&lt;u8&gt;::new(<span class="number">1</span>).unwrap()),
-			<span class="string">&quot;BitSel&lt;u8&gt;(00000001)&quot;</span>,
-		);
-		<span class="macro">assert_eq!</span>(
-			<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, BitSel::&lt;u16&gt;::new(<span class="number">1</span>).unwrap()),
-			<span class="string">&quot;BitSel&lt;u16&gt;(0000000000000001)&quot;</span>,
-		);
-		<span class="macro">assert_eq!</span>(
-			<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, BitSel::&lt;u32&gt;::new(<span class="number">1</span>).unwrap()),
-			<span class="string">&quot;BitSel&lt;u32&gt;(00000000000000000000000000000001)&quot;</span>,
-		);
+		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{:?}"</span>, BitPos::&lt;u8&gt;::MAX), <span class="string">"BitPos&lt;u8&gt;(111)"</span>);
+		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{:?}"</span>, BitPos::&lt;u16&gt;::MAX), <span class="string">"BitPos&lt;u16&gt;(1111)"</span>);
+		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{:?}"</span>, BitPos::&lt;u32&gt;::MAX), <span class="string">"BitPos&lt;u32&gt;(11111)"</span>);
 
 		<span class="macro">assert_eq!</span>(
-			<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, BitMask::&lt;u8&gt;::new(<span class="number">1 </span>| <span class="number">4 </span>| <span class="number">32</span>)),
-			<span class="string">&quot;BitMask&lt;u8&gt;(00100101)&quot;</span>,
+			<span class="macro">format!</span>(<span class="string">"{:?}"</span>, BitSel::&lt;u8&gt;::new(<span class="number">1</span>).unwrap()),
+			<span class="string">"BitSel&lt;u8&gt;(00000001)"</span>,
 		);
 		<span class="macro">assert_eq!</span>(
-			<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, BitMask::&lt;u16&gt;::new(<span class="number">1 </span>| <span class="number">4 </span>| <span class="number">32</span>)),
-			<span class="string">&quot;BitMask&lt;u16&gt;(0000000000100101)&quot;</span>,
+			<span class="macro">format!</span>(<span class="string">"{:?}"</span>, BitSel::&lt;u16&gt;::new(<span class="number">1</span>).unwrap()),
+			<span class="string">"BitSel&lt;u16&gt;(0000000000000001)"</span>,
 		);
 		<span class="macro">assert_eq!</span>(
-			<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, BitMask::&lt;u32&gt;::new(<span class="number">1 </span>| <span class="number">4 </span>| <span class="number">32</span>)),
-			<span class="string">&quot;BitMask&lt;u32&gt;(00000000000000000000000000100101)&quot;</span>,
+			<span class="macro">format!</span>(<span class="string">"{:?}"</span>, BitSel::&lt;u32&gt;::new(<span class="number">1</span>).unwrap()),
+			<span class="string">"BitSel&lt;u32&gt;(00000000000000000000000000000001)"</span>,
 		);
 
-		<span class="attr">#[cfg(target_pointer_width = <span class="string">&quot;64&quot;</span>)]
+		<span class="macro">assert_eq!</span>(
+			<span class="macro">format!</span>(<span class="string">"{:?}"</span>, BitMask::&lt;u8&gt;::new(<span class="number">1 </span>| <span class="number">4 </span>| <span class="number">32</span>)),
+			<span class="string">"BitMask&lt;u8&gt;(00100101)"</span>,
+		);
+		<span class="macro">assert_eq!</span>(
+			<span class="macro">format!</span>(<span class="string">"{:?}"</span>, BitMask::&lt;u16&gt;::new(<span class="number">1 </span>| <span class="number">4 </span>| <span class="number">32</span>)),
+			<span class="string">"BitMask&lt;u16&gt;(0000000000100101)"</span>,
+		);
+		<span class="macro">assert_eq!</span>(
+			<span class="macro">format!</span>(<span class="string">"{:?}"</span>, BitMask::&lt;u32&gt;::new(<span class="number">1 </span>| <span class="number">4 </span>| <span class="number">32</span>)),
+			<span class="string">"BitMask&lt;u32&gt;(00000000000000000000000000100101)"</span>,
+		);
+
+		<span class="attr">#[cfg(target_pointer_width = <span class="string">"64"</span>)]
 		</span>{
 			<span class="macro">assert_eq!</span>(
-				<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, BitIdx::&lt;u64&gt;::MAX),
-				<span class="string">&quot;BitIdx&lt;u64&gt;(111111)&quot;</span>,
+				<span class="macro">format!</span>(<span class="string">"{:?}"</span>, BitIdx::&lt;u64&gt;::MAX),
+				<span class="string">"BitIdx&lt;u64&gt;(111111)"</span>,
 			);
 			<span class="macro">assert_eq!</span>(
-				<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, BitIdx::&lt;u64&gt;::new(<span class="number">64</span>).unwrap_err()),
-				<span class="string">&quot;BitIdxError&lt;u64&gt;(64)&quot;</span>,
+				<span class="macro">format!</span>(<span class="string">"{:?}"</span>, BitIdx::&lt;u64&gt;::new(<span class="number">64</span>).unwrap_err()),
+				<span class="string">"BitIdxError&lt;u64&gt;(64)"</span>,
 			);
 			<span class="macro">assert_eq!</span>(
-				<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, BitEnd::&lt;u64&gt;::MAX),
-				<span class="string">&quot;BitEnd&lt;u64&gt;(1000000)&quot;</span>,
+				<span class="macro">format!</span>(<span class="string">"{:?}"</span>, BitEnd::&lt;u64&gt;::MAX),
+				<span class="string">"BitEnd&lt;u64&gt;(1000000)"</span>,
 			);
 			<span class="macro">assert_eq!</span>(
-				<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, BitPos::&lt;u64&gt;::MAX),
-				<span class="string">&quot;BitPos&lt;u64&gt;(111111)&quot;</span>,
+				<span class="macro">format!</span>(<span class="string">"{:?}"</span>, BitPos::&lt;u64&gt;::MAX),
+				<span class="string">"BitPos&lt;u64&gt;(111111)"</span>,
 			);
 			<span class="macro">assert_eq!</span>(
-				<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, BitSel::&lt;u64&gt;::new(<span class="number">1</span>).unwrap()),
-				<span class="string">&quot;BitSel&lt;u64&gt;(0000000000000000000000000000000000000000000000000000000000000001)&quot;</span>,
+				<span class="macro">format!</span>(<span class="string">"{:?}"</span>, BitSel::&lt;u64&gt;::new(<span class="number">1</span>).unwrap()),
+				<span class="string">"BitSel&lt;u64&gt;(0000000000000000000000000000000000000000000000000000000000000001)"</span>,
 			);
 			<span class="macro">assert_eq!</span>(
-				<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, BitMask::&lt;u64&gt;::new(<span class="number">1 </span>| <span class="number">4 </span>| <span class="number">32</span>)),
-				<span class="string">&quot;BitMask&lt;u64&gt;(0000000000000000000000000000000000000000000000000000000000100101)&quot;</span>,
+				<span class="macro">format!</span>(<span class="string">"{:?}"</span>, BitMask::&lt;u64&gt;::new(<span class="number">1 </span>| <span class="number">4 </span>| <span class="number">32</span>)),
+				<span class="string">"BitMask&lt;u64&gt;(0000000000000000000000000000000000000000000000000000000000100101)"</span>,
 			);
 		}
 	}

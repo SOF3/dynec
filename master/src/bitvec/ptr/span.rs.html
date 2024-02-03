@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitvec-1.0.1/src/ptr/span.rs`."><title>span.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="bitvec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitvec-1.0.1/src/ptr/span.rs`."><title>span.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="bitvec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../bitvec/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -872,7 +874,7 @@
 <a href="#872" id="872">872</a>
 <a href="#873" id="873">873</a>
 <a href="#874" id="874">874</a>
-</pre></div><pre class="rust"><code><span class="attr">#![doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/ptr/span.md&quot;</span>)]
+</pre></div><pre class="rust"><code><span class="attr">#![doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/ptr/span.md"</span>)]
 
 </span><span class="kw">use </span>core::{
 	any,
@@ -929,7 +931,7 @@
 	store::BitStore,
 };
 
-<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/ptr/BitSpan.md&quot;</span>)]
+<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/ptr/BitSpan.md"</span>)]
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>BitSpan&lt;M = Const, T = usize, O = Lsb0&gt;
 <span class="kw">where
 	</span>M: Mutability,
@@ -1015,7 +1017,7 @@
 	/// ## Returns
 	///
 	/// A zero-length `BitSpan` based at `addr`.
-	</span><span class="attr">#[cfg(feature = <span class="string">&quot;alloc&quot;</span>)]
+	</span><span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
 	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>uninhabited(addr: Address&lt;M, T&gt;) -&gt; <span class="self">Self </span>{
 		<span class="self">Self </span>{
 			ptr: addr.into_inner().cast::&lt;()&gt;(),
@@ -1143,7 +1145,7 @@
 	/// None. The invariants of [`::new`] must be checked at the caller.
 	///
 	/// [`::new`]: Self::new
-	</span><span class="attr">#[cfg(feature = <span class="string">&quot;alloc&quot;</span>)]
+	</span><span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
 	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">unsafe fn </span>set_address(<span class="kw-2">&amp;mut </span><span class="self">self</span>, addr: Address&lt;M, T&gt;) {
 		<span class="kw">let </span><span class="kw-2">mut </span>addr_value = addr.to_const() <span class="kw">as </span>usize;
 		addr_value &amp;= <span class="self">Self</span>::PTR_ADDR_MASK;
@@ -1182,7 +1184,7 @@
 	///
 	/// `head` is written into the `.head` logical field, without affecting
 	/// `.addr` or `.bits`.
-	</span><span class="attr">#[cfg(feature = <span class="string">&quot;alloc&quot;</span>)]
+	</span><span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
 	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">unsafe fn </span>set_head(<span class="kw-2">&amp;mut </span><span class="self">self</span>, head: BitIdx&lt;T::Mem&gt;) {
 		<span class="kw">let </span>head = head.into_inner() <span class="kw">as </span>usize;
 		<span class="kw">let </span><span class="kw-2">mut </span>ptr = <span class="self">self</span>.ptr.as_ptr() <span class="kw">as </span>usize;
@@ -1395,7 +1397,7 @@
 	///
 	/// The span must describe memory that is safe to dereference, and to which
 	/// no `&amp;mut BitSlice` references exist.
-	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">unsafe fn </span>into_bitslice_ref&lt;<span class="lifetime">&#39;a</span>&gt;(<span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt; {
+	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">unsafe fn </span>into_bitslice_ref&lt;<span class="lifetime">'a</span>&gt;(<span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt; {
 		<span class="kw-2">&amp;*</span><span class="self">self</span>.into_bitslice_ptr()
 	}
 
@@ -1429,8 +1431,8 @@
 	<span class="doccomment">/// Converts the span descriptor into a `Reference&lt;&gt;` generic handle.
 	///
 	/// This is a noöp.
-	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>to_bitslice&lt;<span class="lifetime">&#39;a</span>&gt;(<span class="self">self</span>) -&gt; Reference&lt;<span class="lifetime">&#39;a</span>, M, BitSlice&lt;T, O&gt;&gt;
-	<span class="kw">where </span>Address&lt;M, BitSlice&lt;T, O&gt;&gt;: Referential&lt;<span class="lifetime">&#39;a</span>&gt; {
+	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>to_bitslice&lt;<span class="lifetime">'a</span>&gt;(<span class="self">self</span>) -&gt; Reference&lt;<span class="lifetime">'a</span>, M, BitSlice&lt;T, O&gt;&gt;
+	<span class="kw">where </span>Address&lt;M, BitSlice&lt;T, O&gt;&gt;: Referential&lt;<span class="lifetime">'a</span>&gt; {
 		<span class="kw">unsafe </span>{ <span class="self">self</span>.to_bitslice_addr().to_ref() }
 	}
 }
@@ -1478,7 +1480,7 @@
 	///
 	/// The span must describe memory that is safe to dereference. In addition,
 	/// no other `BitSlice` reference of any kind (`&amp;` or `&amp;mut`) may exist.
-	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">unsafe fn </span>into_bitslice_mut&lt;<span class="lifetime">&#39;a</span>&gt;(<span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt; {
+	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">unsafe fn </span>into_bitslice_mut&lt;<span class="lifetime">'a</span>&gt;(<span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt; {
 		<span class="kw-2">&amp;mut *</span><span class="self">self</span>.into_bitslice_ptr_mut()
 	}
 }
@@ -1493,7 +1495,7 @@
 	<span class="doccomment">/// Checks if a requested length can be encoded into the `BitSpan`.
 	///
 	/// This is `len &lt;= Self::REGION_MAX_BITS`.
-	</span><span class="attr">#[cfg(feature = <span class="string">&quot;alloc&quot;</span>)]
+	</span><span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
 	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>len_encodable(len: usize) -&gt; bool {
 		len &lt;= <span class="self">Self</span>::REGION_MAX_BITS
 	}
@@ -1527,24 +1529,24 @@
 	///
 	/// [`BitSlice`]: crate::slice::BitSlice
 	/// [`Debug`]: core::fmt::Debug
-	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>render&lt;<span class="lifetime">&#39;a</span>&gt;(
-		<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="self">self</span>,
-		fmt: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>Formatter,
-		name: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str,
-		fields: <span class="kw">impl </span>IntoIterator&lt;Item = <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw">dyn </span>Debug)&gt;,
+	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>render&lt;<span class="lifetime">'a</span>&gt;(
+		<span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="self">self</span>,
+		fmt: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>Formatter,
+		name: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str,
+		fields: <span class="kw">impl </span>IntoIterator&lt;Item = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>(<span class="kw-2">&amp;</span><span class="lifetime">'a </span>str, <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw">dyn </span>Debug)&gt;,
 	) -&gt; fmt::Result {
 		<span class="macro">write!</span>(
 			fmt,
-			<span class="string">&quot;Bit{}&lt;{}, {}&gt;&quot;</span>,
+			<span class="string">"Bit{}&lt;{}, {}&gt;"</span>,
 			name,
 			any::type_name::&lt;T::Mem&gt;(),
 			any::type_name::&lt;O&gt;(),
 		)<span class="question-mark">?</span>;
-		<span class="kw">let </span><span class="kw-2">mut </span>builder = fmt.debug_struct(<span class="string">&quot;&quot;</span>);
+		<span class="kw">let </span><span class="kw-2">mut </span>builder = fmt.debug_struct(<span class="string">""</span>);
 		builder
-			.field(<span class="string">&quot;addr&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.address().fmt_pointer())
-			.field(<span class="string">&quot;head&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.head().fmt_binary())
-			.field(<span class="string">&quot;bits&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.len());
+			.field(<span class="string">"addr"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.address().fmt_pointer())
+			.field(<span class="string">"head"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.head().fmt_binary())
+			.field(<span class="string">"bits"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.len());
 		<span class="kw">for </span>(name, value) <span class="kw">in </span>fields {
 			builder.field(name, value);
 		}
@@ -1627,7 +1629,7 @@
 {
 	<span class="attr">#[inline]
 	</span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
-		<span class="self">self</span>.render(fmt, <span class="string">&quot;Span&quot;</span>, <span class="prelude-val">None</span>)
+		<span class="self">self</span>.render(fmt, <span class="string">"Span"</span>, <span class="prelude-val">None</span>)
 	}
 }
 
@@ -1640,11 +1642,11 @@
 	<span class="attr">#[inline]
 	</span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
 		Pointer::fmt(<span class="kw-2">&amp;</span><span class="self">self</span>.address(), fmt)<span class="question-mark">?</span>;
-		fmt.write_str(<span class="string">&quot;(&quot;</span>)<span class="question-mark">?</span>;
+		fmt.write_str(<span class="string">"("</span>)<span class="question-mark">?</span>;
 		Binary::fmt(<span class="kw-2">&amp;</span><span class="self">self</span>.head(), fmt)<span class="question-mark">?</span>;
-		fmt.write_str(<span class="string">&quot;)[&quot;</span>)<span class="question-mark">?</span>;
+		fmt.write_str(<span class="string">")["</span>)<span class="question-mark">?</span>;
 		Display::fmt(<span class="kw-2">&amp;</span><span class="self">self</span>.len(), fmt)<span class="question-mark">?</span>;
-		fmt.write_str(<span class="string">&quot;]&quot;</span>)
+		fmt.write_str(<span class="string">"]"</span>)
 	}
 }
 
@@ -1700,15 +1702,15 @@
 {
 	<span class="attr">#[inline]
 	</span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
-		<span class="macro">write!</span>(fmt, <span class="string">&quot;BitSpanError&lt;{}&gt;::&quot;</span>, any::type_name::&lt;T::Mem&gt;())<span class="question-mark">?</span>;
+		<span class="macro">write!</span>(fmt, <span class="string">"BitSpanError&lt;{}&gt;::"</span>, any::type_name::&lt;T::Mem&gt;())<span class="question-mark">?</span>;
 		<span class="kw">match </span><span class="self">self </span>{
-			<span class="self">Self</span>::Null(err) =&gt; fmt.debug_tuple(<span class="string">&quot;Null&quot;</span>).field(<span class="kw-2">&amp;</span>err).finish(),
+			<span class="self">Self</span>::Null(err) =&gt; fmt.debug_tuple(<span class="string">"Null"</span>).field(<span class="kw-2">&amp;</span>err).finish(),
 			<span class="self">Self</span>::Misaligned(err) =&gt; {
-				fmt.debug_tuple(<span class="string">&quot;Misaligned&quot;</span>).field(<span class="kw-2">&amp;</span>err).finish()
+				fmt.debug_tuple(<span class="string">"Misaligned"</span>).field(<span class="kw-2">&amp;</span>err).finish()
 			},
-			<span class="self">Self</span>::TooLong(len) =&gt; fmt.debug_tuple(<span class="string">&quot;TooLong&quot;</span>).field(len).finish(),
+			<span class="self">Self</span>::TooLong(len) =&gt; fmt.debug_tuple(<span class="string">"TooLong"</span>).field(len).finish(),
 			<span class="self">Self</span>::TooHigh(addr) =&gt; {
-				fmt.debug_tuple(<span class="string">&quot;TooHigh&quot;</span>).field(addr).finish()
+				fmt.debug_tuple(<span class="string">"TooHigh"</span>).field(addr).finish()
 			},
 		}
 	}
@@ -1725,15 +1727,15 @@
 			<span class="self">Self</span>::Misaligned(err) =&gt; Display::fmt(err, fmt),
 			<span class="self">Self</span>::TooLong(len) =&gt; <span class="macro">write!</span>(
 				fmt,
-				<span class="string">&quot;Length {} is too long to encode in a bit-slice, which can \
-				 only accept {} bits&quot;</span>,
+				<span class="string">"Length {} is too long to encode in a bit-slice, which can \
+				 only accept {} bits"</span>,
 				len,
 				BitSpan::&lt;Const, T, Lsb0&gt;::REGION_MAX_BITS,
 			),
 			<span class="self">Self</span>::TooHigh(addr) =&gt; <span class="macro">write!</span>(
 				fmt,
-				<span class="string">&quot;Address {:p} is too high, and produces a span that wraps \
-				 around to the zero address.&quot;</span>,
+				<span class="string">"Address {:p} is too high, and produces a span that wraps \
+				 around to the zero address."</span>,
 				addr,
 			),
 		}
@@ -1744,6 +1746,6 @@
 
 <span class="kw">unsafe impl</span>&lt;T&gt; Sync <span class="kw">for </span>BitSpanError&lt;T&gt; <span class="kw">where </span>T: BitStore {}
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
 </span><span class="kw">impl</span>&lt;T&gt; std::error::Error <span class="kw">for </span>BitSpanError&lt;T&gt; <span class="kw">where </span>T: BitStore {}
 </code></pre></div></section></main></body></html>

@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/owning_ref-0.4.1/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="owning_ref" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/owning_ref-0.4.1/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="owning_ref" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../owning_ref/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -2027,7 +2029,7 @@ This can sometimes be useful because Rust borrowing rules normally prevent
 moving a type that has been moved from. For example, this kind of code gets rejected:
 
 ```rust,ignore
-fn return_owned_and_referenced&lt;&#39;a&gt;() -&gt; (Vec&lt;u8&gt;, &amp;&#39;a [u8]) {
+fn return_owned_and_referenced&lt;'a&gt;() -&gt; (Vec&lt;u8&gt;, &amp;'a [u8]) {
     let v = vec![1, 2, 3, 4];
     let s = &amp;v[1..3];
     (v, s)
@@ -2035,7 +2037,7 @@ fn return_owned_and_referenced&lt;&#39;a&gt;() -&gt; (Vec&lt;u8&gt;, &amp;&#39;a
 ```
 
 Even though, from a memory-layout point of view, this can be entirely safe
-if the new location of the vector still lives longer than the lifetime `&#39;a`
+if the new location of the vector still lives longer than the lifetime `'a`
 of the reference because the backing allocation of the vector does not change.
 
 This library enables this safe usage by keeping the owner and the reference
@@ -2137,10 +2139,10 @@ extern crate owning_ref;
 use owning_ref::StringRef;
 
 fn main() {
-    let s = StringRef::new(&quot;hello world&quot;.to_owned())
-        .map(|s| s.split(&#39; &#39;).nth(1).unwrap());
+    let s = StringRef::new("hello world".to_owned())
+        .map(|s| s.split(' ').nth(1).unwrap());
 
-    assert_eq!(&amp;*s, &quot;world&quot;);
+    assert_eq!(&amp;*s, "world");
 }
 ```
 
@@ -2299,7 +2301,7 @@ fn main() {
 <span class="doccomment">/// Helper trait for erasing the concrete type of what an owner derferences to,
 /// for example `Box&lt;T&gt; -&gt; Box&lt;dyn Erased&gt;`. This would be unneeded with
 /// higher kinded types support in the language.
-</span><span class="kw">pub unsafe trait </span>IntoErased&lt;<span class="lifetime">&#39;a</span>&gt; {
+</span><span class="kw">pub unsafe trait </span>IntoErased&lt;<span class="lifetime">'a</span>&gt; {
     <span class="doccomment">/// Owner with the dereference type substituted to `Erased`.
     </span><span class="kw">type </span>Erased;
     <span class="doccomment">/// Perform the type erasure.
@@ -2352,7 +2354,7 @@ fn main() {
     /// from the previous one.
     ///
     /// This can be a reference to a field of `U`, something reachable from a field of
-    /// `U`, or even something unrelated with a `&#39;static` lifetime.
+    /// `U`, or even something unrelated with a `'static` lifetime.
     ///
     /// # Example
     /// ```
@@ -2382,7 +2384,7 @@ fn main() {
     /// from the previous one or from the owner itself.
     ///
     /// This can be a reference to a field of `U`, something reachable from a field of
-    /// `U` or from the owner `O`, or even something unrelated with a `&#39;static` lifetime.
+    /// `U` or from the owner `O`, or even something unrelated with a `'static` lifetime.
     ///
     /// # Example
     /// ```
@@ -2402,7 +2404,7 @@ fn main() {
     /// ```
     </span><span class="kw">pub fn </span>map_with_owner&lt;F, U: <span class="question-mark">?</span>Sized&gt;(<span class="self">self</span>, f: F) -&gt; OwningRef&lt;O, U&gt;
         <span class="kw">where </span>O: StableAddress,
-              F: <span class="kw">for</span>&lt;<span class="lifetime">&#39;a</span>&gt; FnOnce(<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>O, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>U
+              F: <span class="kw">for</span>&lt;<span class="lifetime">'a</span>&gt; FnOnce(<span class="kw-2">&amp;</span><span class="lifetime">'a </span>O, <span class="kw-2">&amp;</span><span class="lifetime">'a </span>T) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>U
     {
         OwningRef {
             reference: f(<span class="kw-2">&amp;</span><span class="self">self</span>.owner, <span class="kw-2">&amp;</span><span class="self">self</span>),
@@ -2414,7 +2416,7 @@ fn main() {
     /// at something reachable from the previous one.
     ///
     /// This can be a reference to a field of `U`, something reachable from a field of
-    /// `U`, or even something unrelated with a `&#39;static` lifetime.
+    /// `U`, or even something unrelated with a `'static` lifetime.
     ///
     /// # Example
     /// ```
@@ -2446,7 +2448,7 @@ fn main() {
     /// at something reachable from the previous one.
     ///
     /// This can be a reference to a field of `U`, something reachable from a field of
-    /// `U`, or even something unrelated with a `&#39;static` lifetime.
+    /// `U`, or even something unrelated with a `'static` lifetime.
     ///
     /// # Example
     /// ```
@@ -2467,7 +2469,7 @@ fn main() {
     /// ```
     </span><span class="kw">pub fn </span>try_map_with_owner&lt;F, U: <span class="question-mark">?</span>Sized, E&gt;(<span class="self">self</span>, f: F) -&gt; <span class="prelude-ty">Result</span>&lt;OwningRef&lt;O, U&gt;, E&gt;
         <span class="kw">where </span>O: StableAddress,
-              F: <span class="kw">for</span>&lt;<span class="lifetime">&#39;a</span>&gt; FnOnce(<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>O, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>U, E&gt;
+              F: <span class="kw">for</span>&lt;<span class="lifetime">'a</span>&gt; FnOnce(<span class="kw-2">&amp;</span><span class="lifetime">'a </span>O, <span class="kw-2">&amp;</span><span class="lifetime">'a </span>T) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>U, E&gt;
     {
         <span class="prelude-val">Ok</span>(OwningRef {
             reference: f(<span class="kw-2">&amp;</span><span class="self">self</span>.owner, <span class="kw-2">&amp;</span><span class="self">self</span>)<span class="question-mark">?</span>,
@@ -2535,8 +2537,8 @@ fn main() {
     ///     assert_eq!(*owning_refs[1], 1);
     /// }
     /// ```
-    </span><span class="kw">pub fn </span>erase_owner&lt;<span class="lifetime">&#39;a</span>&gt;(<span class="self">self</span>) -&gt; OwningRef&lt;O::Erased, T&gt;
-        <span class="kw">where </span>O: IntoErased&lt;<span class="lifetime">&#39;a</span>&gt;,
+    </span><span class="kw">pub fn </span>erase_owner&lt;<span class="lifetime">'a</span>&gt;(<span class="self">self</span>) -&gt; OwningRef&lt;O::Erased, T&gt;
+        <span class="kw">where </span>O: IntoErased&lt;<span class="lifetime">'a</span>&gt;,
     {
         OwningRef {
             reference: <span class="self">self</span>.reference,
@@ -2599,7 +2601,7 @@ fn main() {
     /// something reachable from the previous one.
     ///
     /// This can be a reference to a field of `U`, something reachable from a field of
-    /// `U`, or even something unrelated with a `&#39;static` lifetime.
+    /// `U`, or even something unrelated with a `'static` lifetime.
     ///
     /// # Example
     /// ```
@@ -2629,7 +2631,7 @@ fn main() {
     /// something reachable from the previous one.
     ///
     /// This can be a reference to a field of `U`, something reachable from a field of
-    /// `U`, or even something unrelated with a `&#39;static` lifetime.
+    /// `U`, or even something unrelated with a `'static` lifetime.
     ///
     /// # Example
     /// ```
@@ -2659,7 +2661,7 @@ fn main() {
     /// at something reachable from the previous one.
     ///
     /// This can be a reference to a field of `U`, something reachable from a field of
-    /// `U`, or even something unrelated with a `&#39;static` lifetime.
+    /// `U`, or even something unrelated with a `'static` lifetime.
     ///
     /// # Example
     /// ```
@@ -2691,7 +2693,7 @@ fn main() {
     /// at something reachable from the previous one.
     ///
     /// This can be a reference to a field of `U`, something reachable from a field of
-    /// `U`, or even something unrelated with a `&#39;static` lifetime.
+    /// `U`, or even something unrelated with a `'static` lifetime.
     ///
     /// # Example
     /// ```
@@ -2779,8 +2781,8 @@ fn main() {
     ///     assert_eq!(*owning_refs_mut[1], 1);
     /// }
     /// ```
-    </span><span class="kw">pub fn </span>erase_owner&lt;<span class="lifetime">&#39;a</span>&gt;(<span class="self">self</span>) -&gt; OwningRefMut&lt;O::Erased, T&gt;
-        <span class="kw">where </span>O: IntoErased&lt;<span class="lifetime">&#39;a</span>&gt;,
+    </span><span class="kw">pub fn </span>erase_owner&lt;<span class="lifetime">'a</span>&gt;(<span class="self">self</span>) -&gt; OwningRefMut&lt;O::Erased, T&gt;
+        <span class="kw">where </span>O: IntoErased&lt;<span class="lifetime">'a</span>&gt;,
     {
         OwningRefMut {
             reference: <span class="self">self</span>.reference,
@@ -2883,7 +2885,7 @@ fn main() {
     <span class="kw">where </span>O: StableAddress, O::Target: ToHandle&lt;Handle = H&gt;, H: Deref,
 {
     <span class="doccomment">/// Create a new `OwningHandle` for a type that implements `ToHandle`. For types
-    /// that don&#39;t implement `ToHandle`, callers may invoke `new_with_fn`, which accepts
+    /// that don't implement `ToHandle`, callers may invoke `new_with_fn`, which accepts
     /// a callback to perform the conversion.
     </span><span class="kw">pub fn </span>new(o: O) -&gt; <span class="self">Self </span>{
         OwningHandle::new_with_fn(o, |x| <span class="kw">unsafe </span>{ O::Target::to_handle(x) })
@@ -3054,7 +3056,7 @@ fn main() {
 {
     <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter) -&gt; <span class="prelude-ty">Result</span>&lt;(), fmt::Error&gt; {
         <span class="macro">write!</span>(f,
-               <span class="string">&quot;OwningRef {{ owner: {:?}, reference: {:?} }}&quot;</span>,
+               <span class="string">"OwningRef {{ owner: {:?}, reference: {:?} }}"</span>,
                <span class="self">self</span>.as_owner(),
                <span class="kw-2">&amp;**</span><span class="self">self</span>)
     }
@@ -3066,7 +3068,7 @@ fn main() {
 {
     <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter) -&gt; <span class="prelude-ty">Result</span>&lt;(), fmt::Error&gt; {
         <span class="macro">write!</span>(f,
-               <span class="string">&quot;OwningRefMut {{ owner: {:?}, reference: {:?} }}&quot;</span>,
+               <span class="string">"OwningRefMut {{ owner: {:?}, reference: {:?} }}"</span>,
                <span class="self">self</span>.as_owner(),
                <span class="kw-2">&amp;**</span><span class="self">self</span>)
     }
@@ -3087,18 +3089,18 @@ fn main() {
     <span class="kw">where </span>O: CloneStableAddress {}
 
 <span class="kw">unsafe impl</span>&lt;O, T: <span class="question-mark">?</span>Sized&gt; Send <span class="kw">for </span>OwningRef&lt;O, T&gt;
-    <span class="kw">where </span>O: Send, <span class="kw">for</span>&lt;<span class="lifetime">&#39;a</span>&gt; (<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T): Send {}
+    <span class="kw">where </span>O: Send, <span class="kw">for</span>&lt;<span class="lifetime">'a</span>&gt; (<span class="kw-2">&amp;</span><span class="lifetime">'a </span>T): Send {}
 <span class="kw">unsafe impl</span>&lt;O, T: <span class="question-mark">?</span>Sized&gt; Sync <span class="kw">for </span>OwningRef&lt;O, T&gt;
-    <span class="kw">where </span>O: Sync, <span class="kw">for</span>&lt;<span class="lifetime">&#39;a</span>&gt; (<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T): Sync {}
+    <span class="kw">where </span>O: Sync, <span class="kw">for</span>&lt;<span class="lifetime">'a</span>&gt; (<span class="kw-2">&amp;</span><span class="lifetime">'a </span>T): Sync {}
 
 <span class="kw">unsafe impl</span>&lt;O, T: <span class="question-mark">?</span>Sized&gt; Send <span class="kw">for </span>OwningRefMut&lt;O, T&gt;
-    <span class="kw">where </span>O: Send, <span class="kw">for</span>&lt;<span class="lifetime">&#39;a</span>&gt; (<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>T): Send {}
+    <span class="kw">where </span>O: Send, <span class="kw">for</span>&lt;<span class="lifetime">'a</span>&gt; (<span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>T): Send {}
 <span class="kw">unsafe impl</span>&lt;O, T: <span class="question-mark">?</span>Sized&gt; Sync <span class="kw">for </span>OwningRefMut&lt;O, T&gt;
-    <span class="kw">where </span>O: Sync, <span class="kw">for</span>&lt;<span class="lifetime">&#39;a</span>&gt; (<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>T): Sync {}
+    <span class="kw">where </span>O: Sync, <span class="kw">for</span>&lt;<span class="lifetime">'a</span>&gt; (<span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>T): Sync {}
 
 <span class="kw">impl </span>Debug <span class="kw">for dyn </span>Erased {
     <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter) -&gt; <span class="prelude-ty">Result</span>&lt;(), fmt::Error&gt; {
-        <span class="macro">write!</span>(f, <span class="string">&quot;&lt;dyn Erased&gt;&quot;</span>,)
+        <span class="macro">write!</span>(f, <span class="string">"&lt;dyn Erased&gt;"</span>,)
     }
 }
 
@@ -3164,13 +3166,13 @@ fn main() {
 <span class="kw">use </span>std::sync::{MutexGuard, RwLockReadGuard, RwLockWriteGuard};
 <span class="kw">use </span>std::cell::{Ref, RefCell, RefMut};
 
-<span class="kw">impl</span>&lt;T: <span class="lifetime">&#39;static</span>&gt; ToHandle <span class="kw">for </span>RefCell&lt;T&gt; {
-    <span class="kw">type </span>Handle = Ref&lt;<span class="lifetime">&#39;static</span>, T&gt;;
+<span class="kw">impl</span>&lt;T: <span class="lifetime">'static</span>&gt; ToHandle <span class="kw">for </span>RefCell&lt;T&gt; {
+    <span class="kw">type </span>Handle = Ref&lt;<span class="lifetime">'static</span>, T&gt;;
     <span class="kw">unsafe fn </span>to_handle(x: <span class="kw-2">*const </span><span class="self">Self</span>) -&gt; <span class="self">Self</span>::Handle { (<span class="kw-2">*</span>x).borrow() }
 }
 
-<span class="kw">impl</span>&lt;T: <span class="lifetime">&#39;static</span>&gt; ToHandleMut <span class="kw">for </span>RefCell&lt;T&gt; {
-    <span class="kw">type </span>HandleMut = RefMut&lt;<span class="lifetime">&#39;static</span>, T&gt;;
+<span class="kw">impl</span>&lt;T: <span class="lifetime">'static</span>&gt; ToHandleMut <span class="kw">for </span>RefCell&lt;T&gt; {
+    <span class="kw">type </span>HandleMut = RefMut&lt;<span class="lifetime">'static</span>, T&gt;;
     <span class="kw">unsafe fn </span>to_handle_mut(x: <span class="kw-2">*const </span><span class="self">Self</span>) -&gt; <span class="self">Self</span>::HandleMut { (<span class="kw-2">*</span>x).borrow_mut() }
 }
 
@@ -3191,15 +3193,15 @@ fn main() {
 </span><span class="kw">pub type </span>ArcRef&lt;T, U = T&gt; = OwningRef&lt;Arc&lt;T&gt;, U&gt;;
 
 <span class="doccomment">/// Typedef of a owning reference that uses a `Ref` as the owner.
-</span><span class="kw">pub type </span>RefRef&lt;<span class="lifetime">&#39;a</span>, T, U = T&gt; = OwningRef&lt;Ref&lt;<span class="lifetime">&#39;a</span>, T&gt;, U&gt;;
+</span><span class="kw">pub type </span>RefRef&lt;<span class="lifetime">'a</span>, T, U = T&gt; = OwningRef&lt;Ref&lt;<span class="lifetime">'a</span>, T&gt;, U&gt;;
 <span class="doccomment">/// Typedef of a owning reference that uses a `RefMut` as the owner.
-</span><span class="kw">pub type </span>RefMutRef&lt;<span class="lifetime">&#39;a</span>, T, U = T&gt; = OwningRef&lt;RefMut&lt;<span class="lifetime">&#39;a</span>, T&gt;, U&gt;;
+</span><span class="kw">pub type </span>RefMutRef&lt;<span class="lifetime">'a</span>, T, U = T&gt; = OwningRef&lt;RefMut&lt;<span class="lifetime">'a</span>, T&gt;, U&gt;;
 <span class="doccomment">/// Typedef of a owning reference that uses a `MutexGuard` as the owner.
-</span><span class="kw">pub type </span>MutexGuardRef&lt;<span class="lifetime">&#39;a</span>, T, U = T&gt; = OwningRef&lt;MutexGuard&lt;<span class="lifetime">&#39;a</span>, T&gt;, U&gt;;
+</span><span class="kw">pub type </span>MutexGuardRef&lt;<span class="lifetime">'a</span>, T, U = T&gt; = OwningRef&lt;MutexGuard&lt;<span class="lifetime">'a</span>, T&gt;, U&gt;;
 <span class="doccomment">/// Typedef of a owning reference that uses a `RwLockReadGuard` as the owner.
-</span><span class="kw">pub type </span>RwLockReadGuardRef&lt;<span class="lifetime">&#39;a</span>, T, U = T&gt; = OwningRef&lt;RwLockReadGuard&lt;<span class="lifetime">&#39;a</span>, T&gt;, U&gt;;
+</span><span class="kw">pub type </span>RwLockReadGuardRef&lt;<span class="lifetime">'a</span>, T, U = T&gt; = OwningRef&lt;RwLockReadGuard&lt;<span class="lifetime">'a</span>, T&gt;, U&gt;;
 <span class="doccomment">/// Typedef of a owning reference that uses a `RwLockWriteGuard` as the owner.
-</span><span class="kw">pub type </span>RwLockWriteGuardRef&lt;<span class="lifetime">&#39;a</span>, T, U = T&gt; = OwningRef&lt;RwLockWriteGuard&lt;<span class="lifetime">&#39;a</span>, T&gt;, U&gt;;
+</span><span class="kw">pub type </span>RwLockWriteGuardRef&lt;<span class="lifetime">'a</span>, T, U = T&gt; = OwningRef&lt;RwLockWriteGuard&lt;<span class="lifetime">'a</span>, T&gt;, U&gt;;
 
 <span class="doccomment">/// Typedef of a mutable owning reference that uses a `Box` as the owner.
 </span><span class="kw">pub type </span>BoxRefMut&lt;T, U = T&gt; = OwningRefMut&lt;Box&lt;T&gt;, U&gt;;
@@ -3209,26 +3211,26 @@ fn main() {
 </span><span class="kw">pub type </span>StringRefMut = OwningRefMut&lt;String, str&gt;;
 
 <span class="doccomment">/// Typedef of a mutable owning reference that uses a `RefMut` as the owner.
-</span><span class="kw">pub type </span>RefMutRefMut&lt;<span class="lifetime">&#39;a</span>, T, U = T&gt; = OwningRefMut&lt;RefMut&lt;<span class="lifetime">&#39;a</span>, T&gt;, U&gt;;
+</span><span class="kw">pub type </span>RefMutRefMut&lt;<span class="lifetime">'a</span>, T, U = T&gt; = OwningRefMut&lt;RefMut&lt;<span class="lifetime">'a</span>, T&gt;, U&gt;;
 <span class="doccomment">/// Typedef of a mutable owning reference that uses a `MutexGuard` as the owner.
-</span><span class="kw">pub type </span>MutexGuardRefMut&lt;<span class="lifetime">&#39;a</span>, T, U = T&gt; = OwningRefMut&lt;MutexGuard&lt;<span class="lifetime">&#39;a</span>, T&gt;, U&gt;;
+</span><span class="kw">pub type </span>MutexGuardRefMut&lt;<span class="lifetime">'a</span>, T, U = T&gt; = OwningRefMut&lt;MutexGuard&lt;<span class="lifetime">'a</span>, T&gt;, U&gt;;
 <span class="doccomment">/// Typedef of a mutable owning reference that uses a `RwLockWriteGuard` as the owner.
-</span><span class="kw">pub type </span>RwLockWriteGuardRefMut&lt;<span class="lifetime">&#39;a</span>, T, U = T&gt; = OwningRefMut&lt;RwLockWriteGuard&lt;<span class="lifetime">&#39;a</span>, T&gt;, U&gt;;
+</span><span class="kw">pub type </span>RwLockWriteGuardRefMut&lt;<span class="lifetime">'a</span>, T, U = T&gt; = OwningRefMut&lt;RwLockWriteGuard&lt;<span class="lifetime">'a</span>, T&gt;, U&gt;;
 
-<span class="kw">unsafe impl</span>&lt;<span class="lifetime">&#39;a</span>, T: <span class="lifetime">&#39;a</span>&gt; IntoErased&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw">for </span>Box&lt;T&gt; {
-    <span class="kw">type </span>Erased = Box&lt;<span class="kw">dyn </span>Erased + <span class="lifetime">&#39;a</span>&gt;;
+<span class="kw">unsafe impl</span>&lt;<span class="lifetime">'a</span>, T: <span class="lifetime">'a</span>&gt; IntoErased&lt;<span class="lifetime">'a</span>&gt; <span class="kw">for </span>Box&lt;T&gt; {
+    <span class="kw">type </span>Erased = Box&lt;<span class="kw">dyn </span>Erased + <span class="lifetime">'a</span>&gt;;
     <span class="kw">fn </span>into_erased(<span class="self">self</span>) -&gt; <span class="self">Self</span>::Erased {
         <span class="self">self
     </span>}
 }
-<span class="kw">unsafe impl</span>&lt;<span class="lifetime">&#39;a</span>, T: <span class="lifetime">&#39;a</span>&gt; IntoErased&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw">for </span>Rc&lt;T&gt; {
-    <span class="kw">type </span>Erased = Rc&lt;<span class="kw">dyn </span>Erased + <span class="lifetime">&#39;a</span>&gt;;
+<span class="kw">unsafe impl</span>&lt;<span class="lifetime">'a</span>, T: <span class="lifetime">'a</span>&gt; IntoErased&lt;<span class="lifetime">'a</span>&gt; <span class="kw">for </span>Rc&lt;T&gt; {
+    <span class="kw">type </span>Erased = Rc&lt;<span class="kw">dyn </span>Erased + <span class="lifetime">'a</span>&gt;;
     <span class="kw">fn </span>into_erased(<span class="self">self</span>) -&gt; <span class="self">Self</span>::Erased {
         <span class="self">self
     </span>}
 }
-<span class="kw">unsafe impl</span>&lt;<span class="lifetime">&#39;a</span>, T: <span class="lifetime">&#39;a</span>&gt; IntoErased&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw">for </span>Arc&lt;T&gt; {
-    <span class="kw">type </span>Erased = Arc&lt;<span class="kw">dyn </span>Erased + <span class="lifetime">&#39;a</span>&gt;;
+<span class="kw">unsafe impl</span>&lt;<span class="lifetime">'a</span>, T: <span class="lifetime">'a</span>&gt; IntoErased&lt;<span class="lifetime">'a</span>&gt; <span class="kw">for </span>Arc&lt;T&gt; {
+    <span class="kw">type </span>Erased = Arc&lt;<span class="kw">dyn </span>Erased + <span class="lifetime">'a</span>&gt;;
     <span class="kw">fn </span>into_erased(<span class="self">self</span>) -&gt; <span class="self">Self</span>::Erased {
         <span class="self">self
     </span>}
@@ -3258,7 +3260,7 @@ fn main() {
         <span class="attr">#[derive(Debug, PartialEq)]
         </span><span class="kw">struct </span>Example(u32, String, [u8; <span class="number">3</span>]);
         <span class="kw">fn </span>example() -&gt; Example {
-            Example(<span class="number">42</span>, <span class="string">&quot;hello world&quot;</span>.to_string(), [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>])
+            Example(<span class="number">42</span>, <span class="string">"hello world"</span>.to_string(), [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>])
         }
 
         <span class="attr">#[test]
@@ -3288,14 +3290,14 @@ fn main() {
         </span><span class="kw">fn </span>map_heap_ref() {
             <span class="kw">let </span>or: BoxRef&lt;Example&gt; = Box::new(example()).into();
             <span class="kw">let </span>or: BoxRef&lt;<span class="kw">_</span>, str&gt; = or.map(|x| <span class="kw-2">&amp;</span>x.<span class="number">1</span>[..<span class="number">5</span>]);
-            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;*</span>or, <span class="string">&quot;hello&quot;</span>);
+            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;*</span>or, <span class="string">"hello"</span>);
         }
 
         <span class="attr">#[test]
         </span><span class="kw">fn </span>map_static_ref() {
             <span class="kw">let </span>or: BoxRef&lt;()&gt; = Box::new(()).into();
-            <span class="kw">let </span>or: BoxRef&lt;<span class="kw">_</span>, str&gt; = or.map(|<span class="kw">_</span>| <span class="string">&quot;hello&quot;</span>);
-            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;*</span>or, <span class="string">&quot;hello&quot;</span>);
+            <span class="kw">let </span>or: BoxRef&lt;<span class="kw">_</span>, str&gt; = or.map(|<span class="kw">_</span>| <span class="string">"hello"</span>);
+            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;*</span>or, <span class="string">"hello"</span>);
         }
 
         <span class="attr">#[test]
@@ -3303,7 +3305,7 @@ fn main() {
             <span class="kw">let </span>or: BoxRef&lt;String&gt; = Box::new(example().<span class="number">1</span>).into();
             <span class="kw">let </span>or: BoxRef&lt;<span class="kw">_</span>, str&gt; = or.map(|x| <span class="kw-2">&amp;</span>x[<span class="number">1</span>..<span class="number">5</span>]);
             <span class="kw">let </span>or: BoxRef&lt;<span class="kw">_</span>, str&gt; = or.map(|x| <span class="kw-2">&amp;</span>x[..<span class="number">2</span>]);
-            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;*</span>or, <span class="string">&quot;el&quot;</span>);
+            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;*</span>or, <span class="string">"el"</span>);
         }
 
         <span class="attr">#[test]
@@ -3311,32 +3313,32 @@ fn main() {
             <span class="kw">let </span>or = BoxRef::new(Box::new(example().<span class="number">1</span>))
                 .map(|x| <span class="kw-2">&amp;</span>x[..<span class="number">5</span>])
                 .map(|x| <span class="kw-2">&amp;</span>x[<span class="number">1</span>..<span class="number">3</span>]);
-            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;*</span>or, <span class="string">&quot;el&quot;</span>);
+            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;*</span>or, <span class="string">"el"</span>);
         }
 
         <span class="attr">#[test]
         </span><span class="kw">fn </span>as_owner() {
             <span class="kw">let </span>or: BoxRef&lt;String&gt; = Box::new(example().<span class="number">1</span>).into();
             <span class="kw">let </span>or = or.map(|x| <span class="kw-2">&amp;</span>x[..<span class="number">5</span>]);
-            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;*</span>or, <span class="string">&quot;hello&quot;</span>);
-            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;**</span>or.as_owner(), <span class="string">&quot;hello world&quot;</span>);
+            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;*</span>or, <span class="string">"hello"</span>);
+            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;**</span>or.as_owner(), <span class="string">"hello world"</span>);
         }
 
         <span class="attr">#[test]
         </span><span class="kw">fn </span>into_owner() {
             <span class="kw">let </span>or: BoxRef&lt;String&gt; = Box::new(example().<span class="number">1</span>).into();
             <span class="kw">let </span>or = or.map(|x| <span class="kw-2">&amp;</span>x[..<span class="number">5</span>]);
-            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;*</span>or, <span class="string">&quot;hello&quot;</span>);
+            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;*</span>or, <span class="string">"hello"</span>);
             <span class="kw">let </span>s = <span class="kw-2">*</span>or.into_owner();
-            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>s, <span class="string">&quot;hello world&quot;</span>);
+            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>s, <span class="string">"hello world"</span>);
         }
 
         <span class="attr">#[test]
         </span><span class="kw">fn </span>fmt_debug() {
             <span class="kw">let </span>or: BoxRef&lt;String&gt; = Box::new(example().<span class="number">1</span>).into();
             <span class="kw">let </span>or = or.map(|x| <span class="kw-2">&amp;</span>x[..<span class="number">5</span>]);
-            <span class="kw">let </span>s = <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, or);
-            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>s, <span class="string">&quot;OwningRef { owner: \&quot;hello world\&quot;, reference: \&quot;hello\&quot; }&quot;</span>);
+            <span class="kw">let </span>s = <span class="macro">format!</span>(<span class="string">"{:?}"</span>, or);
+            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>s, <span class="string">"OwningRef { owner: \"hello world\", reference: \"hello\" }"</span>);
         }
 
         <span class="attr">#[test]
@@ -3348,7 +3350,7 @@ fn main() {
                 .map(|x| <span class="kw-2">&amp;</span>x[..]);
 
             <span class="kw">let </span>os: Vec&lt;ErasedBoxRef&lt;str&gt;&gt; = <span class="macro">vec!</span>[o1.erase_owner(), o2.erase_owner()];
-            <span class="macro">assert!</span>(os.iter().all(|e| <span class="kw-2">&amp;</span>e[..] == <span class="string">&quot;hello world&quot;</span>));
+            <span class="macro">assert!</span>(os.iter().all(|e| <span class="kw-2">&amp;</span>e[..] == <span class="string">"hello world"</span>));
         }
 
         <span class="attr">#[test]
@@ -3356,10 +3358,10 @@ fn main() {
             <span class="kw">let </span>foo = [<span class="number">413</span>, <span class="number">612</span>];
             <span class="kw">let </span>bar = <span class="kw-2">&amp;</span>foo;
 
-            <span class="comment">// FIXME: lifetime inference fails us, and we can&#39;t easily define a lifetime for a closure
+            <span class="comment">// FIXME: lifetime inference fails us, and we can't easily define a lifetime for a closure
             // (see https://github.com/rust-lang/rust/issues/22340)
             // So we use a function to identify the lifetimes instead.
-            </span><span class="kw">fn </span>borrow&lt;<span class="lifetime">&#39;a</span>&gt;(a: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">&amp;</span>[i32; <span class="number">2</span>]) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>i32 {
+            </span><span class="kw">fn </span>borrow&lt;<span class="lifetime">'a</span>&gt;(a: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">&amp;</span>[i32; <span class="number">2</span>]) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>i32 {
                 <span class="kw-2">&amp;</span>a[<span class="number">0</span>]
             }
 
@@ -3467,13 +3469,13 @@ fn main() {
         <span class="attr">#[test]
         </span><span class="kw">fn </span>borrow() {
             <span class="kw">let </span><span class="kw-2">mut </span>hash = HashMap::new();
-            <span class="kw">let     </span>key  = RcRef::&lt;String&gt;::new(Rc::new(<span class="string">&quot;foo-bar&quot;</span>.to_string())).map(|s| <span class="kw-2">&amp;</span>s[..]);
+            <span class="kw">let     </span>key  = RcRef::&lt;String&gt;::new(Rc::new(<span class="string">"foo-bar"</span>.to_string())).map(|s| <span class="kw-2">&amp;</span>s[..]);
 
             hash.insert(key.clone().map(|s| <span class="kw-2">&amp;</span>s[..<span class="number">3</span>]), <span class="number">42</span>);
             hash.insert(key.clone().map(|s| <span class="kw-2">&amp;</span>s[<span class="number">4</span>..]), <span class="number">23</span>);
 
-            <span class="macro">assert_eq!</span>(hash.get(<span class="string">&quot;foo&quot;</span>), <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="number">42</span>));
-            <span class="macro">assert_eq!</span>(hash.get(<span class="string">&quot;bar&quot;</span>), <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="number">23</span>));
+            <span class="macro">assert_eq!</span>(hash.get(<span class="string">"foo"</span>), <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="number">42</span>));
+            <span class="macro">assert_eq!</span>(hash.get(<span class="string">"bar"</span>), <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="number">23</span>));
         }
 
         <span class="attr">#[test]
@@ -3617,15 +3619,15 @@ fn main() {
             <span class="kw">use </span>std::sync::{Arc, RwLock};
 
             <span class="kw">let </span>result = {
-                <span class="kw">let </span>complex = Rc::new(RefCell::new(Arc::new(RwLock::new(<span class="string">&quot;someString&quot;</span>))));
+                <span class="kw">let </span>complex = Rc::new(RefCell::new(Arc::new(RwLock::new(<span class="string">"someString"</span>))));
                 <span class="kw">let </span>curr = RcRef::new(complex);
                 <span class="kw">let </span>curr = OwningHandle::new_with_fn(curr, |x| <span class="kw">unsafe </span>{ x.as_ref() }.unwrap().borrow_mut());
                 <span class="kw">let </span><span class="kw-2">mut </span>curr = OwningHandle::new_with_fn(curr, |x| <span class="kw">unsafe </span>{ x.as_ref() }.unwrap().try_write().unwrap());
-                <span class="macro">assert_eq!</span>(<span class="kw-2">*</span>curr, <span class="string">&quot;someString&quot;</span>);
-                <span class="kw-2">*</span>curr = <span class="string">&quot;someOtherString&quot;</span>;
+                <span class="macro">assert_eq!</span>(<span class="kw-2">*</span>curr, <span class="string">"someString"</span>);
+                <span class="kw-2">*</span>curr = <span class="string">"someOtherString"</span>;
                 curr
             };
-            <span class="macro">assert_eq!</span>(<span class="kw-2">*</span>result, <span class="string">&quot;someOtherString&quot;</span>);
+            <span class="macro">assert_eq!</span>(<span class="kw-2">*</span>result, <span class="string">"someOtherString"</span>);
         }
 
         <span class="attr">#[test]
@@ -3651,15 +3653,15 @@ fn main() {
         <span class="attr">#[test]
         </span><span class="kw">fn </span>owning_handle_safe_2() {
             <span class="kw">let </span>result = {
-                <span class="kw">let </span>complex = Rc::new(RefCell::new(Arc::new(RwLock::new(<span class="string">&quot;someString&quot;</span>))));
+                <span class="kw">let </span>complex = Rc::new(RefCell::new(Arc::new(RwLock::new(<span class="string">"someString"</span>))));
                 <span class="kw">let </span>curr = RcRef::new(complex);
                 <span class="kw">let </span>curr = OwningHandle::new_with_fn(curr, |x| <span class="kw">unsafe </span>{ x.as_ref() }.unwrap().borrow_mut());
                 <span class="kw">let </span><span class="kw-2">mut </span>curr = OwningHandle::new_with_fn(curr, |x| <span class="kw">unsafe </span>{ x.as_ref() }.unwrap().try_write().unwrap());
-                <span class="macro">assert_eq!</span>(<span class="kw-2">*</span>curr, <span class="string">&quot;someString&quot;</span>);
-                <span class="kw-2">*</span>curr = <span class="string">&quot;someOtherString&quot;</span>;
+                <span class="macro">assert_eq!</span>(<span class="kw-2">*</span>curr, <span class="string">"someString"</span>);
+                <span class="kw-2">*</span>curr = <span class="string">"someOtherString"</span>;
                 curr
             };
-            <span class="macro">assert_eq!</span>(<span class="kw-2">*</span>result, <span class="string">&quot;someOtherString&quot;</span>);
+            <span class="macro">assert_eq!</span>(<span class="kw-2">*</span>result, <span class="string">"someOtherString"</span>);
         }
     }
 
@@ -3674,7 +3676,7 @@ fn main() {
         <span class="attr">#[derive(Debug, PartialEq)]
         </span><span class="kw">struct </span>Example(u32, String, [u8; <span class="number">3</span>]);
         <span class="kw">fn </span>example() -&gt; Example {
-            Example(<span class="number">42</span>, <span class="string">&quot;hello world&quot;</span>.to_string(), [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>])
+            Example(<span class="number">42</span>, <span class="string">"hello world"</span>.to_string(), [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>])
         }
 
         <span class="attr">#[test]
@@ -3718,14 +3720,14 @@ fn main() {
         </span><span class="kw">fn </span>map_heap_ref() {
             <span class="kw">let </span>or: BoxRefMut&lt;Example&gt; = Box::new(example()).into();
             <span class="kw">let </span>or: BoxRef&lt;<span class="kw">_</span>, str&gt; = or.map(|x| <span class="kw-2">&amp;mut </span>x.<span class="number">1</span>[..<span class="number">5</span>]);
-            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;*</span>or, <span class="string">&quot;hello&quot;</span>);
+            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;*</span>or, <span class="string">"hello"</span>);
         }
 
         <span class="attr">#[test]
         </span><span class="kw">fn </span>map_static_ref() {
             <span class="kw">let </span>or: BoxRefMut&lt;()&gt; = Box::new(()).into();
-            <span class="kw">let </span>or: BoxRef&lt;<span class="kw">_</span>, str&gt; = or.map(|<span class="kw">_</span>| <span class="string">&quot;hello&quot;</span>);
-            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;*</span>or, <span class="string">&quot;hello&quot;</span>);
+            <span class="kw">let </span>or: BoxRef&lt;<span class="kw">_</span>, str&gt; = or.map(|<span class="kw">_</span>| <span class="string">"hello"</span>);
+            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;*</span>or, <span class="string">"hello"</span>);
         }
 
         <span class="attr">#[test]
@@ -3743,18 +3745,18 @@ fn main() {
         </span><span class="kw">fn </span>map_mut_heap_ref() {
             <span class="kw">let </span>or: BoxRefMut&lt;Example&gt; = Box::new(example()).into();
             <span class="kw">let </span>or: BoxRefMut&lt;<span class="kw">_</span>, str&gt; = or.map_mut(|x| <span class="kw-2">&amp;mut </span>x.<span class="number">1</span>[..<span class="number">5</span>]);
-            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;*</span>or, <span class="string">&quot;hello&quot;</span>);
+            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;*</span>or, <span class="string">"hello"</span>);
         }
 
         <span class="attr">#[test]
         </span><span class="kw">fn </span>map_mut_static_ref() {
-            <span class="kw">static </span><span class="kw-2">mut </span>MUT_S: [u8; <span class="number">5</span>] = <span class="kw-2">*</span><span class="string">b&quot;hello&quot;</span>;
+            <span class="kw">static </span><span class="kw-2">mut </span>MUT_S: [u8; <span class="number">5</span>] = <span class="kw-2">*</span><span class="string">b"hello"</span>;
 
-            <span class="kw">let </span>mut_s: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span><span class="kw-2">mut </span>[u8] = <span class="kw">unsafe </span>{ <span class="kw-2">&amp;mut </span>MUT_S };
+            <span class="kw">let </span>mut_s: <span class="kw-2">&amp;</span><span class="lifetime">'static </span><span class="kw-2">mut </span>[u8] = <span class="kw">unsafe </span>{ <span class="kw-2">&amp;mut </span>MUT_S };
 
             <span class="kw">let </span>or: BoxRefMut&lt;()&gt; = Box::new(()).into();
             <span class="kw">let </span>or: BoxRefMut&lt;<span class="kw">_</span>, [u8]&gt; = or.map_mut(<span class="kw">move </span>|<span class="kw">_</span>| mut_s);
-            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;*</span>or, <span class="string">b&quot;hello&quot;</span>);
+            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;*</span>or, <span class="string">b"hello"</span>);
         }
 
         <span class="attr">#[test]
@@ -3762,7 +3764,7 @@ fn main() {
             <span class="kw">let </span>or: BoxRefMut&lt;String&gt; = Box::new(example().<span class="number">1</span>).into();
             <span class="kw">let </span>or: BoxRefMut&lt;<span class="kw">_</span>, str&gt; = or.map_mut(|x| <span class="kw-2">&amp;mut </span>x[<span class="number">1</span>..<span class="number">5</span>]);
             <span class="kw">let </span>or: BoxRefMut&lt;<span class="kw">_</span>, str&gt; = or.map_mut(|x| <span class="kw-2">&amp;mut </span>x[..<span class="number">2</span>]);
-            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;*</span>or, <span class="string">&quot;el&quot;</span>);
+            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;*</span>or, <span class="string">"el"</span>);
         }
 
         <span class="attr">#[test]
@@ -3770,14 +3772,14 @@ fn main() {
             <span class="kw">let </span>or = BoxRefMut::new(Box::new(example().<span class="number">1</span>))
                 .map_mut(|x| <span class="kw-2">&amp;mut </span>x[..<span class="number">5</span>])
                 .map_mut(|x| <span class="kw-2">&amp;mut </span>x[<span class="number">1</span>..<span class="number">3</span>]);
-            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;*</span>or, <span class="string">&quot;el&quot;</span>);
+            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;*</span>or, <span class="string">"el"</span>);
         }
 
         <span class="attr">#[test]
         </span><span class="kw">fn </span>try_map_mut() {
             <span class="kw">let </span>or: BoxRefMut&lt;String&gt; = Box::new(example().<span class="number">1</span>).into();
             <span class="kw">let </span>or: <span class="prelude-ty">Result</span>&lt;BoxRefMut&lt;<span class="kw">_</span>, str&gt;, ()&gt; = or.try_map_mut(|x| <span class="prelude-val">Ok</span>(<span class="kw-2">&amp;mut </span>x[<span class="number">1</span>..<span class="number">5</span>]));
-            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;*</span>or.unwrap(), <span class="string">&quot;ello&quot;</span>);
+            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;*</span>or.unwrap(), <span class="string">"ello"</span>);
 
             <span class="kw">let </span>or: BoxRefMut&lt;String&gt; = Box::new(example().<span class="number">1</span>).into();
             <span class="kw">let </span>or: <span class="prelude-ty">Result</span>&lt;BoxRefMut&lt;<span class="kw">_</span>, str&gt;, ()&gt; = or.try_map_mut(|<span class="kw">_</span>| <span class="prelude-val">Err</span>(()));
@@ -3788,26 +3790,26 @@ fn main() {
         </span><span class="kw">fn </span>as_owner() {
             <span class="kw">let </span>or: BoxRefMut&lt;String&gt; = Box::new(example().<span class="number">1</span>).into();
             <span class="kw">let </span>or = or.map_mut(|x| <span class="kw-2">&amp;mut </span>x[..<span class="number">5</span>]);
-            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;*</span>or, <span class="string">&quot;hello&quot;</span>);
-            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;**</span>or.as_owner(), <span class="string">&quot;hello world&quot;</span>);
+            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;*</span>or, <span class="string">"hello"</span>);
+            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;**</span>or.as_owner(), <span class="string">"hello world"</span>);
         }
 
         <span class="attr">#[test]
         </span><span class="kw">fn </span>into_owner() {
             <span class="kw">let </span>or: BoxRefMut&lt;String&gt; = Box::new(example().<span class="number">1</span>).into();
             <span class="kw">let </span>or = or.map_mut(|x| <span class="kw-2">&amp;mut </span>x[..<span class="number">5</span>]);
-            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;*</span>or, <span class="string">&quot;hello&quot;</span>);
+            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;*</span>or, <span class="string">"hello"</span>);
             <span class="kw">let </span>s = <span class="kw-2">*</span>or.into_owner();
-            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>s, <span class="string">&quot;hello world&quot;</span>);
+            <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>s, <span class="string">"hello world"</span>);
         }
 
         <span class="attr">#[test]
         </span><span class="kw">fn </span>fmt_debug() {
             <span class="kw">let </span>or: BoxRefMut&lt;String&gt; = Box::new(example().<span class="number">1</span>).into();
             <span class="kw">let </span>or = or.map_mut(|x| <span class="kw-2">&amp;mut </span>x[..<span class="number">5</span>]);
-            <span class="kw">let </span>s = <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, or);
+            <span class="kw">let </span>s = <span class="macro">format!</span>(<span class="string">"{:?}"</span>, or);
             <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>s,
-                       <span class="string">&quot;OwningRefMut { owner: \&quot;hello world\&quot;, reference: \&quot;hello\&quot; }&quot;</span>);
+                       <span class="string">"OwningRefMut { owner: \"hello world\", reference: \"hello\" }"</span>);
         }
 
         <span class="attr">#[test]
@@ -3819,7 +3821,7 @@ fn main() {
                 .map_mut(|x| <span class="kw-2">&amp;mut </span>x[..]);
 
             <span class="kw">let </span>os: Vec&lt;ErasedBoxRefMut&lt;str&gt;&gt; = <span class="macro">vec!</span>[o1.erase_owner(), o2.erase_owner()];
-            <span class="macro">assert!</span>(os.iter().all(|e| <span class="kw-2">&amp;</span>e[..] == <span class="string">&quot;hello world&quot;</span>));
+            <span class="macro">assert!</span>(os.iter().all(|e| <span class="kw-2">&amp;</span>e[..] == <span class="string">"hello world"</span>));
         }
 
         <span class="attr">#[test]
@@ -3827,10 +3829,10 @@ fn main() {
             <span class="kw">let </span><span class="kw-2">mut </span>foo = [<span class="number">413</span>, <span class="number">612</span>];
             <span class="kw">let </span>bar = <span class="kw-2">&amp;mut </span>foo;
 
-            <span class="comment">// FIXME: lifetime inference fails us, and we can&#39;t easily define a lifetime for a closure
+            <span class="comment">// FIXME: lifetime inference fails us, and we can't easily define a lifetime for a closure
             // (see https://github.com/rust-lang/rust/issues/22340)
             // So we use a function to identify the lifetimes instead.
-            </span><span class="kw">fn </span>borrow&lt;<span class="lifetime">&#39;a</span>&gt;(a: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut &amp;mut </span>[i32; <span class="number">2</span>]) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>i32 {
+            </span><span class="kw">fn </span>borrow&lt;<span class="lifetime">'a</span>&gt;(a: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut &amp;mut </span>[i32; <span class="number">2</span>]) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>i32 {
                 <span class="kw-2">&amp;mut </span>a[<span class="number">0</span>]
             }
 
@@ -3918,14 +3920,14 @@ fn main() {
         <span class="attr">#[test]
         </span><span class="kw">fn </span>borrow() {
             <span class="kw">let </span><span class="kw-2">mut </span>hash = HashMap::new();
-            <span class="kw">let     </span>key1 = BoxRefMut::&lt;String&gt;::new(Box::new(<span class="string">&quot;foo&quot;</span>.to_string())).map(|s| <span class="kw-2">&amp;</span>s[..]);
-            <span class="kw">let     </span>key2 = BoxRefMut::&lt;String&gt;::new(Box::new(<span class="string">&quot;bar&quot;</span>.to_string())).map(|s| <span class="kw-2">&amp;</span>s[..]);
+            <span class="kw">let     </span>key1 = BoxRefMut::&lt;String&gt;::new(Box::new(<span class="string">"foo"</span>.to_string())).map(|s| <span class="kw-2">&amp;</span>s[..]);
+            <span class="kw">let     </span>key2 = BoxRefMut::&lt;String&gt;::new(Box::new(<span class="string">"bar"</span>.to_string())).map(|s| <span class="kw-2">&amp;</span>s[..]);
 
             hash.insert(key1, <span class="number">42</span>);
             hash.insert(key2, <span class="number">23</span>);
 
-            <span class="macro">assert_eq!</span>(hash.get(<span class="string">&quot;foo&quot;</span>), <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="number">42</span>));
-            <span class="macro">assert_eq!</span>(hash.get(<span class="string">&quot;bar&quot;</span>), <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="number">23</span>));
+            <span class="macro">assert_eq!</span>(hash.get(<span class="string">"foo"</span>), <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="number">42</span>));
+            <span class="macro">assert_eq!</span>(hash.get(<span class="string">"bar"</span>), <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="number">23</span>));
         }
 
         <span class="attr">#[test]

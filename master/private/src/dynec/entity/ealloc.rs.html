@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/entity/ealloc.rs`."><title>ealloc.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="dynec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/entity/ealloc.rs`."><title>ealloc.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="dynec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../dynec/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -290,7 +292,7 @@
 }
 
 <span class="doccomment">/// Manages sharded entity ID allocation and deallocation.
-</span><span class="kw">pub trait </span>Ealloc: <span class="lifetime">&#39;static </span>{
+</span><span class="kw">pub trait </span>Ealloc: <span class="lifetime">'static </span>{
     <span class="doccomment">/// The raw entity ID type supported by this allocator.
     </span><span class="kw">type </span>Raw: Raw;
 
@@ -361,9 +363,9 @@
 
 <span class="comment">// Default allocator
 
-</span><span class="kw">struct </span>MutTakeIter&lt;<span class="lifetime">&#39;t</span>, T, I: Iterator&lt;Item = T&gt;&gt;(<span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>I, usize);
+</span><span class="kw">struct </span>MutTakeIter&lt;<span class="lifetime">'t</span>, T, I: Iterator&lt;Item = T&gt;&gt;(<span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span>I, usize);
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>, T, I: Iterator&lt;Item = T&gt;&gt; Iterator <span class="kw">for </span>MutTakeIter&lt;<span class="lifetime">&#39;t</span>, T, I&gt; {
+<span class="kw">impl</span>&lt;<span class="lifetime">'t</span>, T, I: Iterator&lt;Item = T&gt;&gt; Iterator <span class="kw">for </span>MutTakeIter&lt;<span class="lifetime">'t</span>, T, I&gt; {
     <span class="kw">type </span>Item = T;
 
     <span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt; {
@@ -424,10 +426,10 @@
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>get&lt;A: Archetype&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span>A::Ealloc {
         <span class="self">self</span>.map
             .get_mut(<span class="kw-2">&amp;</span>TypeId::of::&lt;A&gt;())
-            .expect(<span class="string">&quot;Attempted to delete entity of unknown archetype&quot;</span>)
+            .expect(<span class="string">"Attempted to delete entity of unknown archetype"</span>)
             .as_any_mut()
             .downcast_mut()
-            .expect(<span class="string">&quot;TypeId mismatch&quot;</span>)
+            .expect(<span class="string">"TypeId mismatch"</span>)
     }
 
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>shards(<span class="kw-2">&amp;mut </span><span class="self">self</span>, num_shards: usize) -&gt; Vec&lt;ShardMap&gt; {
@@ -438,7 +440,7 @@
             ealloc.shards(<span class="kw-2">&amp;mut </span>shard_buf);
 
             <span class="kw">for </span>(shard_id, shard) <span class="kw">in </span>shard_buf.drain(..).enumerate() {
-                <span class="kw">let </span>map = shard_maps.get_mut(shard_id).expect(<span class="string">&quot;inconsistent num_shards&quot;</span>);
+                <span class="kw">let </span>map = shard_maps.get_mut(shard_id).expect(<span class="string">"inconsistent num_shards"</span>);
                 map.map.insert(
                     ty,
                     ShardMapEntry { snapshot: ealloc.snapshot(), cell: RefCell::new(shard) },
@@ -460,7 +462,7 @@
     <span class="doccomment">/// Marks that an archetype has been modified between ticks and shall be flushed.
     </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>mark_need_flush&lt;A: Archetype&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
         <span class="kw">let </span><span class="prelude-val">Some</span>(ealloc) = <span class="self">self</span>.map.get_mut(<span class="kw-2">&amp;</span>TypeId::of::&lt;A&gt;()) <span class="kw">else </span>{
-            <span class="macro">panic!</span>(<span class="string">&quot;Archetype {} is not used in any systems&quot;</span>, type_name::&lt;A&gt;())
+            <span class="macro">panic!</span>(<span class="string">"Archetype {} is not used in any systems"</span>, type_name::&lt;A&gt;())
         };
 
         ealloc.mark_need_flush();
@@ -487,36 +489,36 @@
 }
 
 <span class="doccomment">/// Return value of [`ShardMap::borrow`].
-</span><span class="kw">pub type </span>BorrowedShard&lt;<span class="lifetime">&#39;t</span>, A: Archetype&gt; = <span class="kw">impl </span>ops::DerefMut&lt;Target = <span class="kw">impl </span>Shard&lt;Raw = A::RawEntity, Hint = &lt;A::Ealloc <span class="kw">as </span>Ealloc&gt;::AllocHint&gt;&gt;
-    + <span class="lifetime">&#39;t</span>;
+</span><span class="kw">pub type </span>BorrowedShard&lt;<span class="lifetime">'t</span>, A: Archetype&gt; = <span class="kw">impl </span>ops::DerefMut&lt;Target = <span class="kw">impl </span>Shard&lt;Raw = A::RawEntity, Hint = &lt;A::Ealloc <span class="kw">as </span>Ealloc&gt;::AllocHint&gt;&gt;
+    + <span class="lifetime">'t</span>;
 
 <span class="kw">impl </span>ShardMap {
     <span class="doccomment">/// Gets the mutable shard reference.
     </span><span class="kw">pub fn </span>get&lt;A: Archetype&gt;(
         <span class="kw-2">&amp;mut </span><span class="self">self</span>,
     ) -&gt; <span class="kw-2">&amp;mut </span><span class="kw">impl </span>Shard&lt;Raw = A::RawEntity, Hint = &lt;A::Ealloc <span class="kw">as </span>Ealloc&gt;::AllocHint&gt; {
-        <span class="kw">let </span>shard = <span class="self">self</span>.map.get_mut(<span class="kw-2">&amp;</span>TypeId::of::&lt;A&gt;()).expect(<span class="string">&quot;Use of unregistered archetype&quot;</span>);
+        <span class="kw">let </span>shard = <span class="self">self</span>.map.get_mut(<span class="kw-2">&amp;</span>TypeId::of::&lt;A&gt;()).expect(<span class="string">"Use of unregistered archetype"</span>);
         <span class="kw">let </span>shard: <span class="kw-2">&amp;mut </span>&lt;A::Ealloc <span class="kw">as </span>Ealloc&gt;::Shard =
-            shard.cell.get_mut().as_any_mut().downcast_mut().expect(<span class="string">&quot;TypeId mismatch&quot;</span>);
+            shard.cell.get_mut().as_any_mut().downcast_mut().expect(<span class="string">"TypeId mismatch"</span>);
         shard
     }
 
     <span class="doccomment">/// Returns a snapshot that tells what entities were allocated during last offline.
     </span><span class="kw">pub fn </span>snapshot&lt;A: Archetype&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>Snapshot&lt;A::RawEntity&gt; {
-        <span class="kw">let </span>shard = <span class="self">self</span>.map.get(<span class="kw-2">&amp;</span>TypeId::of::&lt;A&gt;()).expect(<span class="string">&quot;Use of unregistered archetype&quot;</span>);
-        shard.snapshot.downcast_ref().expect(<span class="string">&quot;TypeId mismatch&quot;</span>)
+        <span class="kw">let </span>shard = <span class="self">self</span>.map.get(<span class="kw-2">&amp;</span>TypeId::of::&lt;A&gt;()).expect(<span class="string">"Use of unregistered archetype"</span>);
+        shard.snapshot.downcast_ref().expect(<span class="string">"TypeId mismatch"</span>)
     }
 
     <span class="doccomment">/// Borrows the shard for an archetype through a [`RefCell`].
     </span><span class="kw">pub fn </span>borrow&lt;A: Archetype&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; BorrowedShard&lt;A&gt; {
-        <span class="kw">let </span>shard = <span class="self">self</span>.map.get(<span class="kw-2">&amp;</span>TypeId::of::&lt;A&gt;()).expect(<span class="string">&quot;Use of unregistered archetype&quot;</span>);
+        <span class="kw">let </span>shard = <span class="self">self</span>.map.get(<span class="kw-2">&amp;</span>TypeId::of::&lt;A&gt;()).expect(<span class="string">"Use of unregistered archetype"</span>);
         <span class="kw">let </span>shard = shard
             .cell
             .try_borrow_mut()
-            .expect(<span class="string">&quot;The same system cannot have multiple `EntityCreator`s on the same archetype&quot;</span>);
+            .expect(<span class="string">"The same system cannot have multiple `EntityCreator`s on the same archetype"</span>);
         cell::RefMut::map(shard, |shard| {
             <span class="kw">let </span>shard: <span class="kw-2">&amp;mut </span>&lt;A::Ealloc <span class="kw">as </span>Ealloc&gt;::Shard =
-                shard.as_any_mut().downcast_mut().expect(<span class="string">&quot;TypeId mismatch&quot;</span>);
+                shard.as_any_mut().downcast_mut().expect(<span class="string">"TypeId mismatch"</span>);
             shard
         })
     }

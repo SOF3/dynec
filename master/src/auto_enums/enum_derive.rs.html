@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/auto_enums-0.8.3/src/enum_derive.rs`."><title>enum_derive.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="auto_enums" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/auto_enums-0.8.5/src/enum_derive.rs`."><title>enum_derive.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="auto_enums" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../auto_enums/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -337,6 +339,10 @@
 <a href="#337" id="337">337</a>
 <a href="#338" id="338">338</a>
 <a href="#339" id="339">339</a>
+<a href="#340" id="340">340</a>
+<a href="#341" id="341">341</a>
+<a href="#342" id="342">342</a>
+<a href="#343" id="343">343</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0 OR MIT
 
 </span><span class="kw">use </span>std::cell::Cell;
@@ -364,7 +370,7 @@
     }
 }
 
-<span class="kw">type </span>DeriveFn = <span class="kw">fn</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;_ </span>DeriveContext, <span class="kw-2">&amp;</span><span class="lifetime">&#39;_ </span>Data) -&gt; <span class="prelude-ty">Result</span>&lt;TokenStream&gt;;
+<span class="kw">type </span>DeriveFn = <span class="kw">fn</span>(<span class="kw-2">&amp;</span><span class="lifetime">'_ </span>DeriveContext, <span class="kw-2">&amp;</span><span class="lifetime">'_ </span>Data) -&gt; <span class="prelude-ty">Result</span>&lt;TokenStream&gt;;
 
 <span class="kw">fn </span>get_derive(s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Option</span>&lt;DeriveFn&gt; {
     <span class="macro">macro_rules! </span>match_derive {
@@ -372,7 +378,7 @@
             $(<span class="attr">#[<span class="macro-nonterminal">$meta</span>]</span>)*
             {
                 <span class="kw">if </span><span class="kw">crate</span>::derive::$(<span class="macro-nonterminal">$arm</span>)::<span class="kw-2">*</span>::NAME.iter().any(|name| <span class="kw-2">*</span>name == s) {
-                    <span class="kw">return </span><span class="prelude-val">Some</span>(<span class="kw">crate</span>::derive::$(<span class="macro-nonterminal">$arm</span>)::<span class="kw-2">*</span>::derive <span class="kw">as </span>DeriveFn)
+                    <span class="kw">return </span><span class="prelude-val">Some</span>(<span class="kw">crate</span>::derive::$(<span class="macro-nonterminal">$arm</span>)::<span class="kw-2">*</span>::derive)
                 }
             }
         )<span class="kw-2">*</span>};
@@ -380,129 +386,132 @@
 
     <span class="macro">match_derive! </span>{
         <span class="comment">// core
-        </span><span class="attr">#[cfg(feature = <span class="string">&quot;convert&quot;</span>)]
+        </span><span class="attr">#[cfg(feature = <span class="string">"convert"</span>)]
         </span>core::convert::as_mut,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;convert&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"convert"</span>)]
         </span>core::convert::as_ref,
         core::fmt::debug,
         core::fmt::display,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;fmt&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"fmt"</span>)]
         </span>core::fmt::pointer,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;fmt&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"fmt"</span>)]
         </span>core::fmt::binary,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;fmt&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"fmt"</span>)]
         </span>core::fmt::octal,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;fmt&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"fmt"</span>)]
         </span>core::fmt::upper_hex,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;fmt&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"fmt"</span>)]
         </span>core::fmt::lower_hex,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;fmt&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"fmt"</span>)]
         </span>core::fmt::upper_exp,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;fmt&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"fmt"</span>)]
         </span>core::fmt::lower_exp,
         core::fmt::write,
         core::iter::iterator,
         core::iter::double_ended_iterator,
         core::iter::exact_size_iterator,
         core::iter::fused_iterator,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;trusted_len&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"trusted_len"</span>)]
         </span>core::iter::trusted_len,
         core::iter::extend,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;ops&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"ops"</span>)]
         </span>core::ops::deref,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;ops&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"ops"</span>)]
         </span>core::ops::deref_mut,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;ops&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"ops"</span>)]
         </span>core::ops::index,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;ops&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"ops"</span>)]
         </span>core::ops::index_mut,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;ops&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"ops"</span>)]
         </span>core::ops::range_bounds,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;fn_traits&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"fn_traits"</span>)]
         </span>core::ops::fn_,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;fn_traits&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"fn_traits"</span>)]
         </span>core::ops::fn_mut,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;fn_traits&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"fn_traits"</span>)]
         </span>core::ops::fn_once,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;coroutine_trait&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"coroutine_trait"</span>)]
         </span>core::ops::coroutine,
         core::future,
         <span class="comment">// std
-        </span><span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+        </span><span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
         </span>std::io::read,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
         </span>std::io::buf_read,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
         </span>std::io::seek,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
         </span>std::io::write,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
         </span>std::error,
         <span class="comment">// type impls
-        </span><span class="attr">#[cfg(feature = <span class="string">&quot;transpose_methods&quot;</span>)]
+        </span><span class="attr">#[cfg(feature = <span class="string">"transpose_methods"</span>)]
         </span>ty_impls::transpose,
         <span class="comment">// futures03
-        </span><span class="attr">#[cfg(feature = <span class="string">&quot;futures03&quot;</span>)]
+        </span><span class="attr">#[cfg(feature = <span class="string">"futures03"</span>)]
         </span>external::futures03::stream,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;futures03&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"futures03"</span>)]
         </span>external::futures03::sink,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;futures03&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"futures03"</span>)]
         </span>external::futures03::async_read,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;futures03&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"futures03"</span>)]
         </span>external::futures03::async_write,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;futures03&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"futures03"</span>)]
         </span>external::futures03::async_seek,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;futures03&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"futures03"</span>)]
         </span>external::futures03::async_buf_read,
         <span class="comment">// futures01
-        </span><span class="attr">#[cfg(feature = <span class="string">&quot;futures01&quot;</span>)]
+        </span><span class="attr">#[cfg(feature = <span class="string">"futures01"</span>)]
         </span>external::futures01::future,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;futures01&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"futures01"</span>)]
         </span>external::futures01::stream,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;futures01&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"futures01"</span>)]
         </span>external::futures01::sink,
         <span class="comment">// rayon
-        </span><span class="attr">#[cfg(feature = <span class="string">&quot;rayon&quot;</span>)]
+        </span><span class="attr">#[cfg(feature = <span class="string">"rayon"</span>)]
         </span>external::rayon::par_iter,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;rayon&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"rayon"</span>)]
         </span>external::rayon::indexed_par_iter,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;rayon&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"rayon"</span>)]
         </span>external::rayon::par_extend,
         <span class="comment">// serde
-        </span><span class="attr">#[cfg(feature = <span class="string">&quot;serde&quot;</span>)]
+        </span><span class="attr">#[cfg(feature = <span class="string">"serde"</span>)]
         </span>external::serde::serialize,
         <span class="comment">// tokio1
-        </span><span class="attr">#[cfg(feature = <span class="string">&quot;tokio1&quot;</span>)]
+        </span><span class="attr">#[cfg(feature = <span class="string">"tokio1"</span>)]
         </span>external::tokio1::async_read,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;tokio1&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"tokio1"</span>)]
         </span>external::tokio1::async_write,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;tokio1&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"tokio1"</span>)]
         </span>external::tokio1::async_seek,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;tokio1&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"tokio1"</span>)]
         </span>external::tokio1::async_buf_read,
         <span class="comment">// tokio03
-        </span><span class="attr">#[cfg(feature = <span class="string">&quot;tokio03&quot;</span>)]
+        </span><span class="attr">#[cfg(feature = <span class="string">"tokio03"</span>)]
         </span>external::tokio03::async_read,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;tokio03&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"tokio03"</span>)]
         </span>external::tokio03::async_write,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;tokio03&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"tokio03"</span>)]
         </span>external::tokio03::async_seek,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;tokio03&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"tokio03"</span>)]
         </span>external::tokio03::async_buf_read,
         <span class="comment">// tokio02
-        </span><span class="attr">#[cfg(feature = <span class="string">&quot;tokio02&quot;</span>)]
+        </span><span class="attr">#[cfg(feature = <span class="string">"tokio02"</span>)]
         </span>external::tokio02::async_read,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;tokio02&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"tokio02"</span>)]
         </span>external::tokio02::async_write,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;tokio02&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"tokio02"</span>)]
         </span>external::tokio02::async_seek,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;tokio02&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"tokio02"</span>)]
         </span>external::tokio02::async_buf_read,
         <span class="comment">// tokio01
-        </span><span class="attr">#[cfg(feature = <span class="string">&quot;tokio01&quot;</span>)]
+        </span><span class="attr">#[cfg(feature = <span class="string">"tokio01"</span>)]
         </span>external::tokio01::async_read,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;tokio01&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"tokio01"</span>)]
         </span>external::tokio01::async_write,
+        <span class="comment">// http_body1
+        </span><span class="attr">#[cfg(feature = <span class="string">"http_body1"</span>)]
+        </span>external::http_body1::body,
     }
 
     <span class="prelude-val">None
@@ -513,12 +522,12 @@
 }
 
 <span class="kw">impl </span>Parse <span class="kw">for </span>Args {
-    <span class="kw">fn </span>parse(input: ParseStream&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
+    <span class="kw">fn </span>parse(input: ParseStream&lt;<span class="lifetime">'_</span>&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
         <span class="kw">fn </span>to_trimmed_string(p: <span class="kw-2">&amp;</span>Path) -&gt; String {
-            p.to_token_stream().to_string().replace(<span class="string">&#39; &#39;</span>, <span class="string">&quot;&quot;</span>)
+            p.to_token_stream().to_string().replace(<span class="string">' '</span>, <span class="string">""</span>)
         }
 
-        <span class="kw">let </span><span class="kw-2">mut </span>inner = Vec::new();
+        <span class="kw">let </span><span class="kw-2">mut </span>inner = <span class="macro">vec!</span>[];
         <span class="kw">while </span>!input.is_empty() {
             <span class="kw">let </span>path = input.parse()<span class="question-mark">?</span>;
             inner.push((to_trimmed_string(<span class="kw-2">&amp;</span>path), path));
@@ -533,34 +542,34 @@
     }
 }
 
-<span class="kw">fn </span>get_trait_deps(s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>[<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str]&gt; {
+<span class="kw">fn </span>get_trait_deps(s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'static </span>[<span class="kw-2">&amp;</span><span class="lifetime">'static </span>str]&gt; {
     <span class="prelude-val">Some</span>(<span class="kw">match </span>s {
-        <span class="string">&quot;Copy&quot; </span>=&gt; <span class="kw-2">&amp;</span>[<span class="string">&quot;Clone&quot;</span>],
-        <span class="string">&quot;Eq&quot; </span>| <span class="string">&quot;PartialOrd&quot; </span>=&gt; <span class="kw-2">&amp;</span>[<span class="string">&quot;PartialEq&quot;</span>],
-        <span class="string">&quot;Ord&quot; </span>=&gt; <span class="kw-2">&amp;</span>[<span class="string">&quot;PartialOrd&quot;</span>, <span class="string">&quot;Eq&quot;</span>, <span class="string">&quot;PartialEq&quot;</span>],
-        <span class="attr">#[cfg(feature = <span class="string">&quot;ops&quot;</span>)]
-        </span><span class="string">&quot;DerefMut&quot; </span>=&gt; <span class="kw-2">&amp;</span>[<span class="string">&quot;Deref&quot;</span>],
-        <span class="attr">#[cfg(feature = <span class="string">&quot;ops&quot;</span>)]
-        </span><span class="string">&quot;IndexMut&quot; </span>=&gt; <span class="kw-2">&amp;</span>[<span class="string">&quot;Index&quot;</span>],
-        <span class="attr">#[cfg(feature = <span class="string">&quot;fn_traits&quot;</span>)]
-        </span><span class="string">&quot;Fn&quot; </span>=&gt; <span class="kw-2">&amp;</span>[<span class="string">&quot;FnMut&quot;</span>, <span class="string">&quot;FnOnce&quot;</span>],
-        <span class="attr">#[cfg(feature = <span class="string">&quot;fn_traits&quot;</span>)]
-        </span><span class="string">&quot;FnMut&quot; </span>=&gt; <span class="kw-2">&amp;</span>[<span class="string">&quot;FnOnce&quot;</span>],
-        <span class="string">&quot;DoubleEndedIterator&quot; </span>| <span class="string">&quot;ExactSizeIterator&quot; </span>| <span class="string">&quot;FusedIterator&quot; </span>=&gt; <span class="kw-2">&amp;</span>[<span class="string">&quot;Iterator&quot;</span>],
-        <span class="attr">#[cfg(feature = <span class="string">&quot;trusted_len&quot;</span>)]
-        </span><span class="string">&quot;TrustedLen&quot; </span>=&gt; <span class="kw-2">&amp;</span>[<span class="string">&quot;Iterator&quot;</span>],
-        <span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
-        </span><span class="string">&quot;BufRead&quot; </span>| <span class="string">&quot;io::BufRead&quot; </span>=&gt; <span class="kw-2">&amp;</span>[<span class="string">&quot;Read&quot;</span>],
-        <span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
-        </span><span class="string">&quot;Error&quot; </span>=&gt; <span class="kw-2">&amp;</span>[<span class="string">&quot;Display&quot;</span>, <span class="string">&quot;Debug&quot;</span>],
-        <span class="attr">#[cfg(feature = <span class="string">&quot;rayon&quot;</span>)]
-        </span><span class="string">&quot;rayon::IndexedParallelIterator&quot; </span>=&gt; <span class="kw-2">&amp;</span>[<span class="string">&quot;rayon::ParallelIterator&quot;</span>],
+        <span class="string">"Copy" </span>=&gt; <span class="kw-2">&amp;</span>[<span class="string">"Clone"</span>],
+        <span class="string">"Eq" </span>| <span class="string">"PartialOrd" </span>=&gt; <span class="kw-2">&amp;</span>[<span class="string">"PartialEq"</span>],
+        <span class="string">"Ord" </span>=&gt; <span class="kw-2">&amp;</span>[<span class="string">"PartialOrd"</span>, <span class="string">"Eq"</span>, <span class="string">"PartialEq"</span>],
+        <span class="attr">#[cfg(feature = <span class="string">"ops"</span>)]
+        </span><span class="string">"DerefMut" </span>=&gt; <span class="kw-2">&amp;</span>[<span class="string">"Deref"</span>],
+        <span class="attr">#[cfg(feature = <span class="string">"ops"</span>)]
+        </span><span class="string">"IndexMut" </span>=&gt; <span class="kw-2">&amp;</span>[<span class="string">"Index"</span>],
+        <span class="attr">#[cfg(feature = <span class="string">"fn_traits"</span>)]
+        </span><span class="string">"Fn" </span>=&gt; <span class="kw-2">&amp;</span>[<span class="string">"FnMut"</span>, <span class="string">"FnOnce"</span>],
+        <span class="attr">#[cfg(feature = <span class="string">"fn_traits"</span>)]
+        </span><span class="string">"FnMut" </span>=&gt; <span class="kw-2">&amp;</span>[<span class="string">"FnOnce"</span>],
+        <span class="string">"DoubleEndedIterator" </span>| <span class="string">"ExactSizeIterator" </span>| <span class="string">"FusedIterator" </span>=&gt; <span class="kw-2">&amp;</span>[<span class="string">"Iterator"</span>],
+        <span class="attr">#[cfg(feature = <span class="string">"trusted_len"</span>)]
+        </span><span class="string">"TrustedLen" </span>=&gt; <span class="kw-2">&amp;</span>[<span class="string">"Iterator"</span>],
+        <span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
+        </span><span class="string">"BufRead" </span>| <span class="string">"io::BufRead" </span>=&gt; <span class="kw-2">&amp;</span>[<span class="string">"Read"</span>],
+        <span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
+        </span><span class="string">"Error" </span>=&gt; <span class="kw-2">&amp;</span>[<span class="string">"Display"</span>, <span class="string">"Debug"</span>],
+        <span class="attr">#[cfg(feature = <span class="string">"rayon"</span>)]
+        </span><span class="string">"rayon::IndexedParallelIterator" </span>=&gt; <span class="kw-2">&amp;</span>[<span class="string">"rayon::ParallelIterator"</span>],
         <span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">None</span>,
     })
 }
 
 <span class="kw">fn </span>exists_alias(s: <span class="kw-2">&amp;</span>str, v: <span class="kw-2">&amp;</span>[(<span class="kw-2">&amp;</span>str, <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Path&gt;)]) -&gt; bool {
-    <span class="kw">fn </span>get_alias(s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt; {
+    <span class="kw">fn </span>get_alias(s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'static </span>str&gt; {
         <span class="macro">macro_rules! </span>match_alias {
             ($($(<span class="attr">#[<span class="macro-nonterminal">$meta</span>:meta]</span>)* $(<span class="macro-nonterminal">$arm</span>:ident)::<span class="kw-2">*</span>,)<span class="kw-2">*</span>) =&gt; {$(
                 $(<span class="attr">#[<span class="macro-nonterminal">$meta</span>]</span>)*
@@ -579,13 +588,13 @@
             </span>core::fmt::debug,
             core::fmt::display,
             <span class="comment">// std
-            </span><span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+            </span><span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
             </span>std::io::read,
-            <span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+            <span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
             </span>std::io::buf_read,
-            <span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+            <span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
             </span>std::io::seek,
-            <span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+            <span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
             </span>std::io::write,
         }
 
@@ -598,7 +607,7 @@
 <span class="kw">fn </span>expand(args: TokenStream, input: TokenStream) -&gt; <span class="prelude-ty">Result</span>&lt;TokenStream&gt; {
     <span class="kw">let </span>data = syn::parse2::&lt;Data&gt;(input)<span class="question-mark">?</span>;
     <span class="kw">let </span>args = syn::parse2::&lt;Args&gt;(args)<span class="question-mark">?</span>.inner;
-    <span class="kw">let </span>args = args.iter().fold(Vec::new(), |<span class="kw-2">mut </span>v, (s, arg)| {
+    <span class="kw">let </span>args = args.iter().fold(<span class="macro">vec!</span>[], |<span class="kw-2">mut </span>v, (s, arg)| {
         <span class="kw">if let </span><span class="prelude-val">Some</span>(traits) = get_trait_deps(s) {
             <span class="kw">for </span>s <span class="kw">in </span>traits.iter().filter(|<span class="kw-2">&amp;</span>x| !args.iter().any(|(s, <span class="kw">_</span>)| s == x)) {
                 <span class="kw">if </span>!exists_alias(s, <span class="kw-2">&amp;</span>v) {
@@ -612,14 +621,14 @@
         v
     });
 
-    <span class="kw">let </span><span class="kw-2">mut </span>derive = Vec::new();
+    <span class="kw">let </span><span class="kw-2">mut </span>derive = <span class="macro">vec!</span>[];
     <span class="kw">let </span><span class="kw-2">mut </span>items = TokenStream::new();
     <span class="kw">let </span>cx = DeriveContext::default();
     <span class="kw">for </span>(s, arg) <span class="kw">in </span>args {
         <span class="kw">match </span>(get_derive(s), arg) {
             (<span class="prelude-val">Some</span>(f), <span class="kw">_</span>) =&gt; {
                 items.extend(
-                    f(<span class="kw-2">&amp;</span>cx, <span class="kw-2">&amp;</span>data).map_err(|e| <span class="macro">format_err!</span>(data, <span class="string">&quot;`enum_derive({})` {}&quot;</span>, s, e))<span class="question-mark">?</span>,
+                    f(<span class="kw-2">&amp;</span>cx, <span class="kw-2">&amp;</span>data).map_err(|e| <span class="macro">format_err!</span>(data, <span class="string">"`enum_derive({})` {}"</span>, s, e))<span class="question-mark">?</span>,
                 );
             }
             (<span class="kw">_</span>, <span class="prelude-val">Some</span>(arg)) =&gt; derive.push(arg),
@@ -641,9 +650,10 @@
 
         // Automatically create the appropriate conditional `Unpin` implementation.
         // https://github.com/taiki-e/pin-project/blob/v1.0.10/examples/struct-default-expanded.rs#L89
+        // TODO: use https://github.com/taiki-e/pin-project/issues/102#issuecomment-540472282's trick.
         </span>items.extend(derive_utils::derive_trait(
             <span class="kw-2">&amp;</span>data,
-            <span class="macro">parse_quote!</span>(::core::marker::Unpin),
+            <span class="kw-2">&amp;</span><span class="macro">parse_quote!</span>(::core::marker::Unpin),
             <span class="prelude-val">None</span>,
             <span class="macro">parse_quote! </span>{
                 <span class="kw">trait </span>Unpin {}

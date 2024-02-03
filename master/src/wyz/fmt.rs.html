@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/wyz-0.5.1/src/fmt.rs`."><title>fmt.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="wyz" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/wyz-0.5.1/src/fmt.rs`."><title>fmt.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="wyz" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../wyz/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -563,7 +565,7 @@ of the other trait signifiers.
 	/// formatting specifier provided.
 	</span><span class="attr">#[inline(always)]
 	</span><span class="kw">fn </span>fmt_list(<span class="self">self</span>) -&gt; FmtList&lt;<span class="self">Self</span>&gt;
-	<span class="kw">where for</span>&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="self">Self</span>: IntoIterator {
+	<span class="kw">where for</span>&lt;<span class="lifetime">'a</span>&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="self">Self</span>: IntoIterator {
 		FmtList(<span class="self">self</span>)
 	}
 }
@@ -582,7 +584,7 @@ of the other trait signifiers.
 <span class="doccomment">/// Renders each element of a stream into a list.
 </span><span class="attr">#[repr(transparent)]
 </span><span class="kw">pub struct </span>FmtList&lt;T&gt;(<span class="kw">pub </span>T)
-<span class="kw">where for</span>&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T: IntoIterator;
+<span class="kw">where for</span>&lt;<span class="lifetime">'a</span>&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>T: IntoIterator;
 
 <span class="doccomment">/// Forwards a type’s `LowerExp` formatting implementation to `Debug`.
 </span><span class="attr">#[repr(transparent)]
@@ -730,8 +732,8 @@ of the other trait signifiers.
 
 <span class="kw">impl</span>&lt;T&gt; Binary <span class="kw">for </span>FmtList&lt;T&gt;
 <span class="kw">where
-	for</span>&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T: IntoIterator,
-	<span class="kw">for</span>&lt;<span class="lifetime">&#39;a</span>&gt; &lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T <span class="kw">as </span>IntoIterator&gt;::Item: Binary,
+	for</span>&lt;<span class="lifetime">'a</span>&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>T: IntoIterator,
+	<span class="kw">for</span>&lt;<span class="lifetime">'a</span>&gt; &lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>T <span class="kw">as </span>IntoIterator&gt;::Item: Binary,
 {
 	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
 		fmt.debug_list()
@@ -742,8 +744,8 @@ of the other trait signifiers.
 
 <span class="kw">impl</span>&lt;T&gt; Debug <span class="kw">for </span>FmtList&lt;T&gt;
 <span class="kw">where
-	for</span>&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T: IntoIterator,
-	<span class="kw">for</span>&lt;<span class="lifetime">&#39;a</span>&gt; &lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T <span class="kw">as </span>IntoIterator&gt;::Item: Debug,
+	for</span>&lt;<span class="lifetime">'a</span>&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>T: IntoIterator,
+	<span class="kw">for</span>&lt;<span class="lifetime">'a</span>&gt; &lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>T <span class="kw">as </span>IntoIterator&gt;::Item: Debug,
 {
 	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
 		fmt.debug_list().entries((<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>).into_iter()).finish()
@@ -752,8 +754,8 @@ of the other trait signifiers.
 
 <span class="kw">impl</span>&lt;T&gt; Display <span class="kw">for </span>FmtList&lt;T&gt;
 <span class="kw">where
-	for</span>&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T: IntoIterator,
-	<span class="kw">for</span>&lt;<span class="lifetime">&#39;a</span>&gt; &lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T <span class="kw">as </span>IntoIterator&gt;::Item: Display,
+	for</span>&lt;<span class="lifetime">'a</span>&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>T: IntoIterator,
+	<span class="kw">for</span>&lt;<span class="lifetime">'a</span>&gt; &lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>T <span class="kw">as </span>IntoIterator&gt;::Item: Display,
 {
 	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
 		fmt.debug_list()
@@ -764,8 +766,8 @@ of the other trait signifiers.
 
 <span class="kw">impl</span>&lt;T&gt; LowerExp <span class="kw">for </span>FmtList&lt;T&gt;
 <span class="kw">where
-	for</span>&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T: IntoIterator,
-	<span class="kw">for</span>&lt;<span class="lifetime">&#39;a</span>&gt; &lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T <span class="kw">as </span>IntoIterator&gt;::Item: LowerExp,
+	for</span>&lt;<span class="lifetime">'a</span>&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>T: IntoIterator,
+	<span class="kw">for</span>&lt;<span class="lifetime">'a</span>&gt; &lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>T <span class="kw">as </span>IntoIterator&gt;::Item: LowerExp,
 {
 	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
 		fmt.debug_list()
@@ -776,8 +778,8 @@ of the other trait signifiers.
 
 <span class="kw">impl</span>&lt;T&gt; LowerHex <span class="kw">for </span>FmtList&lt;T&gt;
 <span class="kw">where
-	for</span>&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T: IntoIterator,
-	<span class="kw">for</span>&lt;<span class="lifetime">&#39;a</span>&gt; &lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T <span class="kw">as </span>IntoIterator&gt;::Item: LowerHex,
+	for</span>&lt;<span class="lifetime">'a</span>&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>T: IntoIterator,
+	<span class="kw">for</span>&lt;<span class="lifetime">'a</span>&gt; &lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>T <span class="kw">as </span>IntoIterator&gt;::Item: LowerHex,
 {
 	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
 		fmt.debug_list()
@@ -788,8 +790,8 @@ of the other trait signifiers.
 
 <span class="kw">impl</span>&lt;T&gt; Octal <span class="kw">for </span>FmtList&lt;T&gt;
 <span class="kw">where
-	for</span>&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T: IntoIterator,
-	<span class="kw">for</span>&lt;<span class="lifetime">&#39;a</span>&gt; &lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T <span class="kw">as </span>IntoIterator&gt;::Item: Octal,
+	for</span>&lt;<span class="lifetime">'a</span>&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>T: IntoIterator,
+	<span class="kw">for</span>&lt;<span class="lifetime">'a</span>&gt; &lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>T <span class="kw">as </span>IntoIterator&gt;::Item: Octal,
 {
 	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
 		fmt.debug_list()
@@ -800,8 +802,8 @@ of the other trait signifiers.
 
 <span class="kw">impl</span>&lt;T&gt; UpperExp <span class="kw">for </span>FmtList&lt;T&gt;
 <span class="kw">where
-	for</span>&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T: IntoIterator,
-	<span class="kw">for</span>&lt;<span class="lifetime">&#39;a</span>&gt; &lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T <span class="kw">as </span>IntoIterator&gt;::Item: UpperExp,
+	for</span>&lt;<span class="lifetime">'a</span>&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>T: IntoIterator,
+	<span class="kw">for</span>&lt;<span class="lifetime">'a</span>&gt; &lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>T <span class="kw">as </span>IntoIterator&gt;::Item: UpperExp,
 {
 	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
 		fmt.debug_list()
@@ -812,8 +814,8 @@ of the other trait signifiers.
 
 <span class="kw">impl</span>&lt;T&gt; UpperHex <span class="kw">for </span>FmtList&lt;T&gt;
 <span class="kw">where
-	for</span>&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T: IntoIterator,
-	<span class="kw">for</span>&lt;<span class="lifetime">&#39;a</span>&gt; &lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T <span class="kw">as </span>IntoIterator&gt;::Item: UpperHex,
+	for</span>&lt;<span class="lifetime">'a</span>&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>T: IntoIterator,
+	<span class="kw">for</span>&lt;<span class="lifetime">'a</span>&gt; &lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>T <span class="kw">as </span>IntoIterator&gt;::Item: UpperHex,
 {
 	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
 		fmt.debug_list()
@@ -824,7 +826,7 @@ of the other trait signifiers.
 
 <span class="attr">#[cfg(not(tarpaulin_include))]
 </span><span class="kw">impl</span>&lt;T&gt; Deref <span class="kw">for </span>FmtList&lt;T&gt;
-<span class="kw">where for</span>&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T: IntoIterator
+<span class="kw">where for</span>&lt;<span class="lifetime">'a</span>&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>T: IntoIterator
 {
 	<span class="kw">type </span>Target = T;
 
@@ -836,7 +838,7 @@ of the other trait signifiers.
 
 <span class="attr">#[cfg(not(tarpaulin_include))]
 </span><span class="kw">impl</span>&lt;T&gt; DerefMut <span class="kw">for </span>FmtList&lt;T&gt;
-<span class="kw">where for</span>&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T: IntoIterator
+<span class="kw">where for</span>&lt;<span class="lifetime">'a</span>&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>T: IntoIterator
 {
 	<span class="attr">#[inline(always)]
 	</span><span class="kw">fn </span>deref_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span><span class="self">Self</span>::Target {
@@ -846,7 +848,7 @@ of the other trait signifiers.
 
 <span class="attr">#[cfg(not(tarpaulin_include))]
 </span><span class="kw">impl</span>&lt;T&gt; AsRef&lt;T&gt; <span class="kw">for </span>FmtList&lt;T&gt;
-<span class="kw">where for</span>&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T: IntoIterator
+<span class="kw">where for</span>&lt;<span class="lifetime">'a</span>&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>T: IntoIterator
 {
 	<span class="attr">#[inline(always)]
 	</span><span class="kw">fn </span>as_ref(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>T {
@@ -856,7 +858,7 @@ of the other trait signifiers.
 
 <span class="attr">#[cfg(not(tarpaulin_include))]
 </span><span class="kw">impl</span>&lt;T&gt; AsMut&lt;T&gt; <span class="kw">for </span>FmtList&lt;T&gt;
-<span class="kw">where for</span>&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T: IntoIterator
+<span class="kw">where for</span>&lt;<span class="lifetime">'a</span>&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>T: IntoIterator
 {
 	<span class="attr">#[inline(always)]
 	</span><span class="kw">fn </span>as_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span>T {
@@ -864,12 +866,12 @@ of the other trait signifiers.
 	</span>}
 }
 
-<span class="attr">#[cfg(all(test, feature = <span class="string">&quot;alloc&quot;</span>))]
+<span class="attr">#[cfg(all(test, feature = <span class="string">"alloc"</span>))]
 </span><span class="kw">mod </span>tests {
-	<span class="attr">#[cfg(not(feature = <span class="string">&quot;std&quot;</span>))]
+	<span class="attr">#[cfg(not(feature = <span class="string">"std"</span>))]
 	</span><span class="kw">use </span>alloc::format;
 
-	<span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+	<span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
 	</span><span class="kw">use </span>std::format;
 
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
@@ -878,38 +880,38 @@ of the other trait signifiers.
 	</span><span class="kw">fn </span>render_item() {
 		<span class="kw">let </span>num = <span class="number">29</span>;
 
-		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, num.fmt_binary()), <span class="string">&quot;11101&quot;</span>);
-		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, num.fmt_display()), <span class="string">&quot;29&quot;</span>);
-		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, num.fmt_upper_hex()), <span class="string">&quot;1D&quot;</span>);
-		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, num.fmt_octal()), <span class="string">&quot;35&quot;</span>);
-		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, num.fmt_lower_hex()), <span class="string">&quot;1d&quot;</span>);
+		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{:?}"</span>, num.fmt_binary()), <span class="string">"11101"</span>);
+		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{:?}"</span>, num.fmt_display()), <span class="string">"29"</span>);
+		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{:?}"</span>, num.fmt_upper_hex()), <span class="string">"1D"</span>);
+		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{:?}"</span>, num.fmt_octal()), <span class="string">"35"</span>);
+		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{:?}"</span>, num.fmt_lower_hex()), <span class="string">"1d"</span>);
 
 		<span class="kw">let </span>num = <span class="number">53.7</span>;
-		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, num.fmt_lower_exp()), <span class="string">&quot;5.37e1&quot;</span>);
-		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, num.fmt_upper_exp()), <span class="string">&quot;5.37E1&quot;</span>);
+		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{:?}"</span>, num.fmt_lower_exp()), <span class="string">"5.37e1"</span>);
+		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{:?}"</span>, num.fmt_upper_exp()), <span class="string">"5.37E1"</span>);
 	}
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>render_list() {
 		<span class="kw">let </span>list = [<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>];
-		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">&quot;{:02b}&quot;</span>, list.fmt_list()), <span class="string">&quot;[00, 01, 10, 11]&quot;</span>);
-		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">&quot;{:01?}&quot;</span>, list.fmt_list()), <span class="string">&quot;[0, 1, 2, 3]&quot;</span>);
-		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">&quot;{:01}&quot;</span>, list.fmt_list()), <span class="string">&quot;[0, 1, 2, 3]&quot;</span>);
+		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{:02b}"</span>, list.fmt_list()), <span class="string">"[00, 01, 10, 11]"</span>);
+		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{:01?}"</span>, list.fmt_list()), <span class="string">"[0, 1, 2, 3]"</span>);
+		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{:01}"</span>, list.fmt_list()), <span class="string">"[0, 1, 2, 3]"</span>);
 
 		<span class="kw">let </span>list = [-<span class="number">51.0</span>, -<span class="number">1.2</span>, <span class="number">1.3</span>, <span class="number">54.0</span>];
 		<span class="macro">assert_eq!</span>(
-			<span class="macro">format!</span>(<span class="string">&quot;{:e}&quot;</span>, list.fmt_list()),
-			<span class="string">&quot;[-5.1e1, -1.2e0, 1.3e0, 5.4e1]&quot;
+			<span class="macro">format!</span>(<span class="string">"{:e}"</span>, list.fmt_list()),
+			<span class="string">"[-5.1e1, -1.2e0, 1.3e0, 5.4e1]"
 		</span>);
 		<span class="macro">assert_eq!</span>(
-			<span class="macro">format!</span>(<span class="string">&quot;{:E}&quot;</span>, list.fmt_list()),
-			<span class="string">&quot;[-5.1E1, -1.2E0, 1.3E0, 5.4E1]&quot;
+			<span class="macro">format!</span>(<span class="string">"{:E}"</span>, list.fmt_list()),
+			<span class="string">"[-5.1E1, -1.2E0, 1.3E0, 5.4E1]"
 		</span>);
 
 		<span class="kw">let </span>list = [<span class="number">0</span>, <span class="number">10</span>, <span class="number">20</span>, <span class="number">30</span>];
-		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">&quot;{:02x}&quot;</span>, list.fmt_list()), <span class="string">&quot;[00, 0a, 14, 1e]&quot;</span>);
-		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">&quot;{:02o}&quot;</span>, list.fmt_list()), <span class="string">&quot;[00, 12, 24, 36]&quot;</span>);
-		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">&quot;{:02X}&quot;</span>, list.fmt_list()), <span class="string">&quot;[00, 0A, 14, 1E]&quot;</span>);
+		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{:02x}"</span>, list.fmt_list()), <span class="string">"[00, 0a, 14, 1e]"</span>);
+		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{:02o}"</span>, list.fmt_list()), <span class="string">"[00, 12, 24, 36]"</span>);
+		<span class="macro">assert_eq!</span>(<span class="macro">format!</span>(<span class="string">"{:02X}"</span>, list.fmt_list()), <span class="string">"[00, 0A, 14, 1E]"</span>);
 	}
 }
 </code></pre></div></section></main></body></html>

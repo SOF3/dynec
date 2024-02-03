@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/scheduler/topology.rs`."><title>topology.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="dynec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/scheduler/topology.rs`."><title>topology.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="dynec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../dynec/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -288,11 +290,11 @@
     }
 
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>dependents_of(<span class="kw-2">&amp;</span><span class="self">self</span>, node: Node) -&gt; <span class="kw-2">&amp;</span>[Node] {
-        <span class="self">self</span>.dependents.get(<span class="kw-2">&amp;</span>node).expect(<span class="string">&quot;invalid node index&quot;</span>)
+        <span class="self">self</span>.dependents.get(<span class="kw-2">&amp;</span>node).expect(<span class="string">"invalid node index"</span>)
     }
 
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>exclusions_of(<span class="kw-2">&amp;</span><span class="self">self</span>, node: Node) -&gt; <span class="kw-2">&amp;</span>[Node] {
-        <span class="self">self</span>.exclusions.get(<span class="kw-2">&amp;</span>node).expect(<span class="string">&quot;invalid node index&quot;</span>)
+        <span class="self">self</span>.exclusions.get(<span class="kw-2">&amp;</span>node).expect(<span class="string">"invalid node index"</span>)
     }
 
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>initial_planner(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>Planner { <span class="kw-2">&amp;</span><span class="self">self</span>.initial_planner }
@@ -304,7 +306,7 @@
 ) -&gt; HashMap&lt;Node, Vec&lt;Node&gt;&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>dependents: HashMap&lt;Node, Vec&lt;Node&gt;&gt; = nodes.map(|node| (node, Vec::new())).collect();
     <span class="kw">for </span>order <span class="kw">in </span>orders {
-        dependents.get_mut(<span class="kw-2">&amp;</span>order.before).expect(<span class="string">&quot;invalid node index&quot;</span>).push(order.after);
+        dependents.get_mut(<span class="kw-2">&amp;</span>order.before).expect(<span class="string">"invalid node index"</span>).push(order.after);
     }
     dependents
 }
@@ -337,18 +339,18 @@
         <span class="kw">let </span><span class="kw-2">mut </span>panic_message = String::new();
 
         <span class="kw">for </span><span class="kw-2">&amp;</span>ancestor <span class="kw">in </span>stack.iter().skip_while(|&amp;&amp;ancestor| ancestor != node) {
-            <span class="macro">write!</span>(panic_message, <span class="string">&quot;{} -&gt; &quot;</span>, describe_node(ancestor))
-                .expect(<span class="string">&quot;String write is infallible&quot;</span>);
+            <span class="macro">write!</span>(panic_message, <span class="string">"{} -&gt; "</span>, describe_node(ancestor))
+                .expect(<span class="string">"String write is infallible"</span>);
         }
 
-        <span class="macro">write!</span>(panic_message, <span class="string">&quot;{}&quot;</span>, describe_node(node)).expect(<span class="string">&quot;String write is infallible&quot;</span>);
+        <span class="macro">write!</span>(panic_message, <span class="string">"{}"</span>, describe_node(node)).expect(<span class="string">"String write is infallible"</span>);
 
-        <span class="macro">panic!</span>(<span class="string">&quot;Scheduled systems have a cyclic dependency: {}&quot;</span>, panic_message);
+        <span class="macro">panic!</span>(<span class="string">"Scheduled systems have a cyclic dependency: {}"</span>, panic_message);
     }
 
     stack.push(node);
 
-    <span class="kw">for </span><span class="kw-2">&amp;</span>dependent <span class="kw">in </span>map.get(<span class="kw-2">&amp;</span>node).expect(<span class="string">&quot;invalid node index&quot;</span>) {
+    <span class="kw">for </span><span class="kw-2">&amp;</span>dependent <span class="kw">in </span>map.get(<span class="kw-2">&amp;</span>node).expect(<span class="string">"invalid node index"</span>) {
         scan_cycles_from(map, dependent, remaining, exited, stack, describe_node);
     }
 
@@ -356,7 +358,7 @@
     <span class="macro">debug_assert_eq!</span>(<span class="prelude-val">Some</span>(node), popped);
 
     <span class="kw">let </span>new_exit = exited.insert(node);
-    <span class="macro">assert!</span>(new_exit, <span class="string">&quot;exited is inserted recursively but no cycles were detected&quot;</span>);
+    <span class="macro">assert!</span>(new_exit, <span class="string">"exited is inserted recursively but no cycles were detected"</span>);
 }
 
 <span class="kw">fn </span>build_initials(
@@ -366,7 +368,7 @@
 ) -&gt; (Planner, Vec&lt;PartitionIndex&gt;) {
     <span class="kw">let </span><span class="kw-2">mut </span>dependency_counts: HashMap&lt;Node, usize&gt; = nodes.clone().map(|node| (node, <span class="number">0</span>)).collect();
     <span class="kw">for </span>order <span class="kw">in </span>orders {
-        <span class="kw-2">*</span>dependency_counts.get_mut(<span class="kw-2">&amp;</span>order.after).expect(<span class="string">&quot;invalid node index&quot;</span>) += <span class="number">1</span>;
+        <span class="kw-2">*</span>dependency_counts.get_mut(<span class="kw-2">&amp;</span>order.after).expect(<span class="string">"invalid node index"</span>) += <span class="number">1</span>;
     }
 
     <span class="comment">// trim dependencyless partitions
@@ -379,11 +381,11 @@
         .collect();
 
     <span class="kw">while let </span><span class="prelude-val">Some</span>(par) = depless_pars.pop() {
-        <span class="kw">for </span><span class="kw-2">&amp;</span>dependent <span class="kw">in </span>dependents.get(<span class="kw-2">&amp;</span>Node::Partition(par)).expect(<span class="string">&quot;invalid node index&quot;</span>) {
-            <span class="kw">let </span>count = dependency_counts.get_mut(<span class="kw-2">&amp;</span>dependent).expect(<span class="string">&quot;invalid node index&quot;</span>);
+        <span class="kw">for </span><span class="kw-2">&amp;</span>dependent <span class="kw">in </span>dependents.get(<span class="kw-2">&amp;</span>Node::Partition(par)).expect(<span class="string">"invalid node index"</span>) {
+            <span class="kw">let </span>count = dependency_counts.get_mut(<span class="kw-2">&amp;</span>dependent).expect(<span class="string">"invalid node index"</span>);
             <span class="kw-2">*</span>count = count
                 .checked_sub(<span class="number">1</span>)
-                .expect(<span class="string">&quot;dependent of partition should not have zero dependency count&quot;</span>);
+                .expect(<span class="string">"dependent of partition should not have zero dependency count"</span>);
 
             <span class="kw">if let </span>Node::Partition(index) = dependent {
                 depless_pars.push(index);
@@ -412,7 +414,7 @@
         .map(|entry| <span class="kw">match </span>entry {
             (node, count @ <span class="number">1</span>..) =&gt; (
                 node,
-                WakeupState::Blocked { count: NonZeroUsize::new(count).expect(<span class="string">&quot;count @ 1..&quot;</span>) },
+                WakeupState::Blocked { count: NonZeroUsize::new(count).expect(<span class="string">"count @ 1.."</span>) },
             ),
             (node @ (Node::SendSystem(<span class="kw">_</span>) | Node::UnsendSystem(<span class="kw">_</span>)), <span class="number">0</span>) =&gt; {
                 (node, WakeupState::Pending)
@@ -444,7 +446,7 @@
                 <span class="kw">if </span>accesses1.iter().any(|access1| {
                     accesses2.iter().any(|access2| access1.check_conflicts_with(access2).is_err())
                 }) {
-                    exclusions.get_mut(<span class="kw-2">&amp;</span>node1).expect(<span class="string">&quot;invalid node index&quot;</span>).insert(node2);
+                    exclusions.get_mut(<span class="kw-2">&amp;</span>node1).expect(<span class="string">"invalid node index"</span>).insert(node2);
                 }
             }
         }

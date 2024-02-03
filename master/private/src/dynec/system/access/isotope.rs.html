@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/system/access/isotope.rs`."><title>isotope.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="dynec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/system/access/isotope.rs`."><title>isotope.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="dynec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../../dynec/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -379,7 +381,7 @@
     C: comp::Isotope&lt;A&gt;,
 {
     <span class="doccomment">/// The key from the user, equivalent to [`comp::discrim::Set::Key`]
-    </span><span class="kw">type </span>Key: fmt::Debug + Copy + <span class="lifetime">&#39;static</span>;
+    </span><span class="kw">type </span>Key: fmt::Debug + Copy + <span class="lifetime">'static</span>;
 
     <span class="doccomment">/// Retrieves a storage by key.
     /// Panics if the key is not supported.
@@ -399,28 +401,28 @@
     </span><span class="kw">fn </span>get_storage_many&lt;<span class="kw">const </span>N: usize&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, keys: [<span class="self">Self</span>::Key; N]) -&gt; [<span class="kw-2">&amp;</span>C::Storage; N];
 
     <span class="doccomment">/// Return value of [`iter_keys`](Self::iter_keys).
-    </span><span class="kw">type </span>IterKeys&lt;<span class="lifetime">&#39;t</span>&gt;: Iterator&lt;Item = (<span class="self">Self</span>::Key, C::Discrim)&gt; + <span class="lifetime">&#39;t
+    </span><span class="kw">type </span>IterKeys&lt;<span class="lifetime">'t</span>&gt;: Iterator&lt;Item = (<span class="self">Self</span>::Key, C::Discrim)&gt; + <span class="lifetime">'t
     </span><span class="kw">where
-        </span><span class="self">Self</span>: <span class="lifetime">&#39;t</span>;
+        </span><span class="self">Self</span>: <span class="lifetime">'t</span>;
     <span class="doccomment">/// Iterates over all keys currently accessible from this accessor.
     ///
     /// For partial accessors, this is the set of keys to the discriminants provided by the user.
     ///
     /// For full accessors, this is the set of discriminants that have been initialized.
-    </span><span class="kw">fn </span>iter_keys(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self</span>::IterKeys&lt;<span class="lifetime">&#39;_</span>&gt;;
+    </span><span class="kw">fn </span>iter_keys(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self</span>::IterKeys&lt;<span class="lifetime">'_</span>&gt;;
 
     <span class="doccomment">/// Storage type yielded by [`iter_values`](Self::iter_values).
     </span><span class="kw">type </span>IterValue: ops::Deref&lt;Target = C::Storage&gt;;
     <span class="doccomment">/// Return value of [`iter_values`](Self::iter_values).
-    </span><span class="kw">type </span>IterValues&lt;<span class="lifetime">&#39;t</span>&gt;: Iterator&lt;Item = (<span class="self">Self</span>::Key, C::Discrim, <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="self">Self</span>::IterValue)&gt; + <span class="lifetime">&#39;t
+    </span><span class="kw">type </span>IterValues&lt;<span class="lifetime">'t</span>&gt;: Iterator&lt;Item = (<span class="self">Self</span>::Key, C::Discrim, <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="self">Self</span>::IterValue)&gt; + <span class="lifetime">'t
     </span><span class="kw">where
-        </span><span class="self">Self</span>: <span class="lifetime">&#39;t</span>;
+        </span><span class="self">Self</span>: <span class="lifetime">'t</span>;
     <span class="doccomment">/// Iterates over all storages currently accessible from this accessor.
     ///
     /// For partial accessors, this is the set of keys to the discriminants provided by the user.
     ///
     /// For full accessors, this is the set of discriminants that have been initialized.
-    </span><span class="kw">fn </span>iter_values(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self</span>::IterValues&lt;<span class="lifetime">&#39;_</span>&gt;;
+    </span><span class="kw">fn </span>iter_values(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self</span>::IterValues&lt;<span class="lifetime">'_</span>&gt;;
 }
 
 <span class="doccomment">/// Like [`StorageMap`] but can access a storage without `&amp;mut self`.
@@ -468,13 +470,13 @@
     <span class="doccomment">/// The component that this accessor retrieves.
     </span><span class="kw">type </span>Comp: comp::Isotope&lt;<span class="self">Self</span>::Arch&gt; = C;
     <span class="doccomment">/// The key for the discriminant set, `Comp::Discrim` for full accessors, typically `usize` for partial accessors
-    </span><span class="kw">type </span>Key: fmt::Debug + Copy + <span class="lifetime">&#39;static </span>= KeyT;
+    </span><span class="kw">type </span>Key: fmt::Debug + Copy + <span class="lifetime">'static </span>= KeyT;
 })]
 </span><span class="kw">impl</span>&lt;A, C, KeyT, StorageMapT&gt; Isotope&lt;A, C, StorageMapT&gt;
 <span class="kw">where
     </span>A: Archetype,
     C: comp::Isotope&lt;A&gt;,
-    KeyT: fmt::Debug + Copy + <span class="lifetime">&#39;static</span>,
+    KeyT: fmt::Debug + Copy + <span class="lifetime">'static</span>,
     StorageMapT: StorageMap&lt;A, C, Key = KeyT&gt;,
 {
     <span class="doccomment">/// Retrieves the component for the given entity and discriminant.
@@ -488,7 +490,7 @@
         <span class="kw">match </span><span class="self">self</span>.try_get(entity, discrim) {
             <span class="prelude-val">Some</span>(value) =&gt; value,
             <span class="prelude-val">None </span>=&gt; <span class="macro">panic!</span>(
-                <span class="string">&quot;{}: comp::Must&lt;{}&gt; but has no default initializer&quot;</span>,
+                <span class="string">"{}: comp::Must&lt;{}&gt; but has no default initializer"</span>,
                 any::type_name::&lt;C&gt;(),
                 any::type_name::&lt;A&gt;()
             ),
@@ -506,22 +508,22 @@
     <span class="doccomment">/// Iterates over all known discriminants of the component type.
     ///
     /// The yielded discriminants are not in any guaranteed order.
-    </span><span class="kw">pub fn </span>known_discrims&lt;<span class="lifetime">&#39;t</span>&gt;(
-        <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="self">self</span>,
-    ) -&gt; <span class="kw">impl </span>Iterator&lt;Item = &lt;C <span class="kw">as </span>comp::Isotope&lt;A&gt;&gt;::Discrim&gt; + <span class="lifetime">&#39;t </span>{
+    </span><span class="kw">pub fn </span>known_discrims&lt;<span class="lifetime">'t</span>&gt;(
+        <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="self">self</span>,
+    ) -&gt; <span class="kw">impl </span>Iterator&lt;Item = &lt;C <span class="kw">as </span>comp::Isotope&lt;A&gt;&gt;::Discrim&gt; + <span class="lifetime">'t </span>{
         <span class="self">self</span>.storages.iter_keys().map(|(_key, discrim)| discrim)
     }
 
     <span class="doccomment">/// Iterates over all known isotopes for a specific entity.
-    </span><span class="kw">pub fn </span>get_all&lt;<span class="lifetime">&#39;t</span>, E: entity::Ref&lt;Archetype = A&gt;&gt;(
-        <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="self">self</span>,
+    </span><span class="kw">pub fn </span>get_all&lt;<span class="lifetime">'t</span>, E: entity::Ref&lt;Archetype = A&gt;&gt;(
+        <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="self">self</span>,
         entity: E,
-    ) -&gt; <span class="kw">impl </span>Iterator&lt;Item = (&lt;C <span class="kw">as </span>comp::Isotope&lt;A&gt;&gt;::Discrim, <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span>C)&gt; + <span class="lifetime">&#39;t </span>{
+    ) -&gt; <span class="kw">impl </span>Iterator&lt;Item = (&lt;C <span class="kw">as </span>comp::Isotope&lt;A&gt;&gt;::Discrim, <span class="kw-2">&amp;</span><span class="lifetime">'t </span>C)&gt; + <span class="lifetime">'t </span>{
         <span class="comment">// workaround for https://github.com/rust-lang/rust/issues/65442
         </span><span class="kw">fn </span>without_e&lt;A, C&gt;(
             getter: <span class="kw-2">&amp;</span><span class="kw">impl </span>StorageMap&lt;A, C&gt;,
             id: &lt;A <span class="kw">as </span>Archetype&gt;::RawEntity,
-        ) -&gt; <span class="kw">impl </span>Iterator&lt;Item = (C::Discrim, <span class="kw-2">&amp;</span><span class="lifetime">&#39;_ </span>C)&gt; + <span class="lifetime">&#39;_
+        ) -&gt; <span class="kw">impl </span>Iterator&lt;Item = (C::Discrim, <span class="kw-2">&amp;</span><span class="lifetime">'_ </span>C)&gt; + <span class="lifetime">'_
         </span><span class="kw">where
             </span>A: Archetype,
             C: comp::Isotope&lt;A&gt;,
@@ -538,20 +540,20 @@
     ///
     /// Note that the initializer is not called for lazy-initialized isotope components.
     /// To avoid confusing behavior, do not use this function if [`C: comp::Must&lt;A&gt;`](comp::Must).
-    </span><span class="kw">pub fn </span>iter&lt;<span class="lifetime">&#39;t</span>&gt;(
-        <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span><span class="self">self</span>,
+    </span><span class="kw">pub fn </span>iter&lt;<span class="lifetime">'t</span>&gt;(
+        <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span><span class="self">self</span>,
         key: KeyT,
-    ) -&gt; <span class="kw">impl </span>Iterator&lt;Item = (entity::TempRef&lt;<span class="lifetime">&#39;t</span>, A&gt;, <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span>C)&gt; {
+    ) -&gt; <span class="kw">impl </span>Iterator&lt;Item = (entity::TempRef&lt;<span class="lifetime">'t</span>, A&gt;, <span class="kw-2">&amp;</span><span class="lifetime">'t </span>C)&gt; {
         <span class="kw">let </span>storage = <span class="self">self</span>.storages.get_storage(key);
         storage.iter().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
     }
 
     <span class="doccomment">/// Splits the accessor into multiple immutable [`AccessSingle`] accessors
     /// so that they can be used independently.
-    </span><span class="kw">pub fn </span>split&lt;<span class="lifetime">&#39;t</span>, <span class="kw">const </span>N: usize&gt;(
-        <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span><span class="self">self</span>,
+    </span><span class="kw">pub fn </span>split&lt;<span class="lifetime">'t</span>, <span class="kw">const </span>N: usize&gt;(
+        <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span><span class="self">self</span>,
         keys: [KeyT; N],
-    ) -&gt; [AccessSingle&lt;A, C, <span class="kw">impl </span>ops::Deref&lt;Target = &lt;C <span class="kw">as </span>comp::SimpleOrIsotope&lt;A&gt;&gt;::Storage&gt; + <span class="lifetime">&#39;t</span>&gt;;
+    ) -&gt; [AccessSingle&lt;A, C, <span class="kw">impl </span>ops::Deref&lt;Target = &lt;C <span class="kw">as </span>comp::SimpleOrIsotope&lt;A&gt;&gt;::Storage&gt; + <span class="lifetime">'t</span>&gt;;
            N] {
         <span class="kw">let </span>storages = <span class="self">self</span>.storages.get_storage_many(keys);
         storages.map(|storage| AccessSingle::new(storage))
@@ -564,13 +566,13 @@
     <span class="doccomment">/// The component that this accessor retrieves.
     </span><span class="kw">type </span>Comp: comp::Isotope&lt;<span class="self">Self</span>::Arch&gt; = C;
     <span class="doccomment">/// The key for the discriminant set, `Comp::Discrim` for full accessors, typically `usize` for partial accessors
-    </span><span class="kw">type </span>Key: fmt::Debug + Copy + <span class="lifetime">&#39;static </span>= KeyT;
+    </span><span class="kw">type </span>Key: fmt::Debug + Copy + <span class="lifetime">'static </span>= KeyT;
 })]
 </span><span class="kw">impl</span>&lt;A, C, KeyT, StorageMapT&gt; Isotope&lt;A, C, StorageMapT&gt;
 <span class="kw">where
     </span>A: Archetype,
     C: comp::Isotope&lt;A&gt;,
-    KeyT: fmt::Debug + Copy + <span class="lifetime">&#39;static</span>,
+    KeyT: fmt::Debug + Copy + <span class="lifetime">'static</span>,
     StorageMapT: PartialStorageMap&lt;A, C, Key = KeyT&gt;,
 {
     <span class="doccomment">/// Retrieves the component for the given entity and discriminant.
@@ -583,7 +585,7 @@
         <span class="kw">match </span><span class="self">self</span>.try_get_ref(entity, key) {
             <span class="prelude-val">Some</span>(value) =&gt; value,
             <span class="prelude-val">None </span>=&gt; <span class="macro">panic!</span>(
-                <span class="string">&quot;{}: comp::Must&lt;{}&gt; but has no default initializer&quot;</span>,
+                <span class="string">"{}: comp::Must&lt;{}&gt; but has no default initializer"</span>,
                 any::type_name::&lt;C&gt;(),
                 any::type_name::&lt;A&gt;()
             ),
@@ -603,10 +605,10 @@
     <span class="doccomment">/// Iterates over all components of a specific discriminant.
     ///
     /// Identical to [`iter`](Isotope::iter) but does not require a mutable receiver.
-    </span><span class="kw">pub fn </span>iter_ref&lt;<span class="lifetime">&#39;t</span>&gt;(
-        <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="self">self</span>,
+    </span><span class="kw">pub fn </span>iter_ref&lt;<span class="lifetime">'t</span>&gt;(
+        <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="self">self</span>,
         key: KeyT,
-    ) -&gt; <span class="kw">impl </span>Iterator&lt;Item = (entity::TempRef&lt;<span class="lifetime">&#39;t</span>, A&gt;, <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span>C)&gt; {
+    ) -&gt; <span class="kw">impl </span>Iterator&lt;Item = (entity::TempRef&lt;<span class="lifetime">'t</span>, A&gt;, <span class="kw-2">&amp;</span><span class="lifetime">'t </span>C)&gt; {
         <span class="kw">let </span>storage = <span class="self">self</span>.storages.get_storage_ref(key);
         storage.iter().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
     }
@@ -618,13 +620,13 @@
     <span class="doccomment">/// The component that this accessor retrieves.
     </span><span class="kw">type </span>Comp: comp::Isotope&lt;<span class="self">Self</span>::Arch&gt; = C;
     <span class="doccomment">/// The key for the discriminant set, `Comp::Discrim` for full accessors, typically `usize` for partial accessors
-    </span><span class="kw">type </span>Key: fmt::Debug + Copy + <span class="lifetime">&#39;static </span>= KeyT;
+    </span><span class="kw">type </span>Key: fmt::Debug + Copy + <span class="lifetime">'static </span>= KeyT;
 })]
 </span><span class="kw">impl</span>&lt;A, C, KeyT, StorageMapT&gt; Isotope&lt;A, C, StorageMapT&gt;
 <span class="kw">where
     </span>A: Archetype,
     C: comp::Isotope&lt;A&gt;,
-    KeyT: fmt::Debug + Copy + <span class="lifetime">&#39;static</span>,
+    KeyT: fmt::Debug + Copy + <span class="lifetime">'static</span>,
     StorageMapT: StorageMapMut&lt;A, C, Key = KeyT&gt;,
 {
     <span class="doccomment">/// Retrieves the component for the given entity and discriminant.
@@ -638,7 +640,7 @@
         <span class="kw">match </span><span class="self">self</span>.try_get_mut(entity, discrim) {
             <span class="prelude-val">Some</span>(value) =&gt; value,
             <span class="prelude-val">None </span>=&gt; <span class="macro">panic!</span>(
-                <span class="string">&quot;{}: comp::Must&lt;{}&gt; but has no default initializer&quot;</span>,
+                <span class="string">"{}: comp::Must&lt;{}&gt; but has no default initializer"</span>,
                 any::type_name::&lt;C&gt;(),
                 any::type_name::&lt;A&gt;()
             ),
@@ -675,23 +677,23 @@
     }
 
     <span class="doccomment">/// Iterates over mutable references to all components of a specific discriminant.
-    </span><span class="kw">pub fn </span>iter_mut&lt;<span class="lifetime">&#39;t</span>&gt;(
-        <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span><span class="self">self</span>,
+    </span><span class="kw">pub fn </span>iter_mut&lt;<span class="lifetime">'t</span>&gt;(
+        <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span><span class="self">self</span>,
         key: KeyT,
-    ) -&gt; <span class="kw">impl </span>Iterator&lt;Item = (entity::TempRef&lt;<span class="lifetime">&#39;t</span>, A&gt;, <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>C)&gt; {
+    ) -&gt; <span class="kw">impl </span>Iterator&lt;Item = (entity::TempRef&lt;<span class="lifetime">'t</span>, A&gt;, <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span>C)&gt; {
         <span class="kw">let </span>storage = <span class="self">self</span>.storages.get_storage_mut(key);
         storage.iter_mut().map(|(entity, comp)| (entity::TempRef::new(entity), comp))
     }
 
     <span class="doccomment">/// Splits the accessor into multiple mutable [`AccessSingle`] accessors
     /// so that they can be used in entity iteration independently.
-    </span><span class="kw">pub fn </span>split_mut&lt;<span class="lifetime">&#39;t</span>, <span class="kw">const </span>N: usize&gt;(
-        <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span><span class="self">self</span>,
+    </span><span class="kw">pub fn </span>split_mut&lt;<span class="lifetime">'t</span>, <span class="kw">const </span>N: usize&gt;(
+        <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span><span class="self">self</span>,
         keys: [KeyT; N],
     ) -&gt; [AccessSingle&lt;
         A,
         C,
-        <span class="kw">impl </span>ops::DerefMut&lt;Target = &lt;C <span class="kw">as </span>comp::SimpleOrIsotope&lt;A&gt;&gt;::Storage&gt; + <span class="lifetime">&#39;t</span>,
+        <span class="kw">impl </span>ops::DerefMut&lt;Target = &lt;C <span class="kw">as </span>comp::SimpleOrIsotope&lt;A&gt;&gt;::Storage&gt; + <span class="lifetime">'t</span>,
     &gt;; N] {
         <span class="kw">let </span>storages = <span class="self">self</span>.storages.get_storage_mut_many(keys);
         storages.map(|storage| AccessSingle::new(storage))

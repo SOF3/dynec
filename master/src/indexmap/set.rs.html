@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/indexmap-1.9.3/src/set.rs`."><title>set.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="indexmap" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/indexmap-1.9.3/src/set.rs`."><title>set.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="indexmap" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../indexmap/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -1912,7 +1914,7 @@
 <a href="#1912" id="1912">1912</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! A hash set implemented using `IndexMap`
 
-</span><span class="attr">#[cfg(feature = <span class="string">&quot;rayon&quot;</span>)]
+</span><span class="attr">#[cfg(feature = <span class="string">"rayon"</span>)]
 </span><span class="kw">pub use </span><span class="kw">crate</span>::rayon::set <span class="kw">as </span>rayon;
 
 <span class="attr">#[cfg(has_std)]
@@ -1945,7 +1947,7 @@
 /// already present.
 ///
 /// All iterators traverse the set *in order*.  Set operation iterators like
-/// `union` produce a concatenated order, as do their matching &quot;bitwise&quot;
+/// `union` produce a concatenated order, as do their matching "bitwise"
 /// operators.  See their documentation for specifics.
 ///
 /// The insertion order is preserved, with **notable exceptions** like the
@@ -1964,12 +1966,12 @@
 /// use indexmap::IndexSet;
 ///
 /// // Collects which letters appear in a sentence.
-/// let letters: IndexSet&lt;_&gt; = &quot;a short treatise on fungi&quot;.chars().collect();
+/// let letters: IndexSet&lt;_&gt; = "a short treatise on fungi".chars().collect();
 ///
-/// assert!(letters.contains(&amp;&#39;s&#39;));
-/// assert!(letters.contains(&amp;&#39;t&#39;));
-/// assert!(letters.contains(&amp;&#39;u&#39;));
-/// assert!(!letters.contains(&amp;&#39;y&#39;));
+/// assert!(letters.contains(&amp;'s'));
+/// assert!(letters.contains(&amp;'t'));
+/// assert!(letters.contains(&amp;'u'));
+/// assert!(!letters.contains(&amp;'y'));
 /// ```
 </span><span class="attr">#[cfg(has_std)]
 </span><span class="kw">pub struct </span>IndexSet&lt;T, S = RandomState&gt; {
@@ -2026,12 +2028,12 @@
 <span class="kw">where
     </span>T: fmt::Debug,
 {
-    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
-        <span class="kw">if </span><span class="macro">cfg!</span>(not(feature = <span class="string">&quot;test_debug&quot;</span>)) {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; fmt::Result {
+        <span class="kw">if </span><span class="macro">cfg!</span>(not(feature = <span class="string">"test_debug"</span>)) {
             f.debug_set().entries(<span class="self">self</span>.iter()).finish()
         } <span class="kw">else </span>{
             <span class="comment">// Let the inner `IndexMap` print all of its details
-            </span>f.debug_struct(<span class="string">&quot;IndexSet&quot;</span>).field(<span class="string">&quot;map&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.map).finish()
+            </span>f.debug_struct(<span class="string">"IndexSet"</span>).field(<span class="string">"map"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.map).finish()
         }
     }
 }
@@ -2082,7 +2084,7 @@
         <span class="self">self</span>.map.capacity()
     }
 
-    <span class="doccomment">/// Return a reference to the set&#39;s `BuildHasher`.
+    <span class="doccomment">/// Return a reference to the set's `BuildHasher`.
     </span><span class="kw">pub fn </span>hasher(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>S {
         <span class="self">self</span>.map.hasher()
     }
@@ -2102,7 +2104,7 @@
     }
 
     <span class="doccomment">/// Return an iterator over the values of the set, in their order
-    </span><span class="kw">pub fn </span>iter(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Iter&lt;<span class="lifetime">&#39;_</span>, T&gt; {
+    </span><span class="kw">pub fn </span>iter(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Iter&lt;<span class="lifetime">'_</span>, T&gt; {
         Iter {
             iter: <span class="self">self</span>.map.as_entries().iter(),
         }
@@ -2117,7 +2119,7 @@
 
     <span class="doccomment">/// Shortens the set, keeping the first `len` elements and dropping the rest.
     ///
-    /// If `len` is greater than the set&#39;s current length, this has no effect.
+    /// If `len` is greater than the set's current length, this has no effect.
     </span><span class="kw">pub fn </span>truncate(<span class="kw-2">&amp;mut </span><span class="self">self</span>, len: usize) {
         <span class="self">self</span>.map.truncate(len);
     }
@@ -2135,7 +2137,7 @@
     ///
     /// ***Panics*** if the starting point is greater than the end point or if
     /// the end point is greater than the length of the set.
-    </span><span class="kw">pub fn </span>drain&lt;R&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, range: R) -&gt; Drain&lt;<span class="lifetime">&#39;_</span>, T&gt;
+    </span><span class="kw">pub fn </span>drain&lt;R&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, range: R) -&gt; Drain&lt;<span class="lifetime">'_</span>, T&gt;
     <span class="kw">where
         </span>R: RangeBounds&lt;usize&gt;,
     {
@@ -2224,7 +2226,7 @@
     <span class="doccomment">/// Return an iterator over the values that are in `self` but not `other`.
     ///
     /// Values are produced in the same order that they appear in `self`.
-    </span><span class="kw">pub fn </span>difference&lt;<span class="lifetime">&#39;a</span>, S2&gt;(<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>IndexSet&lt;T, S2&gt;) -&gt; Difference&lt;<span class="lifetime">&#39;a</span>, T, S2&gt;
+    </span><span class="kw">pub fn </span>difference&lt;<span class="lifetime">'a</span>, S2&gt;(<span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>IndexSet&lt;T, S2&gt;) -&gt; Difference&lt;<span class="lifetime">'a</span>, T, S2&gt;
     <span class="kw">where
         </span>S2: BuildHasher,
     {
@@ -2239,10 +2241,10 @@
     ///
     /// Values from `self` are produced in their original order, followed by
     /// values from `other` in their original order.
-    </span><span class="kw">pub fn </span>symmetric_difference&lt;<span class="lifetime">&#39;a</span>, S2&gt;(
-        <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="self">self</span>,
-        other: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>IndexSet&lt;T, S2&gt;,
-    ) -&gt; SymmetricDifference&lt;<span class="lifetime">&#39;a</span>, T, S, S2&gt;
+    </span><span class="kw">pub fn </span>symmetric_difference&lt;<span class="lifetime">'a</span>, S2&gt;(
+        <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="self">self</span>,
+        other: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>IndexSet&lt;T, S2&gt;,
+    ) -&gt; SymmetricDifference&lt;<span class="lifetime">'a</span>, T, S, S2&gt;
     <span class="kw">where
         </span>S2: BuildHasher,
     {
@@ -2254,7 +2256,7 @@
     <span class="doccomment">/// Return an iterator over the values that are in both `self` and `other`.
     ///
     /// Values are produced in the same order that they appear in `self`.
-    </span><span class="kw">pub fn </span>intersection&lt;<span class="lifetime">&#39;a</span>, S2&gt;(<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>IndexSet&lt;T, S2&gt;) -&gt; Intersection&lt;<span class="lifetime">&#39;a</span>, T, S2&gt;
+    </span><span class="kw">pub fn </span>intersection&lt;<span class="lifetime">'a</span>, S2&gt;(<span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>IndexSet&lt;T, S2&gt;) -&gt; Intersection&lt;<span class="lifetime">'a</span>, T, S2&gt;
     <span class="kw">where
         </span>S2: BuildHasher,
     {
@@ -2268,7 +2270,7 @@
     ///
     /// Values from `self` are produced in their original order, followed by
     /// values that are unique to `other` in their original order.
-    </span><span class="kw">pub fn </span>union&lt;<span class="lifetime">&#39;a</span>, S2&gt;(<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>IndexSet&lt;T, S2&gt;) -&gt; Union&lt;<span class="lifetime">&#39;a</span>, T, S&gt;
+    </span><span class="kw">pub fn </span>union&lt;<span class="lifetime">'a</span>, S2&gt;(<span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>IndexSet&lt;T, S2&gt;) -&gt; Union&lt;<span class="lifetime">'a</span>, T, S&gt;
     <span class="kw">where
         </span>S2: BuildHasher,
     {
@@ -2521,7 +2523,7 @@
         }
     }
 
-    <span class="doccomment">/// Sort the set&#39;s values by their default ordering.
+    <span class="doccomment">/// Sort the set's values by their default ordering.
     ///
     /// See [`sort_unstable_by`](Self::sort_unstable_by) for details.
     </span><span class="kw">pub fn </span>sort_unstable(<span class="kw-2">&amp;mut </span><span class="self">self</span>)
@@ -2531,7 +2533,7 @@
         <span class="self">self</span>.map.sort_unstable_keys()
     }
 
-    <span class="doccomment">/// Sort the set&#39;s values in place using the comparison funtion `cmp`.
+    <span class="doccomment">/// Sort the set's values in place using the comparison funtion `cmp`.
     ///
     /// Computes in **O(n log n)** time. The sort is unstable.
     </span><span class="kw">pub fn </span>sort_unstable_by&lt;F&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, <span class="kw-2">mut </span>cmp: F)
@@ -2641,25 +2643,25 @@
 /// use indexmap::IndexSet;
 ///
 /// let mut set = IndexSet::new();
-/// for word in &quot;Lorem ipsum dolor sit amet&quot;.split_whitespace() {
+/// for word in "Lorem ipsum dolor sit amet".split_whitespace() {
 ///     set.insert(word.to_string());
 /// }
-/// assert_eq!(set[0], &quot;Lorem&quot;);
-/// assert_eq!(set[1], &quot;ipsum&quot;);
+/// assert_eq!(set[0], "Lorem");
+/// assert_eq!(set[1], "ipsum");
 /// set.reverse();
-/// assert_eq!(set[0], &quot;amet&quot;);
-/// assert_eq!(set[1], &quot;sit&quot;);
+/// assert_eq!(set[0], "amet");
+/// assert_eq!(set[1], "sit");
 /// set.sort();
-/// assert_eq!(set[0], &quot;Lorem&quot;);
-/// assert_eq!(set[1], &quot;amet&quot;);
+/// assert_eq!(set[0], "Lorem");
+/// assert_eq!(set[1], "amet");
 /// ```
 ///
 /// ```should_panic
 /// use indexmap::IndexSet;
 ///
 /// let mut set = IndexSet::new();
-/// set.insert(&quot;foo&quot;);
-/// println!(&quot;{:?}&quot;, set[10]); // panics!
+/// set.insert("foo");
+/// println!("{:?}", set[10]); // panics!
 /// ```
 </span><span class="kw">impl</span>&lt;T, S&gt; Index&lt;usize&gt; <span class="kw">for </span>IndexSet&lt;T, S&gt; {
     <span class="kw">type </span>Output = T;
@@ -2669,7 +2671,7 @@
     /// ***Panics*** if `index` is out of bounds.
     </span><span class="kw">fn </span>index(<span class="kw-2">&amp;</span><span class="self">self</span>, index: usize) -&gt; <span class="kw-2">&amp;</span>T {
         <span class="self">self</span>.get_index(index)
-            .expect(<span class="string">&quot;IndexSet: index out of bounds&quot;</span>)
+            .expect(<span class="string">"IndexSet: index out of bounds"</span>)
     }
 }
 
@@ -2703,7 +2705,7 @@
 <span class="kw">impl</span>&lt;T&gt; FusedIterator <span class="kw">for </span>IntoIter&lt;T&gt; {}
 
 <span class="kw">impl</span>&lt;T: fmt::Debug&gt; fmt::Debug <span class="kw">for </span>IntoIter&lt;T&gt; {
-    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; fmt::Result {
         <span class="kw">let </span>iter = <span class="self">self</span>.iter.as_slice().iter().map(Bucket::key_ref);
         f.debug_list().entries(iter).finish()
     }
@@ -2716,29 +2718,29 @@
 ///
 /// [`IndexSet`]: struct.IndexSet.html
 /// [`iter`]: struct.IndexSet.html#method.iter
-</span><span class="kw">pub struct </span>Iter&lt;<span class="lifetime">&#39;a</span>, T&gt; {
-    iter: slice::Iter&lt;<span class="lifetime">&#39;a</span>, Bucket&lt;T&gt;&gt;,
+</span><span class="kw">pub struct </span>Iter&lt;<span class="lifetime">'a</span>, T&gt; {
+    iter: slice::Iter&lt;<span class="lifetime">'a</span>, Bucket&lt;T&gt;&gt;,
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T&gt; Iterator <span class="kw">for </span>Iter&lt;<span class="lifetime">&#39;a</span>, T&gt; {
-    <span class="kw">type </span>Item = <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T;
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T&gt; Iterator <span class="kw">for </span>Iter&lt;<span class="lifetime">'a</span>, T&gt; {
+    <span class="kw">type </span>Item = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>T;
 
     <span class="macro">iterator_methods!</span>(Bucket::key_ref);
 }
 
-<span class="kw">impl</span>&lt;T&gt; DoubleEndedIterator <span class="kw">for </span>Iter&lt;<span class="lifetime">&#39;_</span>, T&gt; {
+<span class="kw">impl</span>&lt;T&gt; DoubleEndedIterator <span class="kw">for </span>Iter&lt;<span class="lifetime">'_</span>, T&gt; {
     <span class="macro">double_ended_iterator_methods!</span>(Bucket::key_ref);
 }
 
-<span class="kw">impl</span>&lt;T&gt; ExactSizeIterator <span class="kw">for </span>Iter&lt;<span class="lifetime">&#39;_</span>, T&gt; {
+<span class="kw">impl</span>&lt;T&gt; ExactSizeIterator <span class="kw">for </span>Iter&lt;<span class="lifetime">'_</span>, T&gt; {
     <span class="kw">fn </span>len(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; usize {
         <span class="self">self</span>.iter.len()
     }
 }
 
-<span class="kw">impl</span>&lt;T&gt; FusedIterator <span class="kw">for </span>Iter&lt;<span class="lifetime">&#39;_</span>, T&gt; {}
+<span class="kw">impl</span>&lt;T&gt; FusedIterator <span class="kw">for </span>Iter&lt;<span class="lifetime">'_</span>, T&gt; {}
 
-<span class="kw">impl</span>&lt;T&gt; Clone <span class="kw">for </span>Iter&lt;<span class="lifetime">&#39;_</span>, T&gt; {
+<span class="kw">impl</span>&lt;T&gt; Clone <span class="kw">for </span>Iter&lt;<span class="lifetime">'_</span>, T&gt; {
     <span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
         Iter {
             iter: <span class="self">self</span>.iter.clone(),
@@ -2746,8 +2748,8 @@
     }
 }
 
-<span class="kw">impl</span>&lt;T: fmt::Debug&gt; fmt::Debug <span class="kw">for </span>Iter&lt;<span class="lifetime">&#39;_</span>, T&gt; {
-    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
+<span class="kw">impl</span>&lt;T: fmt::Debug&gt; fmt::Debug <span class="kw">for </span>Iter&lt;<span class="lifetime">'_</span>, T&gt; {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; fmt::Result {
         f.debug_list().entries(<span class="self">self</span>.clone()).finish()
     }
 }
@@ -2759,38 +2761,38 @@
 ///
 /// [`IndexSet`]: struct.IndexSet.html
 /// [`drain`]: struct.IndexSet.html#method.drain
-</span><span class="kw">pub struct </span>Drain&lt;<span class="lifetime">&#39;a</span>, T&gt; {
-    iter: vec::Drain&lt;<span class="lifetime">&#39;a</span>, Bucket&lt;T&gt;&gt;,
+</span><span class="kw">pub struct </span>Drain&lt;<span class="lifetime">'a</span>, T&gt; {
+    iter: vec::Drain&lt;<span class="lifetime">'a</span>, Bucket&lt;T&gt;&gt;,
 }
 
-<span class="kw">impl</span>&lt;T&gt; Iterator <span class="kw">for </span>Drain&lt;<span class="lifetime">&#39;_</span>, T&gt; {
+<span class="kw">impl</span>&lt;T&gt; Iterator <span class="kw">for </span>Drain&lt;<span class="lifetime">'_</span>, T&gt; {
     <span class="kw">type </span>Item = T;
 
     <span class="macro">iterator_methods!</span>(Bucket::key);
 }
 
-<span class="kw">impl</span>&lt;T&gt; DoubleEndedIterator <span class="kw">for </span>Drain&lt;<span class="lifetime">&#39;_</span>, T&gt; {
+<span class="kw">impl</span>&lt;T&gt; DoubleEndedIterator <span class="kw">for </span>Drain&lt;<span class="lifetime">'_</span>, T&gt; {
     <span class="macro">double_ended_iterator_methods!</span>(Bucket::key);
 }
 
-<span class="kw">impl</span>&lt;T&gt; ExactSizeIterator <span class="kw">for </span>Drain&lt;<span class="lifetime">&#39;_</span>, T&gt; {
+<span class="kw">impl</span>&lt;T&gt; ExactSizeIterator <span class="kw">for </span>Drain&lt;<span class="lifetime">'_</span>, T&gt; {
     <span class="kw">fn </span>len(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; usize {
         <span class="self">self</span>.iter.len()
     }
 }
 
-<span class="kw">impl</span>&lt;T&gt; FusedIterator <span class="kw">for </span>Drain&lt;<span class="lifetime">&#39;_</span>, T&gt; {}
+<span class="kw">impl</span>&lt;T&gt; FusedIterator <span class="kw">for </span>Drain&lt;<span class="lifetime">'_</span>, T&gt; {}
 
-<span class="kw">impl</span>&lt;T: fmt::Debug&gt; fmt::Debug <span class="kw">for </span>Drain&lt;<span class="lifetime">&#39;_</span>, T&gt; {
-    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
+<span class="kw">impl</span>&lt;T: fmt::Debug&gt; fmt::Debug <span class="kw">for </span>Drain&lt;<span class="lifetime">'_</span>, T&gt; {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; fmt::Result {
         <span class="kw">let </span>iter = <span class="self">self</span>.iter.as_slice().iter().map(Bucket::key_ref);
         f.debug_list().entries(iter).finish()
     }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, S&gt; IntoIterator <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>IndexSet&lt;T, S&gt; {
-    <span class="kw">type </span>Item = <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T;
-    <span class="kw">type </span>IntoIter = Iter&lt;<span class="lifetime">&#39;a</span>, T&gt;;
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, S&gt; IntoIterator <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">'a </span>IndexSet&lt;T, S&gt; {
+    <span class="kw">type </span>Item = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>T;
+    <span class="kw">type </span>IntoIter = Iter&lt;<span class="lifetime">'a</span>, T&gt;;
 
     <span class="kw">fn </span>into_iter(<span class="self">self</span>) -&gt; <span class="self">Self</span>::IntoIter {
         <span class="self">self</span>.iter()
@@ -2851,12 +2853,12 @@
     }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, S&gt; Extend&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T&gt; <span class="kw">for </span>IndexSet&lt;T, S&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, S&gt; Extend&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>T&gt; <span class="kw">for </span>IndexSet&lt;T, S&gt;
 <span class="kw">where
-    </span>T: Hash + Eq + Copy + <span class="lifetime">&#39;a</span>,
+    </span>T: Hash + Eq + Copy + <span class="lifetime">'a</span>,
     S: BuildHasher,
 {
-    <span class="kw">fn </span>extend&lt;I: IntoIterator&lt;Item = <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T&gt;&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, iterable: I) {
+    <span class="kw">fn </span>extend&lt;I: IntoIterator&lt;Item = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>T&gt;&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, iterable: I) {
         <span class="kw">let </span>iter = iterable.into_iter().copied();
         <span class="self">self</span>.extend(iter);
     }
@@ -2933,17 +2935,17 @@
 ///
 /// [`IndexSet`]: struct.IndexSet.html
 /// [`difference`]: struct.IndexSet.html#method.difference
-</span><span class="kw">pub struct </span>Difference&lt;<span class="lifetime">&#39;a</span>, T, S&gt; {
-    iter: Iter&lt;<span class="lifetime">&#39;a</span>, T&gt;,
-    other: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>IndexSet&lt;T, S&gt;,
+</span><span class="kw">pub struct </span>Difference&lt;<span class="lifetime">'a</span>, T, S&gt; {
+    iter: Iter&lt;<span class="lifetime">'a</span>, T&gt;,
+    other: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>IndexSet&lt;T, S&gt;,
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, S&gt; Iterator <span class="kw">for </span>Difference&lt;<span class="lifetime">&#39;a</span>, T, S&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, S&gt; Iterator <span class="kw">for </span>Difference&lt;<span class="lifetime">'a</span>, T, S&gt;
 <span class="kw">where
     </span>T: Eq + Hash,
     S: BuildHasher,
 {
-    <span class="kw">type </span>Item = <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T;
+    <span class="kw">type </span>Item = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>T;
 
     <span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt; {
         <span class="kw">while let </span><span class="prelude-val">Some</span>(item) = <span class="self">self</span>.iter.next() {
@@ -2959,7 +2961,7 @@
     }
 }
 
-<span class="kw">impl</span>&lt;T, S&gt; DoubleEndedIterator <span class="kw">for </span>Difference&lt;<span class="lifetime">&#39;_</span>, T, S&gt;
+<span class="kw">impl</span>&lt;T, S&gt; DoubleEndedIterator <span class="kw">for </span>Difference&lt;<span class="lifetime">'_</span>, T, S&gt;
 <span class="kw">where
     </span>T: Eq + Hash,
     S: BuildHasher,
@@ -2974,14 +2976,14 @@
     </span>}
 }
 
-<span class="kw">impl</span>&lt;T, S&gt; FusedIterator <span class="kw">for </span>Difference&lt;<span class="lifetime">&#39;_</span>, T, S&gt;
+<span class="kw">impl</span>&lt;T, S&gt; FusedIterator <span class="kw">for </span>Difference&lt;<span class="lifetime">'_</span>, T, S&gt;
 <span class="kw">where
     </span>T: Eq + Hash,
     S: BuildHasher,
 {
 }
 
-<span class="kw">impl</span>&lt;T, S&gt; Clone <span class="kw">for </span>Difference&lt;<span class="lifetime">&#39;_</span>, T, S&gt; {
+<span class="kw">impl</span>&lt;T, S&gt; Clone <span class="kw">for </span>Difference&lt;<span class="lifetime">'_</span>, T, S&gt; {
     <span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
         Difference {
             iter: <span class="self">self</span>.iter.clone(),
@@ -2990,12 +2992,12 @@
     }
 }
 
-<span class="kw">impl</span>&lt;T, S&gt; fmt::Debug <span class="kw">for </span>Difference&lt;<span class="lifetime">&#39;_</span>, T, S&gt;
+<span class="kw">impl</span>&lt;T, S&gt; fmt::Debug <span class="kw">for </span>Difference&lt;<span class="lifetime">'_</span>, T, S&gt;
 <span class="kw">where
     </span>T: fmt::Debug + Eq + Hash,
     S: BuildHasher,
 {
-    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; fmt::Result {
         f.debug_list().entries(<span class="self">self</span>.clone()).finish()
     }
 }
@@ -3007,17 +3009,17 @@
 ///
 /// [`IndexSet`]: struct.IndexSet.html
 /// [`intersection`]: struct.IndexSet.html#method.intersection
-</span><span class="kw">pub struct </span>Intersection&lt;<span class="lifetime">&#39;a</span>, T, S&gt; {
-    iter: Iter&lt;<span class="lifetime">&#39;a</span>, T&gt;,
-    other: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>IndexSet&lt;T, S&gt;,
+</span><span class="kw">pub struct </span>Intersection&lt;<span class="lifetime">'a</span>, T, S&gt; {
+    iter: Iter&lt;<span class="lifetime">'a</span>, T&gt;,
+    other: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>IndexSet&lt;T, S&gt;,
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, S&gt; Iterator <span class="kw">for </span>Intersection&lt;<span class="lifetime">&#39;a</span>, T, S&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, S&gt; Iterator <span class="kw">for </span>Intersection&lt;<span class="lifetime">'a</span>, T, S&gt;
 <span class="kw">where
     </span>T: Eq + Hash,
     S: BuildHasher,
 {
-    <span class="kw">type </span>Item = <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T;
+    <span class="kw">type </span>Item = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>T;
 
     <span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt; {
         <span class="kw">while let </span><span class="prelude-val">Some</span>(item) = <span class="self">self</span>.iter.next() {
@@ -3033,7 +3035,7 @@
     }
 }
 
-<span class="kw">impl</span>&lt;T, S&gt; DoubleEndedIterator <span class="kw">for </span>Intersection&lt;<span class="lifetime">&#39;_</span>, T, S&gt;
+<span class="kw">impl</span>&lt;T, S&gt; DoubleEndedIterator <span class="kw">for </span>Intersection&lt;<span class="lifetime">'_</span>, T, S&gt;
 <span class="kw">where
     </span>T: Eq + Hash,
     S: BuildHasher,
@@ -3048,14 +3050,14 @@
     </span>}
 }
 
-<span class="kw">impl</span>&lt;T, S&gt; FusedIterator <span class="kw">for </span>Intersection&lt;<span class="lifetime">&#39;_</span>, T, S&gt;
+<span class="kw">impl</span>&lt;T, S&gt; FusedIterator <span class="kw">for </span>Intersection&lt;<span class="lifetime">'_</span>, T, S&gt;
 <span class="kw">where
     </span>T: Eq + Hash,
     S: BuildHasher,
 {
 }
 
-<span class="kw">impl</span>&lt;T, S&gt; Clone <span class="kw">for </span>Intersection&lt;<span class="lifetime">&#39;_</span>, T, S&gt; {
+<span class="kw">impl</span>&lt;T, S&gt; Clone <span class="kw">for </span>Intersection&lt;<span class="lifetime">'_</span>, T, S&gt; {
     <span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
         Intersection {
             iter: <span class="self">self</span>.iter.clone(),
@@ -3064,12 +3066,12 @@
     }
 }
 
-<span class="kw">impl</span>&lt;T, S&gt; fmt::Debug <span class="kw">for </span>Intersection&lt;<span class="lifetime">&#39;_</span>, T, S&gt;
+<span class="kw">impl</span>&lt;T, S&gt; fmt::Debug <span class="kw">for </span>Intersection&lt;<span class="lifetime">'_</span>, T, S&gt;
 <span class="kw">where
     </span>T: fmt::Debug + Eq + Hash,
     S: BuildHasher,
 {
-    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; fmt::Result {
         f.debug_list().entries(<span class="self">self</span>.clone()).finish()
     }
 }
@@ -3081,17 +3083,17 @@
 ///
 /// [`IndexSet`]: struct.IndexSet.html
 /// [`symmetric_difference`]: struct.IndexSet.html#method.symmetric_difference
-</span><span class="kw">pub struct </span>SymmetricDifference&lt;<span class="lifetime">&#39;a</span>, T, S1, S2&gt; {
-    iter: Chain&lt;Difference&lt;<span class="lifetime">&#39;a</span>, T, S2&gt;, Difference&lt;<span class="lifetime">&#39;a</span>, T, S1&gt;&gt;,
+</span><span class="kw">pub struct </span>SymmetricDifference&lt;<span class="lifetime">'a</span>, T, S1, S2&gt; {
+    iter: Chain&lt;Difference&lt;<span class="lifetime">'a</span>, T, S2&gt;, Difference&lt;<span class="lifetime">'a</span>, T, S1&gt;&gt;,
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, S1, S2&gt; Iterator <span class="kw">for </span>SymmetricDifference&lt;<span class="lifetime">&#39;a</span>, T, S1, S2&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, S1, S2&gt; Iterator <span class="kw">for </span>SymmetricDifference&lt;<span class="lifetime">'a</span>, T, S1, S2&gt;
 <span class="kw">where
     </span>T: Eq + Hash,
     S1: BuildHasher,
     S2: BuildHasher,
 {
-    <span class="kw">type </span>Item = <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T;
+    <span class="kw">type </span>Item = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>T;
 
     <span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt; {
         <span class="self">self</span>.iter.next()
@@ -3109,7 +3111,7 @@
     }
 }
 
-<span class="kw">impl</span>&lt;T, S1, S2&gt; DoubleEndedIterator <span class="kw">for </span>SymmetricDifference&lt;<span class="lifetime">&#39;_</span>, T, S1, S2&gt;
+<span class="kw">impl</span>&lt;T, S1, S2&gt; DoubleEndedIterator <span class="kw">for </span>SymmetricDifference&lt;<span class="lifetime">'_</span>, T, S1, S2&gt;
 <span class="kw">where
     </span>T: Eq + Hash,
     S1: BuildHasher,
@@ -3127,7 +3129,7 @@
     }
 }
 
-<span class="kw">impl</span>&lt;T, S1, S2&gt; FusedIterator <span class="kw">for </span>SymmetricDifference&lt;<span class="lifetime">&#39;_</span>, T, S1, S2&gt;
+<span class="kw">impl</span>&lt;T, S1, S2&gt; FusedIterator <span class="kw">for </span>SymmetricDifference&lt;<span class="lifetime">'_</span>, T, S1, S2&gt;
 <span class="kw">where
     </span>T: Eq + Hash,
     S1: BuildHasher,
@@ -3135,7 +3137,7 @@
 {
 }
 
-<span class="kw">impl</span>&lt;T, S1, S2&gt; Clone <span class="kw">for </span>SymmetricDifference&lt;<span class="lifetime">&#39;_</span>, T, S1, S2&gt; {
+<span class="kw">impl</span>&lt;T, S1, S2&gt; Clone <span class="kw">for </span>SymmetricDifference&lt;<span class="lifetime">'_</span>, T, S1, S2&gt; {
     <span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
         SymmetricDifference {
             iter: <span class="self">self</span>.iter.clone(),
@@ -3143,13 +3145,13 @@
     }
 }
 
-<span class="kw">impl</span>&lt;T, S1, S2&gt; fmt::Debug <span class="kw">for </span>SymmetricDifference&lt;<span class="lifetime">&#39;_</span>, T, S1, S2&gt;
+<span class="kw">impl</span>&lt;T, S1, S2&gt; fmt::Debug <span class="kw">for </span>SymmetricDifference&lt;<span class="lifetime">'_</span>, T, S1, S2&gt;
 <span class="kw">where
     </span>T: fmt::Debug + Eq + Hash,
     S1: BuildHasher,
     S2: BuildHasher,
 {
-    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; fmt::Result {
         f.debug_list().entries(<span class="self">self</span>.clone()).finish()
     }
 }
@@ -3161,16 +3163,16 @@
 ///
 /// [`IndexSet`]: struct.IndexSet.html
 /// [`union`]: struct.IndexSet.html#method.union
-</span><span class="kw">pub struct </span>Union&lt;<span class="lifetime">&#39;a</span>, T, S&gt; {
-    iter: Chain&lt;Iter&lt;<span class="lifetime">&#39;a</span>, T&gt;, Difference&lt;<span class="lifetime">&#39;a</span>, T, S&gt;&gt;,
+</span><span class="kw">pub struct </span>Union&lt;<span class="lifetime">'a</span>, T, S&gt; {
+    iter: Chain&lt;Iter&lt;<span class="lifetime">'a</span>, T&gt;, Difference&lt;<span class="lifetime">'a</span>, T, S&gt;&gt;,
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, S&gt; Iterator <span class="kw">for </span>Union&lt;<span class="lifetime">&#39;a</span>, T, S&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, S&gt; Iterator <span class="kw">for </span>Union&lt;<span class="lifetime">'a</span>, T, S&gt;
 <span class="kw">where
     </span>T: Eq + Hash,
     S: BuildHasher,
 {
-    <span class="kw">type </span>Item = <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T;
+    <span class="kw">type </span>Item = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>T;
 
     <span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt; {
         <span class="self">self</span>.iter.next()
@@ -3188,7 +3190,7 @@
     }
 }
 
-<span class="kw">impl</span>&lt;T, S&gt; DoubleEndedIterator <span class="kw">for </span>Union&lt;<span class="lifetime">&#39;_</span>, T, S&gt;
+<span class="kw">impl</span>&lt;T, S&gt; DoubleEndedIterator <span class="kw">for </span>Union&lt;<span class="lifetime">'_</span>, T, S&gt;
 <span class="kw">where
     </span>T: Eq + Hash,
     S: BuildHasher,
@@ -3205,14 +3207,14 @@
     }
 }
 
-<span class="kw">impl</span>&lt;T, S&gt; FusedIterator <span class="kw">for </span>Union&lt;<span class="lifetime">&#39;_</span>, T, S&gt;
+<span class="kw">impl</span>&lt;T, S&gt; FusedIterator <span class="kw">for </span>Union&lt;<span class="lifetime">'_</span>, T, S&gt;
 <span class="kw">where
     </span>T: Eq + Hash,
     S: BuildHasher,
 {
 }
 
-<span class="kw">impl</span>&lt;T, S&gt; Clone <span class="kw">for </span>Union&lt;<span class="lifetime">&#39;_</span>, T, S&gt; {
+<span class="kw">impl</span>&lt;T, S&gt; Clone <span class="kw">for </span>Union&lt;<span class="lifetime">'_</span>, T, S&gt; {
     <span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
         Union {
             iter: <span class="self">self</span>.iter.clone(),
@@ -3220,12 +3222,12 @@
     }
 }
 
-<span class="kw">impl</span>&lt;T, S&gt; fmt::Debug <span class="kw">for </span>Union&lt;<span class="lifetime">&#39;_</span>, T, S&gt;
+<span class="kw">impl</span>&lt;T, S&gt; fmt::Debug <span class="kw">for </span>Union&lt;<span class="lifetime">'_</span>, T, S&gt;
 <span class="kw">where
     </span>T: fmt::Debug + Eq + Hash,
     S: BuildHasher,
 {
-    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; fmt::Result {
         f.debug_list().entries(<span class="self">self</span>.clone()).finish()
     }
 }
@@ -3315,7 +3317,7 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>new() {
         <span class="kw">let </span>set = IndexSet::&lt;String&gt;::new();
-        <span class="macro">println!</span>(<span class="string">&quot;{:?}&quot;</span>, set);
+        <span class="macro">println!</span>(<span class="string">"{:?}"</span>, set);
         <span class="macro">assert_eq!</span>(set.capacity(), <span class="number">0</span>);
         <span class="macro">assert_eq!</span>(set.len(), <span class="number">0</span>);
         <span class="macro">assert_eq!</span>(set.is_empty(), <span class="bool-val">true</span>);
@@ -3333,7 +3335,7 @@
             <span class="macro">assert_eq!</span>(set.len(), i + <span class="number">1</span>);
             <span class="macro">assert_eq!</span>(set.get(<span class="kw-2">&amp;</span>elt), <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>elt));
         }
-        <span class="macro">println!</span>(<span class="string">&quot;{:?}&quot;</span>, set);
+        <span class="macro">println!</span>(<span class="string">"{:?}"</span>, set);
 
         <span class="kw">for </span><span class="kw-2">&amp;</span>elt <span class="kw">in </span><span class="kw-2">&amp;</span>not_present {
             <span class="macro">assert!</span>(set.get(<span class="kw-2">&amp;</span>elt).is_none());
@@ -3376,15 +3378,15 @@
             set.insert(i);
             <span class="kw">for </span>value <span class="kw">in </span>old_set.iter() {
                 <span class="kw">if </span>set.get(value).is_none() {
-                    <span class="macro">println!</span>(<span class="string">&quot;old_set: {:?}&quot;</span>, old_set);
-                    <span class="macro">println!</span>(<span class="string">&quot;set: {:?}&quot;</span>, set);
-                    <span class="macro">panic!</span>(<span class="string">&quot;did not find {} in set&quot;</span>, value);
+                    <span class="macro">println!</span>(<span class="string">"old_set: {:?}"</span>, old_set);
+                    <span class="macro">println!</span>(<span class="string">"set: {:?}"</span>, set);
+                    <span class="macro">panic!</span>(<span class="string">"did not find {} in set"</span>, value);
                 }
             }
         }
 
         <span class="kw">for </span><span class="kw-2">&amp;</span>i <span class="kw">in </span><span class="kw-2">&amp;</span>values {
-            <span class="macro">assert!</span>(set.get(<span class="kw-2">&amp;</span>i).is_some(), <span class="string">&quot;did not find {}&quot;</span>, i);
+            <span class="macro">assert!</span>(set.get(<span class="kw-2">&amp;</span>i).is_some(), <span class="string">"did not find {}"</span>, i);
         }
     }
 
@@ -3439,7 +3441,7 @@
             <span class="macro">assert_eq!</span>(set.len(), i + <span class="number">1</span>);
             <span class="macro">assert_eq!</span>(set.get(<span class="kw-2">&amp;</span>elt), <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>elt));
         }
-        <span class="macro">println!</span>(<span class="string">&quot;{:?}&quot;</span>, set);
+        <span class="macro">println!</span>(<span class="string">"{:?}"</span>, set);
 
         <span class="kw">for </span><span class="kw-2">&amp;</span>elt <span class="kw">in </span><span class="kw-2">&amp;</span>not_present {
             <span class="macro">assert!</span>(set.get(<span class="kw-2">&amp;</span>elt).is_none());
@@ -3482,15 +3484,15 @@
             set.replace(i);
             <span class="kw">for </span>value <span class="kw">in </span>old_set.iter() {
                 <span class="kw">if </span>set.get(value).is_none() {
-                    <span class="macro">println!</span>(<span class="string">&quot;old_set: {:?}&quot;</span>, old_set);
-                    <span class="macro">println!</span>(<span class="string">&quot;set: {:?}&quot;</span>, set);
-                    <span class="macro">panic!</span>(<span class="string">&quot;did not find {} in set&quot;</span>, value);
+                    <span class="macro">println!</span>(<span class="string">"old_set: {:?}"</span>, old_set);
+                    <span class="macro">println!</span>(<span class="string">"set: {:?}"</span>, set);
+                    <span class="macro">panic!</span>(<span class="string">"did not find {} in set"</span>, value);
                 }
             }
         }
 
         <span class="kw">for </span><span class="kw-2">&amp;</span>i <span class="kw">in </span><span class="kw-2">&amp;</span>values {
-            <span class="macro">assert!</span>(set.get(<span class="kw-2">&amp;</span>i).is_some(), <span class="string">&quot;did not find {}&quot;</span>, i);
+            <span class="macro">assert!</span>(set.get(<span class="kw-2">&amp;</span>i).is_some(), <span class="string">"did not find {}"</span>, i);
         }
     }
 
@@ -3546,7 +3548,7 @@
             <span class="macro">assert_eq!</span>(set.get(<span class="kw-2">&amp;</span>elt), <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>elt));
         }
 
-        <span class="macro">println!</span>(<span class="string">&quot;{:?}&quot;</span>, set);
+        <span class="macro">println!</span>(<span class="string">"{:?}"</span>, set);
         <span class="kw">for </span><span class="kw-2">&amp;</span>elt <span class="kw">in </span><span class="kw-2">&amp;</span>insert {
             set.insert(elt * <span class="number">10</span>);
         }
@@ -3556,7 +3558,7 @@
         <span class="kw">for </span>(i, <span class="kw-2">&amp;</span>elt) <span class="kw">in </span>insert.iter().cycle().enumerate().take(<span class="number">100</span>) {
             set.insert(elt * <span class="number">100 </span>+ i <span class="kw">as </span>i32);
         }
-        <span class="macro">println!</span>(<span class="string">&quot;{:?}&quot;</span>, set);
+        <span class="macro">println!</span>(<span class="string">"{:?}"</span>, set);
         <span class="kw">for </span><span class="kw-2">&amp;</span>elt <span class="kw">in </span><span class="kw-2">&amp;</span>not_present {
             <span class="macro">assert!</span>(set.get(<span class="kw-2">&amp;</span>elt).is_none());
         }
@@ -3620,13 +3622,13 @@
         <span class="kw">for </span><span class="kw-2">&amp;</span>value <span class="kw">in </span><span class="kw-2">&amp;</span>remove_fail {
             <span class="macro">assert!</span>(set.swap_remove_full(<span class="kw-2">&amp;</span>value).is_none());
         }
-        <span class="macro">println!</span>(<span class="string">&quot;{:?}&quot;</span>, set);
+        <span class="macro">println!</span>(<span class="string">"{:?}"</span>, set);
         <span class="kw">for </span><span class="kw-2">&amp;</span>value <span class="kw">in </span><span class="kw-2">&amp;</span>remove {
-            <span class="comment">//println!(&quot;{:?}&quot;, set);
+            <span class="comment">//println!("{:?}", set);
             </span><span class="kw">let </span>index = set.get_full(<span class="kw-2">&amp;</span>value).unwrap().<span class="number">0</span>;
             <span class="macro">assert_eq!</span>(set.swap_remove_full(<span class="kw-2">&amp;</span>value), <span class="prelude-val">Some</span>((index, value)));
         }
-        <span class="macro">println!</span>(<span class="string">&quot;{:?}&quot;</span>, set);
+        <span class="macro">println!</span>(<span class="string">"{:?}"</span>, set);
 
         <span class="kw">for </span>value <span class="kw">in </span><span class="kw-2">&amp;</span>insert {
             <span class="macro">assert_eq!</span>(set.get(value).is_some(), !remove.contains(value));
@@ -3720,9 +3722,9 @@
     </span><span class="kw">fn </span>iter_comparisons() {
         <span class="kw">use </span>std::iter::empty;
 
-        <span class="kw">fn </span>check&lt;<span class="lifetime">&#39;a</span>, I1, I2&gt;(iter1: I1, iter2: I2)
+        <span class="kw">fn </span>check&lt;<span class="lifetime">'a</span>, I1, I2&gt;(iter1: I1, iter2: I2)
         <span class="kw">where
-            </span>I1: Iterator&lt;Item = <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>i32&gt;,
+            </span>I1: Iterator&lt;Item = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>i32&gt;,
             I2: Iterator&lt;Item = i32&gt;,
         {
             <span class="macro">assert!</span>(iter1.copied().eq(iter2));

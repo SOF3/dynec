@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/storage/vec.rs`."><title>vec.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="dynec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/storage/vec.rs`."><title>vec.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="dynec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../dynec/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -523,7 +525,7 @@
             <span class="self">self</span>.bits.resize(index + <span class="number">1</span>, <span class="bool-val">false</span>);
         }
 
-        <span class="kw">let </span>delta_old = <span class="kw">match </span><span class="kw-2">*</span><span class="self">self</span>.bits.get(index).expect(<span class="string">&quot;resized len &gt;= index+1&quot;</span>) {
+        <span class="kw">let </span>delta_old = <span class="kw">match </span><span class="kw-2">*</span><span class="self">self</span>.bits.get(index).expect(<span class="string">"resized len &gt;= index+1"</span>) {
             <span class="bool-val">false </span>=&gt; <span class="number">0</span>,
             <span class="bool-val">true </span>=&gt; <span class="number">1</span>,
         };
@@ -550,7 +552,7 @@
     }
 }
 
-<span class="kw">impl</span>&lt;RawT: entity::Raw, C: Send + Sync + <span class="lifetime">&#39;static</span>&gt; Access <span class="kw">for </span>VecStorage&lt;RawT, C&gt; {
+<span class="kw">impl</span>&lt;RawT: entity::Raw, C: Send + Sync + <span class="lifetime">'static</span>&gt; Access <span class="kw">for </span>VecStorage&lt;RawT, C&gt; {
     <span class="kw">type </span>RawEntity = RawT;
     <span class="kw">type </span>Comp = C;
 
@@ -558,7 +560,7 @@
         <span class="kw">let </span>index = id.to_primitive();
 
         <span class="kw">if </span><span class="self">self</span>.bit(index) {
-            <span class="kw">let </span>value = <span class="self">self</span>.data.get_mut(index).expect(<span class="string">&quot;bits mismatch&quot;</span>);
+            <span class="kw">let </span>value = <span class="self">self</span>.data.get_mut(index).expect(<span class="string">"bits mismatch"</span>);
             <span class="kw">let </span>value = <span class="kw">unsafe </span>{ value.assume_init_mut() };
             <span class="prelude-val">Some</span>(value)
         } <span class="kw">else </span>{
@@ -584,16 +586,16 @@
         }))
     }
 
-    <span class="kw">type </span>IterMut&lt;<span class="lifetime">&#39;t</span>&gt; = <span class="kw">impl </span>Iterator&lt;Item = (RawT, <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>C)&gt; + <span class="lifetime">&#39;t</span>;
-    <span class="kw">fn </span>iter_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::IterMut&lt;<span class="lifetime">&#39;_</span>&gt; { iter_mut(<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.bits, <span class="kw-2">&amp;mut </span><span class="self">self</span>.data) }
+    <span class="kw">type </span>IterMut&lt;<span class="lifetime">'t</span>&gt; = <span class="kw">impl </span>Iterator&lt;Item = (RawT, <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span>C)&gt; + <span class="lifetime">'t</span>;
+    <span class="kw">fn </span>iter_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::IterMut&lt;<span class="lifetime">'_</span>&gt; { iter_mut(<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.bits, <span class="kw-2">&amp;mut </span><span class="self">self</span>.data) }
 }
 
-<span class="kw">impl</span>&lt;RawT: entity::Raw, C: Send + Sync + <span class="lifetime">&#39;static</span>&gt; Storage <span class="kw">for </span>VecStorage&lt;RawT, C&gt; {
+<span class="kw">impl</span>&lt;RawT: entity::Raw, C: Send + Sync + <span class="lifetime">'static</span>&gt; Storage <span class="kw">for </span>VecStorage&lt;RawT, C&gt; {
     <span class="kw">fn </span>get(<span class="kw-2">&amp;</span><span class="self">self</span>, id: RawT) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>C&gt; {
         <span class="kw">let </span>index = id.to_primitive();
 
         <span class="kw">if </span><span class="self">self</span>.bit(index) {
-            <span class="kw">let </span>value = <span class="self">self</span>.data.get(index).expect(<span class="string">&quot;bits mismatch&quot;</span>);
+            <span class="kw">let </span>value = <span class="self">self</span>.data.get(index).expect(<span class="string">"bits mismatch"</span>);
             <span class="kw">let </span>value = <span class="kw">unsafe </span>{ value.assume_init_ref() };
             <span class="prelude-val">Some</span>(value)
         } <span class="kw">else </span>{
@@ -605,7 +607,7 @@
         <span class="kw">let </span>index = id.to_primitive();
 
         <span class="kw">let </span>old = <span class="kw">if </span><span class="self">self</span>.bit(index) {
-            <span class="kw">let </span>value = <span class="self">self</span>.data.get(index).expect(<span class="string">&quot;bits mismatch&quot;</span>);
+            <span class="kw">let </span>value = <span class="self">self</span>.data.get(index).expect(<span class="string">"bits mismatch"</span>);
             <span class="kw">let </span>value = <span class="kw">unsafe </span>{ value.assume_init_read() };
             <span class="prelude-val">Some</span>(value)
         } <span class="kw">else </span>{
@@ -620,7 +622,7 @@
                 <span class="kw">if </span><span class="self">self</span>.data.len() &lt;= index {
                     <span class="self">self</span>.data.resize_with(index + <span class="number">1</span>, MaybeUninit::uninit);
                 }
-                <span class="kw">let </span>bytes = <span class="self">self</span>.data.get_mut(index).expect(<span class="string">&quot;just resized&quot;</span>);
+                <span class="kw">let </span>bytes = <span class="self">self</span>.data.get_mut(index).expect(<span class="string">"just resized"</span>);
                 <span class="kw-2">*</span>bytes = MaybeUninit::new(new);
             }
             <span class="prelude-val">None </span>=&gt; {
@@ -633,49 +635,49 @@
 
     <span class="kw">fn </span>cardinality(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; usize { <span class="self">self</span>.cardinality }
 
-    <span class="kw">type </span>Iter&lt;<span class="lifetime">&#39;t</span>&gt; = <span class="kw">impl </span>Iterator&lt;Item = (RawT, <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span>C)&gt; + <span class="lifetime">&#39;t</span>;
-    <span class="kw">fn </span>iter(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self</span>::Iter&lt;<span class="lifetime">&#39;_</span>&gt; {
+    <span class="kw">type </span>Iter&lt;<span class="lifetime">'t</span>&gt; = <span class="kw">impl </span>Iterator&lt;Item = (RawT, <span class="kw-2">&amp;</span><span class="lifetime">'t </span>C)&gt; + <span class="lifetime">'t</span>;
+    <span class="kw">fn </span>iter(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self</span>::Iter&lt;<span class="lifetime">'_</span>&gt; {
         <span class="kw">let </span>indices = <span class="self">self</span>.bits.iter_ones();
         <span class="kw">let </span>data = <span class="kw-2">&amp;</span><span class="self">self</span>.data;
 
         indices.map(<span class="kw">move </span>|index| {
             <span class="kw">let </span>entity = RawT::from_primitive(index);
-            <span class="kw">let </span>value = data.get(index).expect(<span class="string">&quot;bits mismatch&quot;</span>);
+            <span class="kw">let </span>value = data.get(index).expect(<span class="string">"bits mismatch"</span>);
             <span class="kw">let </span>value = <span class="kw">unsafe </span>{ value.assume_init_ref() };
             (entity, value)
         })
     }
 
-    <span class="kw">type </span>IterChunks&lt;<span class="lifetime">&#39;t</span>&gt; = <span class="kw">impl </span>Iterator&lt;Item = ChunkRef&lt;<span class="lifetime">&#39;t</span>, <span class="self">Self</span>&gt;&gt; + <span class="lifetime">&#39;t</span>;
-    <span class="kw">fn </span>iter_chunks(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self</span>::IterChunks&lt;<span class="lifetime">&#39;_</span>&gt; {
+    <span class="kw">type </span>IterChunks&lt;<span class="lifetime">'t</span>&gt; = <span class="kw">impl </span>Iterator&lt;Item = ChunkRef&lt;<span class="lifetime">'t</span>, <span class="self">Self</span>&gt;&gt; + <span class="lifetime">'t</span>;
+    <span class="kw">fn </span>iter_chunks(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self</span>::IterChunks&lt;<span class="lifetime">'_</span>&gt; {
         new_iter_chunks_ref(<span class="kw-2">&amp;</span><span class="self">self</span>.bits, <span class="kw-2">&amp;</span><span class="self">self</span>.data[..]).map(|(start_index, chunk)| ChunkRef {
             slice: <span class="kw">unsafe </span>{ slice_assume_init_ref(chunk) },
             start: RawT::from_primitive(start_index),
         })
     }
 
-    <span class="kw">type </span>IterChunksMut&lt;<span class="lifetime">&#39;t</span>&gt; = <span class="kw">impl </span>Iterator&lt;Item = ChunkMut&lt;<span class="lifetime">&#39;t</span>, <span class="self">Self</span>&gt;&gt; + <span class="lifetime">&#39;t</span>;
-    <span class="kw">fn </span>iter_chunks_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::IterChunksMut&lt;<span class="lifetime">&#39;_</span>&gt; {
+    <span class="kw">type </span>IterChunksMut&lt;<span class="lifetime">'t</span>&gt; = <span class="kw">impl </span>Iterator&lt;Item = ChunkMut&lt;<span class="lifetime">'t</span>, <span class="self">Self</span>&gt;&gt; + <span class="lifetime">'t</span>;
+    <span class="kw">fn </span>iter_chunks_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::IterChunksMut&lt;<span class="lifetime">'_</span>&gt; {
         new_iter_chunks_mut(<span class="kw-2">&amp;</span><span class="self">self</span>.bits, <span class="kw-2">&amp;mut </span><span class="self">self</span>.data[..]).map(|(start_index, chunk)| ChunkMut {
             slice: <span class="kw">unsafe </span>{ slice_assume_init_mut(chunk) },
             start: RawT::from_primitive(start_index),
         })
     }
 
-    <span class="kw">type </span>Partition&lt;<span class="lifetime">&#39;t</span>&gt; = StoragePartition&lt;<span class="lifetime">&#39;t</span>, RawT, C&gt;;
-    <span class="kw">fn </span>as_partition(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::Partition&lt;<span class="lifetime">&#39;_</span>&gt; { <span class="self">self</span>.as_partition_chunk() }
+    <span class="kw">type </span>Partition&lt;<span class="lifetime">'t</span>&gt; = StoragePartition&lt;<span class="lifetime">'t</span>, RawT, C&gt;;
+    <span class="kw">fn </span>as_partition(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::Partition&lt;<span class="lifetime">'_</span>&gt; { <span class="self">self</span>.as_partition_chunk() }
 }
 
-<span class="kw">fn </span>iter_mut&lt;<span class="lifetime">&#39;storage</span>, RawT: entity::Raw, C: <span class="lifetime">&#39;static</span>&gt;(
+<span class="kw">fn </span>iter_mut&lt;<span class="lifetime">'storage</span>, RawT: entity::Raw, C: <span class="lifetime">'static</span>&gt;(
     start_offset: usize,
-    bits: <span class="kw-2">&amp;</span><span class="lifetime">&#39;storage </span>bitvec::slice::BitSlice,
-    data: <span class="kw-2">&amp;</span><span class="lifetime">&#39;storage </span><span class="kw-2">mut </span>[MaybeUninit&lt;C&gt;],
-) -&gt; <span class="kw">impl </span>Iterator&lt;Item = (RawT, <span class="kw-2">&amp;</span><span class="lifetime">&#39;storage </span><span class="kw-2">mut </span>C)&gt; + <span class="lifetime">&#39;storage </span>{
+    bits: <span class="kw-2">&amp;</span><span class="lifetime">'storage </span>bitvec::slice::BitSlice,
+    data: <span class="kw-2">&amp;</span><span class="lifetime">'storage </span><span class="kw-2">mut </span>[MaybeUninit&lt;C&gt;],
+) -&gt; <span class="kw">impl </span>Iterator&lt;Item = (RawT, <span class="kw-2">&amp;</span><span class="lifetime">'storage </span><span class="kw-2">mut </span>C)&gt; + <span class="lifetime">'storage </span>{
     <span class="kw">let </span>indices = bits.iter_ones();
 
     indices.map(<span class="kw">move </span>|index| {
         <span class="kw">let </span>entity = RawT::from_primitive(start_offset + index);
-        <span class="kw">let </span>value = data.get_mut(index).expect(<span class="string">&quot;bits mismatch&quot;</span>);
+        <span class="kw">let </span>value = data.get_mut(index).expect(<span class="string">"bits mismatch"</span>);
         <span class="kw">let </span>value = <span class="kw">unsafe </span>{ value.assume_init_mut() };
         <span class="kw">let </span>value = <span class="kw">unsafe </span>{ mem::transmute::&lt;<span class="kw-2">&amp;mut </span>C, <span class="kw-2">&amp;mut </span>C&gt;(value) };
         (entity, value)
@@ -683,14 +685,14 @@
 }
 
 <span class="doccomment">/// Return value of [`VecStorage::split_at`].
-</span><span class="kw">pub struct </span>StoragePartition&lt;<span class="lifetime">&#39;t</span>, RawT: entity::Raw, C&gt; {
-    bits:   <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span>BitSlice,
-    data:   <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>[MaybeUninit&lt;C&gt;],
+</span><span class="kw">pub struct </span>StoragePartition&lt;<span class="lifetime">'t</span>, RawT: entity::Raw, C&gt; {
+    bits:   <span class="kw-2">&amp;</span><span class="lifetime">'t </span>BitSlice,
+    data:   <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span>[MaybeUninit&lt;C&gt;],
     offset: usize,
     _ph:    PhantomData&lt;RawT&gt;,
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>, RawT: entity::Raw, C: Send + Sync + <span class="lifetime">&#39;static</span>&gt; Access <span class="kw">for </span>StoragePartition&lt;<span class="lifetime">&#39;t</span>, RawT, C&gt; {
+<span class="kw">impl</span>&lt;<span class="lifetime">'t</span>, RawT: entity::Raw, C: Send + Sync + <span class="lifetime">'static</span>&gt; Access <span class="kw">for </span>StoragePartition&lt;<span class="lifetime">'t</span>, RawT, C&gt; {
     <span class="kw">type </span>RawEntity = RawT;
     <span class="kw">type </span>Comp = C;
 
@@ -703,15 +705,15 @@
         <span class="self">self</span>.by_ref().into_many_mut(entities)
     }
 
-    <span class="kw">type </span>IterMut&lt;<span class="lifetime">&#39;u</span>&gt; = <span class="kw">impl </span>Iterator&lt;Item = (RawT, <span class="kw-2">&amp;</span><span class="lifetime">&#39;u </span><span class="kw-2">mut </span>C)&gt; + <span class="lifetime">&#39;u </span><span class="kw">where </span><span class="self">Self</span>: <span class="lifetime">&#39;u</span>;
-    <span class="kw">fn </span>iter_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::IterMut&lt;<span class="lifetime">&#39;_</span>&gt; { <span class="self">self</span>.by_ref().into_iter_mut() }
+    <span class="kw">type </span>IterMut&lt;<span class="lifetime">'u</span>&gt; = <span class="kw">impl </span>Iterator&lt;Item = (RawT, <span class="kw-2">&amp;</span><span class="lifetime">'u </span><span class="kw-2">mut </span>C)&gt; + <span class="lifetime">'u </span><span class="kw">where </span><span class="self">Self</span>: <span class="lifetime">'u</span>;
+    <span class="kw">fn </span>iter_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::IterMut&lt;<span class="lifetime">'_</span>&gt; { <span class="self">self</span>.by_ref().into_iter_mut() }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>, RawT: entity::Raw, C: Send + Sync + <span class="lifetime">&#39;static</span>&gt; Partition&lt;<span class="lifetime">&#39;t</span>&gt;
-    <span class="kw">for </span>StoragePartition&lt;<span class="lifetime">&#39;t</span>, RawT, C&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'t</span>, RawT: entity::Raw, C: Send + Sync + <span class="lifetime">'static</span>&gt; Partition&lt;<span class="lifetime">'t</span>&gt;
+    <span class="kw">for </span>StoragePartition&lt;<span class="lifetime">'t</span>, RawT, C&gt;
 {
-    <span class="kw">type </span>ByRef&lt;<span class="lifetime">&#39;u</span>&gt; = StoragePartition&lt;<span class="lifetime">&#39;u</span>, RawT, C&gt; <span class="kw">where </span><span class="self">Self</span>: <span class="lifetime">&#39;u</span>;
-    <span class="kw">fn </span>by_ref(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::ByRef&lt;<span class="lifetime">&#39;_</span>&gt; {
+    <span class="kw">type </span>ByRef&lt;<span class="lifetime">'u</span>&gt; = StoragePartition&lt;<span class="lifetime">'u</span>, RawT, C&gt; <span class="kw">where </span><span class="self">Self</span>: <span class="lifetime">'u</span>;
+    <span class="kw">fn </span>by_ref(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::ByRef&lt;<span class="lifetime">'_</span>&gt; {
         StoragePartition {
             bits:   <span class="self">self</span>.bits,
             data:   <span class="kw-2">&amp;mut *</span><span class="self">self</span>.data,
@@ -720,17 +722,17 @@
         }
     }
 
-    <span class="kw">type </span>IntoIterMut = <span class="kw">impl </span>Iterator&lt;Item = (RawT, <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>C)&gt;;
+    <span class="kw">type </span>IntoIterMut = <span class="kw">impl </span>Iterator&lt;Item = (RawT, <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span>C)&gt;;
     <span class="kw">fn </span>into_iter_mut(<span class="self">self</span>) -&gt; <span class="self">Self</span>::IntoIterMut { iter_mut(<span class="self">self</span>.offset, <span class="self">self</span>.bits, <span class="self">self</span>.data) }
 
-    <span class="kw">fn </span>into_mut(<span class="self">self</span>, entity: RawT) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>C&gt; {
+    <span class="kw">fn </span>into_mut(<span class="self">self</span>, entity: RawT) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span>C&gt; {
         <span class="kw">let </span>index = <span class="kw">match </span>entity.to_primitive().checked_sub(<span class="self">self</span>.offset) {
             <span class="prelude-val">Some</span>(index) =&gt; index,
-            <span class="prelude-val">None </span>=&gt; <span class="macro">panic!</span>(<span class="string">&quot;Entity {entity:?} is not in the partition {:?}..&quot;</span>, <span class="self">self</span>.offset),
+            <span class="prelude-val">None </span>=&gt; <span class="macro">panic!</span>(<span class="string">"Entity {entity:?} is not in the partition {:?}.."</span>, <span class="self">self</span>.offset),
         };
         <span class="kw">match </span><span class="self">self</span>.bits.get(index) {
             <span class="prelude-val">Some</span>(bit) <span class="kw">if </span><span class="kw-2">*</span>bit =&gt; {
-                <span class="kw">let </span>value = <span class="self">self</span>.data.get_mut(index).expect(<span class="string">&quot;bits mismatch&quot;</span>);
+                <span class="kw">let </span>value = <span class="self">self</span>.data.get_mut(index).expect(<span class="string">"bits mismatch"</span>);
                 <span class="prelude-val">Some</span>(<span class="kw">unsafe </span>{ value.assume_init_mut() })
             }
             <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
@@ -740,14 +742,14 @@
     <span class="kw">fn </span>into_many_mut&lt;<span class="kw">const </span>N: usize&gt;(
         <span class="self">self</span>,
         entities: [<span class="self">Self</span>::RawEntity; N],
-    ) -&gt; <span class="prelude-ty">Option</span>&lt;[<span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span><span class="self">Self</span>::Comp; N]&gt; {
+    ) -&gt; <span class="prelude-ty">Option</span>&lt;[<span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span><span class="self">Self</span>::Comp; N]&gt; {
         <span class="kw">let </span>indices: [usize; N] =
             entities.try_map(|entity| <span class="kw">match </span>entity.to_primitive().checked_sub(<span class="self">self</span>.offset) {
                 <span class="prelude-val">Some</span>(index) =&gt; <span class="kw">match </span><span class="self">self</span>.bits.get(index) {
                     <span class="prelude-val">Some</span>(bit) <span class="kw">if </span><span class="kw-2">*</span>bit =&gt; <span class="prelude-val">Some</span>(index),
                     <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
                 },
-                <span class="prelude-val">None </span>=&gt; <span class="macro">panic!</span>(<span class="string">&quot;Entity {entity:?} is not in the partition {:?}..&quot;</span>, <span class="self">self</span>.offset),
+                <span class="prelude-val">None </span>=&gt; <span class="macro">panic!</span>(<span class="string">"Entity {entity:?} is not in the partition {:?}.."</span>, <span class="self">self</span>.offset),
             })<span class="question-mark">?</span>;
         <span class="kw">let </span>values = <span class="self">self</span>.data.get_many_mut(indices).ok()<span class="question-mark">?</span>;
         <span class="prelude-val">Some</span>(values.map(<span class="kw">move </span>|value| {
@@ -759,7 +761,7 @@
 
     <span class="kw">fn </span>split_out(<span class="kw-2">&amp;mut </span><span class="self">self</span>, entity: RawT) -&gt; <span class="self">Self </span>{
         <span class="kw">let </span>index =
-            entity.to_primitive().checked_sub(<span class="self">self</span>.offset).expect(<span class="string">&quot;parameter out of bounds&quot;</span>);
+            entity.to_primitive().checked_sub(<span class="self">self</span>.offset).expect(<span class="string">"parameter out of bounds"</span>);
 
         <span class="kw">if </span>index &gt; <span class="self">self</span>.bits.len() {
             <span class="kw">return </span><span class="self">Self </span>{
@@ -771,7 +773,7 @@
         }
         <span class="macro">assert!</span>(
             index &lt;= <span class="self">self</span>.bits.len(),
-            <span class="string">&quot;split at {index} for partition {}..{}&quot;</span>,
+            <span class="string">"split at {index} for partition {}..{}"</span>,
             <span class="self">self</span>.offset,
             <span class="self">self</span>.offset + <span class="self">self</span>.bits.len()
         );
@@ -779,7 +781,7 @@
         <span class="kw">let </span>(bits_left, bits_right) = <span class="self">self</span>.bits.split_at(index);
         <span class="self">self</span>.bits = bits_left;
 
-        <span class="kw">let </span>data_right = <span class="self">self</span>.data.take_mut(index..).expect(<span class="string">&quot;index &lt; self.data.len()&quot;</span>);
+        <span class="kw">let </span>data_right = <span class="self">self</span>.data.take_mut(index..).expect(<span class="string">"index &lt; self.data.len()"</span>);
 
         <span class="self">Self </span>{
             bits:   bits_right,
@@ -790,7 +792,7 @@
     }
 }
 
-<span class="kw">impl</span>&lt;RawT: entity::Raw, C: Send + Sync + <span class="lifetime">&#39;static</span>&gt; AccessChunked <span class="kw">for </span>VecStorage&lt;RawT, C&gt; {
+<span class="kw">impl</span>&lt;RawT: entity::Raw, C: Send + Sync + <span class="lifetime">'static</span>&gt; AccessChunked <span class="kw">for </span>VecStorage&lt;RawT, C&gt; {
     <span class="kw">fn </span>get_chunk_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>, start: RawT, end: RawT) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;mut </span>[C]&gt; {
         <span class="kw">let </span>range = start.to_primitive()..end.to_primitive();
         <span class="kw">let </span>bits = <span class="kw">match </span><span class="self">self</span>.bits.get(range.clone()) {
@@ -804,12 +806,12 @@
         <span class="kw">let </span>data = <span class="self">self
             </span>.data
             .get_mut(range)
-            .expect(<span class="string">&quot;range exists in self.bits implies existence in self.data&quot;</span>);
+            .expect(<span class="string">"range exists in self.bits implies existence in self.data"</span>);
         <span class="prelude-val">Some</span>(<span class="kw">unsafe </span>{ slice_assume_init_mut(data) })
     }
 }
 
-<span class="kw">impl</span>&lt;RawT: entity::Raw, C: Send + Sync + <span class="lifetime">&#39;static</span>&gt; Chunked <span class="kw">for </span>VecStorage&lt;RawT, C&gt; {
+<span class="kw">impl</span>&lt;RawT: entity::Raw, C: Send + Sync + <span class="lifetime">'static</span>&gt; Chunked <span class="kw">for </span>VecStorage&lt;RawT, C&gt; {
     <span class="kw">fn </span>get_chunk(<span class="kw-2">&amp;</span><span class="self">self</span>, start: RawT, end: RawT) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>[C]&gt; {
         <span class="kw">let </span>range = start.to_primitive()..end.to_primitive();
         <span class="kw">let </span>bits = <span class="kw">match </span><span class="self">self</span>.bits.get(range.clone()) {
@@ -821,12 +823,12 @@
         }
 
         <span class="kw">let </span>data =
-            <span class="self">self</span>.data.get(range).expect(<span class="string">&quot;range exists in self.bits implies existence in self.data&quot;</span>);
+            <span class="self">self</span>.data.get(range).expect(<span class="string">"range exists in self.bits implies existence in self.data"</span>);
         <span class="prelude-val">Some</span>(<span class="kw">unsafe </span>{ slice_assume_init_ref(data) })
     }
 
-    <span class="kw">type </span>PartitionChunked&lt;<span class="lifetime">&#39;u</span>&gt; = <span class="self">Self</span>::Partition&lt;<span class="lifetime">&#39;u</span>&gt;;
-    <span class="kw">fn </span>as_partition_chunk(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::PartitionChunked&lt;<span class="lifetime">&#39;_</span>&gt; {
+    <span class="kw">type </span>PartitionChunked&lt;<span class="lifetime">'u</span>&gt; = <span class="self">Self</span>::Partition&lt;<span class="lifetime">'u</span>&gt;;
+    <span class="kw">fn </span>as_partition_chunk(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::PartitionChunked&lt;<span class="lifetime">'_</span>&gt; {
         StoragePartition {
             bits:   <span class="kw-2">&amp;</span><span class="self">self</span>.bits,
             data:   <span class="kw-2">&amp;mut </span><span class="self">self</span>.data,
@@ -836,18 +838,18 @@
     }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>, RawT: entity::Raw, C: Send + Sync + <span class="lifetime">&#39;static</span>&gt; AccessChunked
-    <span class="kw">for </span>StoragePartition&lt;<span class="lifetime">&#39;t</span>, RawT, C&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'t</span>, RawT: entity::Raw, C: Send + Sync + <span class="lifetime">'static</span>&gt; AccessChunked
+    <span class="kw">for </span>StoragePartition&lt;<span class="lifetime">'t</span>, RawT, C&gt;
 {
     <span class="kw">fn </span>get_chunk_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>, start: RawT, end: RawT) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;mut </span>[C]&gt; {
         <span class="self">self</span>.by_ref().into_chunk_mut(start, end)
     }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>, RawT: entity::Raw, C: Send + Sync + <span class="lifetime">&#39;static</span>&gt; PartitionChunked&lt;<span class="lifetime">&#39;t</span>&gt;
-    <span class="kw">for </span>StoragePartition&lt;<span class="lifetime">&#39;t</span>, RawT, C&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'t</span>, RawT: entity::Raw, C: Send + Sync + <span class="lifetime">'static</span>&gt; PartitionChunked&lt;<span class="lifetime">'t</span>&gt;
+    <span class="kw">for </span>StoragePartition&lt;<span class="lifetime">'t</span>, RawT, C&gt;
 {
-    <span class="kw">fn </span>into_chunk_mut(<span class="self">self</span>, start: RawT, end: RawT) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>[C]&gt; {
+    <span class="kw">fn </span>into_chunk_mut(<span class="self">self</span>, start: RawT, end: RawT) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span>[C]&gt; {
         <span class="kw">let </span>(start, end) = (start.to_primitive() - <span class="self">self</span>.offset, end.to_primitive() - <span class="self">self</span>.offset);
         <span class="kw">let </span>range = start..end;
 
@@ -862,11 +864,11 @@
         <span class="kw">let </span>data = <span class="self">self
             </span>.data
             .get_mut(range)
-            .expect(<span class="string">&quot;range exists in self.bits implies existence in self.data&quot;</span>);
+            .expect(<span class="string">"range exists in self.bits implies existence in self.data"</span>);
         <span class="prelude-val">Some</span>(<span class="kw">unsafe </span>{ slice_assume_init_mut(data) })
     }
 
-    <span class="kw">type </span>IntoIterChunksMut = <span class="kw">impl </span>Iterator&lt;Item = (RawT, <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>[C])&gt;;
+    <span class="kw">type </span>IntoIterChunksMut = <span class="kw">impl </span>Iterator&lt;Item = (RawT, <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span>[C])&gt;;
     <span class="kw">fn </span>into_iter_chunks_mut(<span class="self">self</span>) -&gt; <span class="self">Self</span>::IntoIterChunksMut {
         <span class="comment">// check correctness:
         // `bits[i]` corresponds to `self.data[i]`, of which the index `i` matches `(last_zero ?? -1) + 1 + i`
@@ -893,14 +895,14 @@
     </span>trisplit:   TrisplitFn,
 }
 
-<span class="kw">fn </span>new_iter_chunks&lt;<span class="lifetime">&#39;t</span>, DataT, TrisplitFn&gt;(
-    bits: <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span>BitSlice,
+<span class="kw">fn </span>new_iter_chunks&lt;<span class="lifetime">'t</span>, DataT, TrisplitFn&gt;(
+    bits: <span class="kw-2">&amp;</span><span class="lifetime">'t </span>BitSlice,
     data: DataT,
     trisplit: TrisplitFn,
-) -&gt; <span class="kw">impl </span>Iterator&lt;Item = (usize, DataT)&gt; + <span class="lifetime">&#39;t
+) -&gt; <span class="kw">impl </span>Iterator&lt;Item = (usize, DataT)&gt; + <span class="lifetime">'t
 </span><span class="kw">where
-    </span>DataT: Default + <span class="lifetime">&#39;t</span>,
-    TrisplitFn: Fn(DataT, usize) -&gt; (DataT, DataT, DataT) + <span class="lifetime">&#39;static</span>,
+    </span>DataT: Default + <span class="lifetime">'t</span>,
+    TrisplitFn: Fn(DataT, usize) -&gt; (DataT, DataT, DataT) + <span class="lifetime">'static</span>,
 {
     IterChunks {
         last_zero: <span class="prelude-val">None</span>,
@@ -909,16 +911,16 @@
         trisplit,
     }
 }
-<span class="kw">fn </span>new_iter_chunks_ref&lt;<span class="lifetime">&#39;iter</span>, <span class="lifetime">&#39;data</span>: <span class="lifetime">&#39;iter</span>, C: <span class="lifetime">&#39;static</span>&gt;(
-    bits: <span class="kw-2">&amp;</span><span class="lifetime">&#39;iter </span>BitSlice,
-    data: <span class="kw-2">&amp;</span><span class="lifetime">&#39;data </span>[C],
-) -&gt; <span class="kw">impl </span>Iterator&lt;Item = (usize, <span class="kw-2">&amp;</span><span class="lifetime">&#39;data </span>[C])&gt; + <span class="lifetime">&#39;iter </span>{
+<span class="kw">fn </span>new_iter_chunks_ref&lt;<span class="lifetime">'iter</span>, <span class="lifetime">'data</span>: <span class="lifetime">'iter</span>, C: <span class="lifetime">'static</span>&gt;(
+    bits: <span class="kw-2">&amp;</span><span class="lifetime">'iter </span>BitSlice,
+    data: <span class="kw-2">&amp;</span><span class="lifetime">'data </span>[C],
+) -&gt; <span class="kw">impl </span>Iterator&lt;Item = (usize, <span class="kw-2">&amp;</span><span class="lifetime">'data </span>[C])&gt; + <span class="lifetime">'iter </span>{
     new_iter_chunks(bits, data, trisplit_fn_ref)
 }
-<span class="kw">fn </span>new_iter_chunks_mut&lt;<span class="lifetime">&#39;iter</span>, <span class="lifetime">&#39;data</span>: <span class="lifetime">&#39;iter</span>, C: <span class="lifetime">&#39;static</span>&gt;(
-    bits: <span class="kw-2">&amp;</span><span class="lifetime">&#39;iter </span>BitSlice,
-    data: <span class="kw-2">&amp;</span><span class="lifetime">&#39;data </span><span class="kw-2">mut </span>[C],
-) -&gt; <span class="kw">impl </span>Iterator&lt;Item = (usize, <span class="kw-2">&amp;</span><span class="lifetime">&#39;data </span><span class="kw-2">mut </span>[C])&gt; + <span class="lifetime">&#39;iter </span>{
+<span class="kw">fn </span>new_iter_chunks_mut&lt;<span class="lifetime">'iter</span>, <span class="lifetime">'data</span>: <span class="lifetime">'iter</span>, C: <span class="lifetime">'static</span>&gt;(
+    bits: <span class="kw-2">&amp;</span><span class="lifetime">'iter </span>BitSlice,
+    data: <span class="kw-2">&amp;</span><span class="lifetime">'data </span><span class="kw-2">mut </span>[C],
+) -&gt; <span class="kw">impl </span>Iterator&lt;Item = (usize, <span class="kw-2">&amp;</span><span class="lifetime">'data </span><span class="kw-2">mut </span>[C])&gt; + <span class="lifetime">'iter </span>{
     new_iter_chunks(bits, data, trisplit_fn_mut)
 }
 

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["distribute_sorted"],"mod":["recycler"],"opaque":[""],"struct":["Recycling","RecyclingShard"],"type":["MutableShards"]};
+window.SIDEBAR_ITEMS = {"fn":["distribute_sorted"],"mod":["recycler"],"struct":["Recycling","RecyclingShard"],"type":["MutableShards"]};

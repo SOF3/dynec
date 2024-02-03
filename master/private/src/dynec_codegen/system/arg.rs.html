@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `codegen/src/system/arg.rs`."><title>arg.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="dynec_codegen" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `codegen/src/system/arg.rs`."><title>arg.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="dynec_codegen" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../dynec_codegen/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -412,14 +414,14 @@
         <span class="kw">let </span>[arch, comp]: [<span class="kw-2">&amp;</span>syn::Type; <span class="number">2</span>] = args.try_into().map_err(|<span class="kw">_</span>| {
             Error::new(
                 args_span,
-                <span class="string">&quot;Cannot infer archetype and component for component access. Specify explicitly \
+                <span class="string">"Cannot infer archetype and component for component access. Specify explicitly \
                  with `#[dynec(simple(arch = X, comp = Y))]`, or use `ReadSimple&lt;X, \
-                 Y&gt;`/`WriteSimple&lt;X, Y&gt;`.&quot;</span>,
+                 Y&gt;`/`WriteSimple&lt;X, Y&gt;`."</span>,
             )
         })<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(ArgType::Simple {
-            mutable: mutable || ident == <span class="string">&quot;WriteSimple&quot;</span>,
+            mutable: mutable || ident == <span class="string">"WriteSimple"</span>,
             arch: Box::new(arch.clone()),
             comp: Box::new(comp.clone()),
             maybe_uninit,
@@ -436,18 +438,18 @@
         <span class="kw">if </span>args.len() != <span class="number">2 </span>&amp;&amp; args.len() != <span class="number">3 </span>{
             <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(
                 args_span,
-                <span class="string">&quot;Cannot infer archetype and component for component access. Specify explicitly \
+                <span class="string">"Cannot infer archetype and component for component access. Specify explicitly \
                  with `#[dynec(isotope(arch = X, comp = Y, [discrim_set = Z]))]`, or use \
-                 `(Read|Write)Isotope(Full|Isotope)&lt;X, Y, [Z]&gt;`.&quot;</span>,
+                 `(Read|Write)Isotope(Full|Isotope)&lt;X, Y, [Z]&gt;`."</span>,
             ));
         }
 
-        <span class="kw">let </span><span class="kw-2">&amp;</span>arch = args.first().expect(<span class="string">&quot;args.len() &gt;= 2&quot;</span>);
-        <span class="kw">let </span><span class="kw-2">&amp;</span>comp = args.get(<span class="number">1</span>).expect(<span class="string">&quot;args.len() &gt;= 2&quot;</span>);
+        <span class="kw">let </span><span class="kw-2">&amp;</span>arch = args.first().expect(<span class="string">"args.len() &gt;= 2"</span>);
+        <span class="kw">let </span><span class="kw-2">&amp;</span>comp = args.get(<span class="number">1</span>).expect(<span class="string">"args.len() &gt;= 2"</span>);
         <span class="kw">let </span>discrim_set = args.get(<span class="number">2</span>).map(|<span class="kw-2">&amp;</span>ty| Box::new(ty.clone())).ok_or(args_span);
 
         <span class="prelude-val">Ok</span>(ArgType::Isotope {
-            mutable: mutable || ident.starts_with(<span class="string">&quot;WriteIsotope&quot;</span>),
+            mutable: mutable || ident.starts_with(<span class="string">"WriteIsotope"</span>),
             arch: Box::new(arch.clone()),
             comp: Box::new(comp.clone()),
             discrim,
@@ -462,8 +464,8 @@
         <span class="kw">let </span>[arch]: [<span class="kw-2">&amp;</span>syn::Type; <span class="number">1</span>] = args.try_into().map_err(|<span class="kw">_</span>| {
             Error::new(
                 args_span,
-                <span class="string">&quot;Cannot infer archetype for entity creation. Specify explicitly with \
-                 `#[dynec(entity_creator(arch = X))]`, or use `impl EntityCreator&lt;X&gt;`.&quot;</span>,
+                <span class="string">"Cannot infer archetype for entity creation. Specify explicitly with \
+                 `#[dynec(entity_creator(arch = X))]`, or use `impl EntityCreator&lt;X&gt;`."</span>,
             )
         })<span class="question-mark">?</span>;
 
@@ -476,8 +478,8 @@
         <span class="kw">let </span>[arch]: [<span class="kw-2">&amp;</span>syn::Type; <span class="number">1</span>] = args.try_into().map_err(|<span class="kw">_</span>| {
             Error::new(
                 args_span,
-                <span class="string">&quot;Cannot infer archetype for entity deletion. Specify explicitly with \
-                 `#[dynec(entity_deleter(arch = X))]`, or use `impl EntityDeleter&lt;X&gt;`.&quot;</span>,
+                <span class="string">"Cannot infer archetype for entity deletion. Specify explicitly with \
+                 `#[dynec(entity_deleter(arch = X))]`, or use `impl EntityDeleter&lt;X&gt;`."</span>,
             )
         })<span class="question-mark">?</span>;
 
@@ -490,8 +492,8 @@
         <span class="kw">let </span>[arch]: [<span class="kw-2">&amp;</span>syn::Type; <span class="number">1</span>] = args.try_into().map_err(|<span class="kw">_</span>| {
             Error::new(
                 args_span,
-                <span class="string">&quot;Cannot infer archetype for entity iteration. Specify explicitly with \
-                 `#[dynec(entity_iterator(arch = X))]`, or use `impl EntityIterator&lt;X&gt;`.&quot;</span>,
+                <span class="string">"Cannot infer archetype for entity iteration. Specify explicitly with \
+                 `#[dynec(entity_iterator(arch = X))]`, or use `impl EntityIterator&lt;X&gt;`."</span>,
             )
         })<span class="question-mark">?</span>;
 
@@ -499,16 +501,16 @@
     })
 }
 
-<span class="kw">const </span>USAGE_INFERENCE_ERROR: <span class="kw-2">&amp;</span>str = <span class="string">&quot;Cannot infer parameter usage. Specify explicitly with \
+<span class="kw">const </span>USAGE_INFERENCE_ERROR: <span class="kw-2">&amp;</span>str = <span class="string">"Cannot infer parameter usage. Specify explicitly with \
                                      `#[dynec(...)]`, or use the form `impl \
                                      system::(Read|Write)(Simple|IsotopeFull|IsotopePartial)&lt;Arch, \
-                                     Comp&gt;` or `impl system::Entity(Creator|Deleter)`.&quot;</span>;
+                                     Comp&gt;` or `impl system::Entity(Creator|Deleter)`."</span>;
 
 <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>infer_arg_type(param: <span class="kw-2">&amp;mut </span>syn::PatType) -&gt; <span class="prelude-ty">Result</span>&lt;ArgType&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>maybe_partial: <span class="prelude-ty">Option</span>&lt;MaybePartial&gt; = <span class="prelude-val">None</span>;
 
     <span class="kw">let </span>param_span = param.span();
-    <span class="kw">for </span>attr <span class="kw">in </span>param.attrs.extract_if(|attr| attr.path().is_ident(<span class="string">&quot;dynec&quot;</span>)) {
+    <span class="kw">for </span>attr <span class="kw">in </span>param.attrs.extract_if(|attr| attr.path().is_ident(<span class="string">"dynec"</span>)) {
         <span class="kw">let </span>arg_attr = attr.parse_args::&lt;Attr&lt;opt::Arg&gt;&gt;()<span class="question-mark">?</span>;
 
         <span class="kw">for </span>arg <span class="kw">in </span>arg_attr.items {
@@ -517,7 +519,7 @@
             <span class="kw">if </span>old.is_some() {
                 <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(
                     param_span,
-                    <span class="string">&quot;Each argument can only have one argument type&quot;</span>,
+                    <span class="string">"Each argument can only have one argument type"</span>,
                 ));
             }
         }
@@ -530,20 +532,20 @@
                 <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new_spanned(<span class="kw-2">&amp;*</span>param.ty, USAGE_INFERENCE_ERROR));
             };
 
-            <span class="kw">let </span>trait_name = ty.path.segments.last().expect(<span class="string">&quot;path should not be empty&quot;</span>);
+            <span class="kw">let </span>trait_name = ty.path.segments.last().expect(<span class="string">"path should not be empty"</span>);
             <span class="kw">let </span>trait_name_string = trait_name.ident.to_string();
 
             <span class="kw">let </span>builder = <span class="kw">match </span>arg_type {
                 <span class="prelude-val">Some</span>(MaybePartial::Partial(builder)) =&gt; builder,
                 <span class="prelude-val">None </span>=&gt; <span class="kw">match </span>trait_name_string.as_str() {
-                    <span class="string">&quot;ReadSimple&quot; </span>| <span class="string">&quot;WriteSimple&quot; </span>=&gt; simple_partial_builder(<span class="bool-val">false</span>, Vec::new()),
-                    <span class="string">&quot;ReadIsotopePartial&quot;
-                    </span>| <span class="string">&quot;WriteIsotopePartial&quot;
-                    </span>| <span class="string">&quot;ReadIsotopeFull&quot;
-                    </span>| <span class="string">&quot;WriteIsotopeFull&quot; </span>=&gt; isotope_partial_builder(<span class="bool-val">false</span>, <span class="prelude-val">None</span>, Vec::new()),
-                    <span class="string">&quot;EntityCreator&quot; </span>=&gt; entity_creator_partial_builder(<span class="bool-val">false</span>),
-                    <span class="string">&quot;EntityDeleter&quot; </span>=&gt; entity_deleter_partial_builder(),
-                    <span class="string">&quot;EntityIterator&quot; </span>=&gt; entity_iterator_partial_builder(),
+                    <span class="string">"ReadSimple" </span>| <span class="string">"WriteSimple" </span>=&gt; simple_partial_builder(<span class="bool-val">false</span>, Vec::new()),
+                    <span class="string">"ReadIsotopePartial"
+                    </span>| <span class="string">"WriteIsotopePartial"
+                    </span>| <span class="string">"ReadIsotopeFull"
+                    </span>| <span class="string">"WriteIsotopeFull" </span>=&gt; isotope_partial_builder(<span class="bool-val">false</span>, <span class="prelude-val">None</span>, Vec::new()),
+                    <span class="string">"EntityCreator" </span>=&gt; entity_creator_partial_builder(<span class="bool-val">false</span>),
+                    <span class="string">"EntityDeleter" </span>=&gt; entity_deleter_partial_builder(),
+                    <span class="string">"EntityIterator" </span>=&gt; entity_iterator_partial_builder(),
                     <span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new_spanned(trait_name, USAGE_INFERENCE_ERROR)),
                 },
                 <span class="kw">_ </span>=&gt; <span class="macro">unreachable!</span>(),
@@ -587,7 +589,7 @@
                 <span class="prelude-val">None </span>=&gt; {
                     <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(
                         attr_span,
-                        <span class="string">&quot;Missing required expression for #[dynec(local(initial = expr))]&quot;</span>,
+                        <span class="string">"Missing required expression for #[dynec(local(initial = expr))]"</span>,
                     ))
                 }
             };
@@ -633,8 +635,8 @@
                 <span class="kw">_ </span>=&gt; {
                     <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(
                         attr_span,
-                        <span class="string">&quot;Invalid argument. `arch`, `comp` and `mutable` have no effect unless \
-                         both `arch` and `comp` are supplied.&quot;</span>,
+                        <span class="string">"Invalid argument. `arch`, `comp` and `mutable` have no effect unless \
+                         both `arch` and `comp` are supplied."</span>,
                     ));
                 }
             }
@@ -673,8 +675,8 @@
                 <span class="kw">_ </span>=&gt; {
                     <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(
                         attr_span,
-                        <span class="string">&quot;Invalid argument. `arch`, `comp` and `mutable` have no effect unless \
-                         both `arch` and `comp` are supplied.&quot;</span>,
+                        <span class="string">"Invalid argument. `arch`, `comp` and `mutable` have no effect unless \
+                         both `arch` and `comp` are supplied."</span>,
                     ));
                 }
             }

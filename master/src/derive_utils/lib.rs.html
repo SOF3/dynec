@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/derive_utils-0.13.2/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="derive_utils" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/derive_utils-0.14.1/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="derive_utils" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../derive_utils/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -211,7 +213,21 @@
 <a href="#211" id="211">211</a>
 <a href="#212" id="212">212</a>
 <a href="#213" id="213">213</a>
-</pre></div><pre class="rust"><code><span class="doccomment">/*!
+<a href="#214" id="214">214</a>
+<a href="#215" id="215">215</a>
+<a href="#216" id="216">216</a>
+<a href="#217" id="217">217</a>
+<a href="#218" id="218">218</a>
+<a href="#219" id="219">219</a>
+<a href="#220" id="220">220</a>
+<a href="#221" id="221">221</a>
+<a href="#222" id="222">222</a>
+<a href="#223" id="223">223</a>
+<a href="#224" id="224">224</a>
+<a href="#225" id="225">225</a>
+</pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0 OR MIT
+
+</span><span class="doccomment">/*!
 A procedural macro helper for easily writing [derives macros][proc-macro-derive] for enums.
 
 ## Examples
@@ -250,7 +266,7 @@ pub fn derive_exact_size_iterator(input: TokenStream) -&gt; TokenStream {
         input,
         // trait path
         std::iter::ExactSizeIterator,
-        // super trait&#39;s associated types
+        // super trait's associated types
         &lt;Item&gt;,
         // trait definition
         trait ExactSizeIterator: Iterator {
@@ -337,17 +353,18 @@ where
     )
 ))]
 #![forbid(unsafe_code)]
-#![warn(rust_2018_idioms, single_use_lifetimes, unreachable_pub)]
 #![warn(
-    clippy::pedantic,
-    <span class="comment">// lints for public library
+    <span class="comment">// Lints that may help when writing public library.
+    // missing_docs,
     </span>clippy::alloc_instead_of_core,
     clippy::exhaustive_enums,
     clippy::exhaustive_structs,
-    <span class="comment">// clippy::std_instead_of_alloc,
+    clippy::impl_trait_in_params,
+    <span class="comment">// clippy::missing_inline_in_public_items,
+    // clippy::std_instead_of_alloc,
     </span>clippy::std_instead_of_core,
 )]
-#![allow(clippy::must_use_candidate)]
+#![allow(missing_debug_implementations, clippy::must_use_candidate)]
 
 #[macro_use]
 </span><span class="kw">mod </span>error;
@@ -366,35 +383,39 @@ where
 /// See crate level documentation for details.
 </span><span class="attr">#[macro_export]
 </span><span class="macro">macro_rules! </span>quick_derive {
-    (<span class="macro-nonterminal">$input</span>:expr, <span class="macro-nonterminal">$trait_path</span>:expr, &lt;<span class="macro-nonterminal">$</span><span class="kw">super</span>:<span class="macro-nonterminal">ident</span>&gt;, <span class="macro-nonterminal">$trait_def</span>:item $(,)<span class="question-mark">?</span>) =&gt; {
+    (<span class="macro-nonterminal">$input</span>:expr, <span class="macro-nonterminal">$trait_path</span>:expr, &lt;<span class="macro-nonterminal">$</span><span class="kw">super</span>:<span class="macro-nonterminal">ident</span>&gt;, $(<span class="macro-nonterminal">$trait_def</span>:tt)<span class="kw-2">*</span>) =&gt; {
         <span class="macro-nonterminal">$crate::__private::parse_input</span>(<span class="macro-nonterminal">$input</span>, |data| {
             <span class="macro-nonterminal">$crate::derive_trait</span>(
                 <span class="kw-2">&amp;</span>data,
-                <span class="macro-nonterminal">$</span><span class="macro">crate::__private::parse_quote!</span>(<span class="macro-nonterminal">$trait_path</span>),
-                <span class="macro-nonterminal">$crate::__private::Some</span>(<span class="macro-nonterminal">$</span><span class="macro">crate::__private::format_ident!</span>(<span class="macro">stringify!</span>(<span class="macro-nonterminal">$</span><span class="kw">super</span>))),
-                <span class="macro-nonterminal">$</span><span class="macro">crate::__private::parse_quote!</span>(<span class="macro-nonterminal">$trait_def</span>),
+                <span class="kw-2">&amp;</span><span class="macro-nonterminal">$</span><span class="macro">crate::__private::parse_quote!</span>(<span class="macro-nonterminal">$trait_path</span>),
+                <span class="macro-nonterminal">$crate::__private::Some</span>(
+                    <span class="macro-nonterminal">$</span><span class="macro">crate::__private::format_ident!</span>(<span class="macro-nonterminal">$</span><span class="macro">crate::__private::stringify!</span>(<span class="macro-nonterminal">$</span><span class="kw">super</span>))
+                ),
+                <span class="macro-nonterminal">$</span><span class="macro">crate::__private::parse_quote!</span>($(<span class="macro-nonterminal">$trait_def</span>)<span class="kw-2">*</span>),
             )
         })
         .into()
     };
-    (<span class="macro-nonterminal">$input</span>:expr, <span class="macro-nonterminal">$trait_path</span>:expr, &lt;$(<span class="macro-nonterminal">$</span><span class="kw">super</span>:<span class="macro-nonterminal">ident</span>),+ $(,)<span class="question-mark">?</span>&gt;, <span class="macro-nonterminal">$trait_def</span>:item $(,)<span class="question-mark">?</span>) =&gt; {
+    (<span class="macro-nonterminal">$input</span>:expr, <span class="macro-nonterminal">$trait_path</span>:expr, &lt;$(<span class="macro-nonterminal">$</span><span class="kw">super</span>:<span class="macro-nonterminal">ident</span>),+ $(,)<span class="question-mark">?</span>&gt;, $(<span class="macro-nonterminal">$trait_def</span>:tt)<span class="kw-2">*</span>) =&gt; {
         <span class="macro-nonterminal">$crate::__private::parse_input</span>(<span class="macro-nonterminal">$input</span>, |data| {
             <span class="macro-nonterminal">$crate::derive_trait</span>(
                 <span class="kw-2">&amp;</span>data,
-                <span class="macro-nonterminal">$</span><span class="macro">crate::__private::parse_quote!</span>(<span class="macro-nonterminal">$trait_path</span>),
-                <span class="macro">vec!</span>[$( <span class="macro-nonterminal">$</span><span class="macro">crate::__private::format_ident!</span>(<span class="macro">stringify!</span>(<span class="macro-nonterminal">$</span><span class="kw">super</span>)) ),+],
-                <span class="macro-nonterminal">$</span><span class="macro">crate::__private::parse_quote!</span>(<span class="macro-nonterminal">$trait_def</span>),
+                <span class="kw-2">&amp;</span><span class="macro-nonterminal">$</span><span class="macro">crate::__private::parse_quote!</span>(<span class="macro-nonterminal">$trait_path</span>),
+                <span class="macro-nonterminal">$</span><span class="macro">crate::__private::vec!</span>[
+                    $( <span class="macro-nonterminal">$</span><span class="macro">crate::__private::format_ident!</span>(<span class="macro-nonterminal">$</span><span class="macro">crate::__private::stringify!</span>(<span class="macro-nonterminal">$</span><span class="kw">super</span>)) ),+
+                ],
+                <span class="macro-nonterminal">$</span><span class="macro">crate::__private::parse_quote!</span>($(<span class="macro-nonterminal">$trait_def</span>)<span class="kw-2">*</span>),
             )
         })
         .into()
     };
-    (<span class="macro-nonterminal">$input</span>:expr, <span class="macro-nonterminal">$trait_path</span>:expr, <span class="macro-nonterminal">$trait_def</span>:item $(,)<span class="question-mark">?</span>) =&gt; {
+    (<span class="macro-nonterminal">$input</span>:expr, <span class="macro-nonterminal">$trait_path</span>:expr, $(<span class="macro-nonterminal">$trait_def</span>:tt)<span class="kw-2">*</span>) =&gt; {
         <span class="macro-nonterminal">$crate::__private::parse_input</span>(<span class="macro-nonterminal">$input</span>, |data| {
             <span class="macro-nonterminal">$crate::derive_trait</span>(
                 <span class="kw-2">&amp;</span>data,
-                <span class="macro-nonterminal">$</span><span class="macro">crate::__private::parse_quote!</span>(<span class="macro-nonterminal">$trait_path</span>),
+                <span class="kw-2">&amp;</span><span class="macro-nonterminal">$</span><span class="macro">crate::__private::parse_quote!</span>(<span class="macro-nonterminal">$trait_path</span>),
                 <span class="macro-nonterminal">$crate::__private::None</span>,
-                <span class="macro-nonterminal">$</span><span class="macro">crate::__private::parse_quote!</span>(<span class="macro-nonterminal">$trait_def</span>),
+                <span class="macro-nonterminal">$</span><span class="macro">crate::__private::parse_quote!</span>($(<span class="macro-nonterminal">$trait_def</span>)<span class="kw-2">*</span>),
             )
         })
         .into()
@@ -405,7 +426,12 @@ where
 </span><span class="attr">#[doc(hidden)]
 </span><span class="kw">pub mod </span>__private {
     <span class="attr">#[doc(hidden)]
-    </span><span class="kw">pub use </span>core::option::Option::{<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>};
+    </span><span class="kw">pub use </span>core::{
+        option::Option::{<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>},
+        stringify,
+    };
+    <span class="attr">#[doc(hidden)]
+    </span><span class="kw">pub use </span>std::vec;
 
     <span class="kw">use </span>proc_macro2::TokenStream;
     <span class="attr">#[doc(hidden)]
@@ -417,9 +443,9 @@ where
     <span class="kw">use </span><span class="kw">crate</span>::EnumData;
 
     <span class="attr">#[doc(hidden)]
-    </span><span class="kw">pub fn </span>parse_input(
-        input: <span class="kw">impl </span>Into&lt;TokenStream&gt;,
-        f: <span class="kw">fn</span>(EnumData) -&gt; TokenStream,
+    </span><span class="kw">pub fn </span>parse_input&lt;T: Into&lt;TokenStream&gt;, F: Fn(EnumData) -&gt; TokenStream&gt;(
+        input: T,
+        f: F,
     ) -&gt; TokenStream {
         parse2::&lt;EnumData&gt;(input.into()).map_or_else(Error::into_compile_error, f)
     }

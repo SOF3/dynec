@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/system/iter.rs`."><title>iter.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="dynec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/system/iter.rs`."><title>iter.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="dynec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../dynec/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -465,7 +467,7 @@
     }
 
     <span class="doccomment">/// Iterates over all contiguous chunks of entity IDs.
-    </span><span class="kw">pub fn </span>chunks(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw">impl </span>Iterator&lt;Item = entity::TempRefChunk&lt;A&gt;&gt; + <span class="lifetime">&#39;_ </span>{
+    </span><span class="kw">pub fn </span>chunks(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw">impl </span>Iterator&lt;Item = entity::TempRefChunk&lt;A&gt;&gt; + <span class="lifetime">'_ </span>{
         <span class="self">self</span>.ealloc
             .iter_allocated_chunks()
             .map(|range| entity::TempRefChunk::new(range.start, range.end))
@@ -520,7 +522,7 @@
     <span class="kw">fn </span>par_raw_chunks&lt;IntoZ: IntoZip&lt;A&gt;&gt;(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         zip: IntoZ,
-    ) -&gt; <span class="kw">impl </span>ParallelIterator&lt;Item = (snapshot::Slice&lt;<span class="lifetime">&#39;_</span>, A::RawEntity&gt;, IntoZ::IntoZip)&gt;
+    ) -&gt; <span class="kw">impl </span>ParallelIterator&lt;Item = (snapshot::Slice&lt;<span class="lifetime">'_</span>, A::RawEntity&gt;, IntoZ::IntoZip)&gt;
     <span class="kw">where
         </span>IntoZ::IntoZip: Send,
     {
@@ -648,7 +650,7 @@
 ///
 /// The default configuration only implements for tuples of up to 4 elements.
 /// To use larger tuples at the cost of slower compile time,
-/// use the feature `&quot;tuple-impl-{n}-zip&quot;`,
+/// use the feature `"tuple-impl-{n}-zip"`,
 /// where `{n}` is `8`, `16`, `24` or `32`.
 </span><span class="kw">pub trait </span>IntoZip&lt;A: Archetype&gt; {
     <span class="doccomment">/// The [`Zip`] type that this is converted into.
@@ -673,7 +675,7 @@
         <span class="kw">match </span>option {
             <span class="prelude-val">Some</span>(value) =&gt; value,
             <span class="prelude-val">None </span>=&gt; <span class="macro">panic!</span>(
-                <span class="string">&quot;Component {}/{} implements comp::Must but is not present&quot;</span>,
+                <span class="string">"Component {}/{} implements comp::Must but is not present"</span>,
                 any::type_name::&lt;A&gt;(),
                 any::type_name::&lt;C&gt;()
             ),
@@ -691,38 +693,38 @@
 <span class="doccomment">/// Wrap accessor references with `Try` to indicate that the result should be an `Option`.
 </span><span class="kw">pub struct </span>Try&lt;T&gt;(<span class="kw">pub </span>T);
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>, A, C, AccessorT&gt; IntoZip&lt;A&gt; <span class="kw">for </span>Try&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span>AccessorT&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'t</span>, A, C, AccessorT&gt; IntoZip&lt;A&gt; <span class="kw">for </span>Try&lt;<span class="kw-2">&amp;</span><span class="lifetime">'t </span>AccessorT&gt;
 <span class="kw">where
     </span>A: Archetype,
     C: comp::SimpleOrIsotope&lt;A&gt;,
     AccessorT: single::Get&lt;Arch = A, Comp = C&gt;,
 {
-    <span class="kw">type </span>IntoZip = Read&lt;<span class="lifetime">&#39;t</span>, A, C, AccessorT, TryMissingResln&gt;;
+    <span class="kw">type </span>IntoZip = Read&lt;<span class="lifetime">'t</span>, A, C, AccessorT, TryMissingResln&gt;;
     <span class="kw">fn </span>into_zip(<span class="self">self</span>) -&gt; <span class="self">Self</span>::IntoZip { Read { accessor: <span class="self">self</span>.<span class="number">0</span>, _ph: PhantomData } }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>, A, C, AccessorT&gt; IntoZip&lt;A&gt; <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span>AccessorT
+<span class="kw">impl</span>&lt;<span class="lifetime">'t</span>, A, C, AccessorT&gt; IntoZip&lt;A&gt; <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">'t </span>AccessorT
 <span class="kw">where
     </span>A: Archetype,
     C: comp::SimpleOrIsotope&lt;A&gt; + comp::Must&lt;A&gt;,
     AccessorT: single::Get&lt;Arch = A, Comp = C&gt;,
 {
-    <span class="kw">type </span>IntoZip = Read&lt;<span class="lifetime">&#39;t</span>, A, C, AccessorT, MustMissingResln&lt;A, C&gt;&gt;;
+    <span class="kw">type </span>IntoZip = Read&lt;<span class="lifetime">'t</span>, A, C, AccessorT, MustMissingResln&lt;A, C&gt;&gt;;
     <span class="kw">fn </span>into_zip(<span class="self">self</span>) -&gt; <span class="self">Self</span>::IntoZip { Read { accessor: <span class="self">self</span>, _ph: PhantomData } }
 }
 
 <span class="doccomment">/// [`IntoZip::IntoZip`] for read-only accessors.
-</span><span class="kw">pub struct </span>Read&lt;<span class="lifetime">&#39;t</span>, A, C, AccessorT, Resln&gt; {
-    accessor: <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span>AccessorT,
+</span><span class="kw">pub struct </span>Read&lt;<span class="lifetime">'t</span>, A, C, AccessorT, Resln&gt; {
+    accessor: <span class="kw-2">&amp;</span><span class="lifetime">'t </span>AccessorT,
     _ph:      PhantomData&lt;(A, C, Resln)&gt;,
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>, A, C, AccessorT, Resln&gt; Copy <span class="kw">for </span>Read&lt;<span class="lifetime">&#39;t</span>, A, C, AccessorT, Resln&gt; {}
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>, A, C, AccessorT, Resln&gt; Clone <span class="kw">for </span>Read&lt;<span class="lifetime">&#39;t</span>, A, C, AccessorT, Resln&gt; {
+<span class="kw">impl</span>&lt;<span class="lifetime">'t</span>, A, C, AccessorT, Resln&gt; Copy <span class="kw">for </span>Read&lt;<span class="lifetime">'t</span>, A, C, AccessorT, Resln&gt; {}
+<span class="kw">impl</span>&lt;<span class="lifetime">'t</span>, A, C, AccessorT, Resln&gt; Clone <span class="kw">for </span>Read&lt;<span class="lifetime">'t</span>, A, C, AccessorT, Resln&gt; {
     <span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{ <span class="kw-2">*</span><span class="self">self </span>}
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>, A, C, AccessorT, Resln&gt; Zip&lt;A&gt; <span class="kw">for </span>Read&lt;<span class="lifetime">&#39;t</span>, A, C, AccessorT, Resln&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'t</span>, A, C, AccessorT, Resln&gt; Zip&lt;A&gt; <span class="kw">for </span>Read&lt;<span class="lifetime">'t</span>, A, C, AccessorT, Resln&gt;
 <span class="kw">where
     </span>A: Archetype,
     C: comp::SimpleOrIsotope&lt;A&gt;,
@@ -731,27 +733,27 @@
 {
     <span class="kw">fn </span>split(<span class="kw-2">&amp;mut </span><span class="self">self</span>, _offset: A::RawEntity) -&gt; <span class="self">Self </span>{ <span class="kw-2">*</span><span class="self">self </span>}
 
-    <span class="kw">type </span>Item = Resln::Result&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span>C&gt;;
-    <span class="kw">fn </span>get&lt;E: entity::Ref&lt;Archetype = A&gt;&gt;(<span class="self">self</span>, entity: E) -&gt; Resln::Result&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span>C&gt; {
+    <span class="kw">type </span>Item = Resln::Result&lt;<span class="kw-2">&amp;</span><span class="lifetime">'t </span>C&gt;;
+    <span class="kw">fn </span>get&lt;E: entity::Ref&lt;Archetype = A&gt;&gt;(<span class="self">self</span>, entity: E) -&gt; Resln::Result&lt;<span class="kw-2">&amp;</span><span class="lifetime">'t </span>C&gt; {
         Resln::must_or_try(<span class="self">self</span>.accessor.try_get(entity))
     }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>, A, C, AccessorT&gt; ZipChunked&lt;A&gt; <span class="kw">for </span>Read&lt;<span class="lifetime">&#39;t</span>, A, C, AccessorT, MustMissingResln&lt;A, C&gt;&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'t</span>, A, C, AccessorT&gt; ZipChunked&lt;A&gt; <span class="kw">for </span>Read&lt;<span class="lifetime">'t</span>, A, C, AccessorT, MustMissingResln&lt;A, C&gt;&gt;
 <span class="kw">where
     </span>A: Archetype,
     C: comp::SimpleOrIsotope&lt;A&gt; + comp::Must&lt;A&gt;,
     AccessorT: single::Get&lt;Arch = A, Comp = C&gt; + single::GetChunked&lt;Arch = A, Comp = C&gt;,
 {
-    <span class="kw">type </span>Chunk = <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span>[C];
+    <span class="kw">type </span>Chunk = <span class="kw-2">&amp;</span><span class="lifetime">'t </span>[C];
     <span class="kw">fn </span>get_chunk(<span class="self">self</span>, chunk: entity::TempRefChunk&lt;A&gt;) -&gt; <span class="self">Self</span>::Chunk {
         <span class="self">self</span>.accessor.get_chunk(chunk)
     }
 
-    <span class="kw">fn </span>chunk_to_entities(chunk: <span class="self">Self</span>::Chunk) -&gt; <span class="kw">impl </span>Iterator&lt;Item = <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span>C&gt; { chunk.iter() }
+    <span class="kw">fn </span>chunk_to_entities(chunk: <span class="self">Self</span>::Chunk) -&gt; <span class="kw">impl </span>Iterator&lt;Item = <span class="kw-2">&amp;</span><span class="lifetime">'t </span>C&gt; { chunk.iter() }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>, A, C, StorageRef&gt; IntoZip&lt;A&gt; <span class="kw">for </span>Try&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>access::Single&lt;A, C, StorageRef&gt;&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'t</span>, A, C, StorageRef&gt; IntoZip&lt;A&gt; <span class="kw">for </span>Try&lt;<span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span>access::Single&lt;A, C, StorageRef&gt;&gt;
 <span class="kw">where
     </span>A: Archetype,
     C: comp::SimpleOrIsotope&lt;A&gt;,
@@ -759,10 +761,10 @@
     StorageRef::Target: Storage&lt;RawEntity = A::RawEntity, Comp = C&gt;,
 {
     <span class="kw">type </span>IntoZip = Write&lt;
-        <span class="lifetime">&#39;t</span>,
+        <span class="lifetime">'t</span>,
         A,
         C,
-        util::OwnedDeref&lt;&lt;StorageRef::Target <span class="kw">as </span>Storage&gt;::Partition&lt;<span class="lifetime">&#39;t</span>&gt;&gt;,
+        util::OwnedDeref&lt;&lt;StorageRef::Target <span class="kw">as </span>Storage&gt;::Partition&lt;<span class="lifetime">'t</span>&gt;&gt;,
         TryMissingResln,
     &gt;;
     <span class="kw">fn </span>into_zip(<span class="self">self</span>) -&gt; <span class="self">Self</span>::IntoZip {
@@ -770,7 +772,7 @@
     }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>, A, C, StorageRef&gt; IntoZip&lt;A&gt; <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>access::Single&lt;A, C, StorageRef&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'t</span>, A, C, StorageRef&gt; IntoZip&lt;A&gt; <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span>access::Single&lt;A, C, StorageRef&gt;
 <span class="kw">where
     </span>A: Archetype,
     C: comp::SimpleOrIsotope&lt;A&gt; + comp::Must&lt;A&gt;,
@@ -778,26 +780,26 @@
     StorageRef::Target: Storage&lt;RawEntity = A::RawEntity, Comp = C&gt;,
 {
     <span class="kw">type </span>IntoZip = Write&lt;
-        <span class="lifetime">&#39;t</span>,
+        <span class="lifetime">'t</span>,
         A,
         C,
-        util::OwnedDeref&lt;&lt;StorageRef::Target <span class="kw">as </span>Storage&gt;::Partition&lt;<span class="lifetime">&#39;t</span>&gt;&gt;,
+        util::OwnedDeref&lt;&lt;StorageRef::Target <span class="kw">as </span>Storage&gt;::Partition&lt;<span class="lifetime">'t</span>&gt;&gt;,
         MustMissingResln&lt;A, C&gt;,
     &gt;;
     <span class="kw">fn </span>into_zip(<span class="self">self</span>) -&gt; <span class="self">Self</span>::IntoZip { Write { accessor: <span class="self">self</span>.as_partition(), _ph: PhantomData } }
 }
 
 <span class="doccomment">/// [`IntoZip::IntoZip`] for mutable accessors.
-</span><span class="kw">pub struct </span>Write&lt;<span class="lifetime">&#39;t</span>, A, C, PartitionT, Resln&gt; {
+</span><span class="kw">pub struct </span>Write&lt;<span class="lifetime">'t</span>, A, C, PartitionT, Resln&gt; {
     accessor: access::Single&lt;A, C, PartitionT&gt;,
-    _ph:      PhantomData&lt;(<span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>C, Resln)&gt;,
+    _ph:      PhantomData&lt;(<span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span>C, Resln)&gt;,
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>, A, C, PartitionT, Resln&gt; Zip&lt;A&gt; <span class="kw">for </span>Write&lt;<span class="lifetime">&#39;t</span>, A, C, util::OwnedDeref&lt;PartitionT&gt;, Resln&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'t</span>, A, C, PartitionT, Resln&gt; Zip&lt;A&gt; <span class="kw">for </span>Write&lt;<span class="lifetime">'t</span>, A, C, util::OwnedDeref&lt;PartitionT&gt;, Resln&gt;
 <span class="kw">where
     </span>A: Archetype,
     C: comp::SimpleOrIsotope&lt;A&gt;,
-    PartitionT: storage::Partition&lt;<span class="lifetime">&#39;t</span>, RawEntity = A::RawEntity, Comp = C&gt;,
+    PartitionT: storage::Partition&lt;<span class="lifetime">'t</span>, RawEntity = A::RawEntity, Comp = C&gt;,
     Resln: MissingResln,
 {
     <span class="kw">fn </span>split(<span class="kw-2">&amp;mut </span><span class="self">self</span>, offset: A::RawEntity) -&gt; <span class="self">Self </span>{
@@ -805,25 +807,25 @@
         <span class="self">Self </span>{ accessor: right, _ph: PhantomData }
     }
 
-    <span class="kw">type </span>Item = Resln::Result&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>C&gt;;
-    <span class="kw">fn </span>get&lt;E: entity::Ref&lt;Archetype = A&gt;&gt;(<span class="self">self</span>, entity: E) -&gt; Resln::Result&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>C&gt; {
+    <span class="kw">type </span>Item = Resln::Result&lt;<span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span>C&gt;;
+    <span class="kw">fn </span>get&lt;E: entity::Ref&lt;Archetype = A&gt;&gt;(<span class="self">self</span>, entity: E) -&gt; Resln::Result&lt;<span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span>C&gt; {
         Resln::must_or_try(<span class="self">self</span>.accessor.try_into_mut(entity))
     }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>, A, C, PartitionT&gt; ZipChunked&lt;A&gt;
-    <span class="kw">for </span>Write&lt;<span class="lifetime">&#39;t</span>, A, C, util::OwnedDeref&lt;PartitionT&gt;, MustMissingResln&lt;A, C&gt;&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'t</span>, A, C, PartitionT&gt; ZipChunked&lt;A&gt;
+    <span class="kw">for </span>Write&lt;<span class="lifetime">'t</span>, A, C, util::OwnedDeref&lt;PartitionT&gt;, MustMissingResln&lt;A, C&gt;&gt;
 <span class="kw">where
     </span>A: Archetype,
     C: comp::SimpleOrIsotope&lt;A&gt; + comp::Must&lt;A&gt;,
-    PartitionT: storage::PartitionChunked&lt;<span class="lifetime">&#39;t</span>, RawEntity = A::RawEntity, Comp = C&gt;,
+    PartitionT: storage::PartitionChunked&lt;<span class="lifetime">'t</span>, RawEntity = A::RawEntity, Comp = C&gt;,
 {
-    <span class="kw">type </span>Chunk = <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>[C];
+    <span class="kw">type </span>Chunk = <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span>[C];
     <span class="kw">fn </span>get_chunk(<span class="self">self</span>, chunk: entity::TempRefChunk&lt;A&gt;) -&gt; <span class="self">Self</span>::Chunk {
         <span class="self">self</span>.accessor.into_chunk_mut(chunk)
     }
 
-    <span class="kw">fn </span>chunk_to_entities(chunk: <span class="self">Self</span>::Chunk) -&gt; <span class="kw">impl </span>Iterator&lt;Item = <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>C&gt; { chunk.iter_mut() }
+    <span class="kw">fn </span>chunk_to_entities(chunk: <span class="self">Self</span>::Chunk) -&gt; <span class="kw">impl </span>Iterator&lt;Item = <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span>C&gt; { chunk.iter_mut() }
 }
 
 <span class="kw">mod </span>tuple_impls;

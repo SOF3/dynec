@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/macros.rs`."><title>macros.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="dynec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/macros.rs`."><title>macros.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="dynec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../dynec/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -1093,7 +1095,7 @@
 /// struct MyDiscrim(usize);
 ///
 /// #[dynec::comp(of = Foo, isotope = MyDiscrim)]
-/// struct Iso(&amp;&#39;static str);
+/// struct Iso(&amp;'static str);
 ///
 /// #[dynec::comp(of = Foo, isotope = MyDiscrim)]
 /// struct Carbon { neutrons: i32 };
@@ -1108,7 +1110,7 @@
 ///     Comp2(2),
 ///     ?Some(Comp3{ value: 3 }),
 ///     ?None::&lt;Comp4&gt;,
-///     @(MyDiscrim(4), Iso(&quot;xxx&quot;)),
+///     @(MyDiscrim(4), Iso("xxx")),
 ///     @?hashed,
 /// ];
 /// assert_eq!(map.simple_len(), 3);
@@ -1175,7 +1177,7 @@
 ///
 /// ## `name = $expr`
 /// Sets the [name](crate::system::Spec::debug_name) of the system to `$expr`.
-/// By default, the name is `concat!(module_path!(), &quot;::&quot;, $function_identifier)`.
+/// By default, the name is `concat!(module_path!(), "::", $function_identifier)`.
 ///
 /// The `$expr` can read the local and param states of the system directly.
 /// Since the debug name is only used for display purposes,
@@ -1194,7 +1196,7 @@
 /// Each parameter of a system function has a special meaning:
 ///
 /// ## Local states
-/// Parameters with the attribute `#[dynec(local(initial = xxx))]` are &quot;local states&quot;,
+/// Parameters with the attribute `#[dynec(local(initial = xxx))]` are "local states",
 /// where `xxx` is an expression that evaluates to the initial value of the state.
 ///
 /// Local states must take the type `&amp;T` or `&amp;mut T`,
@@ -1227,7 +1229,7 @@
 /// ```
 ///
 /// ## Param states
-/// Parameters with the attribute `#[dynec(param)]` are &quot;param states&quot;.
+/// Parameters with the attribute `#[dynec(param)]` are "param states".
 /// The user has to pass initial values for param states in the `.build()` method.
 /// Param states behave identically to local states
 /// except for different definition location of the initial value.
@@ -1252,7 +1254,7 @@
 /// ```
 ///
 /// ## Global states
-/// Parameters with the attribute `#[dynec(global)]` are &quot;global states&quot;.
+/// Parameters with the attribute `#[dynec(global)]` are "global states".
 /// Global states are shared scalar data between multiple systems.
 /// See [`Global`](crate::Global) for more information.
 ///
@@ -1426,7 +1428,7 @@
 /// Parameters that require an [`EntityDeleter`](crate::system::EntityDeleter)
 /// can be used to delete entities.
 /// The archetype of deleted entities is specified in the type bounds.
-/// Note that `EntityDeleter` can only be used to mark entities as &quot;deleting&quot;;
+/// Note that `EntityDeleter` can only be used to mark entities as "deleting";
 /// the entity is only deleted after
 /// all [finalizer](crate::comp::Simple::IS_FINALIZER) components are unset.
 ///
@@ -1470,8 +1472,8 @@
 /// ```
 /// use dynec::system;
 ///
-/// #[dynec::global(initial = Title(&quot;hello world&quot;))]
-/// struct Title(&amp;&#39;static str);
+/// #[dynec::global(initial = Title("hello world"))]
+/// struct Title(&amp;'static str);
 ///
 /// #[derive(Debug, PartialEq, Eq, Hash)]
 /// struct Foo;
@@ -1493,7 +1495,7 @@
 /// struct SkillLevel(u8);
 ///
 /// #[system(
-///     name = format!(&quot;simulate[counter = {}, skill_id = {:?}]&quot;, counter, skill_id),
+///     name = format!("simulate[counter = {}, skill_id = {:?}]", counter, skill_id),
 ///     before(Foo),
 /// )]
 /// fn simulate(
@@ -1512,21 +1514,21 @@
 ///     *counter += 1;
 ///
 ///     if *counter == 1 {
-///         title.0 = &quot;changed&quot;;
+///         title.0 = "changed";
 ///     }
 /// }
 ///
 /// let system = simulate.build(SkillType(3));
 /// assert_eq!(
 ///     system::Descriptor::get_spec(&amp;system).debug_name.as_str(),
-///     &quot;simulate[counter = 0, skill_id = SkillType(3)]&quot;
+///     "simulate[counter = 0, skill_id = SkillType(3)]"
 /// );
 ///
 /// {
 ///     // We can also call the function directly in unit tests.
 ///
 ///     let mut counter = 0;
-///     let mut title = Title(&quot;original&quot;);
+///     let mut title = Title("original");
 ///
 ///     let mut world = dynec::system_test! {
 ///         simulate.build(SkillType(2));
@@ -1556,7 +1558,7 @@
 ///     );
 ///
 ///     assert_eq!(counter, 1);
-///     assert_eq!(title.0, &quot;changed&quot;);
+///     assert_eq!(title.0, "changed");
 /// }
 /// ```
 </span><span class="attr">#[doc(inline)]
@@ -1580,7 +1582,7 @@
             <span class="kw">use </span><span class="kw">crate</span>::system::Descriptor;
             <span class="macro">assert_eq!</span>(
                 system.get_spec().debug_name.as_str(),
-                <span class="string">&quot;dynec::macros::system_tests::simulate&quot;
+                <span class="string">"dynec::macros::system_tests::simulate"
             </span>);
         }
     }
@@ -1688,13 +1690,13 @@
 /// # dynec::archetype!(Foo);
 /// #
 /// #[derive(dynec::EntityRef)]
-/// struct Bar&lt;T: &#39;static&gt; {
+/// struct Bar&lt;T: 'static&gt; {
 ///     #[not_entity]
 ///     value: T,
 /// }
 /// ```
 ///
-/// It is the user&#39;s responsibility not to set `T` as a `Referrer` implementation.
+/// It is the user's responsibility not to set `T` as a `Referrer` implementation.
 ///
 /// Note that this compile error is best-effort and not comprehensive &amp;mdash;
 /// if the actual entity reference is hidden behind a complex type

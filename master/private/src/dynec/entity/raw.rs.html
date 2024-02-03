@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/entity/raw.rs`."><title>raw.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="dynec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/entity/raw.rs`."><title>raw.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="dynec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../dynec/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -147,7 +149,7 @@
 // but non-transitive implementors of `Raw` could lead to incorrect soundness validation
 // in code that iterates over a storage mutably by strictly increasing index.
 // The safety constraint here is necessary for the safety constraint in `Storage` to hold.
-</span><span class="kw">pub trait </span>Raw: Sized + Send + Sync + Copy + fmt::Debug + UnsafeEqOrd + <span class="lifetime">&#39;static </span>{
+</span><span class="kw">pub trait </span>Raw: Sized + Send + Sync + Copy + fmt::Debug + UnsafeEqOrd + <span class="lifetime">'static </span>{
     <span class="doccomment">/// The atomic variant of this data type.
     </span><span class="kw">type </span>Atomic: Atomic&lt;<span class="self">Self</span>&gt;;
 
@@ -185,7 +187,7 @@
 }
 
 <span class="doccomment">/// An atomic variant of [`Raw`].
-</span><span class="kw">pub trait </span>Atomic&lt;E: Raw&gt;: Send + Sync + <span class="lifetime">&#39;static </span>{
+</span><span class="kw">pub trait </span>Atomic&lt;E: Raw&gt;: Send + Sync + <span class="lifetime">'static </span>{
     <span class="doccomment">/// Equivalent to `AtomicUsize::fetch_add(self, count, Ordering::SeqCst)`
     </span><span class="kw">fn </span>fetch_add(<span class="kw-2">&amp;</span><span class="self">self</span>, count: usize) -&gt; E;
 
@@ -207,30 +209,30 @@
             <span class="kw">fn </span>new() -&gt; <span class="self">Self</span>::Atomic { &lt;<span class="macro-nonterminal">$atomic</span>&gt;::new(<span class="number">1</span>) }
 
             <span class="kw">fn </span>add(<span class="self">self</span>, count: usize) -&gt; <span class="self">Self </span>{
-                <span class="kw">let </span>count: <span class="macro-nonterminal">$primitive </span>= count.try_into().expect(<span class="string">&quot;count is too large&quot;</span>);
-                &lt;<span class="macro-nonterminal">$base</span>&gt;::new(<span class="self">self</span>.get() + count).expect(<span class="string">&quot;integer overflow&quot;</span>)
+                <span class="kw">let </span>count: <span class="macro-nonterminal">$primitive </span>= count.try_into().expect(<span class="string">"count is too large"</span>);
+                &lt;<span class="macro-nonterminal">$base</span>&gt;::new(<span class="self">self</span>.get() + count).expect(<span class="string">"integer overflow"</span>)
             }
 
             <span class="kw">fn </span>sub(<span class="self">self</span>, other: <span class="self">Self</span>) -&gt; usize {
-                (<span class="self">self</span>.get() - other.get()).try_into().expect(<span class="string">&quot;usize should be sufficiently large&quot;</span>)
+                (<span class="self">self</span>.get() - other.get()).try_into().expect(<span class="string">"usize should be sufficiently large"</span>)
             }
 
             <span class="kw">fn </span>approx_midpoint(<span class="self">self</span>, other: <span class="self">Self</span>) -&gt; <span class="self">Self </span>{
                 &lt;<span class="macro-nonterminal">$base</span>&gt;::new((<span class="self">self</span>.get() + other.get()) / <span class="number">2</span>)
-                    .expect(<span class="string">&quot;get() &gt;= 1, get() + get() &gt;= 2, half &gt;= 1&quot;</span>)
+                    .expect(<span class="string">"get() &gt;= 1, get() + get() &gt;= 2, half &gt;= 1"</span>)
             }
 
             <span class="kw">fn </span>from_primitive(i: Primitive) -&gt; <span class="self">Self </span>{
-                i.try_into().ok().and_then(<span class="self">Self</span>::new).expect(<span class="string">&quot;Invalid usize&quot;</span>)
+                i.try_into().ok().and_then(<span class="self">Self</span>::new).expect(<span class="string">"Invalid usize"</span>)
             }
 
-            <span class="kw">fn </span>to_primitive(<span class="self">self</span>) -&gt; Primitive { <span class="self">self</span>.get().try_into().expect(<span class="string">&quot;Too many entities&quot;</span>) }
+            <span class="kw">fn </span>to_primitive(<span class="self">self</span>) -&gt; Primitive { <span class="self">self</span>.get().try_into().expect(<span class="string">"Too many entities"</span>) }
 
             <span class="kw">type </span>Range = <span class="kw">impl </span>Iterator&lt;Item = <span class="self">Self</span>&gt;;
             <span class="kw">fn </span>range(range: ops::Range&lt;<span class="self">Self</span>&gt;) -&gt; <span class="self">Self</span>::Range {
                 (range.start.get()..range.end.get()).map(|v| {
                     &lt;<span class="macro-nonterminal">$base</span>&gt;::new(v)
-                        .expect(<span class="string">&quot;zero does not appear between two non-zero unsigned integers&quot;</span>)
+                        .expect(<span class="string">"zero does not appear between two non-zero unsigned integers"</span>)
                 })
             }
         }
@@ -239,20 +241,20 @@
             <span class="kw">fn </span>fetch_add(<span class="kw-2">&amp;</span><span class="self">self</span>, count: usize) -&gt; <span class="macro-nonterminal">$base </span>{
                 <span class="kw">let </span>original = &lt;<span class="macro-nonterminal">$atomic</span>&gt;::fetch_add(
                     <span class="self">self</span>,
-                    count.try_into().expect(<span class="string">&quot;count is too large&quot;</span>),
+                    count.try_into().expect(<span class="string">"count is too large"</span>),
                     atomic::Ordering::SeqCst,
                 );
-                &lt;<span class="macro-nonterminal">$base</span>&gt;::new(original).expect(<span class="string">&quot;integer overflow&quot;</span>)
+                &lt;<span class="macro-nonterminal">$base</span>&gt;::new(original).expect(<span class="string">"integer overflow"</span>)
             }
 
             <span class="kw">fn </span>load(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="macro-nonterminal">$base </span>{
                 <span class="kw">let </span>original = &lt;<span class="macro-nonterminal">$atomic</span>&gt;::load(<span class="self">self</span>, atomic::Ordering::SeqCst);
-                &lt;<span class="macro-nonterminal">$base</span>&gt;::new(original).expect(<span class="string">&quot;invalid state&quot;</span>)
+                &lt;<span class="macro-nonterminal">$base</span>&gt;::new(original).expect(<span class="string">"invalid state"</span>)
             }
 
             <span class="kw">fn </span>load_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="macro-nonterminal">$base </span>{
                 <span class="kw">let </span>original = <span class="kw-2">*</span>&lt;<span class="macro-nonterminal">$atomic</span>&gt;::get_mut(<span class="self">self</span>);
-                &lt;<span class="macro-nonterminal">$base</span>&gt;::new(original).expect(<span class="string">&quot;invalid state&quot;</span>)
+                &lt;<span class="macro-nonterminal">$base</span>&gt;::new(original).expect(<span class="string">"invalid state"</span>)
             }
         }
     };

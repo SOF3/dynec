@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="dynec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="dynec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../dynec/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -216,8 +218,8 @@
 //!
 //! # What is ECS?
 //! ECS is a data-oriented programming paradigm that focuses on optimizing the CPU cache.
-//! Objects (&quot;Entities&quot;) store their data in &quot;Components&quot;,
-//! which are processed in &quot;Systems&quot;.
+//! Objects ("Entities") store their data in "Components",
+//! which are processed in "Systems".
 //!
 //! # dynec has E, C and S, but it is not the typical ECS
 //! dynec is **statically archetyped**.
@@ -237,7 +239,7 @@
 //!
 //! Furthermore, archetypes cannot be subtyped.
 //! This means that, unlike the traditional ECS,
-//! there is no &quot;join query&quot; that queries all entities with a subset of components present.
+//! there is no "join query" that queries all entities with a subset of components present.
 //! Iteration can only be performed on all entities of an archetype
 //! (it is also possible to iterate over all entities with a single component,
 //! but this is for a different purpose).
@@ -245,18 +247,18 @@
 //! like how you would usually do in other frameworks,
 //! you probably wanted to split them to be a separate entity instead.
 //!
-//! ## Doesn&#39;t this make polymorphism more difficult to use?
+//! ## Doesn't this make polymorphism more difficult to use?
 //! I imagine your design is like this:
-//! some entities have the &quot;pig&quot; archetype,
-//! some have the &quot;bird&quot; archetype,
+//! some entities have the "pig" archetype,
+//! some have the "bird" archetype,
 //! both share the common animal components,
-//! while &quot;bird&quot; also has the additional flight- and egg-related components.
+//! while "bird" also has the additional flight- and egg-related components.
 //!
 //! This is not the perspective to organize entities in dynec.
-//! Pigs and birds are both the same archetype, let&#39;s say &quot;animal&quot;.
-//! The term &quot;bird&quot; is just an umbrella term to refer to abilities such as flying and laying eggs.
+//! Pigs and birds are both the same archetype, let's say "animal".
+//! The term "bird" is just an umbrella term to refer to abilities such as flying and laying eggs.
 //! It should not be a concept that appears in the code logic at all,
-//! because &quot;bird&quot; does not really mean anything at the programming level.
+//! because "bird" does not really mean anything at the programming level.
 //! In a sense, entities in dynec are comparable to some optional components in traditional ECS.
 //!
 //! This implies entities would have a lot of references among them &amp;mdash;
@@ -275,12 +277,12 @@
 //! This means we can be (mostly) confident that any entity reference points to a live one,
 //! and enables reduction of the size of a strong entity reference to one integer
 //! because strong reference should not be able to outlive the referenced entity
-//! (most ECS frameworks require another integer to store the &quot;generation&quot;
+//! (most ECS frameworks require another integer to store the "generation"
 //! to avoid dangling references from pointing to a new entity recreated at the same offset).
 //!
 //! Dropping all references before an entity is deleted sounds troublesome to implement,
 //! but dynec provides two solutions for this.
-//! First, dynec supports &quot;finalizer components&quot;,
+//! First, dynec supports "finalizer components",
 //! where components serve as [asynchronous finalizers][k8s-finalizer].
 //! Systems can create finalizers that ensure that references to the entity are dropped
 //! before the actual deletion (and the dangling reference check) takes place.
@@ -288,7 +290,7 @@
 //! without losing the context that describes the entity
 //! (because components are dropped after deletion and cannot be read anymore).
 //! Second, if it is really necessary to retain the (dangling) entity reference,
-//! you can store a &quot;weak reference&quot; instead &amp;mdash;
+//! you can store a "weak reference" instead &amp;mdash;
 //! weak references are also reference-counted, but they do not cause a dangling reference panic.
 //!
 //! Nevertheless, in order to track where entities are located,
@@ -314,10 +316,10 @@
 //! Or maybe a `SmallVec&lt;[Attribute; N]&gt;` to avoid heap allocation.
 //! Wait, how much is `N`?
 //!
-//! In dynec, we avoid this problem with &quot;isotope components&quot;.
+//! In dynec, we avoid this problem with "isotope components".
 //! Similar to isotopes in chemistry,
 //! there may be multiple components of the same type (`Attribute`) for the same entity,
-//! but these components belong to different &quot;discriminants&quot; (e.g. the attribute ID).
+//! but these components belong to different "discriminants" (e.g. the attribute ID).
 //! So in terms of semantics, it looks as if we got a `HashMap&lt;AttributeId, Attribute&gt;` component,
 //! but in terms of performance, each `AttributeId` gets allocated in a new storage
 //! as if it is a different component.
@@ -368,8 +370,8 @@
 #![cfg_attr(not(debug_assertions), deny(missing_docs))]
 #![cfg_attr(
     not(any(
-        all(debug_assertions, feature = <span class="string">&quot;debug-entity-rc&quot;</span>),
-        all(not(debug_assertions), feature = <span class="string">&quot;release-entity-rc&quot;</span>),
+        all(debug_assertions, feature = <span class="string">"debug-entity-rc"</span>),
+        all(not(debug_assertions), feature = <span class="string">"release-entity-rc"</span>),
     )),
     allow(dead_code)
 )]
@@ -413,7 +415,7 @@
 
 <span class="kw">pub mod </span>system;
 
-<span class="attr">#[cfg(any(test, feature = <span class="string">&quot;internal-bench&quot;</span>))]
+<span class="attr">#[cfg(any(test, feature = <span class="string">"internal-bench"</span>))]
 </span><span class="kw">pub mod </span>test_util;
 
 <span class="kw">pub mod </span>world;

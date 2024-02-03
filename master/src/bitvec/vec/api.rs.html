@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitvec-1.0.1/src/vec/api.rs`."><title>api.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="bitvec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitvec-1.0.1/src/vec/api.rs`."><title>api.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="bitvec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../bitvec/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -1239,7 +1241,7 @@
 	</span><span class="kw">pub fn </span>capacity(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; usize {
 		<span class="self">self</span>.capacity
 			.checked_mul(mem::bits_of::&lt;T&gt;())
-			.expect(<span class="string">&quot;bit-vector capacity exceeded&quot;</span>)
+			.expect(<span class="string">"bit-vector capacity exceeded"</span>)
 			.saturating_sub(<span class="self">self</span>.bitspan.head().into_inner() <span class="kw">as </span>usize)
 	}
 
@@ -1343,7 +1345,7 @@
 
 	<span class="attr">#[inline]
 	#[cfg(not(tarpaulin_include))]
-	#[deprecated = <span class="string">&quot;prefer `.into_boxed_bitslice() instead&quot;</span>]
+	#[deprecated = <span class="string">"prefer `.into_boxed_bitslice() instead"</span>]
 	#[allow(missing_docs, clippy::missing_docs_in_private_items)]
 	</span><span class="kw">pub fn </span>into_boxed_slice(<span class="self">self</span>) -&gt; BitBox&lt;T, O&gt; {
 		<span class="self">self</span>.into_boxed_bitslice()
@@ -1397,7 +1399,7 @@
 
 	<span class="attr">#[inline]
 	#[cfg(not(tarpaulin_include))]
-	#[deprecated = <span class="string">&quot;use `.as_bitslice()` instead&quot;</span>]
+	#[deprecated = <span class="string">"use `.as_bitslice()` instead"</span>]
 	#[allow(missing_docs, clippy::missing_docs_in_private_items)]
 	</span><span class="kw">pub fn </span>as_slice(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>BitSlice&lt;T, O&gt; {
 		<span class="self">self</span>.as_bitslice()
@@ -1405,7 +1407,7 @@
 
 	<span class="attr">#[inline]
 	#[cfg(not(tarpaulin_include))]
-	#[deprecated = <span class="string">&quot;use `.as_mut_bitslice()` instead&quot;</span>]
+	#[deprecated = <span class="string">"use `.as_mut_bitslice()` instead"</span>]
 	#[allow(missing_docs, clippy::missing_docs_in_private_items)]
 	</span><span class="kw">pub fn </span>as_mut_slice(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span>BitSlice&lt;T, O&gt; {
 		<span class="self">self</span>.as_mut_bitslice()
@@ -1413,7 +1415,7 @@
 
 	<span class="attr">#[inline]
 	#[cfg(not(tarpaulin_include))]
-	#[deprecated = <span class="string">&quot;use `.as_bitptr()` instead&quot;</span>]
+	#[deprecated = <span class="string">"use `.as_bitptr()` instead"</span>]
 	#[allow(missing_docs, clippy::missing_docs_in_private_items)]
 	</span><span class="kw">pub fn </span>as_ptr(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; BitPtr&lt;Const, T, O&gt; {
 		<span class="self">self</span>.as_bitptr()
@@ -1421,7 +1423,7 @@
 
 	<span class="attr">#[inline]
 	#[cfg(not(tarpaulin_include))]
-	#[deprecated = <span class="string">&quot;use `.as_mut_bitptr()` instead&quot;</span>]
+	#[deprecated = <span class="string">"use `.as_mut_bitptr()` instead"</span>]
 	#[allow(missing_docs, clippy::missing_docs_in_private_items)]
 	</span><span class="kw">pub fn </span>as_mut_ptr(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; BitPtr&lt;Mut, T, O&gt; {
 		<span class="self">self</span>.as_mut_bitptr()
@@ -1477,7 +1479,7 @@
 		<span class="kw">let </span>capa = <span class="self">self</span>.capacity();
 		<span class="macro">assert!</span>(
 			new_len &lt;= capa,
-			<span class="string">&quot;bit-vector capacity exceeded: {} &gt; {}&quot;</span>,
+			<span class="string">"bit-vector capacity exceeded: {} &gt; {}"</span>,
 			new_len,
 			capa,
 		);
@@ -1911,7 +1913,7 @@
 	/// use bitvec::prelude::*;
 	///
 	/// let bv = bitvec![0, 0, 1];
-	/// let static_bits: &amp;&#39;static mut BitSlice = bv.leak();
+	/// let static_bits: &amp;'static mut BitSlice = bv.leak();
 	/// static_bits.set(0, true);
 	/// assert_eq!(static_bits, bits![1, 0, 1]);
 	///
@@ -1923,7 +1925,7 @@
 	/// [`BitBox::leak`]: crate::boxed::BitBox::leak
 	</span><span class="attr">#[inline]
 	#[cfg(not(tarpaulin_include))]
-	</span><span class="kw">pub fn </span>leak&lt;<span class="lifetime">&#39;a</span>&gt;(<span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt; {
+	</span><span class="kw">pub fn </span>leak&lt;<span class="lifetime">'a</span>&gt;(<span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt; {
 		<span class="self">self</span>.into_boxed_bitslice().pipe(BitBox::leak)
 	}
 
@@ -1961,8 +1963,8 @@
 	<span class="attr">#[inline]
 	#[cfg(not(tarpaulin_include))]
 	#[allow(missing_docs, clippy::missing_docs_in_private_items)]
-	#[deprecated = <span class="string">&quot;use `.extend_from_bitslice()` or `.extend_from_raw_slice()` \
-	                instead&quot;</span>]
+	#[deprecated = <span class="string">"use `.extend_from_bitslice()` or `.extend_from_raw_slice()` \
+	                instead"</span>]
 	</span><span class="kw">pub fn </span>extend_from_slice&lt;T2, O2&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, other: <span class="kw-2">&amp;</span>BitSlice&lt;T2, O2&gt;)
 	<span class="kw">where
 		</span>T2: BitStore,

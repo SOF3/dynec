@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hashbrown-0.12.3/src/raw/mod.rs`."><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="hashbrown" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hashbrown-0.12.3/src/raw/mod.rs`."><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="hashbrown" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../hashbrown/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -2471,22 +2473,22 @@
 
 <span class="macro">cfg_if! </span>{
     <span class="comment">// Use the SSE2 implementation if possible: it allows us to scan 16 buckets
-    // at once instead of 8. We don&#39;t bother with AVX since it would require
-    // runtime dispatch and wouldn&#39;t gain us much anyways: the probability of
+    // at once instead of 8. We don't bother with AVX since it would require
+    // runtime dispatch and wouldn't gain us much anyways: the probability of
     // finding a match drops off drastically after the first few buckets.
     //
     // I attempted an implementation on ARM using NEON instructions, but it
     // turns out that most NEON instructions have multi-cycle latency, which in
     // the end outweighs any gains over the generic implementation.
     </span><span class="kw">if </span><span class="attr">#[cfg(all(
-        target_feature = <span class="string">&quot;sse2&quot;</span>,
-        any(target_arch = <span class="string">&quot;x86&quot;</span>, target_arch = <span class="string">&quot;x86_64&quot;</span>),
+        target_feature = <span class="string">"sse2"</span>,
+        any(target_arch = <span class="string">"x86"</span>, target_arch = <span class="string">"x86_64"</span>),
         not(miri)
     ))] </span>{
         <span class="kw">mod </span>sse2;
         <span class="kw">use </span>sse2 <span class="kw">as </span>imp;
     } <span class="kw">else </span>{
-        <span class="attr">#[path = <span class="string">&quot;generic.rs&quot;</span>]
+        <span class="attr">#[path = <span class="string">"generic.rs"</span>]
         </span><span class="kw">mod </span>generic;
         <span class="kw">use </span>generic <span class="kw">as </span>imp;
     }
@@ -2502,17 +2504,17 @@
 
 <span class="comment">// Branch prediction hint. This is currently only available on nightly but it
 // consistently improves performance by 10-15%.
-</span><span class="attr">#[cfg(feature = <span class="string">&quot;nightly&quot;</span>)]
+</span><span class="attr">#[cfg(feature = <span class="string">"nightly"</span>)]
 </span><span class="kw">use </span>core::intrinsics::{likely, unlikely};
 
 <span class="comment">// On stable we can use #[cold] to get a equivalent effect: this attributes
 // suggests that the function is unlikely to be called
-</span><span class="attr">#[cfg(not(feature = <span class="string">&quot;nightly&quot;</span>))]
+</span><span class="attr">#[cfg(not(feature = <span class="string">"nightly"</span>))]
 #[inline]
 #[cold]
 </span><span class="kw">fn </span>cold() {}
 
-<span class="attr">#[cfg(not(feature = <span class="string">&quot;nightly&quot;</span>))]
+<span class="attr">#[cfg(not(feature = <span class="string">"nightly"</span>))]
 #[inline]
 </span><span class="kw">fn </span>likely(b: bool) -&gt; bool {
     <span class="kw">if </span>!b {
@@ -2520,7 +2522,7 @@
     }
     b
 }
-<span class="attr">#[cfg(not(feature = <span class="string">&quot;nightly&quot;</span>))]
+<span class="attr">#[cfg(not(feature = <span class="string">"nightly"</span>))]
 #[inline]
 </span><span class="kw">fn </span>unlikely(b: bool) -&gt; bool {
     <span class="kw">if </span>b {
@@ -2543,16 +2545,16 @@
 
 <span class="kw">impl </span>Fallibility {
     <span class="doccomment">/// Error to return on capacity overflow.
-    </span><span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    </span><span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">fn </span>capacity_overflow(<span class="self">self</span>) -&gt; TryReserveError {
         <span class="kw">match </span><span class="self">self </span>{
             Fallibility::Fallible =&gt; TryReserveError::CapacityOverflow,
-            Fallibility::Infallible =&gt; <span class="macro">panic!</span>(<span class="string">&quot;Hash table capacity overflow&quot;</span>),
+            Fallibility::Infallible =&gt; <span class="macro">panic!</span>(<span class="string">"Hash table capacity overflow"</span>),
         }
     }
 
     <span class="doccomment">/// Error to return on allocation error.
-    </span><span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    </span><span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">fn </span>alloc_err(<span class="self">self</span>, layout: Layout) -&gt; TryReserveError {
         <span class="kw">match </span><span class="self">self </span>{
             Fallibility::Fallible =&gt; TryReserveError::AllocError { layout },
@@ -2626,7 +2628,7 @@
         <span class="comment">// We should have found an empty bucket by now and ended the probe.
         </span><span class="macro">debug_assert!</span>(
             <span class="self">self</span>.stride &lt;= bucket_mask,
-            <span class="string">&quot;Went past end of probe sequence&quot;
+            <span class="string">"Went past end of probe sequence"
         </span>);
 
         <span class="self">self</span>.stride += Group::WIDTH;
@@ -2640,15 +2642,15 @@
 ///
 /// Returns `None` if an overflow occurs.
 </span><span class="comment">// Workaround for emscripten bug emscripten-core/emscripten-fastcomp#258
-</span><span class="attr">#[cfg_attr(target_os = <span class="string">&quot;emscripten&quot;</span>, inline(never))]
-#[cfg_attr(not(target_os = <span class="string">&quot;emscripten&quot;</span>), inline)]
+</span><span class="attr">#[cfg_attr(target_os = <span class="string">"emscripten"</span>, inline(never))]
+#[cfg_attr(not(target_os = <span class="string">"emscripten"</span>), inline)]
 </span><span class="kw">fn </span>capacity_to_buckets(cap: usize) -&gt; <span class="prelude-ty">Option</span>&lt;usize&gt; {
     <span class="macro">debug_assert_ne!</span>(cap, <span class="number">0</span>);
 
     <span class="comment">// For small tables we require at least 1 empty bucket so that lookups are
-    // guaranteed to terminate if an element doesn&#39;t exist in the table.
+    // guaranteed to terminate if an element doesn't exist in the table.
     </span><span class="kw">if </span>cap &lt; <span class="number">8 </span>{
-        <span class="comment">// We don&#39;t bother with a table size of 2 buckets since that can only
+        <span class="comment">// We don't bother with a table size of 2 buckets since that can only
         // hold a single element. Instead we skip directly to a 4 bucket table
         // which can hold 3 elements.
         </span><span class="kw">return </span><span class="prelude-val">Some</span>(<span class="kw">if </span>cap &lt; <span class="number">4 </span>{ <span class="number">4 </span>} <span class="kw">else </span>{ <span class="number">8 </span>});
@@ -2662,7 +2664,7 @@
 
     <span class="comment">// Any overflows will have been caught by the checked_mul. Also, any
     // rounding errors from the division above will be cleaned up by
-    // next_power_of_two (which can&#39;t overflow because of the previous division).
+    // next_power_of_two (which can't overflow because of the previous division).
     </span><span class="prelude-val">Some</span>(adjusted_cap.next_power_of_two())
 }
 
@@ -2720,7 +2722,7 @@
 /// (the offset is also one past last element of buckets)
 ///
 /// Returns `None` if an overflow occurs.
-</span><span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+</span><span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
 </span><span class="kw">fn </span>calculate_layout&lt;T&gt;(buckets: usize) -&gt; <span class="prelude-ty">Option</span>&lt;(Layout, usize)&gt; {
     TableLayout::new::&lt;T&gt;().calculate_layout_for(buckets)
 }
@@ -2753,7 +2755,7 @@
     <span class="attr">#[inline]
     </span><span class="kw">unsafe fn </span>from_base_index(base: NonNull&lt;T&gt;, index: usize) -&gt; <span class="self">Self </span>{
         <span class="kw">let </span>ptr = <span class="kw">if </span>mem::size_of::&lt;T&gt;() == <span class="number">0 </span>{
-            <span class="comment">// won&#39;t overflow because index must be less than length
+            <span class="comment">// won't overflow because index must be less than length
             </span>(index + <span class="number">1</span>) <span class="kw">as </span><span class="kw-2">*mut </span>T
         } <span class="kw">else </span>{
             base.as_ptr().sub(index)
@@ -2790,7 +2792,7 @@
             ptr: NonNull::new_unchecked(ptr),
         }
     }
-    <span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    <span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">pub unsafe fn </span>drop(<span class="kw-2">&amp;</span><span class="self">self</span>) {
         <span class="self">self</span>.as_ptr().drop_in_place();
     }
@@ -2803,14 +2805,14 @@
         <span class="self">self</span>.as_ptr().write(val);
     }
     <span class="attr">#[inline]
-    </span><span class="kw">pub unsafe fn </span>as_ref&lt;<span class="lifetime">&#39;a</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T {
+    </span><span class="kw">pub unsafe fn </span>as_ref&lt;<span class="lifetime">'a</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>T {
         <span class="kw-2">&amp;*</span><span class="self">self</span>.as_ptr()
     }
     <span class="attr">#[inline]
-    </span><span class="kw">pub unsafe fn </span>as_mut&lt;<span class="lifetime">&#39;a</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>T {
+    </span><span class="kw">pub unsafe fn </span>as_mut&lt;<span class="lifetime">'a</span>&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>T {
         <span class="kw-2">&amp;mut *</span><span class="self">self</span>.as_ptr()
     }
-    <span class="attr">#[cfg(feature = <span class="string">&quot;raw&quot;</span>)]
+    <span class="attr">#[cfg(feature = <span class="string">"raw"</span>)]
     #[inline]
     </span><span class="kw">pub unsafe fn </span>copy_from_nonoverlapping(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) {
         <span class="self">self</span>.as_ptr().copy_from_nonoverlapping(other.as_ptr(), <span class="number">1</span>);
@@ -2860,7 +2862,7 @@
 
     <span class="doccomment">/// Attempts to allocate a new hash table with at least enough capacity
     /// for inserting the given number of elements without reallocating.
-    </span><span class="attr">#[cfg(feature = <span class="string">&quot;raw&quot;</span>)]
+    </span><span class="attr">#[cfg(feature = <span class="string">"raw"</span>)]
     </span><span class="kw">pub fn </span>try_with_capacity(capacity: usize) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, TryReserveError&gt; {
         <span class="self">Self</span>::try_with_capacity_in(capacity, Global)
     }
@@ -2890,7 +2892,7 @@
     <span class="doccomment">/// Allocates a new hash table with the given number of buckets.
     ///
     /// The control bytes are left uninitialized.
-    </span><span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    </span><span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">unsafe fn </span>new_uninitialized(
         alloc: A,
         buckets: usize,
@@ -2929,7 +2931,7 @@
 
     <span class="doccomment">/// Attempts to allocate a new hash table using the given allocator, with at least enough
     /// capacity for inserting the given number of elements without reallocating.
-    </span><span class="attr">#[cfg(feature = <span class="string">&quot;raw&quot;</span>)]
+    </span><span class="attr">#[cfg(feature = <span class="string">"raw"</span>)]
     </span><span class="kw">pub fn </span>try_with_capacity_in(capacity: usize, alloc: A) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, TryReserveError&gt; {
         <span class="self">Self</span>::fallible_with_capacity(alloc, capacity, Fallibility::Fallible)
     }
@@ -2951,7 +2953,7 @@
     }
 
     <span class="doccomment">/// Deallocates the table without dropping any entries.
-    </span><span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    </span><span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">unsafe fn </span>free_buckets(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
         <span class="self">self</span>.table.free_buckets(TableLayout::new::&lt;T&gt;());
     }
@@ -2964,7 +2966,7 @@
 
     <span class="doccomment">/// Returns pointer to start of data table.
     </span><span class="attr">#[inline]
-    #[cfg(feature = <span class="string">&quot;nightly&quot;</span>)]
+    #[cfg(feature = <span class="string">"nightly"</span>)]
     </span><span class="kw">pub unsafe fn </span>data_start(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">*mut </span>T {
         <span class="self">self</span>.data_end().as_ptr().wrapping_sub(<span class="self">self</span>.buckets())
     }
@@ -2984,15 +2986,15 @@
     }
 
     <span class="doccomment">/// Erases an element from the table without dropping it.
-    </span><span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
-    #[deprecated(since = <span class="string">&quot;0.8.1&quot;</span>, note = <span class="string">&quot;use erase or remove instead&quot;</span>)]
+    </span><span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
+    #[deprecated(since = <span class="string">"0.8.1"</span>, note = <span class="string">"use erase or remove instead"</span>)]
     </span><span class="kw">pub unsafe fn </span>erase_no_drop(<span class="kw-2">&amp;mut </span><span class="self">self</span>, item: <span class="kw-2">&amp;</span>Bucket&lt;T&gt;) {
         <span class="kw">let </span>index = <span class="self">self</span>.bucket_index(item);
         <span class="self">self</span>.table.erase(index);
     }
 
     <span class="doccomment">/// Erases an element from the table, dropping it in place.
-    </span><span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    </span><span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     #[allow(clippy::needless_pass_by_value)]
     #[allow(deprecated)]
     </span><span class="kw">pub unsafe fn </span>erase(<span class="kw-2">&amp;mut </span><span class="self">self</span>, item: Bucket&lt;T&gt;) {
@@ -3003,8 +3005,8 @@
 
     <span class="doccomment">/// Finds and erases an element from the table, dropping it in place.
     /// Returns true if an element was found.
-    </span><span class="attr">#[cfg(feature = <span class="string">&quot;raw&quot;</span>)]
-    #[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    </span><span class="attr">#[cfg(feature = <span class="string">"raw"</span>)]
+    #[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">pub fn </span>erase_entry(<span class="kw-2">&amp;mut </span><span class="self">self</span>, hash: u64, eq: <span class="kw">impl </span>FnMut(<span class="kw-2">&amp;</span>T) -&gt; bool) -&gt; bool {
         <span class="comment">// Avoid `Option::map` because it bloats LLVM IR.
         </span><span class="kw">if let </span><span class="prelude-val">Some</span>(bucket) = <span class="self">self</span>.find(hash, eq) {
@@ -3018,7 +3020,7 @@
     }
 
     <span class="doccomment">/// Removes an element from the table, returning it.
-    </span><span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    </span><span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     #[allow(clippy::needless_pass_by_value)]
     #[allow(deprecated)]
     </span><span class="kw">pub unsafe fn </span>remove(<span class="kw-2">&amp;mut </span><span class="self">self</span>, item: Bucket&lt;T&gt;) -&gt; T {
@@ -3027,7 +3029,7 @@
     }
 
     <span class="doccomment">/// Finds and removes an element from the table, returning it.
-    </span><span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    </span><span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">pub fn </span>remove_entry(<span class="kw-2">&amp;mut </span><span class="self">self</span>, hash: u64, eq: <span class="kw">impl </span>FnMut(<span class="kw-2">&amp;</span>T) -&gt; bool) -&gt; <span class="prelude-ty">Option</span>&lt;T&gt; {
         <span class="comment">// Avoid `Option::map` because it bloats LLVM IR.
         </span><span class="kw">match </span><span class="self">self</span>.find(hash, eq) {
@@ -3037,13 +3039,13 @@
     }
 
     <span class="doccomment">/// Marks all table buckets as empty without dropping their contents.
-    </span><span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    </span><span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">pub fn </span>clear_no_drop(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
         <span class="self">self</span>.table.clear_no_drop();
     }
 
     <span class="doccomment">/// Removes all elements from the table without freeing the backing memory.
-    </span><span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    </span><span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">pub fn </span>clear(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
         <span class="comment">// Ensure that the table is reset even if one of the drops panic
         </span><span class="kw">let </span><span class="kw-2">mut </span>self_ = guard(<span class="self">self</span>, |self_| self_.clear_no_drop());
@@ -3061,7 +3063,7 @@
     }
 
     <span class="doccomment">/// Shrinks the table to fit `max(self.len(), min_size)` elements.
-    </span><span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    </span><span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">pub fn </span>shrink_to(<span class="kw-2">&amp;mut </span><span class="self">self</span>, min_size: usize, hasher: <span class="kw">impl </span>Fn(<span class="kw-2">&amp;</span>T) -&gt; u64) {
         <span class="comment">// Calculate the minimal number of elements that we need to reserve
         // space for.
@@ -3099,7 +3101,7 @@
 
     <span class="doccomment">/// Ensures that at least `additional` items can be inserted into the table
     /// without reallocation.
-    </span><span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    </span><span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">pub fn </span>reserve(<span class="kw-2">&amp;mut </span><span class="self">self</span>, additional: usize, hasher: <span class="kw">impl </span>Fn(<span class="kw-2">&amp;</span>T) -&gt; u64) {
         <span class="kw">if </span>additional &gt; <span class="self">self</span>.table.growth_left {
             <span class="comment">// Avoid `Result::unwrap_or_else` because it bloats LLVM IR.
@@ -3114,7 +3116,7 @@
 
     <span class="doccomment">/// Tries to ensure that at least `additional` items can be inserted into
     /// the table without reallocation.
-    </span><span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    </span><span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">pub fn </span>try_reserve(
         <span class="kw-2">&amp;mut </span><span class="self">self</span>,
         additional: usize,
@@ -3172,7 +3174,7 @@
     <span class="doccomment">/// Inserts a new element into the table, and returns its raw bucket.
     ///
     /// This does not check if the given element already exists in the table.
-    </span><span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    </span><span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">pub fn </span>insert(<span class="kw-2">&amp;mut </span><span class="self">self</span>, hash: u64, value: T, hasher: <span class="kw">impl </span>Fn(<span class="kw-2">&amp;</span>T) -&gt; u64) -&gt; Bucket&lt;T&gt; {
         <span class="kw">unsafe </span>{
             <span class="kw">let </span><span class="kw-2">mut </span>index = <span class="self">self</span>.table.find_insert_slot(hash);
@@ -3200,8 +3202,8 @@
     /// table.
     ///
     /// This does not check if the given element already exists in the table.
-    </span><span class="attr">#[cfg(feature = <span class="string">&quot;raw&quot;</span>)]
-    #[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    </span><span class="attr">#[cfg(feature = <span class="string">"raw"</span>)]
+    #[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">pub fn </span>try_insert_no_grow(<span class="kw-2">&amp;mut </span><span class="self">self</span>, hash: u64, value: T) -&gt; <span class="prelude-ty">Result</span>&lt;Bucket&lt;T&gt;, T&gt; {
         <span class="kw">unsafe </span>{
             <span class="kw">match </span><span class="self">self</span>.table.prepare_insert_no_grow(hash) {
@@ -3218,7 +3220,7 @@
     <span class="doccomment">/// Inserts a new element into the table, and returns a mutable reference to it.
     ///
     /// This does not check if the given element already exists in the table.
-    </span><span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    </span><span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">pub fn </span>insert_entry(<span class="kw-2">&amp;mut </span><span class="self">self</span>, hash: u64, value: T, hasher: <span class="kw">impl </span>Fn(<span class="kw-2">&amp;</span>T) -&gt; u64) -&gt; <span class="kw-2">&amp;mut </span>T {
         <span class="kw">unsafe </span>{ <span class="self">self</span>.insert(hash, value, hasher).as_mut() }
     }
@@ -3228,13 +3230,13 @@
     /// There must be enough space in the table to insert the new element.
     ///
     /// This does not check if the given element already exists in the table.
-    </span><span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
-    #[cfg(any(feature = <span class="string">&quot;raw&quot;</span>, feature = <span class="string">&quot;rustc-internal-api&quot;</span>))]
+    </span><span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
+    #[cfg(any(feature = <span class="string">"raw"</span>, feature = <span class="string">"rustc-internal-api"</span>))]
     </span><span class="kw">pub unsafe fn </span>insert_no_grow(<span class="kw-2">&amp;mut </span><span class="self">self</span>, hash: u64, value: T) -&gt; Bucket&lt;T&gt; {
         <span class="kw">let </span>(index, old_ctrl) = <span class="self">self</span>.table.prepare_insert_slot(hash);
         <span class="kw">let </span>bucket = <span class="self">self</span>.table.bucket(index);
 
-        <span class="comment">// If we are replacing a DELETED entry then we don&#39;t need to update
+        <span class="comment">// If we are replacing a DELETED entry then we don't need to update
         // the load counter.
         </span><span class="self">self</span>.table.growth_left -= special_is_empty(old_ctrl) <span class="kw">as </span>usize;
 
@@ -3249,7 +3251,7 @@
     /// Returns `true` if the bucket still contains an element
     ///
     /// This does not check if the given bucket is actually occupied.
-    </span><span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    </span><span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">pub unsafe fn </span>replace_bucket_with&lt;F&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, bucket: Bucket&lt;T&gt;, f: F) -&gt; bool
     <span class="kw">where
         </span>F: FnOnce(T) -&gt; <span class="prelude-ty">Option</span>&lt;T&gt;,
@@ -3317,7 +3319,7 @@
         <span class="kw-2">&amp;mut </span><span class="self">self</span>,
         hashes: [u64; N],
         eq: <span class="kw">impl </span>FnMut(usize, <span class="kw-2">&amp;</span>T) -&gt; bool,
-    ) -&gt; <span class="prelude-ty">Option</span>&lt;[<span class="kw-2">&amp;</span><span class="lifetime">&#39;_ </span><span class="kw-2">mut </span>T; N]&gt; {
+    ) -&gt; <span class="prelude-ty">Option</span>&lt;[<span class="kw-2">&amp;</span><span class="lifetime">'_ </span><span class="kw-2">mut </span>T; N]&gt; {
         <span class="kw">unsafe </span>{
             <span class="kw">let </span>ptrs = <span class="self">self</span>.get_many_mut_pointers(hashes, eq)<span class="question-mark">?</span>;
 
@@ -3326,10 +3328,10 @@
                     <span class="kw">return </span><span class="prelude-val">None</span>;
                 }
             }
-            <span class="comment">// All bucket are distinct from all previous buckets so we&#39;re clear to return the result
+            <span class="comment">// All bucket are distinct from all previous buckets so we're clear to return the result
             // of the lookup.
 
-            // TODO use `MaybeUninit::array_assume_init` here instead once that&#39;s stable.
+            // TODO use `MaybeUninit::array_assume_init` here instead once that's stable.
             </span><span class="prelude-val">Some</span>(mem::transmute_copy(<span class="kw-2">&amp;</span>ptrs))
         }
     }
@@ -3338,7 +3340,7 @@
         <span class="kw-2">&amp;mut </span><span class="self">self</span>,
         hashes: [u64; N],
         eq: <span class="kw">impl </span>FnMut(usize, <span class="kw-2">&amp;</span>T) -&gt; bool,
-    ) -&gt; <span class="prelude-ty">Option</span>&lt;[<span class="kw-2">&amp;</span><span class="lifetime">&#39;_ </span><span class="kw-2">mut </span>T; N]&gt; {
+    ) -&gt; <span class="prelude-ty">Option</span>&lt;[<span class="kw-2">&amp;</span><span class="lifetime">'_ </span><span class="kw-2">mut </span>T; N]&gt; {
         <span class="kw">let </span>ptrs = <span class="self">self</span>.get_many_mut_pointers(hashes, eq)<span class="question-mark">?</span>;
         <span class="prelude-val">Some</span>(mem::transmute_copy(<span class="kw-2">&amp;</span>ptrs))
     }
@@ -3348,7 +3350,7 @@
         hashes: [u64; N],
         <span class="kw-2">mut </span>eq: <span class="kw">impl </span>FnMut(usize, <span class="kw-2">&amp;</span>T) -&gt; bool,
     ) -&gt; <span class="prelude-ty">Option</span>&lt;[<span class="kw-2">*mut </span>T; N]&gt; {
-        <span class="comment">// TODO use `MaybeUninit::uninit_array` here instead once that&#39;s stable.
+        <span class="comment">// TODO use `MaybeUninit::uninit_array` here instead once that's stable.
         </span><span class="kw">let </span><span class="kw-2">mut </span>outs: MaybeUninit&lt;[<span class="kw-2">*mut </span>T; N]&gt; = MaybeUninit::uninit();
         <span class="kw">let </span>outs_ptr = outs.as_mut_ptr();
 
@@ -3357,7 +3359,7 @@
             <span class="kw-2">*</span>(<span class="kw-2">*</span>outs_ptr).get_unchecked_mut(i) = cur.as_mut();
         }
 
-        <span class="comment">// TODO use `MaybeUninit::array_assume_init` here instead once that&#39;s stable.
+        <span class="comment">// TODO use `MaybeUninit::array_assume_init` here instead once that's stable.
         </span><span class="prelude-val">Some</span>(outs.assume_init())
     }
 
@@ -3410,16 +3412,16 @@
     /// It is up to the caller to ensure that the `RawTable` outlives the
     /// `RawIterHash`. Because we cannot make the `next` method unsafe on the
     /// `RawIterHash` struct, we have to make the `iter_hash` method unsafe.
-    </span><span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
-    #[cfg(feature = <span class="string">&quot;raw&quot;</span>)]
-    </span><span class="kw">pub unsafe fn </span>iter_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: u64) -&gt; RawIterHash&lt;<span class="lifetime">&#39;_</span>, T, A&gt; {
+    </span><span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
+    #[cfg(feature = <span class="string">"raw"</span>)]
+    </span><span class="kw">pub unsafe fn </span>iter_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: u64) -&gt; RawIterHash&lt;<span class="lifetime">'_</span>, T, A&gt; {
         RawIterHash::new(<span class="self">self</span>, hash)
     }
 
     <span class="doccomment">/// Returns an iterator which removes all elements from the table without
     /// freeing the memory.
-    </span><span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
-    </span><span class="kw">pub fn </span>drain(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; RawDrain&lt;<span class="lifetime">&#39;_</span>, T, A&gt; {
+    </span><span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
+    </span><span class="kw">pub fn </span>drain(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; RawDrain&lt;<span class="lifetime">'_</span>, T, A&gt; {
         <span class="kw">unsafe </span>{
             <span class="kw">let </span>iter = <span class="self">self</span>.iter();
             <span class="self">self</span>.drain_iter_from(iter)
@@ -3429,12 +3431,12 @@
     <span class="doccomment">/// Returns an iterator which removes all elements from the table without
     /// freeing the memory.
     ///
-    /// Iteration starts at the provided iterator&#39;s current location.
+    /// Iteration starts at the provided iterator's current location.
     ///
     /// It is up to the caller to ensure that the iterator is valid for this
     /// `RawTable` and covers all items that remain in the table.
-    </span><span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
-    </span><span class="kw">pub unsafe fn </span>drain_iter_from(<span class="kw-2">&amp;mut </span><span class="self">self</span>, iter: RawIter&lt;T&gt;) -&gt; RawDrain&lt;<span class="lifetime">&#39;_</span>, T, A&gt; {
+    </span><span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
+    </span><span class="kw">pub unsafe fn </span>drain_iter_from(<span class="kw-2">&amp;mut </span><span class="self">self</span>, iter: RawIter&lt;T&gt;) -&gt; RawDrain&lt;<span class="lifetime">'_</span>, T, A&gt; {
         <span class="macro">debug_assert_eq!</span>(iter.len(), <span class="self">self</span>.len());
         RawDrain {
             iter,
@@ -3446,7 +3448,7 @@
 
     <span class="doccomment">/// Returns an iterator which consumes all elements from the table.
     ///
-    /// Iteration starts at the provided iterator&#39;s current location.
+    /// Iteration starts at the provided iterator's current location.
     ///
     /// It is up to the caller to ensure that the iterator is valid for this
     /// `RawTable` and covers all items that remain in the table.
@@ -3465,7 +3467,7 @@
 
     <span class="doccomment">/// Converts the table into a raw allocation. The contents of the table
     /// should be dropped using a `RawIter` before freeing the allocation.
-    </span><span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    </span><span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>into_allocation(<span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;(NonNull&lt;u8&gt;, Layout)&gt; {
         <span class="kw">let </span>alloc = <span class="kw">if </span><span class="self">self</span>.table.is_empty_singleton() {
             <span class="prelude-val">None
@@ -3513,7 +3515,7 @@
 }
 
 <span class="kw">impl</span>&lt;A: Allocator + Clone&gt; RawTableInner&lt;A&gt; {
-    <span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    <span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">unsafe fn </span>new_uninitialized(
         alloc: A,
         table_layout: TableLayout,
@@ -3528,7 +3530,7 @@
             <span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(fallibility.capacity_overflow()),
         };
 
-        <span class="comment">// We need an additional check to ensure that the allocation doesn&#39;t
+        <span class="comment">// We need an additional check to ensure that the allocation doesn't
         // exceed `isize::MAX`. We can skip this check on 64-bit systems since
         // such allocations will never succeed anyways.
         //
@@ -3707,7 +3709,7 @@
 
     <span class="doccomment">/// Returns the index of a bucket for which a value must be inserted if there is enough rooom
     /// in the table, otherwise returns error
-    </span><span class="attr">#[cfg(feature = <span class="string">&quot;raw&quot;</span>)]
+    </span><span class="attr">#[cfg(feature = <span class="string">"raw"</span>)]
     #[inline]
     </span><span class="kw">unsafe fn </span>prepare_insert_no_grow(<span class="kw-2">&amp;mut </span><span class="self">self</span>, hash: u64) -&gt; <span class="prelude-ty">Result</span>&lt;usize, ()&gt; {
         <span class="kw">let </span>index = <span class="self">self</span>.find_insert_slot(hash);
@@ -3919,13 +3921,13 @@
     <span class="doccomment">/// Rehashes the contents of the table in place (i.e. without changing the
     /// allocation).
     ///
-    /// If `hasher` panics then some the table&#39;s contents may be lost.
+    /// If `hasher` panics then some the table's contents may be lost.
     ///
     /// This uses dynamic dispatch to reduce the amount of
     /// code generated, but it is eliminated by LLVM optimizations when inlined.
     </span><span class="attr">#[allow(clippy::inline_always)]
-    #[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline(always))]
-    #[cfg_attr(not(feature = <span class="string">&quot;inline-more&quot;</span>), inline)]
+    #[cfg_attr(feature = <span class="string">"inline-more"</span>, inline(always))]
+    #[cfg_attr(not(feature = <span class="string">"inline-more"</span>), inline)]
     </span><span class="kw">unsafe fn </span>rehash_in_place(
         <span class="kw-2">&amp;mut </span><span class="self">self</span>,
         hasher: <span class="kw-2">&amp;</span><span class="kw">dyn </span>Fn(<span class="kw-2">&amp;mut </span><span class="self">Self</span>, usize) -&gt; u64,
@@ -3933,7 +3935,7 @@
         drop: <span class="prelude-ty">Option</span>&lt;<span class="kw">fn</span>(<span class="kw-2">*mut </span>u8)&gt;,
     ) {
         <span class="comment">// If the hash function panics then properly clean up any elements
-        // that we haven&#39;t rehashed yet. We unfortunately can&#39;t preserve the
+        // that we haven't rehashed yet. We unfortunately can't preserve the
         // element since we lost their hash and have no way of recovering it
         // without risking another panic.
         </span><span class="self">self</span>.prepare_rehash_in_place();
@@ -3951,17 +3953,17 @@
             self_.growth_left = bucket_mask_to_capacity(self_.bucket_mask) - self_.items;
         });
 
-        <span class="comment">// At this point, DELETED elements are elements that we haven&#39;t
+        <span class="comment">// At this point, DELETED elements are elements that we haven't
         // rehashed yet. Find them and re-insert them at their ideal
         // position.
-        </span><span class="lifetime">&#39;outer</span>: <span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..guard.buckets() {
+        </span><span class="lifetime">'outer</span>: <span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..guard.buckets() {
             <span class="kw">if </span><span class="kw-2">*</span>guard.ctrl(i) != DELETED {
                 <span class="kw">continue</span>;
             }
 
             <span class="kw">let </span>i_p = guard.bucket_ptr(i, size_of);
 
-            <span class="lifetime">&#39;inner</span>: <span class="kw">loop </span>{
+            <span class="lifetime">'inner</span>: <span class="kw">loop </span>{
                 <span class="comment">// Hash the current item
                 </span><span class="kw">let </span>hash = hasher(<span class="kw-2">*</span>guard, i);
 
@@ -3976,7 +3978,7 @@
                 // it and we can just continue to the next item.
                 </span><span class="kw">if </span>likely(guard.is_in_same_group(i, new_i, hash)) {
                     guard.set_ctrl_h2(i, hash);
-                    <span class="kw">continue </span><span class="lifetime">&#39;outer</span>;
+                    <span class="kw">continue </span><span class="lifetime">'outer</span>;
                 }
 
                 <span class="comment">// We are moving the current item to a new position. Write
@@ -3988,14 +3990,14 @@
                     // element into the new slot and clear the old control
                     // byte.
                     </span>ptr::copy_nonoverlapping(i_p, new_i_p, size_of);
-                    <span class="kw">continue </span><span class="lifetime">&#39;outer</span>;
+                    <span class="kw">continue </span><span class="lifetime">'outer</span>;
                 } <span class="kw">else </span>{
                     <span class="comment">// If the target slot is occupied, swap the two elements
                     // and then continue processing the element that we just
                     // swapped into the old slot.
                     </span><span class="macro">debug_assert_eq!</span>(prev_ctrl, DELETED);
                     ptr::swap_nonoverlapping(i_p, new_i_p, size_of);
-                    <span class="kw">continue </span><span class="lifetime">&#39;inner</span>;
+                    <span class="kw">continue </span><span class="lifetime">'inner</span>;
                 }
             }
         }
@@ -4073,7 +4075,7 @@
                 };
 
                 <span class="comment">// If cloning fails then we need to free the allocation for the
-                // new table. However we don&#39;t run its drop since its control
+                // new table. However we don't run its drop since its control
                 // bytes are not initialized yet.
                 </span><span class="kw">let </span><span class="kw-2">mut </span>guard = guard(ManuallyDrop::new(new_table), |new_table| {
                     new_table.free_buckets();
@@ -4102,7 +4104,7 @@
                 // bytes. If this panics then the scope guard will clear the
                 // table, leaking any elements that were not dropped yet.
                 //
-                // This leak is unavoidable: we can&#39;t try dropping more elements
+                // This leak is unavoidable: we can't try dropping more elements
                 // since this could lead to another panic and abort the process.
                 </span>self_.drop_elements();
 
@@ -4140,15 +4142,15 @@
 }
 <span class="kw">impl</span>&lt;T: Clone, A: Allocator + Clone&gt; RawTableClone <span class="kw">for </span>RawTable&lt;T, A&gt; {
     <span class="macro">default_fn! </span>{
-        <span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+        <span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
         </span><span class="kw">unsafe fn </span>clone_from_spec(<span class="kw-2">&amp;mut </span><span class="self">self</span>, source: <span class="kw-2">&amp;</span><span class="self">Self</span>) {
             <span class="self">self</span>.clone_from_impl(source);
         }
     }
 }
-<span class="attr">#[cfg(feature = <span class="string">&quot;nightly&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"nightly"</span>)]
 </span><span class="kw">impl</span>&lt;T: Copy, A: Allocator + Clone&gt; RawTableClone <span class="kw">for </span>RawTable&lt;T, A&gt; {
-    <span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    <span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">unsafe fn </span>clone_from_spec(<span class="kw-2">&amp;mut </span><span class="self">self</span>, source: <span class="kw-2">&amp;</span><span class="self">Self</span>) {
         source
             .table
@@ -4168,7 +4170,7 @@
     /// - `self.buckets() == source.buckets()`.
     /// - Any existing elements have been dropped.
     /// - The control bytes are not initialized yet.
-    </span><span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    </span><span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">unsafe fn </span>clone_from_impl(<span class="kw-2">&amp;mut </span><span class="self">self</span>, source: <span class="kw-2">&amp;</span><span class="self">Self</span>) {
         <span class="comment">// Copy the control bytes unchanged. We do this in a single pass
         </span>source
@@ -4206,10 +4208,10 @@
     }
 
     <span class="doccomment">/// Variant of `clone_from` to use when a hasher is available.
-    </span><span class="attr">#[cfg(feature = <span class="string">&quot;raw&quot;</span>)]
+    </span><span class="attr">#[cfg(feature = <span class="string">"raw"</span>)]
     </span><span class="kw">pub fn </span>clone_from_with_hasher(<span class="kw-2">&amp;mut </span><span class="self">self</span>, source: <span class="kw-2">&amp;</span><span class="self">Self</span>, hasher: <span class="kw">impl </span>Fn(<span class="kw-2">&amp;</span>T) -&gt; u64) {
         <span class="comment">// If we have enough capacity in the table, just clear it and insert
-        // elements one by one. We don&#39;t do this if we have the same number of
+        // elements one by one. We don't do this if we have the same number of
         // buckets as the source since we can just copy the contents directly
         // in that case.
         </span><span class="kw">if </span><span class="self">self</span>.table.buckets() != source.table.buckets()
@@ -4257,9 +4259,9 @@
     }
 }
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;nightly&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"nightly"</span>)]
 </span><span class="kw">unsafe impl</span>&lt;<span class="attr">#[may_dangle] </span>T, A: Allocator + Clone&gt; Drop <span class="kw">for </span>RawTable&lt;T, A&gt; {
-    <span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    <span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">fn </span>drop(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
         <span class="kw">if </span>!<span class="self">self</span>.table.is_empty_singleton() {
             <span class="kw">unsafe </span>{
@@ -4269,9 +4271,9 @@
         }
     }
 }
-<span class="attr">#[cfg(not(feature = <span class="string">&quot;nightly&quot;</span>))]
+<span class="attr">#[cfg(not(feature = <span class="string">"nightly"</span>))]
 </span><span class="kw">impl</span>&lt;T, A: Allocator + Clone&gt; Drop <span class="kw">for </span>RawTable&lt;T, A&gt; {
-    <span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    <span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">fn </span>drop(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
         <span class="kw">if </span>!<span class="self">self</span>.table.is_empty_singleton() {
             <span class="kw">unsafe </span>{
@@ -4286,7 +4288,7 @@
     <span class="kw">type </span>Item = T;
     <span class="kw">type </span>IntoIter = RawIntoIter&lt;T, A&gt;;
 
-    <span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    <span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">fn </span>into_iter(<span class="self">self</span>) -&gt; RawIntoIter&lt;T, A&gt; {
         <span class="kw">unsafe </span>{
             <span class="kw">let </span>iter = <span class="self">self</span>.iter();
@@ -4317,7 +4319,7 @@
     <span class="doccomment">/// Returns a `RawIterRange` covering a subset of a table.
     ///
     /// The control byte address must be aligned to the group size.
-    </span><span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    </span><span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">unsafe fn </span>new(ctrl: <span class="kw-2">*const </span>u8, data: Bucket&lt;T&gt;, len: usize) -&gt; <span class="self">Self </span>{
         <span class="macro">debug_assert_ne!</span>(len, <span class="number">0</span>);
         <span class="macro">debug_assert_eq!</span>(ctrl <span class="kw">as </span>usize % Group::WIDTH, <span class="number">0</span>);
@@ -4339,8 +4341,8 @@
     ///
     /// Returns `None` if the remaining range is smaller than or equal to the
     /// group width.
-    </span><span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
-    #[cfg(feature = <span class="string">&quot;rayon&quot;</span>)]
+    </span><span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
+    #[cfg(feature = <span class="string">"rayon"</span>)]
     </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>split(<span class="kw-2">mut </span><span class="self">self</span>) -&gt; (<span class="self">Self</span>, <span class="prelude-ty">Option</span>&lt;RawIterRange&lt;T&gt;&gt;) {
         <span class="kw">unsafe </span>{
             <span class="kw">if </span><span class="self">self</span>.end &lt;= <span class="self">self</span>.next_ctrl {
@@ -4382,7 +4384,7 @@
     <span class="doccomment">/// # Safety
     /// If DO_CHECK_PTR_RANGE is false, caller must ensure that we never try to iterate
     /// after yielding all elements.
-    </span><span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    </span><span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">unsafe fn </span>next_impl&lt;<span class="kw">const </span>DO_CHECK_PTR_RANGE: bool&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Bucket&lt;T&gt;&gt; {
         <span class="kw">loop </span>{
             <span class="kw">if let </span><span class="prelude-val">Some</span>(index) = <span class="self">self</span>.current_group.lowest_set_bit() {
@@ -4412,7 +4414,7 @@
 <span class="kw">unsafe impl</span>&lt;T&gt; Sync <span class="kw">for </span>RawIterRange&lt;T&gt; {}
 
 <span class="kw">impl</span>&lt;T&gt; Clone <span class="kw">for </span>RawIterRange&lt;T&gt; {
-    <span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    <span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
         <span class="self">Self </span>{
             data: <span class="self">self</span>.data.clone(),
@@ -4426,7 +4428,7 @@
 <span class="kw">impl</span>&lt;T&gt; Iterator <span class="kw">for </span>RawIterRange&lt;T&gt; {
     <span class="kw">type </span>Item = Bucket&lt;T&gt;;
 
-    <span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    <span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Bucket&lt;T&gt;&gt; {
         <span class="kw">unsafe </span>{
             <span class="comment">// SAFETY: We set checker flag to true.
@@ -4436,7 +4438,7 @@
 
     <span class="attr">#[inline]
     </span><span class="kw">fn </span>size_hint(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; (usize, <span class="prelude-ty">Option</span>&lt;usize&gt;) {
-        <span class="comment">// We don&#39;t have an item count, so just guess based on the range size.
+        <span class="comment">// We don't have an item count, so just guess based on the range size.
         </span><span class="kw">let </span>remaining_buckets = <span class="kw">if </span><span class="self">self</span>.end &gt; <span class="self">self</span>.next_ctrl {
             <span class="kw">unsafe </span>{ offset_from(<span class="self">self</span>.end, <span class="self">self</span>.next_ctrl) }
         } <span class="kw">else </span>{
@@ -4475,7 +4477,7 @@
     ///
     /// This method should be called _before_ the removal is made. It is not necessary to call this
     /// method if you are removing an item that this iterator yielded in the past.
-    </span><span class="attr">#[cfg(feature = <span class="string">&quot;raw&quot;</span>)]
+    </span><span class="attr">#[cfg(feature = <span class="string">"raw"</span>)]
     </span><span class="kw">pub fn </span>reflect_remove(<span class="kw-2">&amp;mut </span><span class="self">self</span>, b: <span class="kw-2">&amp;</span>Bucket&lt;T&gt;) {
         <span class="self">self</span>.reflect_toggle_full(b, <span class="bool-val">false</span>);
     }
@@ -4489,29 +4491,29 @@
     /// index than the last one yielded will be reflected in the iterator.
     ///
     /// This method should be called _after_ the given insert is made.
-    </span><span class="attr">#[cfg(feature = <span class="string">&quot;raw&quot;</span>)]
+    </span><span class="attr">#[cfg(feature = <span class="string">"raw"</span>)]
     </span><span class="kw">pub fn </span>reflect_insert(<span class="kw-2">&amp;mut </span><span class="self">self</span>, b: <span class="kw-2">&amp;</span>Bucket&lt;T&gt;) {
         <span class="self">self</span>.reflect_toggle_full(b, <span class="bool-val">true</span>);
     }
 
     <span class="doccomment">/// Refresh the iterator so that it reflects a change to the state of the given bucket.
-    </span><span class="attr">#[cfg(feature = <span class="string">&quot;raw&quot;</span>)]
+    </span><span class="attr">#[cfg(feature = <span class="string">"raw"</span>)]
     </span><span class="kw">fn </span>reflect_toggle_full(<span class="kw-2">&amp;mut </span><span class="self">self</span>, b: <span class="kw-2">&amp;</span>Bucket&lt;T&gt;, is_insert: bool) {
         <span class="kw">unsafe </span>{
             <span class="kw">if </span>b.as_ptr() &gt; <span class="self">self</span>.iter.data.as_ptr() {
-                <span class="comment">// The iterator has already passed the bucket&#39;s group.
-                // So the toggle isn&#39;t relevant to this iterator.
+                <span class="comment">// The iterator has already passed the bucket's group.
+                // So the toggle isn't relevant to this iterator.
                 </span><span class="kw">return</span>;
             }
 
             <span class="kw">if </span><span class="self">self</span>.iter.next_ctrl &lt; <span class="self">self</span>.iter.end
                 &amp;&amp; b.as_ptr() &lt;= <span class="self">self</span>.iter.data.next_n(Group::WIDTH).as_ptr()
             {
-                <span class="comment">// The iterator has not yet reached the bucket&#39;s group.
-                // We don&#39;t need to reload anything, but we do need to adjust the item count.
+                <span class="comment">// The iterator has not yet reached the bucket's group.
+                // We don't need to reload anything, but we do need to adjust the item count.
 
                 </span><span class="kw">if </span><span class="macro">cfg!</span>(debug_assertions) {
-                    <span class="comment">// Double-check that the user isn&#39;t lying to us by checking the bucket state.
+                    <span class="comment">// Double-check that the user isn't lying to us by checking the bucket state.
                     // To do that, we need to find its control byte. We know that self.iter.data is
                     // at self.iter.next_ctrl - Group::WIDTH, so we work from there:
                     </span><span class="kw">let </span>offset = offset_from(<span class="self">self</span>.iter.data.as_ptr(), b.as_ptr());
@@ -4534,26 +4536,26 @@
             // We need to do two things:
             //
             //  - Determine if the iterator already yielded the toggled bucket.
-            //    If it did, we&#39;re done.
-            //  - Otherwise, update the iterator cached group so that it won&#39;t
+            //    If it did, we're done.
+            //  - Otherwise, update the iterator cached group so that it won't
             //    yield a to-be-removed bucket, or _will_ yield a to-be-added bucket.
-            //    We&#39;ll also need to update the item count accordingly.
+            //    We'll also need to update the item count accordingly.
             </span><span class="kw">if let </span><span class="prelude-val">Some</span>(index) = <span class="self">self</span>.iter.current_group.lowest_set_bit() {
                 <span class="kw">let </span>next_bucket = <span class="self">self</span>.iter.data.next_n(index);
                 <span class="kw">if </span>b.as_ptr() &gt; next_bucket.as_ptr() {
-                    <span class="comment">// The toggled bucket is &quot;before&quot; the bucket the iterator would yield next. We
-                    // therefore don&#39;t need to do anything --- the iterator has already passed the
+                    <span class="comment">// The toggled bucket is "before" the bucket the iterator would yield next. We
+                    // therefore don't need to do anything --- the iterator has already passed the
                     // bucket in question.
                     //
-                    // The item count must already be correct, since a removal or insert &quot;prior&quot; to
-                    // the iterator&#39;s position wouldn&#39;t affect the item count.
+                    // The item count must already be correct, since a removal or insert "prior" to
+                    // the iterator's position wouldn't affect the item count.
                 </span>} <span class="kw">else </span>{
                     <span class="comment">// The removed bucket is an upcoming bucket. We need to make sure it does _not_
-                    // get yielded, and also that it&#39;s no longer included in the item count.
+                    // get yielded, and also that it's no longer included in the item count.
                     //
-                    // NOTE: We can&#39;t just reload the group here, both since that might reflect
-                    // inserts we&#39;ve already passed, and because that might inadvertently unset the
-                    // bits for _other_ removals. If we do that, we&#39;d have to also decrement the
+                    // NOTE: We can't just reload the group here, both since that might reflect
+                    // inserts we've already passed, and because that might inadvertently unset the
+                    // bits for _other_ removals. If we do that, we'd have to also decrement the
                     // item count for those other bits that we unset. But the presumably subsequent
                     // call to reflect for those buckets might _also_ decrement the item count.
                     // Instead, we _just_ flip the bit for the particular bucket the caller asked
@@ -4594,7 +4596,7 @@
 }
 
 <span class="kw">impl</span>&lt;T&gt; Clone <span class="kw">for </span>RawIter&lt;T&gt; {
-    <span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    <span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
         <span class="self">Self </span>{
             iter: <span class="self">self</span>.iter.clone(),
@@ -4606,7 +4608,7 @@
 <span class="kw">impl</span>&lt;T&gt; Iterator <span class="kw">for </span>RawIter&lt;T&gt; {
     <span class="kw">type </span>Item = Bucket&lt;T&gt;;
 
-    <span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    <span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Bucket&lt;T&gt;&gt; {
         <span class="comment">// Inner iterator iterates over buckets
         // so it can do unnecessary work if we already yielded all items.
@@ -4644,7 +4646,7 @@
 }
 
 <span class="kw">impl</span>&lt;T, A: Allocator + Clone&gt; RawIntoIter&lt;T, A&gt; {
-    <span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    <span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">pub fn </span>iter(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RawIter&lt;T&gt; {
         <span class="self">self</span>.iter.clone()
     }
@@ -4663,9 +4665,9 @@
 {
 }
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;nightly&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"nightly"</span>)]
 </span><span class="kw">unsafe impl</span>&lt;<span class="attr">#[may_dangle] </span>T, A: Allocator + Clone&gt; Drop <span class="kw">for </span>RawIntoIter&lt;T, A&gt; {
-    <span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    <span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">fn </span>drop(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
         <span class="kw">unsafe </span>{
             <span class="comment">// Drop all remaining elements
@@ -4678,9 +4680,9 @@
         }
     }
 }
-<span class="attr">#[cfg(not(feature = <span class="string">&quot;nightly&quot;</span>))]
+<span class="attr">#[cfg(not(feature = <span class="string">"nightly"</span>))]
 </span><span class="kw">impl</span>&lt;T, A: Allocator + Clone&gt; Drop <span class="kw">for </span>RawIntoIter&lt;T, A&gt; {
-    <span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    <span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">fn </span>drop(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
         <span class="kw">unsafe </span>{
             <span class="comment">// Drop all remaining elements
@@ -4697,7 +4699,7 @@
 <span class="kw">impl</span>&lt;T, A: Allocator + Clone&gt; Iterator <span class="kw">for </span>RawIntoIter&lt;T, A&gt; {
     <span class="kw">type </span>Item = T;
 
-    <span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    <span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;T&gt; {
         <span class="kw">unsafe </span>{ <span class="prelude-val">Some</span>(<span class="self">self</span>.iter.next()<span class="question-mark">?</span>.read()) }
     }
@@ -4712,7 +4714,7 @@
 <span class="kw">impl</span>&lt;T, A: Allocator + Clone&gt; FusedIterator <span class="kw">for </span>RawIntoIter&lt;T, A&gt; {}
 
 <span class="doccomment">/// Iterator which consumes elements without freeing the table storage.
-</span><span class="kw">pub struct </span>RawDrain&lt;<span class="lifetime">&#39;a</span>, T, A: Allocator + Clone = Global&gt; {
+</span><span class="kw">pub struct </span>RawDrain&lt;<span class="lifetime">'a</span>, T, A: Allocator + Clone = Global&gt; {
     iter: RawIter&lt;T&gt;,
 
     <span class="comment">// The table is moved into the iterator for the duration of the drain. This
@@ -4721,33 +4723,33 @@
     </span>table: ManuallyDrop&lt;RawTable&lt;T, A&gt;&gt;,
     orig_table: NonNull&lt;RawTable&lt;T, A&gt;&gt;,
 
-    <span class="comment">// We don&#39;t use a &amp;&#39;a mut RawTable&lt;T&gt; because we want RawDrain to be
+    <span class="comment">// We don't use a &amp;'a mut RawTable&lt;T&gt; because we want RawDrain to be
     // covariant over T.
-    </span>marker: PhantomData&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>RawTable&lt;T, A&gt;&gt;,
+    </span>marker: PhantomData&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>RawTable&lt;T, A&gt;&gt;,
 }
 
-<span class="kw">impl</span>&lt;T, A: Allocator + Clone&gt; RawDrain&lt;<span class="lifetime">&#39;_</span>, T, A&gt; {
-    <span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+<span class="kw">impl</span>&lt;T, A: Allocator + Clone&gt; RawDrain&lt;<span class="lifetime">'_</span>, T, A&gt; {
+    <span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">pub fn </span>iter(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RawIter&lt;T&gt; {
         <span class="self">self</span>.iter.clone()
     }
 }
 
-<span class="kw">unsafe impl</span>&lt;T, A: Allocator + Copy&gt; Send <span class="kw">for </span>RawDrain&lt;<span class="lifetime">&#39;_</span>, T, A&gt;
+<span class="kw">unsafe impl</span>&lt;T, A: Allocator + Copy&gt; Send <span class="kw">for </span>RawDrain&lt;<span class="lifetime">'_</span>, T, A&gt;
 <span class="kw">where
     </span>T: Send,
     A: Send,
 {
 }
-<span class="kw">unsafe impl</span>&lt;T, A: Allocator + Copy&gt; Sync <span class="kw">for </span>RawDrain&lt;<span class="lifetime">&#39;_</span>, T, A&gt;
+<span class="kw">unsafe impl</span>&lt;T, A: Allocator + Copy&gt; Sync <span class="kw">for </span>RawDrain&lt;<span class="lifetime">'_</span>, T, A&gt;
 <span class="kw">where
     </span>T: Sync,
     A: Sync,
 {
 }
 
-<span class="kw">impl</span>&lt;T, A: Allocator + Clone&gt; Drop <span class="kw">for </span>RawDrain&lt;<span class="lifetime">&#39;_</span>, T, A&gt; {
-    <span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+<span class="kw">impl</span>&lt;T, A: Allocator + Clone&gt; Drop <span class="kw">for </span>RawDrain&lt;<span class="lifetime">'_</span>, T, A&gt; {
+    <span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">fn </span>drop(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
         <span class="kw">unsafe </span>{
             <span class="comment">// Drop all remaining elements. Note that this may panic.
@@ -4765,10 +4767,10 @@
     }
 }
 
-<span class="kw">impl</span>&lt;T, A: Allocator + Clone&gt; Iterator <span class="kw">for </span>RawDrain&lt;<span class="lifetime">&#39;_</span>, T, A&gt; {
+<span class="kw">impl</span>&lt;T, A: Allocator + Clone&gt; Iterator <span class="kw">for </span>RawDrain&lt;<span class="lifetime">'_</span>, T, A&gt; {
     <span class="kw">type </span>Item = T;
 
-    <span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
+    <span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
     </span><span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;T&gt; {
         <span class="kw">unsafe </span>{
             <span class="kw">let </span>item = <span class="self">self</span>.iter.next()<span class="question-mark">?</span>;
@@ -4782,21 +4784,21 @@
     }
 }
 
-<span class="kw">impl</span>&lt;T, A: Allocator + Clone&gt; ExactSizeIterator <span class="kw">for </span>RawDrain&lt;<span class="lifetime">&#39;_</span>, T, A&gt; {}
-<span class="kw">impl</span>&lt;T, A: Allocator + Clone&gt; FusedIterator <span class="kw">for </span>RawDrain&lt;<span class="lifetime">&#39;_</span>, T, A&gt; {}
+<span class="kw">impl</span>&lt;T, A: Allocator + Clone&gt; ExactSizeIterator <span class="kw">for </span>RawDrain&lt;<span class="lifetime">'_</span>, T, A&gt; {}
+<span class="kw">impl</span>&lt;T, A: Allocator + Clone&gt; FusedIterator <span class="kw">for </span>RawDrain&lt;<span class="lifetime">'_</span>, T, A&gt; {}
 
 <span class="doccomment">/// Iterator over occupied buckets that could match a given hash.
 ///
 /// `RawTable` only stores 7 bits of the hash value, so this iterator may return
 /// items that have a hash value different than the one provided. You should
 /// always validate the returned values before using them.
-</span><span class="kw">pub struct </span>RawIterHash&lt;<span class="lifetime">&#39;a</span>, T, A: Allocator + Clone = Global&gt; {
-    inner: RawIterHashInner&lt;<span class="lifetime">&#39;a</span>, A&gt;,
+</span><span class="kw">pub struct </span>RawIterHash&lt;<span class="lifetime">'a</span>, T, A: Allocator + Clone = Global&gt; {
+    inner: RawIterHashInner&lt;<span class="lifetime">'a</span>, A&gt;,
     _marker: PhantomData&lt;T&gt;,
 }
 
-<span class="kw">struct </span>RawIterHashInner&lt;<span class="lifetime">&#39;a</span>, A: Allocator + Clone&gt; {
-    table: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>RawTableInner&lt;A&gt;,
+<span class="kw">struct </span>RawIterHashInner&lt;<span class="lifetime">'a</span>, A: Allocator + Clone&gt; {
+    table: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>RawTableInner&lt;A&gt;,
 
     <span class="comment">// The top 7 bits of the hash.
     </span>h2_hash: u8,
@@ -4810,20 +4812,20 @@
     </span>bitmask: BitMaskIter,
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, A: Allocator + Clone&gt; RawIterHash&lt;<span class="lifetime">&#39;a</span>, T, A&gt; {
-    <span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
-    #[cfg(feature = <span class="string">&quot;raw&quot;</span>)]
-    </span><span class="kw">fn </span>new(table: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>RawTable&lt;T, A&gt;, hash: u64) -&gt; <span class="self">Self </span>{
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, A: Allocator + Clone&gt; RawIterHash&lt;<span class="lifetime">'a</span>, T, A&gt; {
+    <span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
+    #[cfg(feature = <span class="string">"raw"</span>)]
+    </span><span class="kw">fn </span>new(table: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>RawTable&lt;T, A&gt;, hash: u64) -&gt; <span class="self">Self </span>{
         RawIterHash {
             inner: RawIterHashInner::new(<span class="kw-2">&amp;</span>table.table, hash),
             _marker: PhantomData,
         }
     }
 }
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, A: Allocator + Clone&gt; RawIterHashInner&lt;<span class="lifetime">&#39;a</span>, A&gt; {
-    <span class="attr">#[cfg_attr(feature = <span class="string">&quot;inline-more&quot;</span>, inline)]
-    #[cfg(feature = <span class="string">&quot;raw&quot;</span>)]
-    </span><span class="kw">fn </span>new(table: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>RawTableInner&lt;A&gt;, hash: u64) -&gt; <span class="self">Self </span>{
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, A: Allocator + Clone&gt; RawIterHashInner&lt;<span class="lifetime">'a</span>, A&gt; {
+    <span class="attr">#[cfg_attr(feature = <span class="string">"inline-more"</span>, inline)]
+    #[cfg(feature = <span class="string">"raw"</span>)]
+    </span><span class="kw">fn </span>new(table: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>RawTableInner&lt;A&gt;, hash: u64) -&gt; <span class="self">Self </span>{
         <span class="kw">unsafe </span>{
             <span class="kw">let </span>h2_hash = h2(hash);
             <span class="kw">let </span>probe_seq = table.probe_seq(hash);
@@ -4841,7 +4843,7 @@
     }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, A: Allocator + Clone&gt; Iterator <span class="kw">for </span>RawIterHash&lt;<span class="lifetime">&#39;a</span>, T, A&gt; {
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, A: Allocator + Clone&gt; Iterator <span class="kw">for </span>RawIterHash&lt;<span class="lifetime">'a</span>, T, A&gt; {
     <span class="kw">type </span>Item = Bucket&lt;T&gt;;
 
     <span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Bucket&lt;T&gt;&gt; {
@@ -4854,7 +4856,7 @@
     }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, A: Allocator + Clone&gt; Iterator <span class="kw">for </span>RawIterHashInner&lt;<span class="lifetime">&#39;a</span>, A&gt; {
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, A: Allocator + Clone&gt; Iterator <span class="kw">for </span>RawIterHashInner&lt;<span class="lifetime">'a</span>, A&gt; {
     <span class="kw">type </span>Item = usize;
 
     <span class="kw">fn </span>next(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt; {

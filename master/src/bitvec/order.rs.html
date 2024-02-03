@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitvec-1.0.1/src/order.rs`."><title>order.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="bitvec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitvec-1.0.1/src/order.rs`."><title>order.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="bitvec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../bitvec/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -529,7 +531,7 @@
 <a href="#529" id="529">529</a>
 <a href="#530" id="530">530</a>
 <a href="#531" id="531">531</a>
-</pre></div><pre class="rust"><code><span class="attr">#![doc = <span class="macro">include_str!</span>(<span class="string">&quot;../doc/order.md&quot;</span>)]
+</pre></div><pre class="rust"><code><span class="attr">#![doc = <span class="macro">include_str!</span>(<span class="string">"../doc/order.md"</span>)]
 
 </span><span class="kw">use crate</span>::{
 	index::{
@@ -545,8 +547,8 @@
 	},
 };
 
-<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../doc/order/BitOrder.md&quot;</span>)]
-</span><span class="kw">pub unsafe trait </span>BitOrder: <span class="lifetime">&#39;static </span>{
+<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">"../doc/order/BitOrder.md"</span>)]
+</span><span class="kw">pub unsafe trait </span>BitOrder: <span class="lifetime">'static </span>{
 	<span class="doccomment">/// Translates a semantic bit index into a real bit position.
 	///
 	/// This function is the basis of the trait, and must adhere to a number of
@@ -644,11 +646,11 @@
 	}
 }
 
-<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../doc/order/Lsb0.md&quot;</span>)]
+<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">"../doc/order/Lsb0.md"</span>)]
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 </span><span class="kw">pub struct </span>Lsb0;
 
-<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../doc/order/Msb0.md&quot;</span>)]
+<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">"../doc/order/Msb0.md"</span>)]
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 </span><span class="kw">pub struct </span>Msb0;
 
@@ -677,7 +679,7 @@
 		<span class="kw">let </span>upto = upto.into().unwrap_or(BitEnd::MAX).into_inner();
 		<span class="macro">debug_assert!</span>(
 			from &lt;= upto,
-			<span class="string">&quot;Ranges must run from low index ({}) to high ({})&quot;</span>,
+			<span class="string">"Ranges must run from low index ({}) to high ({})"</span>,
 			from,
 			upto,
 		);
@@ -730,7 +732,7 @@
 		<span class="kw">let </span>upto = upto.into().unwrap_or(BitEnd::MAX).into_inner();
 		<span class="macro">debug_assert!</span>(
 			from &lt;= upto,
-			<span class="string">&quot;ranges must run from low index ({}) to high ({})&quot;</span>,
+			<span class="string">"ranges must run from low index ({}) to high ({})"</span>,
 			from,
 			upto,
 		);
@@ -752,21 +754,21 @@
 	}
 }
 
-<span class="attr">#[cfg(target_endian = <span class="string">&quot;little&quot;</span>)]
-#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../doc/order/LocalBits.md&quot;</span>)]
+<span class="attr">#[cfg(target_endian = <span class="string">"little"</span>)]
+#[doc = <span class="macro">include_str!</span>(<span class="string">"../doc/order/LocalBits.md"</span>)]
 </span><span class="kw">pub use </span><span class="self">self</span>::Lsb0 <span class="kw">as </span>LocalBits;
-<span class="attr">#[cfg(target_endian = <span class="string">&quot;big&quot;</span>)]
-#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../doc/order/LocalBits.md&quot;</span>)]
+<span class="attr">#[cfg(target_endian = <span class="string">"big"</span>)]
+#[doc = <span class="macro">include_str!</span>(<span class="string">"../doc/order/LocalBits.md"</span>)]
 </span><span class="kw">pub use </span><span class="self">self</span>::Msb0 <span class="kw">as </span>LocalBits;
 
-<span class="attr">#[cfg(not(any(target_endian = <span class="string">&quot;big&quot;</span>, target_endian = <span class="string">&quot;little&quot;</span>)))]
+<span class="attr">#[cfg(not(any(target_endian = <span class="string">"big"</span>, target_endian = <span class="string">"little"</span>)))]
 </span><span class="macro">compile_fail!</span>(
-	<span class="string">&quot;This architecture is not supported! Please consider filing an issue&quot;
+	<span class="string">"This architecture is not supported! Please consider filing an issue"
 </span>);
 
 <span class="attr">#[inline]
 #[cfg(not(tarpaulin_include))]
-#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../doc/order/verify.md&quot;</span>)]
+#[doc = <span class="macro">include_str!</span>(<span class="string">"../doc/order/verify.md"</span>)]
 </span><span class="kw">pub fn </span>verify&lt;O&gt;(verbose: bool)
 <span class="kw">where </span>O: BitOrder {
 	verify_for_type::&lt;u8, O&gt;(verbose);
@@ -774,7 +776,7 @@
 	verify_for_type::&lt;u32, O&gt;(verbose);
 	verify_for_type::&lt;usize, O&gt;(verbose);
 
-	<span class="attr">#[cfg(target_pointer_width = <span class="string">&quot;64&quot;</span>)]
+	<span class="attr">#[cfg(target_pointer_width = <span class="string">"64"</span>)]
 	</span>verify_for_type::&lt;u64, O&gt;(verbose);
 }
 
@@ -788,7 +790,7 @@
 }
 
 <span class="attr">#[cfg(not(miri))]
-#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../doc/order/verify_for_type.md&quot;</span>)]
+#[doc = <span class="macro">include_str!</span>(<span class="string">"../doc/order/verify_for_type.md"</span>)]
 </span><span class="kw">pub fn </span>verify_for_type&lt;R, O&gt;(verbose: bool)
 <span class="kw">where
 	</span>R: BitRegister,
@@ -807,9 +809,9 @@
 		<span class="comment">//  Compute the bit position for the index.
 		</span><span class="kw">let </span>pos = O::at::&lt;R&gt;(idx);
 		<span class="kw">if </span>verbose {
-			<span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+			<span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
 			</span><span class="macro">println!</span>(
-				<span class="string">&quot;`&lt;{} as BitOrder&gt;::at::&lt;{}&gt;({})` produces {}&quot;</span>,
+				<span class="string">"`&lt;{} as BitOrder&gt;::at::&lt;{}&gt;({})` produces {}"</span>,
 				ord_name,
 				reg_name,
 				n,
@@ -820,9 +822,9 @@
 		<span class="comment">//  If the computed position exceeds the valid range, fail.
 		</span><span class="macro">assert!</span>(
 			pos.into_inner() &lt; bits_of::&lt;R&gt;() <span class="kw">as </span>u8,
-			<span class="string">&quot;Error when verifying the implementation of `BitOrder` for `{}`: \
+			<span class="string">"Error when verifying the implementation of `BitOrder` for `{}`: \
 			 Index {} produces a bit position ({}) that exceeds the type width \
-			 {}&quot;</span>,
+			 {}"</span>,
 			ord_name,
 			n,
 			pos.into_inner(),
@@ -832,9 +834,9 @@
 		<span class="comment">//  Check `O`’s implementation of `select`
 		</span><span class="kw">let </span>sel = O::select::&lt;R&gt;(idx);
 		<span class="kw">if </span>verbose {
-			<span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+			<span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
 			</span><span class="macro">println!</span>(
-				<span class="string">&quot;`&lt;{} as BitOrder&gt;::select::&lt;{}&gt;({})` produces {:b}&quot;</span>,
+				<span class="string">"`&lt;{} as BitOrder&gt;::select::&lt;{}&gt;({})` produces {:b}"</span>,
 				ord_name, reg_name, n, sel,
 			);
 		}
@@ -843,8 +845,8 @@
 		</span><span class="macro">assert_eq!</span>(
 			sel.into_inner().count_ones(),
 			<span class="number">1</span>,
-			<span class="string">&quot;Error when verifying the implementation of `BitOrder` for `{}`: \
-			 Index {} produces a bit selector ({:b}) that is not a one-hot mask&quot;</span>,
+			<span class="string">"Error when verifying the implementation of `BitOrder` for `{}`: \
+			 Index {} produces a bit selector ({:b}) that is not a one-hot mask"</span>,
 			ord_name,
 			n,
 			sel,
@@ -857,9 +859,9 @@
 		</span><span class="macro">assert_eq!</span>(
 			sel,
 			shl,
-			<span class="string">&quot;Error when verifying the implementation of `BitOrder` for `{}`: \
+			<span class="string">"Error when verifying the implementation of `BitOrder` for `{}`: \
 			 Index {} produces a bit selector ({:b}) that is not equal to `1 \
-			 &lt;&lt; {}` ({:b})&quot;</span>,
+			 &lt;&lt; {}` ({:b})"</span>,
 			ord_name,
 			n,
 			sel,
@@ -871,18 +873,18 @@
 		//  the accumulator.
 		</span><span class="macro">assert!</span>(
 			!accum.test(sel),
-			<span class="string">&quot;Error when verifying the implementation of `BitOrder` for `{}`: \
+			<span class="string">"Error when verifying the implementation of `BitOrder` for `{}`: \
 			 Index {} produces a bit position ({}) that has already been \
-			 produced by a prior index&quot;</span>,
+			 produced by a prior index"</span>,
 			ord_name,
 			n,
 			pos.into_inner(),
 		);
 		accum.insert(sel);
 		<span class="kw">if </span>verbose {
-			<span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+			<span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
 			</span><span class="macro">println!</span>(
-				<span class="string">&quot;`&lt;{} as BitOrder&gt;::at::&lt;{}&gt;({})` accumulates  {:b}&quot;</span>,
+				<span class="string">"`&lt;{} as BitOrder&gt;::at::&lt;{}&gt;({})` accumulates  {:b}"</span>,
 				ord_name, reg_name, n, accum,
 			);
 		}
@@ -892,10 +894,10 @@
 	</span><span class="macro">assert_eq!</span>(
 		accum,
 		BitMask::ALL,
-		<span class="string">&quot;Error when verifying the implementation of `BitOrder` for `{}`: The \
+		<span class="string">"Error when verifying the implementation of `BitOrder` for `{}`: The \
 		 bit positions marked with a `0` here were never produced from an \
 		 index, despite all possible indices being passed in for translation: \
-		 {:b}&quot;</span>,
+		 {:b}"</span>,
 		ord_name,
 		accum,
 	);
@@ -912,9 +914,9 @@
 			<span class="macro">assert_eq!</span>(
 				mask,
 				check,
-				<span class="string">&quot;Error when verifying the implementation of `BitOrder` for \
+				<span class="string">"Error when verifying the implementation of `BitOrder` for \
 				 `{o}`: `{o}::mask::&lt;{m}&gt;({f}, {u})` produced {bad:b}, but \
-				 expected {good:b}&quot;</span>,
+				 expected {good:b}"</span>,
 				o = ord_name,
 				m = reg_name,
 				f = from,
@@ -966,31 +968,31 @@
 
 		<span class="attr">#[test]
 		</span><span class="kw">fn </span>verify_u8() {
-			verify_for_type::&lt;u8, Lsb0&gt;(<span class="macro">cfg!</span>(feature = <span class="string">&quot;verbose&quot;</span>));
+			verify_for_type::&lt;u8, Lsb0&gt;(<span class="macro">cfg!</span>(feature = <span class="string">"verbose"</span>));
 		}
 
 		<span class="attr">#[test]
 		#[cfg(not(tarpaulin))]
 		</span><span class="kw">fn </span>verify_u16() {
-			verify_for_type::&lt;u16, Lsb0&gt;(<span class="macro">cfg!</span>(feature = <span class="string">&quot;verbose&quot;</span>));
+			verify_for_type::&lt;u16, Lsb0&gt;(<span class="macro">cfg!</span>(feature = <span class="string">"verbose"</span>));
 		}
 
 		<span class="attr">#[test]
 		#[cfg(not(tarpaulin))]
 		</span><span class="kw">fn </span>verify_u32() {
-			verify_for_type::&lt;u32, Lsb0&gt;(<span class="macro">cfg!</span>(feature = <span class="string">&quot;verbose&quot;</span>));
+			verify_for_type::&lt;u32, Lsb0&gt;(<span class="macro">cfg!</span>(feature = <span class="string">"verbose"</span>));
 		}
 
 		<span class="attr">#[test]
-		#[cfg(all(target_pointer_width = <span class="string">&quot;64&quot;</span>, not(tarpaulin)))]
+		#[cfg(all(target_pointer_width = <span class="string">"64"</span>, not(tarpaulin)))]
 		</span><span class="kw">fn </span>verify_u64() {
-			verify_for_type::&lt;u64, Lsb0&gt;(<span class="macro">cfg!</span>(feature = <span class="string">&quot;verbose&quot;</span>));
+			verify_for_type::&lt;u64, Lsb0&gt;(<span class="macro">cfg!</span>(feature = <span class="string">"verbose"</span>));
 		}
 
 		<span class="attr">#[test]
 		#[cfg(not(tarpaulin))]
 		</span><span class="kw">fn </span>verify_usize() {
-			verify_for_type::&lt;usize, Lsb0&gt;(<span class="macro">cfg!</span>(feature = <span class="string">&quot;verbose&quot;</span>));
+			verify_for_type::&lt;usize, Lsb0&gt;(<span class="macro">cfg!</span>(feature = <span class="string">"verbose"</span>));
 		}
 	}
 
@@ -999,31 +1001,31 @@
 
 		<span class="attr">#[test]
 		</span><span class="kw">fn </span>verify_u8() {
-			verify_for_type::&lt;u8, Msb0&gt;(<span class="macro">cfg!</span>(feature = <span class="string">&quot;verbose&quot;</span>));
+			verify_for_type::&lt;u8, Msb0&gt;(<span class="macro">cfg!</span>(feature = <span class="string">"verbose"</span>));
 		}
 
 		<span class="attr">#[test]
 		#[cfg(not(tarpaulin))]
 		</span><span class="kw">fn </span>verify_u16() {
-			verify_for_type::&lt;u16, Msb0&gt;(<span class="macro">cfg!</span>(feature = <span class="string">&quot;verbose&quot;</span>));
+			verify_for_type::&lt;u16, Msb0&gt;(<span class="macro">cfg!</span>(feature = <span class="string">"verbose"</span>));
 		}
 
 		<span class="attr">#[test]
 		#[cfg(not(tarpaulin))]
 		</span><span class="kw">fn </span>verify_u32() {
-			verify_for_type::&lt;u32, Msb0&gt;(<span class="macro">cfg!</span>(feature = <span class="string">&quot;verbose&quot;</span>));
+			verify_for_type::&lt;u32, Msb0&gt;(<span class="macro">cfg!</span>(feature = <span class="string">"verbose"</span>));
 		}
 
 		<span class="attr">#[test]
-		#[cfg(all(target_pointer_width = <span class="string">&quot;64&quot;</span>, not(tarpaulin)))]
+		#[cfg(all(target_pointer_width = <span class="string">"64"</span>, not(tarpaulin)))]
 		</span><span class="kw">fn </span>verify_u64() {
-			verify_for_type::&lt;u64, Msb0&gt;(<span class="macro">cfg!</span>(feature = <span class="string">&quot;verbose&quot;</span>));
+			verify_for_type::&lt;u64, Msb0&gt;(<span class="macro">cfg!</span>(feature = <span class="string">"verbose"</span>));
 		}
 
 		<span class="attr">#[test]
 		#[cfg(not(tarpaulin))]
 		</span><span class="kw">fn </span>verify_usize() {
-			verify_for_type::&lt;usize, Msb0&gt;(<span class="macro">cfg!</span>(feature = <span class="string">&quot;verbose&quot;</span>));
+			verify_for_type::&lt;usize, Msb0&gt;(<span class="macro">cfg!</span>(feature = <span class="string">"verbose"</span>));
 		}
 	}
 
@@ -1032,31 +1034,31 @@
 
 		<span class="attr">#[test]
 		</span><span class="kw">fn </span>verify_u8() {
-			verify_for_type::&lt;u8, HiLo&gt;(<span class="macro">cfg!</span>(feature = <span class="string">&quot;verbose&quot;</span>));
+			verify_for_type::&lt;u8, HiLo&gt;(<span class="macro">cfg!</span>(feature = <span class="string">"verbose"</span>));
 		}
 
 		<span class="attr">#[test]
 		#[cfg(not(tarpaulin))]
 		</span><span class="kw">fn </span>verify_u16() {
-			verify_for_type::&lt;u16, HiLo&gt;(<span class="macro">cfg!</span>(feature = <span class="string">&quot;verbose&quot;</span>));
+			verify_for_type::&lt;u16, HiLo&gt;(<span class="macro">cfg!</span>(feature = <span class="string">"verbose"</span>));
 		}
 
 		<span class="attr">#[test]
 		#[cfg(not(tarpaulin))]
 		</span><span class="kw">fn </span>verify_u32() {
-			verify_for_type::&lt;u32, HiLo&gt;(<span class="macro">cfg!</span>(feature = <span class="string">&quot;verbose&quot;</span>));
+			verify_for_type::&lt;u32, HiLo&gt;(<span class="macro">cfg!</span>(feature = <span class="string">"verbose"</span>));
 		}
 
 		<span class="attr">#[test]
-		#[cfg(all(target_pointer_width = <span class="string">&quot;64&quot;</span>, not(tarpaulin)))]
+		#[cfg(all(target_pointer_width = <span class="string">"64"</span>, not(tarpaulin)))]
 		</span><span class="kw">fn </span>verify_u64() {
-			verify_for_type::&lt;u64, HiLo&gt;(<span class="macro">cfg!</span>(feature = <span class="string">&quot;verbose&quot;</span>));
+			verify_for_type::&lt;u64, HiLo&gt;(<span class="macro">cfg!</span>(feature = <span class="string">"verbose"</span>));
 		}
 
 		<span class="attr">#[test]
 		#[cfg(not(tarpaulin))]
 		</span><span class="kw">fn </span>verify_usize() {
-			verify_for_type::&lt;usize, HiLo&gt;(<span class="macro">cfg!</span>(feature = <span class="string">&quot;verbose&quot;</span>));
+			verify_for_type::&lt;usize, HiLo&gt;(<span class="macro">cfg!</span>(feature = <span class="string">"verbose"</span>));
 		}
 	}
 }

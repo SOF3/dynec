@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitvec-1.0.1/src/slice/traits.rs`."><title>traits.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="bitvec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitvec-1.0.1/src/slice/traits.rs`."><title>traits.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="bitvec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../bitvec/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -580,9 +582,9 @@
 <a href="#580" id="580">580</a>
 <a href="#581" id="581">581</a>
 <a href="#582" id="582">582</a>
-</pre></div><pre class="rust"><code><span class="attr">#![doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/slice/traits.md&quot;</span>)]
+</pre></div><pre class="rust"><code><span class="attr">#![doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/slice/traits.md"</span>)]
 
-#[cfg(feature = <span class="string">&quot;alloc&quot;</span>)]
+#[cfg(feature = <span class="string">"alloc"</span>)]
 </span><span class="kw">use </span>alloc::borrow::ToOwned;
 <span class="kw">use </span>core::{
 	cmp,
@@ -608,7 +610,7 @@
 <span class="kw">use </span>wyz::fmt::FmtForward;
 
 <span class="kw">use </span><span class="kw">super</span>::BitSlice;
-<span class="attr">#[cfg(feature = <span class="string">&quot;alloc&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
 </span><span class="kw">use </span><span class="kw">crate</span>::vec::BitVec;
 <span class="kw">use crate</span>::{
 	domain::Domain,
@@ -663,7 +665,7 @@
 	<span class="attr">#[inline]
 	</span><span class="kw">fn </span>cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, rhs: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; cmp::Ordering {
 		<span class="self">self</span>.partial_cmp(rhs)
-			.expect(<span class="string">&quot;BitSlice has a total ordering&quot;</span>)
+			.expect(<span class="string">"BitSlice has a total ordering"</span>)
 	}
 }
 
@@ -882,15 +884,15 @@ This only fails if `slice.len()` exceeds `BitSlice::MAX_ELTS`.
 
 [`BitSlice::try_from_slice`]: crate::slice::BitSlice::try_from_slice
 **/
-</span><span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O&gt; TryFrom&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[T]&gt; <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>BitSlice&lt;T, O&gt;
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O&gt; TryFrom&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>[T]&gt; <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">'a </span>BitSlice&lt;T, O&gt;
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
 {
-	<span class="kw">type </span>Error = <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[T];
+	<span class="kw">type </span>Error = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[T];
 
 	<span class="attr">#[inline]
-	</span><span class="kw">fn </span>try_from(slice: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[T]) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Error&gt; {
+	</span><span class="kw">fn </span>try_from(slice: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[T]) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Error&gt; {
 		BitSlice::try_from_slice(slice).map_err(|<span class="kw">_</span>| slice)
 	}
 }
@@ -902,15 +904,15 @@ This only fails if `slice.len()` exceeds `BitSlice::MAX_ELTS`.
 
 [`BitSlice::try_from_slice_mut`]: crate::slice::BitSlice::try_from_slice_mut
 **/
-</span><span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T, O&gt; TryFrom&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>[T]&gt; <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt;
+</span><span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T, O&gt; TryFrom&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>[T]&gt; <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>BitSlice&lt;T, O&gt;
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
 {
-	<span class="kw">type </span>Error = <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>[T];
+	<span class="kw">type </span>Error = <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>[T];
 
 	<span class="attr">#[inline]
-	</span><span class="kw">fn </span>try_from(slice: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>[T]) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Error&gt; {
+	</span><span class="kw">fn </span>try_from(slice: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>[T]) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Error&gt; {
 		<span class="kw">let </span>slice_ptr = slice <span class="kw">as </span><span class="kw-2">*mut </span>[T];
 		BitSlice::try_from_slice_mut(slice)
 			.map_err(|<span class="kw">_</span>| <span class="kw">unsafe </span>{ <span class="kw-2">&amp;mut *</span>slice_ptr })
@@ -949,8 +951,8 @@ This only fails if `slice.len()` exceeds `BitSlice::MAX_ELTS`.
 {
 	<span class="attr">#[inline]
 	</span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
-		<span class="self">self</span>.as_bitspan().render(fmt, <span class="string">&quot;Slice&quot;</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
-		fmt.write_str(<span class="string">&quot; &quot;</span>)<span class="question-mark">?</span>;
+		<span class="self">self</span>.as_bitspan().render(fmt, <span class="string">"Slice"</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
+		fmt.write_str(<span class="string">" "</span>)<span class="question-mark">?</span>;
 		Display::fmt(<span class="self">self</span>, fmt)
 	}
 }
@@ -992,10 +994,10 @@ This only fails if `slice.len()` exceeds `BitSlice::MAX_ELTS`.
 		val |= bit <span class="kw">as </span>u8;
 	}
 	<span class="kw">match </span>val {
-		v @ <span class="number">0 </span>..= <span class="number">9 </span>=&gt; <span class="string">b&#39;0&#39; </span>+ v,
+		v @ <span class="number">0 </span>..= <span class="number">9 </span>=&gt; <span class="string">b'0' </span>+ v,
 		v @ <span class="number">10 </span>..= <span class="number">35 </span>=&gt; alpha - <span class="number">10 </span>+ v,
 		<span class="kw">_ </span>=&gt; <span class="macro">unreachable!</span>(
-			<span class="string">&quot;bit-slices wider than five bits cannot be rendered to ASCII b36&quot;
+			<span class="string">"bit-slices wider than five bits cannot be rendered to ASCII b36"
 		</span>),
 	}
 }
@@ -1008,20 +1010,20 @@ This only fails if `slice.len()` exceeds `BitSlice::MAX_ELTS`.
 - `into`: a provided buffer into which the bit-slice is encoded.
 - `radix`: the bit width of each digit (log2 of its radix).
 - `skip`: the number of bytes to skip before beginning the write.
-- `alpha`: one of `b&#39;a&#39;` or `b&#39;A&#39;`.
+- `alpha`: one of `b'a'` or `b'A'`.
 
 ## Returns
 
 A subset of `into` that is now initialized to the ASCII encoding.
 **/
 </span><span class="attr">#[inline(always)]
-</span><span class="kw">fn </span>encode_ascii&lt;<span class="lifetime">&#39;a</span>, T, O&gt;(
+</span><span class="kw">fn </span>encode_ascii&lt;<span class="lifetime">'a</span>, T, O&gt;(
 	bits: <span class="kw-2">&amp;</span>BitSlice&lt;T, O&gt;,
-	into: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>[u8],
+	into: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>[u8],
 	radix: usize,
 	<span class="kw-2">mut </span>skip: usize,
 	alpha: u8,
-) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str
+) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
@@ -1038,7 +1040,7 @@ A subset of `into` that is now initialized to the ASCII encoding.
 <span class="doccomment">/// Constructs the numeric formatting implementations.
 </span><span class="macro">macro_rules! </span>fmt {
 	($(<span class="macro-nonterminal">$</span><span class="kw">trait</span>:<span class="macro-nonterminal">ident</span>: <span class="macro-nonterminal">$alpha</span>:expr, <span class="macro-nonterminal">$pfx</span>:expr, <span class="macro-nonterminal">$radix</span>:expr;)+) =&gt; { $(
-		<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/slice/format.md&quot;</span>)]
+		<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/slice/format.md"</span>)]
 		</span><span class="kw">impl</span>&lt;T, O&gt; <span class="macro-nonterminal">$</span><span class="kw">trait for </span><span class="macro-nonterminal">BitSlice</span>&lt;T, O&gt;
 		<span class="kw">where
 			</span>T: BitStore,
@@ -1051,7 +1053,7 @@ A subset of `into` that is now initialized to the ASCII encoding.
 				<span class="kw">const </span>D: usize = mem::bits_of::&lt;usize&gt;() / <span class="macro-nonterminal">$radix</span>;
 				<span class="kw">const </span>M: usize = mem::bits_of::&lt;usize&gt;() % <span class="macro-nonterminal">$radix</span>;
 				<span class="kw">const </span>W: usize = D + (M != <span class="number">0</span>) <span class="kw">as </span>usize;
-				<span class="kw">let </span><span class="kw-2">mut </span>txt: [u8; W + <span class="number">2</span>] = [<span class="string">b&#39;0&#39;</span>; W + <span class="number">2</span>];
+				<span class="kw">let </span><span class="kw-2">mut </span>txt: [u8; W + <span class="number">2</span>] = [<span class="string">b'0'</span>; W + <span class="number">2</span>];
 				txt[<span class="number">1</span>] = <span class="macro-nonterminal">$pfx</span>;
 
 				<span class="kw">let </span>start = <span class="kw">if </span>fmt.alternate() { <span class="number">0 </span>} <span class="kw">else </span>{ <span class="number">2 </span>};
@@ -1103,10 +1105,10 @@ A subset of `into` that is now initialized to the ASCII encoding.
 }
 
 <span class="macro">fmt! </span>{
-	Binary: <span class="string">b&#39;0&#39;</span>, <span class="string">b&#39;b&#39;</span>, <span class="number">1</span>;
-	Octal: <span class="string">b&#39;0&#39;</span>, <span class="string">b&#39;o&#39;</span>, <span class="number">3</span>;
-	LowerHex: <span class="string">b&#39;a&#39;</span>, <span class="string">b&#39;x&#39;</span>, <span class="number">4</span>;
-	UpperHex: <span class="string">b&#39;A&#39;</span>, <span class="string">b&#39;x&#39;</span>, <span class="number">4</span>;
+	Binary: <span class="string">b'0'</span>, <span class="string">b'b'</span>, <span class="number">1</span>;
+	Octal: <span class="string">b'0'</span>, <span class="string">b'o'</span>, <span class="number">3</span>;
+	LowerHex: <span class="string">b'a'</span>, <span class="string">b'x'</span>, <span class="number">4</span>;
+	UpperHex: <span class="string">b'A'</span>, <span class="string">b'x'</span>, <span class="number">4</span>;
 }
 
 <span class="doccomment">/// [Original](https://doc.rust-lang.org/std/primitive.slice.html#impl-Hash)
@@ -1123,7 +1125,7 @@ A subset of `into` that is now initialized to the ASCII encoding.
 	}
 }
 
-<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/slice/threadsafe.md&quot;</span>)]
+<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/slice/threadsafe.md"</span>)]
 </span><span class="kw">unsafe impl</span>&lt;T, O&gt; Send <span class="kw">for </span>BitSlice&lt;T, O&gt;
 <span class="kw">where
 	</span>T: BitStore + Sync,
@@ -1131,7 +1133,7 @@ A subset of `into` that is now initialized to the ASCII encoding.
 {
 }
 
-<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/slice/threadsafe.md&quot;</span>)]
+<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/slice/threadsafe.md"</span>)]
 </span><span class="kw">unsafe impl</span>&lt;T, O&gt; Sync <span class="kw">for </span>BitSlice&lt;T, O&gt;
 <span class="kw">where
 	</span>T: BitStore + Sync,
@@ -1148,7 +1150,7 @@ A subset of `into` that is now initialized to the ASCII encoding.
 }
 
 <span class="doccomment">/// [Original](https://doc.rust-lang.org/std/primitive.slice.html#impl-ToOwned)
-</span><span class="attr">#[cfg(feature = <span class="string">&quot;alloc&quot;</span>)]
+</span><span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
 #[cfg(not(tarpaulin_include))]
 </span><span class="kw">impl</span>&lt;T, O&gt; ToOwned <span class="kw">for </span>BitSlice&lt;T, O&gt;
 <span class="kw">where

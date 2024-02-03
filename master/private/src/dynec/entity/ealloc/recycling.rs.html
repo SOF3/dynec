@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/entity/ealloc/recycling.rs`."><title>recycling.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="dynec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/entity/ealloc/recycling.rs`."><title>recycling.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="dynec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../../dynec/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -244,11 +246,14 @@
 <a href="#244" id="244">244</a>
 <a href="#245" id="245">245</a>
 <a href="#246" id="246">246</a>
+<a href="#247" id="247">247</a>
+<a href="#248" id="248">248</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::BTreeSet;
 <span class="kw">use </span>std::sync::Arc;
 <span class="kw">use </span>std::{iter, ops};
 
-<span class="kw">use </span>parking_lot::Mutex;
+<span class="kw">use </span>parking_lot::lock_api::ArcMutexGuard;
+<span class="kw">use </span>parking_lot::{Mutex, RawMutex};
 
 <span class="kw">use super</span>::{iter_gaps, Ealloc, Shard, ShardAssigner, Snapshot};
 <span class="kw">use </span><span class="kw">crate</span>::entity::raw::Atomic;
@@ -296,21 +301,21 @@
     }
 
     <span class="kw">fn </span>get_recycler_offline(sharded_recyclers: <span class="kw-2">&amp;mut </span>MutableShards&lt;T&gt;, index: usize) -&gt; <span class="kw-2">&amp;mut </span>T {
-        <span class="kw">let </span>arc = sharded_recyclers.get_mut(index).expect(<span class="string">&quot;index out of bounds&quot;</span>);
-        Arc::get_mut(arc).expect(<span class="string">&quot;shards are dropped in offline mode&quot;</span>).get_mut()
+        <span class="kw">let </span>arc = sharded_recyclers.get_mut(index).expect(<span class="string">"index out of bounds"</span>);
+        Arc::get_mut(arc).expect(<span class="string">"shards are dropped in offline mode"</span>).get_mut()
     }
 
     <span class="kw">fn </span>get_reuse_queue_offline(
         reuse_queues: <span class="kw-2">&amp;mut </span>MutableShards&lt;Vec&lt;RawT&gt;&gt;,
         index: usize,
     ) -&gt; <span class="kw-2">&amp;mut </span>Vec&lt;RawT&gt; {
-        <span class="kw">let </span>arc = reuse_queues.get_mut(index).expect(<span class="string">&quot;index out of bounds&quot;</span>);
-        Arc::get_mut(arc).expect(<span class="string">&quot;shards are dropped in offline mode&quot;</span>).get_mut()
+        <span class="kw">let </span>arc = reuse_queues.get_mut(index).expect(<span class="string">"index out of bounds"</span>);
+        Arc::get_mut(arc).expect(<span class="string">"shards are dropped in offline mode"</span>).get_mut()
     }
 
     <span class="kw">fn </span>iter_allocated_chunks_offline(
         <span class="kw-2">&amp;mut </span><span class="self">self</span>,
-    ) -&gt; <span class="kw">impl </span>iter::FusedIterator&lt;Item = ops::Range&lt;RawT&gt;&gt; + <span class="lifetime">&#39;_ </span>{
+    ) -&gt; <span class="kw">impl </span>iter::FusedIterator&lt;Item = ops::Range&lt;RawT&gt;&gt; + <span class="lifetime">'_ </span>{
         iter_gaps(<span class="self">self</span>.global_gauge.load(), <span class="self">self</span>.recyclable.iter().copied())
     }
 }
@@ -318,7 +323,11 @@
 <span class="kw">impl</span>&lt;RawT: Raw, T: Recycler&lt;RawT&gt;, S: ShardAssigner&gt; Ealloc <span class="kw">for </span>Recycling&lt;RawT, T, S&gt; {
     <span class="kw">type </span>Raw = RawT;
     <span class="kw">type </span>AllocHint = T::Hint;
-    <span class="kw">type </span>Shard = <span class="kw">impl </span>Shard&lt;Raw = RawT, Hint = T::Hint&gt;;
+    <span class="kw">type </span>Shard = RecyclingShard&lt;
+        Arc&lt;RawT::Atomic&gt;,
+        ArcMutexGuard&lt;RawMutex, T&gt;,
+        ArcMutexGuard&lt;RawMutex, Vec&lt;RawT&gt;&gt;,
+    &gt;;
 
     <span class="kw">fn </span>new(num_shards: usize) -&gt; <span class="self">Self </span>{ <span class="self">Self</span>::new_with_shard_assigner(num_shards, S::default()) }
 
@@ -327,17 +336,14 @@
 
         vec.extend(
             iter::zip(<span class="self">self</span>.recycler_shards.iter(), <span class="self">self</span>.reuse_queue_shards.iter())
-                .map(|(recycler, reuse_queue)| -&gt; <span class="self">Self</span>::Shard {
-                    <span class="comment">// The return type hint here is used to constrain the TAIT, don&#39;t delete it.
-                    </span>RecyclingShard {
-                        global_gauge: Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.global_gauge),
-                        recycler:     Arc::clone(recycler).lock_arc(),
-                        reuse_queue:  Arc::clone(reuse_queue).lock_arc(),
-                    }
+                .map(|(recycler, reuse_queue)| RecyclingShard {
+                    global_gauge: Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.global_gauge),
+                    recycler:     Arc::clone(recycler).lock_arc(),
+                    reuse_queue:  Arc::clone(reuse_queue).lock_arc(),
                 })
                 .map(f),
         );
-        <span class="kw">let </span>my_slice = vec.get_mut(slice_start..).expect(<span class="string">&quot;just inserted&quot;</span>);
+        <span class="kw">let </span>my_slice = vec.get_mut(slice_start..).expect(<span class="string">"just inserted"</span>);
         <span class="self">self</span>.shard_assigner.shuffle_shards(my_slice);
     }
 
@@ -363,11 +369,11 @@
         <span class="kw">let </span><span class="kw-2">mut </span>ids = <span class="kw-2">&amp;</span><span class="self">self</span>.dealloc_queue[..];
         {
             <span class="kw">let </span>recyclable = Arc::get_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>.recyclable)
-                .expect(<span class="string">&quot;all exposed shards should be dropped before flush&quot;</span>);
+                .expect(<span class="string">"all exposed shards should be dropped before flush"</span>);
             recyclable.extend(ids);
             <span class="kw">for </span>shard <span class="kw">in </span><span class="kw-2">&amp;mut </span><span class="self">self</span>.reuse_queue_shards {
                 <span class="kw">let </span>queue = Arc::get_mut(shard)
-                    .expect(<span class="string">&quot;all exposed shards should be dropped before flush&quot;</span>)
+                    .expect(<span class="string">"all exposed shards should be dropped before flush"</span>)
                     .get_mut();
 
                 <span class="kw">for </span>item <span class="kw">in </span>queue.drain(..) {
@@ -382,7 +388,7 @@
             .iter_mut()
             .map(|recycler| {
                 Arc::get_mut(recycler)
-                    .expect(<span class="string">&quot;all exposed shards should be dropped before flush&quot;</span>)
+                    .expect(<span class="string">"all exposed shards should be dropped before flush"</span>)
                     .get_mut()
             })
             .collect();
@@ -396,7 +402,7 @@
 
         <span class="kw">for </span>(i, recycler) <span class="kw">in </span>shards.iter_mut().enumerate() {
             <span class="kw">let </span>take: usize =
-                <span class="kw-2">*</span>target_sizes.get(i).expect(<span class="string">&quot;target_sizes collected from shards.iter()&quot;</span>)
+                <span class="kw-2">*</span>target_sizes.get(i).expect(<span class="string">"target_sizes collected from shards.iter()"</span>)
                     - recycler.len();
             <span class="comment">// take &gt;= 0 assuming correctness of distribute_sorted
 
@@ -454,10 +460,10 @@
 <span class="kw">impl</span>&lt;RawT: Raw, GaugeRef, RecyclerRef, ReuseQueueRef&gt; Shard
     <span class="kw">for </span>RecyclingShard&lt;GaugeRef, RecyclerRef, ReuseQueueRef&gt;
 <span class="kw">where
-    </span>GaugeRef: ops::Deref&lt;Target = RawT::Atomic&gt; + Send + <span class="lifetime">&#39;static</span>,
-    RecyclerRef: ops::DerefMut + Send + <span class="lifetime">&#39;static</span>,
+    </span>GaugeRef: ops::Deref&lt;Target = RawT::Atomic&gt; + Send + <span class="lifetime">'static</span>,
+    RecyclerRef: ops::DerefMut + Send + <span class="lifetime">'static</span>,
     &lt;RecyclerRef <span class="kw">as </span>ops::Deref&gt;::Target: Recycler&lt;RawT&gt;,
-    ReuseQueueRef: ops::DerefMut&lt;Target = Vec&lt;RawT&gt;&gt; + Send + <span class="lifetime">&#39;static</span>,
+    ReuseQueueRef: ops::DerefMut&lt;Target = Vec&lt;RawT&gt;&gt; + Send + <span class="lifetime">'static</span>,
 {
     <span class="kw">type </span>Raw = RawT;
     <span class="kw">type </span>Hint = &lt;RecyclerRef::Target <span class="kw">as </span>Recycler&lt;RawT&gt;&gt;::Hint;

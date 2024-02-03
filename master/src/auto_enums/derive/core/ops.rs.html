@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/auto_enums-0.8.3/src/derive/core/ops.rs`."><title>ops.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="auto_enums" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/auto_enums-0.8.5/src/derive/core/ops.rs`."><title>ops.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="auto_enums" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../../auto_enums/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -226,26 +228,16 @@
 <a href="#226" id="226">226</a>
 <a href="#227" id="227">227</a>
 <a href="#228" id="228">228</a>
-<a href="#229" id="229">229</a>
-<a href="#230" id="230">230</a>
-<a href="#231" id="231">231</a>
-<a href="#232" id="232">232</a>
-<a href="#233" id="233">233</a>
-<a href="#234" id="234">234</a>
-<a href="#235" id="235">235</a>
-<a href="#236" id="236">236</a>
-<a href="#237" id="237">237</a>
-<a href="#238" id="238">238</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0 OR MIT
 
-</span><span class="attr">#[cfg(feature = <span class="string">&quot;ops&quot;</span>)]
+</span><span class="attr">#[cfg(feature = <span class="string">"ops"</span>)]
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>deref {
     <span class="kw">use </span><span class="kw">crate</span>::derive::<span class="kw-2">*</span>;
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>NAME: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str] = <span class="kw-2">&amp;</span>[<span class="string">&quot;Deref&quot;</span>];
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>NAME: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str] = <span class="kw-2">&amp;</span>[<span class="string">"Deref"</span>];
 
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>derive(_cx: <span class="kw-2">&amp;</span>Context, data: <span class="kw-2">&amp;</span>Data) -&gt; <span class="prelude-ty">Result</span>&lt;TokenStream&gt; {
-        <span class="prelude-val">Ok</span>(derive_trait(data, <span class="macro">parse_quote!</span>(::core::ops::Deref), <span class="prelude-val">None</span>, <span class="macro">parse_quote! </span>{
+        <span class="prelude-val">Ok</span>(derive_trait(data, <span class="kw-2">&amp;</span><span class="macro">parse_quote!</span>(::core::ops::Deref), <span class="prelude-val">None</span>, <span class="macro">parse_quote! </span>{
             <span class="kw">trait </span>Deref {
                 <span class="kw">type </span>Target;
                 <span class="attr">#[inline]
@@ -255,17 +247,17 @@
     }
 }
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;ops&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"ops"</span>)]
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>deref_mut {
     <span class="kw">use </span><span class="kw">crate</span>::derive::<span class="kw-2">*</span>;
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>NAME: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str] = <span class="kw-2">&amp;</span>[<span class="string">&quot;DerefMut&quot;</span>];
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>NAME: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str] = <span class="kw-2">&amp;</span>[<span class="string">"DerefMut"</span>];
 
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>derive(_cx: <span class="kw-2">&amp;</span>Context, data: <span class="kw-2">&amp;</span>Data) -&gt; <span class="prelude-ty">Result</span>&lt;TokenStream&gt; {
         <span class="prelude-val">Ok</span>(derive_trait(
             data,
-            <span class="macro">parse_quote!</span>(::core::ops::DerefMut),
-            <span class="prelude-val">Some</span>(<span class="macro">format_ident!</span>(<span class="string">&quot;Target&quot;</span>)),
+            <span class="kw-2">&amp;</span><span class="macro">parse_quote!</span>(::core::ops::DerefMut),
+            <span class="prelude-val">Some</span>(<span class="macro">format_ident!</span>(<span class="string">"Target"</span>)),
             <span class="macro">parse_quote! </span>{
                 <span class="kw">trait </span>DerefMut: ::core::ops::Deref {
                     <span class="attr">#[inline]
@@ -276,14 +268,14 @@
     }
 }
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;ops&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"ops"</span>)]
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>index {
     <span class="kw">use </span><span class="kw">crate</span>::derive::<span class="kw-2">*</span>;
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>NAME: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str] = <span class="kw-2">&amp;</span>[<span class="string">&quot;Index&quot;</span>];
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>NAME: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str] = <span class="kw-2">&amp;</span>[<span class="string">"Index"</span>];
 
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>derive(_cx: <span class="kw-2">&amp;</span>Context, data: <span class="kw-2">&amp;</span>Data) -&gt; <span class="prelude-ty">Result</span>&lt;TokenStream&gt; {
-        <span class="prelude-val">Ok</span>(derive_trait(data, <span class="macro">parse_quote!</span>(::core::ops::Index), <span class="prelude-val">None</span>, <span class="macro">parse_quote! </span>{
+        <span class="prelude-val">Ok</span>(derive_trait(data, <span class="kw-2">&amp;</span><span class="macro">parse_quote!</span>(::core::ops::Index), <span class="prelude-val">None</span>, <span class="macro">parse_quote! </span>{
             <span class="kw">trait </span>Index&lt;__Idx&gt; {
                 <span class="kw">type </span>Output;
                 <span class="attr">#[inline]
@@ -293,17 +285,17 @@
     }
 }
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;ops&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"ops"</span>)]
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>index_mut {
     <span class="kw">use </span><span class="kw">crate</span>::derive::<span class="kw-2">*</span>;
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>NAME: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str] = <span class="kw-2">&amp;</span>[<span class="string">&quot;IndexMut&quot;</span>];
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>NAME: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str] = <span class="kw-2">&amp;</span>[<span class="string">"IndexMut"</span>];
 
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>derive(_cx: <span class="kw-2">&amp;</span>Context, data: <span class="kw-2">&amp;</span>Data) -&gt; <span class="prelude-ty">Result</span>&lt;TokenStream&gt; {
         <span class="prelude-val">Ok</span>(derive_trait(
             data,
-            <span class="macro">parse_quote!</span>(::core::ops::IndexMut),
-            <span class="prelude-val">Some</span>(<span class="macro">format_ident!</span>(<span class="string">&quot;Output&quot;</span>)),
+            <span class="kw-2">&amp;</span><span class="macro">parse_quote!</span>(::core::ops::IndexMut),
+            <span class="prelude-val">Some</span>(<span class="macro">format_ident!</span>(<span class="string">"Output"</span>)),
             <span class="macro">parse_quote! </span>{
                 <span class="kw">trait </span>IndexMut&lt;__Idx&gt;: ::core::ops::Index&lt;__Idx&gt; {
                     <span class="attr">#[inline]
@@ -314,14 +306,14 @@
     }
 }
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;ops&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"ops"</span>)]
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>range_bounds {
     <span class="kw">use </span><span class="kw">crate</span>::derive::<span class="kw-2">*</span>;
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>NAME: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str] = <span class="kw-2">&amp;</span>[<span class="string">&quot;RangeBounds&quot;</span>];
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>NAME: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str] = <span class="kw-2">&amp;</span>[<span class="string">"RangeBounds"</span>];
 
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>derive(_cx: <span class="kw-2">&amp;</span>Context, data: <span class="kw-2">&amp;</span>Data) -&gt; <span class="prelude-ty">Result</span>&lt;TokenStream&gt; {
-        <span class="prelude-val">Ok</span>(derive_trait(data, <span class="macro">parse_quote!</span>(::core::ops::RangeBounds), <span class="prelude-val">None</span>, <span class="macro">parse_quote! </span>{
+        <span class="prelude-val">Ok</span>(derive_trait(data, <span class="kw-2">&amp;</span><span class="macro">parse_quote!</span>(::core::ops::RangeBounds), <span class="prelude-val">None</span>, <span class="macro">parse_quote! </span>{
             <span class="kw">trait </span>RangeBounds&lt;__T: <span class="question-mark">?</span>Sized&gt; {
                 <span class="attr">#[inline]
                 </span><span class="kw">fn </span>start_bound(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ::core::ops::Bound&lt;<span class="kw-2">&amp;</span>__T&gt;;
@@ -332,21 +324,21 @@
     }
 }
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;coroutine_trait&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"coroutine_trait"</span>)]
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>coroutine {
     <span class="kw">use </span>quote::ToTokens;
 
     <span class="kw">use </span><span class="kw">crate</span>::derive::<span class="kw-2">*</span>;
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>NAME: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str] = <span class="kw-2">&amp;</span>[<span class="string">&quot;Coroutine&quot;</span>];
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>NAME: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str] = <span class="kw-2">&amp;</span>[<span class="string">"Coroutine"</span>];
 
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>derive(cx: <span class="kw-2">&amp;</span>Context, data: <span class="kw-2">&amp;</span>Data) -&gt; <span class="prelude-ty">Result</span>&lt;TokenStream&gt; {
         cx.needs_pin_projection();
 
         <span class="kw">let </span>ident = <span class="kw-2">&amp;</span>data.ident;
         <span class="kw">let </span>pin = <span class="macro">quote!</span>(::core::pin::Pin);
-        <span class="kw">let </span>trait_: syn::Path = <span class="macro">parse_quote!</span>(::core::ops::Coroutine);
-        <span class="kw">let </span><span class="kw-2">mut </span>impl_ = EnumImpl::from_trait(data, trait_.clone(), <span class="prelude-val">None</span>, <span class="macro">parse_quote! </span>{
+        <span class="kw">let </span>trait_ = <span class="macro">parse_quote!</span>(::core::ops::Coroutine);
+        <span class="kw">let </span><span class="kw-2">mut </span>impl_ = EnumImpl::from_trait(data, <span class="kw-2">&amp;</span>trait_, <span class="prelude-val">None</span>, <span class="macro">parse_quote! </span>{
             <span class="kw">trait </span>Coroutine&lt;R&gt; {
                 <span class="kw">type </span>Yield;
                 <span class="kw">type </span>Return;
@@ -354,9 +346,11 @@
         })
         .build_impl();
 
-        <span class="kw">let </span>resume = data
-            .variant_idents()
-            .map(|v| <span class="macro">quote!</span>(#ident::#v(x) =&gt; #trait_::resume(#pin::new_unchecked(x), arg)));
+        <span class="kw">let </span>resume = data.variant_idents().zip(data.field_types()).map(|(v, ty)| {
+            <span class="macro">quote! </span>{
+                #ident::#v(x) =&gt; &lt;#ty <span class="kw">as </span>#trait_&lt;R&gt;&gt;::resume(#pin::new_unchecked(x), arg),
+            }
+        });
         impl_.items.push(<span class="macro">parse_quote! </span>{
             <span class="attr">#[inline]
             </span><span class="kw">fn </span>resume(
@@ -364,7 +358,7 @@
                 arg: R,
             ) -&gt; ::core::ops::CoroutineState&lt;<span class="self">Self</span>::Yield, <span class="self">Self</span>::Return&gt; {
                 <span class="kw">unsafe </span>{
-                    <span class="kw">match </span><span class="self">self</span>.get_unchecked_mut() { #(#resume,)* }
+                    <span class="kw">match </span><span class="self">self</span>.get_unchecked_mut() { #(#resume)* }
                 }
             }
         });
@@ -373,101 +367,89 @@
     }
 }
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;fn_traits&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"fn_traits"</span>)]
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>fn_ {
     <span class="kw">use </span>derive_utils::EnumImpl;
     <span class="kw">use </span>syn::TypeParam;
 
     <span class="kw">use </span><span class="kw">crate</span>::derive::<span class="kw-2">*</span>;
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>NAME: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str] = <span class="kw-2">&amp;</span>[<span class="string">&quot;Fn&quot;</span>];
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>NAME: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str] = <span class="kw-2">&amp;</span>[<span class="string">"Fn"</span>];
 
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>derive(_cx: <span class="kw-2">&amp;</span>Context, data: <span class="kw-2">&amp;</span>Data) -&gt; <span class="prelude-ty">Result</span>&lt;TokenStream&gt; {
         <span class="kw">let </span>trait_path = <span class="macro">quote!</span>(::core::ops::Fn);
         <span class="kw">let </span>trait_ = <span class="macro">quote!</span>(#trait_path(__T) -&gt; __U);
-        <span class="kw">let </span>fst = data.field_types().next();
         <span class="kw">let </span><span class="kw-2">mut </span>impl_ = EnumImpl::new(data);
 
         impl_.set_trait(<span class="macro">parse_quote!</span>(#trait_path&lt;(__T,)&gt;));
-        impl_.push_generic_param(TypeParam::from(<span class="macro">format_ident!</span>(<span class="string">&quot;__T&quot;</span>)).into());
-        impl_.push_generic_param(TypeParam::from(<span class="macro">format_ident!</span>(<span class="string">&quot;__U&quot;</span>)).into());
+        impl_.push_generic_param(TypeParam::from(<span class="macro">format_ident!</span>(<span class="string">"__T"</span>)).into());
+        impl_.push_generic_param(TypeParam::from(<span class="macro">format_ident!</span>(<span class="string">"__U"</span>)).into());
 
-        impl_.push_where_predicate(<span class="macro">parse_quote!</span>(#fst: #trait_));
-        data.field_types()
-            .skip(<span class="number">1</span>)
-            .for_each(|f| impl_.push_where_predicate(<span class="macro">parse_quote!</span>(#f: #trait_)));
+        data.field_types().for_each(|f| impl_.push_where_predicate(<span class="macro">parse_quote!</span>(#f: #trait_)));
 
         impl_.push_method(<span class="macro">parse_quote! </span>{
             <span class="attr">#[inline]
-            </span><span class="kw">extern </span><span class="string">&quot;rust-call&quot; </span><span class="kw">fn </span>call(<span class="kw-2">&amp;</span><span class="self">self</span>, args: (__T,)) -&gt; <span class="self">Self</span>::Output;
+            </span><span class="kw">extern </span><span class="string">"rust-call" </span><span class="kw">fn </span>call(<span class="kw-2">&amp;</span><span class="self">self</span>, args: (__T,)) -&gt; <span class="self">Self</span>::Output;
         });
 
         <span class="prelude-val">Ok</span>(impl_.build())
     }
 }
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;fn_traits&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"fn_traits"</span>)]
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>fn_mut {
     <span class="kw">use </span>derive_utils::EnumImpl;
     <span class="kw">use </span>syn::TypeParam;
 
     <span class="kw">use </span><span class="kw">crate</span>::derive::<span class="kw-2">*</span>;
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>NAME: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str] = <span class="kw-2">&amp;</span>[<span class="string">&quot;FnMut&quot;</span>];
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>NAME: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str] = <span class="kw-2">&amp;</span>[<span class="string">"FnMut"</span>];
 
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>derive(_cx: <span class="kw-2">&amp;</span>Context, data: <span class="kw-2">&amp;</span>Data) -&gt; <span class="prelude-ty">Result</span>&lt;TokenStream&gt; {
         <span class="kw">let </span>trait_path = <span class="macro">quote!</span>(::core::ops::FnMut);
         <span class="kw">let </span>trait_ = <span class="macro">quote!</span>(#trait_path(__T) -&gt; __U);
-        <span class="kw">let </span>fst = data.field_types().next();
         <span class="kw">let </span><span class="kw-2">mut </span>impl_ = EnumImpl::new(data);
 
         impl_.set_trait(<span class="macro">parse_quote!</span>(#trait_path&lt;(__T,)&gt;));
-        impl_.push_generic_param(TypeParam::from(<span class="macro">format_ident!</span>(<span class="string">&quot;__T&quot;</span>)).into());
-        impl_.push_generic_param(TypeParam::from(<span class="macro">format_ident!</span>(<span class="string">&quot;__U&quot;</span>)).into());
+        impl_.push_generic_param(TypeParam::from(<span class="macro">format_ident!</span>(<span class="string">"__T"</span>)).into());
+        impl_.push_generic_param(TypeParam::from(<span class="macro">format_ident!</span>(<span class="string">"__U"</span>)).into());
 
-        impl_.push_where_predicate(<span class="macro">parse_quote!</span>(#fst: #trait_));
-        data.field_types()
-            .skip(<span class="number">1</span>)
-            .for_each(|f| impl_.push_where_predicate(<span class="macro">parse_quote!</span>(#f: #trait_)));
+        data.field_types().for_each(|f| impl_.push_where_predicate(<span class="macro">parse_quote!</span>(#f: #trait_)));
 
         impl_.push_method(<span class="macro">parse_quote! </span>{
             <span class="attr">#[inline]
-            </span><span class="kw">extern </span><span class="string">&quot;rust-call&quot; </span><span class="kw">fn </span>call_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>, args: (__T,)) -&gt; <span class="self">Self</span>::Output;
+            </span><span class="kw">extern </span><span class="string">"rust-call" </span><span class="kw">fn </span>call_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>, args: (__T,)) -&gt; <span class="self">Self</span>::Output;
         });
 
         <span class="prelude-val">Ok</span>(impl_.build())
     }
 }
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;fn_traits&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"fn_traits"</span>)]
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod </span>fn_once {
     <span class="kw">use </span>derive_utils::EnumImpl;
     <span class="kw">use </span>syn::TypeParam;
 
     <span class="kw">use </span><span class="kw">crate</span>::derive::<span class="kw-2">*</span>;
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>NAME: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str] = <span class="kw-2">&amp;</span>[<span class="string">&quot;FnOnce&quot;</span>];
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>NAME: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str] = <span class="kw-2">&amp;</span>[<span class="string">"FnOnce"</span>];
 
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>derive(_cx: <span class="kw-2">&amp;</span>Context, data: <span class="kw-2">&amp;</span>Data) -&gt; <span class="prelude-ty">Result</span>&lt;TokenStream&gt; {
         <span class="kw">let </span>trait_path = <span class="macro">quote!</span>(::core::ops::FnOnce);
         <span class="kw">let </span>trait_ = <span class="macro">quote!</span>(#trait_path(__T) -&gt; __U);
-        <span class="kw">let </span>fst = data.field_types().next();
         <span class="kw">let </span><span class="kw-2">mut </span>impl_ = EnumImpl::new(data);
 
         impl_.set_trait(<span class="macro">parse_quote!</span>(#trait_path&lt;(__T,)&gt;));
-        impl_.push_generic_param(TypeParam::from(<span class="macro">format_ident!</span>(<span class="string">&quot;__T&quot;</span>)).into());
-        impl_.push_generic_param(TypeParam::from(<span class="macro">format_ident!</span>(<span class="string">&quot;__U&quot;</span>)).into());
+        impl_.push_generic_param(TypeParam::from(<span class="macro">format_ident!</span>(<span class="string">"__T"</span>)).into());
+        impl_.push_generic_param(TypeParam::from(<span class="macro">format_ident!</span>(<span class="string">"__U"</span>)).into());
 
-        impl_.push_where_predicate(<span class="macro">parse_quote!</span>(#fst: #trait_));
-        data.field_types()
-            .skip(<span class="number">1</span>)
-            .for_each(|f| impl_.push_where_predicate(<span class="macro">parse_quote!</span>(#f: #trait_)));
+        data.field_types().for_each(|f| impl_.push_where_predicate(<span class="macro">parse_quote!</span>(#f: #trait_)));
 
         impl_.append_items_from_trait(<span class="macro">parse_quote! </span>{
             <span class="kw">trait </span>FnOnce {
                 <span class="kw">type </span>Output;
                 <span class="attr">#[inline]
-                </span><span class="kw">extern </span><span class="string">&quot;rust-call&quot; </span><span class="kw">fn </span>call_once(<span class="self">self</span>, args: (__T,)) -&gt; <span class="self">Self</span>::Output;
+                </span><span class="kw">extern </span><span class="string">"rust-call" </span><span class="kw">fn </span>call_once(<span class="self">self</span>, args: (__T,)) -&gt; <span class="self">Self</span>::Output;
             }
         });
 

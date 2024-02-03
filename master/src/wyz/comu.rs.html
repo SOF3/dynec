@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/wyz-0.5.1/src/comu.rs`."><title>comu.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="wyz" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/wyz-0.5.1/src/comu.rs`."><title>comu.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="wyz" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../wyz/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -690,7 +692,7 @@ shared logic can be placed in an `impl&lt;T, M&gt; Ptr&lt;T, M&gt;` block, but u
 (such as freezing a `Mut` pointer, or unfreezing a `Frozen&lt;Mut&gt;`) can be placed
 in specialized `impl&lt;T&gt; Ptr&lt;T, Mut&gt;` blocks.
 **/
-</span><span class="kw">pub trait </span>Mutability: <span class="lifetime">&#39;static </span>+ Copy + Sized + <span class="self">self</span>::seal::Sealed {
+</span><span class="kw">pub trait </span>Mutability: <span class="lifetime">'static </span>+ Copy + Sized + <span class="self">self</span>::seal::Sealed {
 	<span class="doccomment">/// Marks whether this type contains mutability permissions within it.
 	///
 	/// This is `false` for `Const` and `true` for `Mut`. `Frozen` wrappers
@@ -704,7 +706,7 @@ in specialized `impl&lt;T&gt; Ptr&lt;T, Mut&gt;` blocks.
 	</span><span class="kw">const </span>SELF: <span class="self">Self</span>;
 
 	<span class="doccomment">/// One of `*const` or `*mut`.
-	</span><span class="kw">const </span>RENDER: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str;
+	</span><span class="kw">const </span>RENDER: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str;
 
 	<span class="doccomment">/// Freeze this type, wrapping it in a `const` marker that may later be
 	/// removed to thaw it.
@@ -720,7 +722,7 @@ in specialized `impl&lt;T&gt; Ptr&lt;T, Mut&gt;` blocks.
 }
 
 <span class="kw">impl </span>Mutability <span class="kw">for </span>Const {
-	<span class="kw">const </span>RENDER: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str = <span class="string">&quot;*const&quot;</span>;
+	<span class="kw">const </span>RENDER: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str = <span class="string">"*const"</span>;
 	<span class="kw">const </span>SELF: <span class="self">Self </span>= <span class="self">Self</span>;
 }
 
@@ -732,7 +734,7 @@ in specialized `impl&lt;T&gt; Ptr&lt;T, Mut&gt;` blocks.
 {
 	<span class="kw">const </span>CONTAINS_MUTABILITY: bool = Inner::CONTAINS_MUTABILITY;
 	<span class="kw">const </span>PEANO_NUMBER: usize = <span class="number">1 </span>+ Inner::PEANO_NUMBER;
-	<span class="kw">const </span>RENDER: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str = Inner::RENDER;
+	<span class="kw">const </span>RENDER: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str = Inner::RENDER;
 	<span class="kw">const </span>SELF: <span class="self">Self </span>= <span class="self">Self </span>{ inner: Inner::SELF };
 }
 
@@ -742,7 +744,7 @@ in specialized `impl&lt;T&gt; Ptr&lt;T, Mut&gt;` blocks.
 
 <span class="kw">impl </span>Mutability <span class="kw">for </span>Mut {
 	<span class="kw">const </span>CONTAINS_MUTABILITY: bool = <span class="bool-val">true</span>;
-	<span class="kw">const </span>RENDER: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str = <span class="string">&quot;*mut&quot;</span>;
+	<span class="kw">const </span>RENDER: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str = <span class="string">"*mut"</span>;
 	<span class="kw">const </span>SELF: <span class="self">Self </span>= <span class="self">Self</span>;
 }
 
@@ -882,11 +884,11 @@ in specialized `impl&lt;T&gt; Ptr&lt;T, Mut&gt;` blocks.
 		</span>$(, <span class="macro-nonterminal">$arg</span>:ident: <span class="macro-nonterminal">$ty</span>:ty)*
 		$(=&gt; <span class="macro-nonterminal">$ret</span>:ty)<span class="question-mark">?
 	</span>);+ $(;)<span class="question-mark">?</span>) =&gt; { $(
-		<span class="attr">#[doc = <span class="macro">concat!</span>(<span class="string">&quot;Applies `&lt;*T&gt;::&quot;</span>, <span class="macro">stringify!</span>(<span class="macro-nonterminal">$name</span>), <span class="string">&quot;`.&quot;</span>)]
+		<span class="attr">#[doc = <span class="macro">concat!</span>(<span class="string">"Applies `&lt;*T&gt;::"</span>, <span class="macro">stringify!</span>(<span class="macro-nonterminal">$name</span>), <span class="string">"`."</span>)]
 		</span><span class="doccomment">///
 		/// See [original documentation][orig].
 		///
-		</span><span class="attr">#[doc = <span class="macro">concat!</span>(<span class="string">&quot;[orig]: https://doc.rust-lang.org/std/primitive.pointer.html#method.&quot;</span>, <span class="macro">stringify!</span>(<span class="macro-nonterminal">$name</span>))]
+		</span><span class="attr">#[doc = <span class="macro">concat!</span>(<span class="string">"[orig]: https://doc.rust-lang.org/std/primitive.pointer.html#method."</span>, <span class="macro">stringify!</span>(<span class="macro-nonterminal">$name</span>))]
 		</span><span class="kw">pub </span>$(<span class="macro-nonterminal">$</span><span class="kw">unsafe</span>)<span class="question-mark">? </span><span class="kw">fn </span><span class="macro-nonterminal">$name</span>$(&lt;
 			$(<span class="macro-nonterminal">$lt</span>,)* $(<span class="macro-nonterminal">$typaram</span>$(: $(<span class="macro-nonterminal">$bound</span>),+)<span class="question-mark">?</span>,)*
 		&gt;)<span class="question-mark">?</span>(<span class="self">self</span>$(, <span class="macro-nonterminal">$arg</span>: <span class="macro-nonterminal">$ty</span>)<span class="kw-2">*</span>) $(-&gt; <span class="macro-nonterminal">$ret</span>)<span class="question-mark">? </span>{
@@ -908,11 +910,11 @@ in specialized `impl&lt;T&gt; Ptr&lt;T, Mut&gt;` blocks.
 		</span>$(, <span class="macro-nonterminal">$arg</span>:ident: <span class="macro-nonterminal">$ty</span>:ty $(<span class="kw">as </span><span class="macro-nonterminal">$map</span>:expr)<span class="question-mark">?</span>)*
 		$(=&gt; <span class="macro-nonterminal">$ret</span>:ty)<span class="question-mark">?
 	</span>);+ $(;)<span class="question-mark">?</span>) =&gt; { $(
-		<span class="attr">#[doc = <span class="macro">concat!</span>(<span class="string">&quot;Applies `&lt;*T&gt;::&quot;</span>, <span class="macro">stringify!</span>(<span class="macro-nonterminal">$name</span>), <span class="string">&quot;`.&quot;</span>)]
+		<span class="attr">#[doc = <span class="macro">concat!</span>(<span class="string">"Applies `&lt;*T&gt;::"</span>, <span class="macro">stringify!</span>(<span class="macro-nonterminal">$name</span>), <span class="string">"`."</span>)]
 		</span><span class="doccomment">///
 		/// See [original documentation][orig].
 		///
-		</span><span class="attr">#[doc = <span class="macro">concat!</span>(<span class="string">&quot;[orig]: https://doc.rust-lang.org/std/primitive.pointer.html#method.&quot;</span>, <span class="macro">stringify!</span>(<span class="macro-nonterminal">$name</span>))]
+		</span><span class="attr">#[doc = <span class="macro">concat!</span>(<span class="string">"[orig]: https://doc.rust-lang.org/std/primitive.pointer.html#method."</span>, <span class="macro">stringify!</span>(<span class="macro-nonterminal">$name</span>))]
 		</span><span class="kw">pub </span>$(<span class="macro-nonterminal">$</span><span class="kw">unsafe</span>)<span class="question-mark">? </span><span class="kw">fn </span><span class="macro-nonterminal">$name</span>$(&lt;
 			$(<span class="macro-nonterminal">$lt</span>,)* $(<span class="macro-nonterminal">$typaram</span>$(: $(<span class="macro-nonterminal">$bound</span>),+)<span class="question-mark">?</span>,)*
 		&gt;)<span class="question-mark">?</span>(<span class="self">self</span>$(, <span class="macro-nonterminal">$arg</span>: <span class="macro-nonterminal">$ty</span>)<span class="kw-2">*</span>) $(-&gt; <span class="macro-nonterminal">$ret</span>)<span class="question-mark">? </span>{
@@ -954,7 +956,7 @@ in specialized `impl&lt;T&gt; Ptr&lt;T, Mut&gt;` blocks.
 	T: <span class="question-mark">?</span>Sized,
 {
 	<span class="macro">map! </span>{
-		@<span class="kw">unsafe </span>as_ref&lt;<span class="lifetime">&#39;a</span>&gt; =&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T&gt;;
+		@<span class="kw">unsafe </span>as_ref&lt;<span class="lifetime">'a</span>&gt; =&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>T&gt;;
 	}
 
 	<span class="doccomment">/// Applies a pointer -&gt; pointer function within an Address -&gt; Address.
@@ -987,7 +989,7 @@ in specialized `impl&lt;T&gt; Ptr&lt;T, Mut&gt;` blocks.
 <span class="kw">where </span>T: <span class="question-mark">?</span>Sized
 {
 	<span class="macro">map! </span>{
-		@<span class="kw">unsafe </span>as_mut&lt;<span class="lifetime">&#39;a</span>&gt; =&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>T&gt;;
+		@<span class="kw">unsafe </span>as_mut&lt;<span class="lifetime">'a</span>&gt; =&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>T&gt;;
 		@<span class="kw">unsafe </span>drop_in_place;
 	}
 }
@@ -1066,7 +1068,7 @@ in specialized `impl&lt;T&gt; Ptr&lt;T, Mut&gt;` blocks.
 	<span class="attr">#[inline]
 	</span><span class="kw">fn </span>cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; cmp::Ordering {
 		<span class="self">self</span>.partial_cmp(other)
-			.expect(<span class="string">&quot;Addresses have a total ordering&quot;</span>)
+			.expect(<span class="string">"Addresses have a total ordering"</span>)
 	}
 }
 
@@ -1131,9 +1133,9 @@ in specialized `impl&lt;T&gt; Ptr&lt;T, Mut&gt;` blocks.
 }
 
 <span class="doccomment">/// Allows an `Address` to produce an ordinary reference.
-</span><span class="kw">pub trait </span>Referential&lt;<span class="lifetime">&#39;a</span>&gt;: <span class="self">self</span>::seal::Sealed {
+</span><span class="kw">pub trait </span>Referential&lt;<span class="lifetime">'a</span>&gt;: <span class="self">self</span>::seal::Sealed {
 	<span class="doccomment">/// The created reference type. Must be one of `&amp;T` or `&amp;mut T`.
-	</span><span class="kw">type </span>Ref: <span class="lifetime">&#39;a </span>+ Deref;
+	</span><span class="kw">type </span>Ref: <span class="lifetime">'a </span>+ Deref;
 
 	<span class="doccomment">/// Converts the `Address` to a reference.
 	///
@@ -1148,10 +1150,10 @@ in specialized `impl&lt;T&gt; Ptr&lt;T, Mut&gt;` blocks.
 	</span><span class="kw">fn </span>from_ref(this: <span class="self">Self</span>::Ref) -&gt; <span class="self">Self</span>;
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T&gt; Referential&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw">for </span>Address&lt;Const, T&gt;
-<span class="kw">where </span>T: <span class="lifetime">&#39;a </span>+ <span class="question-mark">?</span>Sized
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T&gt; Referential&lt;<span class="lifetime">'a</span>&gt; <span class="kw">for </span>Address&lt;Const, T&gt;
+<span class="kw">where </span>T: <span class="lifetime">'a </span>+ <span class="question-mark">?</span>Sized
 {
-	<span class="kw">type </span>Ref = <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T;
+	<span class="kw">type </span>Ref = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>T;
 
 	<span class="kw">unsafe fn </span>to_ref(<span class="self">self</span>) -&gt; <span class="self">Self</span>::Ref {
 		<span class="self">self</span>.inner.as_ref()
@@ -1162,10 +1164,10 @@ in specialized `impl&lt;T&gt; Ptr&lt;T, Mut&gt;` blocks.
 	}
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T&gt; Referential&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw">for </span>Address&lt;Mut, T&gt;
-<span class="kw">where </span>T: <span class="lifetime">&#39;a </span>+ <span class="question-mark">?</span>Sized
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T&gt; Referential&lt;<span class="lifetime">'a</span>&gt; <span class="kw">for </span>Address&lt;Mut, T&gt;
+<span class="kw">where </span>T: <span class="lifetime">'a </span>+ <span class="question-mark">?</span>Sized
 {
-	<span class="kw">type </span>Ref = <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>T;
+	<span class="kw">type </span>Ref = <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>T;
 
 	<span class="kw">unsafe fn </span>to_ref(<span class="kw-2">mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::Ref {
 		<span class="self">self</span>.inner.as_mut()
@@ -1176,12 +1178,12 @@ in specialized `impl&lt;T&gt; Ptr&lt;T, Mut&gt;` blocks.
 	}
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, M, T&gt; Referential&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw">for </span>Address&lt;Frozen&lt;M&gt;, T&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, M, T&gt; Referential&lt;<span class="lifetime">'a</span>&gt; <span class="kw">for </span>Address&lt;Frozen&lt;M&gt;, T&gt;
 <span class="kw">where
 	</span>M: Mutability,
-	T: <span class="lifetime">&#39;a </span>+ <span class="question-mark">?</span>Sized,
+	T: <span class="lifetime">'a </span>+ <span class="question-mark">?</span>Sized,
 {
-	<span class="kw">type </span>Ref = <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T;
+	<span class="kw">type </span>Ref = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>T;
 
 	<span class="kw">unsafe fn </span>to_ref(<span class="self">self</span>) -&gt; <span class="self">Self</span>::Ref {
 		<span class="self">self</span>.inner.as_ref()
@@ -1193,10 +1195,10 @@ in specialized `impl&lt;T&gt; Ptr&lt;T, Mut&gt;` blocks.
 }
 
 <span class="doccomment">/// A generically-mutable reference.
-</span><span class="kw">pub type </span>Reference&lt;<span class="lifetime">&#39;a</span>, M, T&gt; = &lt;Address&lt;M, T&gt; <span class="kw">as </span>Referential&lt;<span class="lifetime">&#39;a</span>&gt;&gt;::Ref;
+</span><span class="kw">pub type </span>Reference&lt;<span class="lifetime">'a</span>, M, T&gt; = &lt;Address&lt;M, T&gt; <span class="kw">as </span>Referential&lt;<span class="lifetime">'a</span>&gt;&gt;::Ref;
 
 <span class="doccomment">/// Allows an `Address&lt;M, [T]&gt;` to produce an ordinary slice reference.
-</span><span class="kw">pub trait </span>SliceReferential&lt;<span class="lifetime">&#39;a</span>&gt;: Referential&lt;<span class="lifetime">&#39;a</span>&gt; + <span class="self">self</span>::seal::Sealed {
+</span><span class="kw">pub trait </span>SliceReferential&lt;<span class="lifetime">'a</span>&gt;: Referential&lt;<span class="lifetime">'a</span>&gt; + <span class="self">self</span>::seal::Sealed {
 	<span class="doccomment">/// The type of the element pointer.
 	</span><span class="kw">type </span>ElementAddr;
 
@@ -1214,8 +1216,8 @@ in specialized `impl&lt;T&gt; Ptr&lt;T, Mut&gt;` blocks.
 	</span><span class="kw">unsafe fn </span>from_raw_parts(ptr: <span class="self">Self</span>::ElementAddr, len: usize) -&gt; <span class="self">Self</span>::Ref;
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T&gt; SliceReferential&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw">for </span>Address&lt;Const, [T]&gt;
-<span class="kw">where </span>T: <span class="lifetime">&#39;a
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T&gt; SliceReferential&lt;<span class="lifetime">'a</span>&gt; <span class="kw">for </span>Address&lt;Const, [T]&gt;
+<span class="kw">where </span>T: <span class="lifetime">'a
 </span>{
 	<span class="kw">type </span>ElementAddr = Address&lt;Const, T&gt;;
 
@@ -1224,10 +1226,10 @@ in specialized `impl&lt;T&gt; Ptr&lt;T, Mut&gt;` blocks.
 	}
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, M, T&gt; SliceReferential&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw">for </span>Address&lt;Frozen&lt;M&gt;, [T]&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, M, T&gt; SliceReferential&lt;<span class="lifetime">'a</span>&gt; <span class="kw">for </span>Address&lt;Frozen&lt;M&gt;, [T]&gt;
 <span class="kw">where
 	</span>M: Mutability,
-	T: <span class="lifetime">&#39;a</span>,
+	T: <span class="lifetime">'a</span>,
 {
 	<span class="kw">type </span>ElementAddr = Address&lt;Frozen&lt;M&gt;, T&gt;;
 
@@ -1236,8 +1238,8 @@ in specialized `impl&lt;T&gt; Ptr&lt;T, Mut&gt;` blocks.
 	}
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T&gt; SliceReferential&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw">for </span>Address&lt;Mut, [T]&gt;
-<span class="kw">where </span>T: <span class="lifetime">&#39;a
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, T&gt; SliceReferential&lt;<span class="lifetime">'a</span>&gt; <span class="kw">for </span>Address&lt;Mut, [T]&gt;
+<span class="kw">where </span>T: <span class="lifetime">'a
 </span>{
 	<span class="kw">type </span>ElementAddr = Address&lt;Mut, T&gt;;
 
@@ -1253,11 +1255,11 @@ in specialized `impl&lt;T&gt; Ptr&lt;T, Mut&gt;` blocks.
 <span class="kw">impl </span>Display <span class="kw">for </span>NullPtrError {
 	<span class="attr">#[inline]
 	</span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
-		<span class="macro">write!</span>(fmt, <span class="string">&quot;wyz::Address cannot contain a null pointer&quot;</span>)
+		<span class="macro">write!</span>(fmt, <span class="string">"wyz::Address cannot contain a null pointer"</span>)
 	}
 }
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
 </span><span class="kw">impl </span>std::error::Error <span class="kw">for </span>NullPtrError {
 }
 

@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `codegen/src/comp.rs`."><title>comp.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="dynec_codegen" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `codegen/src/comp.rs`."><title>comp.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="dynec_codegen" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../dynec_codegen/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -295,7 +297,7 @@
         <span class="kw">match </span>args.find_one(|arg| <span class="macro">option_match!</span>(arg, ItemOpt::Storage(<span class="kw">_</span>, discrim) =&gt; discrim))<span class="question-mark">? </span>{
             <span class="prelude-val">Some</span>((<span class="kw">_</span>, ty)) =&gt; ty.clone(),
             <span class="prelude-val">None </span>=&gt; syn::parse2(<span class="macro">quote!</span>(#crate_name::storage::Vec))
-                .expect(<span class="string">&quot;Cannot parse storage::Vec as a path&quot;</span>),
+                .expect(<span class="string">"Cannot parse storage::Vec as a path"</span>),
         };
 
     <span class="kw">let </span>presence = args.find_one(|arg| <span class="macro">option_match!</span>(arg, ItemOpt::Required =&gt; <span class="kw-2">&amp;</span>()))<span class="question-mark">?</span>;
@@ -308,7 +310,7 @@
     <span class="kw">if let </span>(<span class="prelude-val">Some</span>((isotope_span, <span class="kw">_</span>)), <span class="prelude-val">Some</span>((finalizer_span, <span class="kw">_</span>))) = (isotope, finalizer) {
         <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(
             isotope_span.join(finalizer_span).unwrap_or(finalizer_span),
-            <span class="string">&quot;isotope components cannot be finalizers&quot;</span>,
+            <span class="string">"isotope components cannot be finalizers"</span>,
         ));
     }
     <span class="kw">let </span>finalizer = finalizer.is_some();
@@ -317,8 +319,8 @@
     <span class="kw">if let </span>(<span class="prelude-val">Some</span>((isotope_span, <span class="kw">_</span>)), <span class="prelude-val">Some</span>((presence_span, <span class="kw">_</span>)), <span class="prelude-val">None</span>) = (isotope, presence, init) {
         <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(
             isotope_span.join(presence_span).unwrap_or(presence_span),
-            <span class="string">&quot;isotope components without an auto-initializer cannot be required because new \
-             isotopes may be created dynamically&quot;</span>,
+            <span class="string">"isotope components without an auto-initializer cannot be required because new \
+             isotopes may be created dynamically"</span>,
         ));
     }
 
@@ -391,7 +393,7 @@
         #entity_ref
     };
     <span class="kw">if </span>debug_print {
-        <span class="macro">println!</span>(<span class="string">&quot;#[comp] output: {output}&quot;</span>);
+        <span class="macro">println!</span>(<span class="string">"#[comp] output: {output}"</span>);
     }
     <span class="prelude-val">Ok</span>(output)
 }
@@ -412,36 +414,36 @@
         <span class="kw">let </span>name = input.parse::&lt;syn::Ident&gt;()<span class="question-mark">?</span>;
 
         <span class="kw">let </span>value = <span class="kw">match </span>name.to_string().as_str() {
-            <span class="string">&quot;dynec_as&quot; </span>=&gt; {
+            <span class="string">"dynec_as" </span>=&gt; {
                 <span class="kw">let </span>inner;
                 <span class="kw">let </span>paren = <span class="macro">syn::parenthesized!</span>(inner <span class="kw">in </span>input);
                 <span class="kw">let </span>args = inner.parse()<span class="question-mark">?</span>;
                 ItemOpt::DynecAs(paren, args)
             }
-            <span class="string">&quot;__debug_print&quot; </span>=&gt; ItemOpt::DebugPrint,
-            <span class="string">&quot;of&quot; </span>=&gt; {
+            <span class="string">"__debug_print" </span>=&gt; ItemOpt::DebugPrint,
+            <span class="string">"of" </span>=&gt; {
                 <span class="kw">let </span>eq: <span class="macro">syn::Token!</span>[=] = input.parse()<span class="question-mark">?</span>;
                 <span class="kw">let </span>ty = input.parse::&lt;syn::Type&gt;()<span class="question-mark">?</span>;
                 ItemOpt::Of(eq, ty)
             }
-            <span class="string">&quot;isotope&quot; </span>=&gt; {
+            <span class="string">"isotope" </span>=&gt; {
                 <span class="kw">let </span>eq: <span class="macro">syn::Token!</span>[=] = input.parse()<span class="question-mark">?</span>;
                 <span class="kw">let </span>ty = input.parse::&lt;syn::Type&gt;()<span class="question-mark">?</span>;
                 ItemOpt::Isotope(eq, ty)
             }
-            <span class="string">&quot;storage&quot; </span>=&gt; {
+            <span class="string">"storage" </span>=&gt; {
                 <span class="kw">let </span>eq: <span class="macro">syn::Token!</span>[=] = input.parse()<span class="question-mark">?</span>;
                 <span class="kw">let </span>ty = input.parse::&lt;syn::Path&gt;()<span class="question-mark">?</span>;
                 ItemOpt::Storage(eq, ty)
             }
-            <span class="string">&quot;required&quot; </span>=&gt; ItemOpt::Required,
-            <span class="string">&quot;finalizer&quot; </span>=&gt; ItemOpt::Finalizer,
-            <span class="string">&quot;init&quot; </span>=&gt; {
+            <span class="string">"required" </span>=&gt; ItemOpt::Required,
+            <span class="string">"finalizer" </span>=&gt; ItemOpt::Finalizer,
+            <span class="string">"init" </span>=&gt; {
                 <span class="kw">let </span>eq: <span class="macro">syn::Token!</span>[=] = input.parse()<span class="question-mark">?</span>;
                 <span class="kw">let </span>expr = input.parse::&lt;FunctionRefWithArity&gt;()<span class="question-mark">?</span>;
                 ItemOpt::Init(eq, Box::new(expr))
             }
-            <span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new_spanned(<span class="kw-2">&amp;</span>name, <span class="macro">format!</span>(<span class="string">&quot;Unknown argument `{}`&quot;</span>, name))),
+            <span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new_spanned(<span class="kw-2">&amp;</span>name, <span class="macro">format!</span>(<span class="string">"Unknown argument `{}`"</span>, name))),
         };
 
         <span class="prelude-val">Ok</span>(Named { name, value })
@@ -472,8 +474,8 @@
         }
 
         <span class="prelude-val">Err</span>(input.error(
-            <span class="string">&quot;expected closure or function reference in the form `path/arity` (e.g. \
-             `Default::default/0`)&quot;</span>,
+            <span class="string">"expected closure or function reference in the form `path/arity` (e.g. \
+             `Default::default/0`)"</span>,
         ))
     }
 }

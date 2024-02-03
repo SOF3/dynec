@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitvec-1.0.1/src/ptr/proxy.rs`."><title>proxy.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="bitvec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitvec-1.0.1/src/ptr/proxy.rs`."><title>proxy.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="bitvec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../bitvec/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -473,7 +475,7 @@
 <a href="#473" id="473">473</a>
 <a href="#474" id="474">474</a>
 <a href="#475" id="475">475</a>
-</pre></div><pre class="rust"><code><span class="attr">#![doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/ptr/proxy.md&quot;</span>)]
+</pre></div><pre class="rust"><code><span class="attr">#![doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/ptr/proxy.md"</span>)]
 
 </span><span class="kw">use </span>core::{
 	cell::UnsafeCell,
@@ -513,15 +515,15 @@
 	store::BitStore,
 };
 
-<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/ptr/BitRef.md&quot;</span>)]
+<span class="attr">#[doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/ptr/BitRef.md"</span>)]
 </span><span class="comment">//  Restore alignment and sizing properties, as `BitPtr` lacks them.
-</span><span class="attr">#[cfg_attr(target_pointer_width = <span class="string">&quot;32&quot;</span>, repr(C, align(<span class="number">4</span>)))]
-#[cfg_attr(target_pointer_width = <span class="string">&quot;64&quot;</span>, repr(C, align(<span class="number">8</span>)))]
+</span><span class="attr">#[cfg_attr(target_pointer_width = <span class="string">"32"</span>, repr(C, align(<span class="number">4</span>)))]
+#[cfg_attr(target_pointer_width = <span class="string">"64"</span>, repr(C, align(<span class="number">8</span>)))]
 #[cfg_attr(
-	not(any(target_pointer_width = <span class="string">&quot;32&quot;</span>, target_pointer_width = <span class="string">&quot;64&quot;</span>)),
+	not(any(target_pointer_width = <span class="string">"32"</span>, target_pointer_width = <span class="string">"64"</span>)),
 	repr(C)
 )]
-</span><span class="kw">pub struct </span>BitRef&lt;<span class="lifetime">&#39;a</span>, M = Const, T = usize, O = Lsb0&gt;
+</span><span class="kw">pub struct </span>BitRef&lt;<span class="lifetime">'a</span>, M = Const, T = usize, O = Lsb0&gt;
 <span class="kw">where
 	</span>M: Mutability,
 	T: BitStore,
@@ -532,10 +534,10 @@
 	<span class="doccomment">/// A local cache of the proxied bit that can be referenced.
 	</span>data:   bool,
 	<span class="doccomment">/// Attach the lifetime and reflect the possibility of mutation.
-	</span>_ref:   PhantomData&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>UnsafeCell&lt;bool&gt;&gt;,
+	</span>_ref:   PhantomData&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>UnsafeCell&lt;bool&gt;&gt;,
 }
 
-<span class="kw">impl</span>&lt;M, T, O&gt; BitRef&lt;<span class="lifetime">&#39;_</span>, M, T, O&gt;
+<span class="kw">impl</span>&lt;M, T, O&gt; BitRef&lt;<span class="lifetime">'_</span>, M, T, O&gt;
 <span class="kw">where
 	</span>M: Mutability,
 	T: BitStore,
@@ -592,7 +594,7 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;T, O&gt; BitRef&lt;<span class="lifetime">&#39;_</span>, Mut, T, O&gt;
+<span class="kw">impl</span>&lt;T, O&gt; BitRef&lt;<span class="lifetime">'_</span>, Mut, T, O&gt;
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
@@ -645,7 +647,7 @@
 }
 
 <span class="attr">#[cfg(not(tarpaulin_include))]
-</span><span class="kw">impl</span>&lt;T, O&gt; Clone <span class="kw">for </span>BitRef&lt;<span class="lifetime">&#39;_</span>, Const, T, O&gt;
+</span><span class="kw">impl</span>&lt;T, O&gt; Clone <span class="kw">for </span>BitRef&lt;<span class="lifetime">'_</span>, Const, T, O&gt;
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
@@ -656,7 +658,7 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;M, T, O&gt; Eq <span class="kw">for </span>BitRef&lt;<span class="lifetime">&#39;_</span>, M, T, O&gt;
+<span class="kw">impl</span>&lt;M, T, O&gt; Eq <span class="kw">for </span>BitRef&lt;<span class="lifetime">'_</span>, M, T, O&gt;
 <span class="kw">where
 	</span>M: Mutability,
 	T: BitStore,
@@ -665,7 +667,7 @@
 }
 
 <span class="attr">#[cfg(not(tarpaulin_include))]
-</span><span class="kw">impl</span>&lt;M, T, O&gt; Ord <span class="kw">for </span>BitRef&lt;<span class="lifetime">&#39;_</span>, M, T, O&gt;
+</span><span class="kw">impl</span>&lt;M, T, O&gt; Ord <span class="kw">for </span>BitRef&lt;<span class="lifetime">'_</span>, M, T, O&gt;
 <span class="kw">where
 	</span>M: Mutability,
 	T: BitStore,
@@ -678,8 +680,8 @@
 }
 
 <span class="attr">#[cfg(not(tarpaulin_include))]
-</span><span class="kw">impl</span>&lt;M1, M2, O1, O2, T1, T2&gt; PartialEq&lt;BitRef&lt;<span class="lifetime">&#39;_</span>, M2, T2, O2&gt;&gt;
-	<span class="kw">for </span>BitRef&lt;<span class="lifetime">&#39;_</span>, M1, T1, O1&gt;
+</span><span class="kw">impl</span>&lt;M1, M2, O1, O2, T1, T2&gt; PartialEq&lt;BitRef&lt;<span class="lifetime">'_</span>, M2, T2, O2&gt;&gt;
+	<span class="kw">for </span>BitRef&lt;<span class="lifetime">'_</span>, M1, T1, O1&gt;
 <span class="kw">where
 	</span>M1: Mutability,
 	M2: Mutability,
@@ -689,13 +691,13 @@
 	O2: BitOrder,
 {
 	<span class="attr">#[inline(always)]
-	</span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span>BitRef&lt;<span class="lifetime">&#39;_</span>, M2, T2, O2&gt;) -&gt; bool {
+	</span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span>BitRef&lt;<span class="lifetime">'_</span>, M2, T2, O2&gt;) -&gt; bool {
 		<span class="self">self</span>.data == other.data
 	}
 }
 
 <span class="attr">#[cfg(not(tarpaulin_include))]
-</span><span class="kw">impl</span>&lt;M, T, O&gt; PartialEq&lt;bool&gt; <span class="kw">for </span>BitRef&lt;<span class="lifetime">&#39;_</span>, M, T, O&gt;
+</span><span class="kw">impl</span>&lt;M, T, O&gt; PartialEq&lt;bool&gt; <span class="kw">for </span>BitRef&lt;<span class="lifetime">'_</span>, M, T, O&gt;
 <span class="kw">where
 	</span>M: Mutability,
 	T: BitStore,
@@ -708,20 +710,20 @@
 }
 
 <span class="attr">#[cfg(not(tarpaulin_include))]
-</span><span class="kw">impl</span>&lt;M, T, O&gt; PartialEq&lt;BitRef&lt;<span class="lifetime">&#39;_</span>, M, T, O&gt;&gt; <span class="kw">for </span>bool
+</span><span class="kw">impl</span>&lt;M, T, O&gt; PartialEq&lt;BitRef&lt;<span class="lifetime">'_</span>, M, T, O&gt;&gt; <span class="kw">for </span>bool
 <span class="kw">where
 	</span>M: Mutability,
 	T: BitStore,
 	O: BitOrder,
 {
 	<span class="attr">#[inline]
-	</span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span>BitRef&lt;<span class="lifetime">&#39;_</span>, M, T, O&gt;) -&gt; bool {
+	</span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span>BitRef&lt;<span class="lifetime">'_</span>, M, T, O&gt;) -&gt; bool {
 		other == <span class="self">self
 	</span>}
 }
 
 <span class="attr">#[cfg(not(tarpaulin_include))]
-</span><span class="kw">impl</span>&lt;M, T, O&gt; PartialEq&lt;<span class="kw-2">&amp;</span>bool&gt; <span class="kw">for </span>BitRef&lt;<span class="lifetime">&#39;_</span>, M, T, O&gt;
+</span><span class="kw">impl</span>&lt;M, T, O&gt; PartialEq&lt;<span class="kw-2">&amp;</span>bool&gt; <span class="kw">for </span>BitRef&lt;<span class="lifetime">'_</span>, M, T, O&gt;
 <span class="kw">where
 	</span>M: Mutability,
 	T: BitStore,
@@ -734,21 +736,21 @@
 }
 
 <span class="attr">#[cfg(not(tarpaulin_include))]
-</span><span class="kw">impl</span>&lt;M, T, O&gt; PartialEq&lt;BitRef&lt;<span class="lifetime">&#39;_</span>, M, T, O&gt;&gt; <span class="kw">for </span><span class="kw-2">&amp;</span>bool
+</span><span class="kw">impl</span>&lt;M, T, O&gt; PartialEq&lt;BitRef&lt;<span class="lifetime">'_</span>, M, T, O&gt;&gt; <span class="kw">for </span><span class="kw-2">&amp;</span>bool
 <span class="kw">where
 	</span>M: Mutability,
 	T: BitStore,
 	O: BitOrder,
 {
 	<span class="attr">#[inline]
-	</span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span>BitRef&lt;<span class="lifetime">&#39;_</span>, M, T, O&gt;) -&gt; bool {
+	</span><span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span>BitRef&lt;<span class="lifetime">'_</span>, M, T, O&gt;) -&gt; bool {
 		other == <span class="kw-2">*</span><span class="self">self
 	</span>}
 }
 
 <span class="attr">#[cfg(not(tarpaulin_include))]
-</span><span class="kw">impl</span>&lt;M1, M2, O1, O2, T1, T2&gt; PartialOrd&lt;BitRef&lt;<span class="lifetime">&#39;_</span>, M2, T2, O2&gt;&gt;
-	<span class="kw">for </span>BitRef&lt;<span class="lifetime">&#39;_</span>, M1, T1, O1&gt;
+</span><span class="kw">impl</span>&lt;M1, M2, O1, O2, T1, T2&gt; PartialOrd&lt;BitRef&lt;<span class="lifetime">'_</span>, M2, T2, O2&gt;&gt;
+	<span class="kw">for </span>BitRef&lt;<span class="lifetime">'_</span>, M1, T1, O1&gt;
 <span class="kw">where
 	</span>M1: Mutability,
 	M2: Mutability,
@@ -760,14 +762,14 @@
 	<span class="attr">#[inline]
 	</span><span class="kw">fn </span>partial_cmp(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		other: <span class="kw-2">&amp;</span>BitRef&lt;<span class="lifetime">&#39;_</span>, M2, T2, O2&gt;,
+		other: <span class="kw-2">&amp;</span>BitRef&lt;<span class="lifetime">'_</span>, M2, T2, O2&gt;,
 	) -&gt; <span class="prelude-ty">Option</span>&lt;cmp::Ordering&gt; {
 		<span class="self">self</span>.data.partial_cmp(<span class="kw-2">&amp;</span>other.data)
 	}
 }
 
 <span class="attr">#[cfg(not(tarpaulin_include))]
-</span><span class="kw">impl</span>&lt;M, T, O&gt; PartialOrd&lt;bool&gt; <span class="kw">for </span>BitRef&lt;<span class="lifetime">&#39;_</span>, M, T, O&gt;
+</span><span class="kw">impl</span>&lt;M, T, O&gt; PartialOrd&lt;bool&gt; <span class="kw">for </span>BitRef&lt;<span class="lifetime">'_</span>, M, T, O&gt;
 <span class="kw">where
 	</span>M: Mutability,
 	T: BitStore,
@@ -780,7 +782,7 @@
 }
 
 <span class="attr">#[cfg(not(tarpaulin_include))]
-</span><span class="kw">impl</span>&lt;M, T, O&gt; PartialOrd&lt;<span class="kw-2">&amp;</span>bool&gt; <span class="kw">for </span>BitRef&lt;<span class="lifetime">&#39;_</span>, M, T, O&gt;
+</span><span class="kw">impl</span>&lt;M, T, O&gt; PartialOrd&lt;<span class="kw-2">&amp;</span>bool&gt; <span class="kw">for </span>BitRef&lt;<span class="lifetime">'_</span>, M, T, O&gt;
 <span class="kw">where
 	</span>M: Mutability,
 	T: BitStore,
@@ -793,7 +795,7 @@
 }
 
 <span class="attr">#[cfg(not(tarpaulin_include))]
-</span><span class="kw">impl</span>&lt;M, T, O&gt; AsRef&lt;bool&gt; <span class="kw">for </span>BitRef&lt;<span class="lifetime">&#39;_</span>, M, T, O&gt;
+</span><span class="kw">impl</span>&lt;M, T, O&gt; AsRef&lt;bool&gt; <span class="kw">for </span>BitRef&lt;<span class="lifetime">'_</span>, M, T, O&gt;
 <span class="kw">where
 	</span>M: Mutability,
 	T: BitStore,
@@ -806,7 +808,7 @@
 }
 
 <span class="attr">#[cfg(not(tarpaulin_include))]
-</span><span class="kw">impl</span>&lt;T, O&gt; AsMut&lt;bool&gt; <span class="kw">for </span>BitRef&lt;<span class="lifetime">&#39;_</span>, Mut, T, O&gt;
+</span><span class="kw">impl</span>&lt;T, O&gt; AsMut&lt;bool&gt; <span class="kw">for </span>BitRef&lt;<span class="lifetime">'_</span>, Mut, T, O&gt;
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
@@ -817,7 +819,7 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;M, T, O&gt; Debug <span class="kw">for </span>BitRef&lt;<span class="lifetime">&#39;_</span>, M, T, O&gt;
+<span class="kw">impl</span>&lt;M, T, O&gt; Debug <span class="kw">for </span>BitRef&lt;<span class="lifetime">'_</span>, M, T, O&gt;
 <span class="kw">where
 	</span>M: Mutability,
 	T: BitStore,
@@ -826,12 +828,12 @@
 	<span class="attr">#[inline]
 	</span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
 		<span class="kw">unsafe </span>{ <span class="self">self</span>.bitptr.span_unchecked(<span class="number">1</span>) }
-			.render(fmt, <span class="string">&quot;Ref&quot;</span>, <span class="kw-2">&amp;</span>[(<span class="string">&quot;bit&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.data <span class="kw">as </span><span class="kw-2">&amp;</span><span class="kw">dyn </span>Debug)])
+			.render(fmt, <span class="string">"Ref"</span>, <span class="kw-2">&amp;</span>[(<span class="string">"bit"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.data <span class="kw">as </span><span class="kw-2">&amp;</span><span class="kw">dyn </span>Debug)])
 	}
 }
 
 <span class="attr">#[cfg(not(tarpaulin_include))]
-</span><span class="kw">impl</span>&lt;M, T, O&gt; Display <span class="kw">for </span>BitRef&lt;<span class="lifetime">&#39;_</span>, M, T, O&gt;
+</span><span class="kw">impl</span>&lt;M, T, O&gt; Display <span class="kw">for </span>BitRef&lt;<span class="lifetime">'_</span>, M, T, O&gt;
 <span class="kw">where
 	</span>M: Mutability,
 	T: BitStore,
@@ -844,7 +846,7 @@
 }
 
 <span class="attr">#[cfg(not(tarpaulin_include))]
-</span><span class="kw">impl</span>&lt;M, T, O&gt; Pointer <span class="kw">for </span>BitRef&lt;<span class="lifetime">&#39;_</span>, M, T, O&gt;
+</span><span class="kw">impl</span>&lt;M, T, O&gt; Pointer <span class="kw">for </span>BitRef&lt;<span class="lifetime">'_</span>, M, T, O&gt;
 <span class="kw">where
 	</span>M: Mutability,
 	T: BitStore,
@@ -857,7 +859,7 @@
 }
 
 <span class="attr">#[cfg(not(tarpaulin_include))]
-</span><span class="kw">impl</span>&lt;M, T, O&gt; Hash <span class="kw">for </span>BitRef&lt;<span class="lifetime">&#39;_</span>, M, T, O&gt;
+</span><span class="kw">impl</span>&lt;M, T, O&gt; Hash <span class="kw">for </span>BitRef&lt;<span class="lifetime">'_</span>, M, T, O&gt;
 <span class="kw">where
 	</span>M: Mutability,
 	T: BitStore,
@@ -871,7 +873,7 @@
 }
 
 <span class="comment">// #[allow(clippy::non_send_fields_in_send_ty)] // I know what I’m doing
-</span><span class="kw">unsafe impl</span>&lt;M, T, O&gt; Send <span class="kw">for </span>BitRef&lt;<span class="lifetime">&#39;_</span>, M, T, O&gt;
+</span><span class="kw">unsafe impl</span>&lt;M, T, O&gt; Send <span class="kw">for </span>BitRef&lt;<span class="lifetime">'_</span>, M, T, O&gt;
 <span class="kw">where
 	</span>M: Mutability,
 	T: BitStore + Sync,
@@ -879,7 +881,7 @@
 {
 }
 
-<span class="kw">unsafe impl</span>&lt;M, T, O&gt; Sync <span class="kw">for </span>BitRef&lt;<span class="lifetime">&#39;_</span>, M, T, O&gt;
+<span class="kw">unsafe impl</span>&lt;M, T, O&gt; Sync <span class="kw">for </span>BitRef&lt;<span class="lifetime">'_</span>, M, T, O&gt;
 <span class="kw">where
 	</span>M: Mutability,
 	T: BitStore + Sync,
@@ -889,10 +891,10 @@
 
 <span class="comment">// This cannot be implemented until `Drop` is specialized to only
 // `&lt;Mut, T, O&gt;`.
-// impl&lt;T, O&gt; Copy for BitRef&lt;&#39;_, Const, T, O&gt;
+// impl&lt;T, O&gt; Copy for BitRef&lt;'_, Const, T, O&gt;
 // where O: BitOrder, T: BitStore {}
 
-</span><span class="kw">impl</span>&lt;M, T, O&gt; Deref <span class="kw">for </span>BitRef&lt;<span class="lifetime">&#39;_</span>, M, T, O&gt;
+</span><span class="kw">impl</span>&lt;M, T, O&gt; Deref <span class="kw">for </span>BitRef&lt;<span class="lifetime">'_</span>, M, T, O&gt;
 <span class="kw">where
 	</span>M: Mutability,
 	T: BitStore,
@@ -906,7 +908,7 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;T, O&gt; DerefMut <span class="kw">for </span>BitRef&lt;<span class="lifetime">&#39;_</span>, Mut, T, O&gt;
+<span class="kw">impl</span>&lt;T, O&gt; DerefMut <span class="kw">for </span>BitRef&lt;<span class="lifetime">'_</span>, Mut, T, O&gt;
 <span class="kw">where
 	</span>T: BitStore,
 	O: BitOrder,
@@ -917,7 +919,7 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;M, T, O&gt; Drop <span class="kw">for </span>BitRef&lt;<span class="lifetime">&#39;_</span>, M, T, O&gt;
+<span class="kw">impl</span>&lt;M, T, O&gt; Drop <span class="kw">for </span>BitRef&lt;<span class="lifetime">'_</span>, M, T, O&gt;
 <span class="kw">where
 	</span>M: Mutability,
 	T: BitStore,
@@ -935,7 +937,7 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;M, T, O&gt; Not <span class="kw">for </span>BitRef&lt;<span class="lifetime">&#39;_</span>, M, T, O&gt;
+<span class="kw">impl</span>&lt;M, T, O&gt; Not <span class="kw">for </span>BitRef&lt;<span class="lifetime">'_</span>, M, T, O&gt;
 <span class="kw">where
 	</span>M: Mutability,
 	T: BitStore,

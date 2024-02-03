@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/storage/tree.rs`."><title>tree.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="dynec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/storage/tree.rs`."><title>tree.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="dynec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../dynec/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -267,7 +269,7 @@
     <span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{ <span class="self">Self </span>{ data: BTreeMap::new() } }
 }
 
-<span class="kw">impl</span>&lt;RawT: entity::Raw, C: Send + Sync + <span class="lifetime">&#39;static</span>&gt; Access <span class="kw">for </span>Tree&lt;RawT, C&gt; {
+<span class="kw">impl</span>&lt;RawT: entity::Raw, C: Send + Sync + <span class="lifetime">'static</span>&gt; Access <span class="kw">for </span>Tree&lt;RawT, C&gt; {
     <span class="kw">type </span>RawEntity = RawT;
     <span class="kw">type </span>Comp = C;
 
@@ -294,7 +296,7 @@
         }
 
         <span class="prelude-val">Some</span>(ptrs.map(|ptr| {
-            <span class="kw">let </span><span class="kw-2">mut </span>ptr = ptr.expect(<span class="string">&quot;checked all are not none&quot;</span>);
+            <span class="kw">let </span><span class="kw-2">mut </span>ptr = ptr.expect(<span class="string">"checked all are not none"</span>);
 
             <span class="kw">unsafe </span>{
                 <span class="comment">// All pointers originated from a `&amp;mut self`, so all possible aliases are in locals.
@@ -305,13 +307,13 @@
         }))
     }
 
-    <span class="kw">type </span>IterMut&lt;<span class="lifetime">&#39;t</span>&gt; = <span class="kw">impl </span>Iterator&lt;Item = (<span class="self">Self</span>::RawEntity, <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span><span class="self">Self</span>::Comp)&gt; + <span class="lifetime">&#39;t</span>;
-    <span class="kw">fn </span>iter_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::IterMut&lt;<span class="lifetime">&#39;_</span>&gt; {
+    <span class="kw">type </span>IterMut&lt;<span class="lifetime">'t</span>&gt; = <span class="kw">impl </span>Iterator&lt;Item = (<span class="self">Self</span>::RawEntity, <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span><span class="self">Self</span>::Comp)&gt; + <span class="lifetime">'t</span>;
+    <span class="kw">fn </span>iter_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::IterMut&lt;<span class="lifetime">'_</span>&gt; {
         Box::new(<span class="self">self</span>.data.iter_mut().map(|(<span class="kw-2">&amp;</span>entity, cell)| (entity, cell.get_mut())))
     }
 }
 
-<span class="kw">impl</span>&lt;RawT: entity::Raw, C: Send + Sync + <span class="lifetime">&#39;static</span>&gt; Storage <span class="kw">for </span>Tree&lt;RawT, C&gt; {
+<span class="kw">impl</span>&lt;RawT: entity::Raw, C: Send + Sync + <span class="lifetime">'static</span>&gt; Storage <span class="kw">for </span>Tree&lt;RawT, C&gt; {
     <span class="kw">fn </span>get(<span class="kw-2">&amp;</span><span class="self">self</span>, id: <span class="self">Self</span>::RawEntity) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>C&gt; {
         <span class="self">self</span>.data.get(<span class="kw-2">&amp;</span>id).map(|cell| <span class="kw">unsafe </span>{
             <span class="comment">// Safety: `&amp;self` implies that nobody else can mutate the values.
@@ -329,8 +331,8 @@
 
     <span class="kw">fn </span>cardinality(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; usize { <span class="self">self</span>.data.len() }
 
-    <span class="kw">type </span>Iter&lt;<span class="lifetime">&#39;t</span>&gt; = <span class="kw">impl </span>Iterator&lt;Item = (<span class="self">Self</span>::RawEntity, <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="self">Self</span>::Comp)&gt; + <span class="lifetime">&#39;t</span>;
-    <span class="kw">fn </span>iter(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self</span>::Iter&lt;<span class="lifetime">&#39;_</span>&gt; {
+    <span class="kw">type </span>Iter&lt;<span class="lifetime">'t</span>&gt; = <span class="kw">impl </span>Iterator&lt;Item = (<span class="self">Self</span>::RawEntity, <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="self">Self</span>::Comp)&gt; + <span class="lifetime">'t</span>;
+    <span class="kw">fn </span>iter(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self</span>::Iter&lt;<span class="lifetime">'_</span>&gt; {
         <span class="self">self</span>.data.iter().map(|(<span class="kw-2">&amp;</span>entity, cell)| {
             (entity, <span class="kw">unsafe </span>{
                 <span class="comment">// Safety: `&amp;self` implies that nobody else can mutate the values.
@@ -339,42 +341,42 @@
         })
     }
 
-    <span class="kw">type </span>IterChunks&lt;<span class="lifetime">&#39;t</span>&gt; = <span class="kw">impl </span>Iterator&lt;Item = ChunkRef&lt;<span class="lifetime">&#39;t</span>, <span class="self">Self</span>&gt;&gt; + <span class="lifetime">&#39;t</span>;
-    <span class="kw">fn </span>iter_chunks(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self</span>::IterChunks&lt;<span class="lifetime">&#39;_</span>&gt; {
+    <span class="kw">type </span>IterChunks&lt;<span class="lifetime">'t</span>&gt; = <span class="kw">impl </span>Iterator&lt;Item = ChunkRef&lt;<span class="lifetime">'t</span>, <span class="self">Self</span>&gt;&gt; + <span class="lifetime">'t</span>;
+    <span class="kw">fn </span>iter_chunks(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self</span>::IterChunks&lt;<span class="lifetime">'_</span>&gt; {
         <span class="self">self</span>.iter().map(|(entity, item)| ChunkRef { slice: slice::from_ref(item), start: entity })
     }
 
-    <span class="kw">type </span>IterChunksMut&lt;<span class="lifetime">&#39;t</span>&gt; = <span class="kw">impl </span>Iterator&lt;Item = ChunkMut&lt;<span class="lifetime">&#39;t</span>, <span class="self">Self</span>&gt;&gt; + <span class="lifetime">&#39;t</span>;
-    <span class="kw">fn </span>iter_chunks_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::IterChunksMut&lt;<span class="lifetime">&#39;_</span>&gt; {
+    <span class="kw">type </span>IterChunksMut&lt;<span class="lifetime">'t</span>&gt; = <span class="kw">impl </span>Iterator&lt;Item = ChunkMut&lt;<span class="lifetime">'t</span>, <span class="self">Self</span>&gt;&gt; + <span class="lifetime">'t</span>;
+    <span class="kw">fn </span>iter_chunks_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::IterChunksMut&lt;<span class="lifetime">'_</span>&gt; {
         <span class="self">self</span>.iter_mut()
             .map(|(entity, item)| ChunkMut { slice: slice::from_mut(item), start: entity })
     }
 
-    <span class="kw">type </span>Partition&lt;<span class="lifetime">&#39;t</span>&gt; = StoragePartition&lt;<span class="lifetime">&#39;t</span>, RawT, C&gt;;
-    <span class="kw">fn </span>as_partition(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::Partition&lt;<span class="lifetime">&#39;_</span>&gt; {
+    <span class="kw">type </span>Partition&lt;<span class="lifetime">'t</span>&gt; = StoragePartition&lt;<span class="lifetime">'t</span>, RawT, C&gt;;
+    <span class="kw">fn </span>as_partition(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::Partition&lt;<span class="lifetime">'_</span>&gt; {
         StoragePartition { data: <span class="kw-2">&amp;</span><span class="self">self</span>.data, lower_bound: <span class="prelude-val">None</span>, upper_bound: <span class="prelude-val">None </span>}
     }
 }
 
 <span class="doccomment">/// Return value of [`Tree::split_at`].
-</span><span class="kw">pub struct </span>StoragePartition&lt;<span class="lifetime">&#39;t</span>, RawT: entity::Raw, C&gt; {
-    data:        <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span>BTreeMap&lt;RawT, SyncUnsafeCell&lt;C&gt;&gt;,
+</span><span class="kw">pub struct </span>StoragePartition&lt;<span class="lifetime">'t</span>, RawT: entity::Raw, C&gt; {
+    data:        <span class="kw-2">&amp;</span><span class="lifetime">'t </span>BTreeMap&lt;RawT, SyncUnsafeCell&lt;C&gt;&gt;,
     lower_bound: <span class="prelude-ty">Option</span>&lt;RawT&gt;,
     upper_bound: <span class="prelude-ty">Option</span>&lt;RawT&gt;,
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>, RawT: entity::Raw, C&gt; StoragePartition&lt;<span class="lifetime">&#39;t</span>, RawT, C&gt; {
+<span class="kw">impl</span>&lt;<span class="lifetime">'t</span>, RawT: entity::Raw, C&gt; StoragePartition&lt;<span class="lifetime">'t</span>, RawT, C&gt; {
     <span class="kw">fn </span>assert_bounds(<span class="kw-2">&amp;</span><span class="self">self</span>, entity: RawT) {
         <span class="kw">if let </span><span class="prelude-val">Some</span>(bound) = <span class="self">self</span>.lower_bound {
-            <span class="macro">assert!</span>(entity &gt;= bound, <span class="string">&quot;Entity {entity:?} is not in the partition {bound:?}..&quot;</span>);
+            <span class="macro">assert!</span>(entity &gt;= bound, <span class="string">"Entity {entity:?} is not in the partition {bound:?}.."</span>);
         }
         <span class="kw">if let </span><span class="prelude-val">Some</span>(bound) = <span class="self">self</span>.upper_bound {
-            <span class="macro">assert!</span>(entity &lt; bound, <span class="string">&quot;Entity {entity:?} is not in the partition ..{bound:?}&quot;</span>);
+            <span class="macro">assert!</span>(entity &lt; bound, <span class="string">"Entity {entity:?} is not in the partition ..{bound:?}"</span>);
         }
     }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>, RawT: entity::Raw, C: Send + Sync + <span class="lifetime">&#39;static</span>&gt; Access <span class="kw">for </span>StoragePartition&lt;<span class="lifetime">&#39;t</span>, RawT, C&gt; {
+<span class="kw">impl</span>&lt;<span class="lifetime">'t</span>, RawT: entity::Raw, C: Send + Sync + <span class="lifetime">'static</span>&gt; Access <span class="kw">for </span>StoragePartition&lt;<span class="lifetime">'t</span>, RawT, C&gt; {
     <span class="kw">type </span>RawEntity = RawT;
     <span class="kw">type </span>Comp = C;
 
@@ -397,15 +399,15 @@
         <span class="self">self</span>.by_ref().into_many_mut(entities)
     }
 
-    <span class="kw">type </span>IterMut&lt;<span class="lifetime">&#39;u</span>&gt; = <span class="kw">impl </span>Iterator&lt;Item = (<span class="self">Self</span>::RawEntity, <span class="kw-2">&amp;</span><span class="lifetime">&#39;u </span><span class="kw-2">mut </span><span class="self">Self</span>::Comp)&gt; + <span class="lifetime">&#39;u </span><span class="kw">where </span><span class="self">Self</span>: <span class="lifetime">&#39;u</span>;
-    <span class="kw">fn </span>iter_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::IterMut&lt;<span class="lifetime">&#39;_</span>&gt; { <span class="self">self</span>.by_ref().into_iter_mut() }
+    <span class="kw">type </span>IterMut&lt;<span class="lifetime">'u</span>&gt; = <span class="kw">impl </span>Iterator&lt;Item = (<span class="self">Self</span>::RawEntity, <span class="kw-2">&amp;</span><span class="lifetime">'u </span><span class="kw-2">mut </span><span class="self">Self</span>::Comp)&gt; + <span class="lifetime">'u </span><span class="kw">where </span><span class="self">Self</span>: <span class="lifetime">'u</span>;
+    <span class="kw">fn </span>iter_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::IterMut&lt;<span class="lifetime">'_</span>&gt; { <span class="self">self</span>.by_ref().into_iter_mut() }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;t</span>, RawT: entity::Raw, C: Send + Sync + <span class="lifetime">&#39;static</span>&gt; Partition&lt;<span class="lifetime">&#39;t</span>&gt;
-    <span class="kw">for </span>StoragePartition&lt;<span class="lifetime">&#39;t</span>, RawT, C&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'t</span>, RawT: entity::Raw, C: Send + Sync + <span class="lifetime">'static</span>&gt; Partition&lt;<span class="lifetime">'t</span>&gt;
+    <span class="kw">for </span>StoragePartition&lt;<span class="lifetime">'t</span>, RawT, C&gt;
 {
-    <span class="kw">type </span>ByRef&lt;<span class="lifetime">&#39;u</span>&gt; = StoragePartition&lt;<span class="lifetime">&#39;u</span>, RawT, C&gt; <span class="kw">where </span><span class="self">Self</span>: <span class="lifetime">&#39;u</span>;
-    <span class="kw">fn </span>by_ref(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::ByRef&lt;<span class="lifetime">&#39;_</span>&gt; {
+    <span class="kw">type </span>ByRef&lt;<span class="lifetime">'u</span>&gt; = StoragePartition&lt;<span class="lifetime">'u</span>, RawT, C&gt; <span class="kw">where </span><span class="self">Self</span>: <span class="lifetime">'u</span>;
+    <span class="kw">fn </span>by_ref(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="self">Self</span>::ByRef&lt;<span class="lifetime">'_</span>&gt; {
         StoragePartition {
             data:        <span class="self">self</span>.data,
             lower_bound: <span class="self">self</span>.lower_bound,
@@ -413,7 +415,7 @@
         }
     }
 
-    <span class="kw">type </span>IntoIterMut = <span class="kw">impl </span>Iterator&lt;Item = (RawT, <span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span>C)&gt;;
+    <span class="kw">type </span>IntoIterMut = <span class="kw">impl </span>Iterator&lt;Item = (RawT, <span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span>C)&gt;;
     <span class="kw">fn </span>into_iter_mut(<span class="self">self</span>) -&gt; <span class="self">Self</span>::IntoIterMut {
         <span class="kw">let </span>iter = <span class="kw">match </span>(<span class="self">self</span>.lower_bound, <span class="self">self</span>.upper_bound) {
             (<span class="prelude-val">Some</span>(lower), <span class="prelude-val">Some</span>(upper)) =&gt; Box::new(<span class="self">self</span>.data.range(lower..upper))
@@ -432,7 +434,7 @@
         })
     }
 
-    <span class="kw">fn </span>into_mut(<span class="self">self</span>, entity: <span class="self">Self</span>::RawEntity) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span><span class="self">Self</span>::Comp&gt; {
+    <span class="kw">fn </span>into_mut(<span class="self">self</span>, entity: <span class="self">Self</span>::RawEntity) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span><span class="self">Self</span>::Comp&gt; {
         <span class="self">self</span>.assert_bounds(entity);
 
         <span class="kw">let </span>cell = <span class="self">self</span>.data.get(<span class="kw-2">&amp;</span>entity)<span class="question-mark">?</span>;
@@ -447,7 +449,7 @@
     <span class="kw">fn </span>into_many_mut&lt;<span class="kw">const </span>N: usize&gt;(
         <span class="self">self</span>,
         entities: [<span class="self">Self</span>::RawEntity; N],
-    ) -&gt; <span class="prelude-ty">Option</span>&lt;[<span class="kw-2">&amp;</span><span class="lifetime">&#39;t </span><span class="kw-2">mut </span><span class="self">Self</span>::Comp; N]&gt; {
+    ) -&gt; <span class="prelude-ty">Option</span>&lt;[<span class="kw-2">&amp;</span><span class="lifetime">'t </span><span class="kw-2">mut </span><span class="self">Self</span>::Comp; N]&gt; {
         <span class="kw">for </span>entity <span class="kw">in </span>entities {
             <span class="self">self</span>.assert_bounds(entity);
         }

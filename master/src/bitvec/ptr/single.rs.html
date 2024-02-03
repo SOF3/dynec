@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitvec-1.0.1/src/ptr/single.rs`."><title>single.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="bitvec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (3a85a5cfe 2023-11-20)" data-channel="nightly" data-search-js="search-d23a059ec093b287.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-f06f02fd918e3bb3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/home/runner/.cargo/registry/src/index.crates.io-6f17d22bba15001f/bitvec-1.0.1/src/ptr/single.rs`."><title>single.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="bitvec" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (cb4d9a190 2024-01-30)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../bitvec/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -1444,7 +1446,7 @@
 <a href="#1444" id="1444">1444</a>
 <a href="#1445" id="1445">1445</a>
 <a href="#1446" id="1446">1446</a>
-</pre></div><pre class="rust"><code><span class="attr">#![doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/ptr/single.md&quot;</span>)]
+</pre></div><pre class="rust"><code><span class="attr">#![doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/ptr/single.md"</span>)]
 
 </span><span class="kw">use </span>core::{
 	any,
@@ -1503,7 +1505,7 @@
 };
 
 <span class="attr">#[repr(C, packed)]
-#[doc = <span class="macro">include_str!</span>(<span class="string">&quot;../../doc/ptr/BitPtr.md&quot;</span>)]
+#[doc = <span class="macro">include_str!</span>(<span class="string">"../../doc/ptr/BitPtr.md"</span>)]
 </span><span class="kw">pub struct </span>BitPtr&lt;M = Const, T = usize, O = Lsb0&gt;
 <span class="kw">where
 	</span>M: Mutability,
@@ -1856,7 +1858,7 @@
 	///
 	/// [`pointer::is_null`](https://doc.rust-lang.org/std/primitive.pointer.html#method.is_null)
 	</span><span class="attr">#[inline]
-	#[deprecated = <span class="string">&quot;`BitPtr` is never null&quot;</span>]
+	#[deprecated = <span class="string">"`BitPtr` is never null"</span>]
 	</span><span class="kw">pub fn </span>is_null(<span class="self">self</span>) -&gt; bool {
 		<span class="bool-val">false
 	</span>}
@@ -1939,7 +1941,7 @@
 	/// assert!(*val);
 	/// ```
 	</span><span class="attr">#[inline]
-	</span><span class="kw">pub unsafe fn </span>as_ref&lt;<span class="lifetime">&#39;a</span>&gt;(<span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;BitRef&lt;<span class="lifetime">&#39;a</span>, Const, T, O&gt;&gt; {
+	</span><span class="kw">pub unsafe fn </span>as_ref&lt;<span class="lifetime">'a</span>&gt;(<span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;BitRef&lt;<span class="lifetime">'a</span>, Const, T, O&gt;&gt; {
 		<span class="prelude-val">Some</span>(BitRef::from_bitptr(<span class="self">self</span>.to_const()))
 	}
 
@@ -1987,7 +1989,7 @@
 	///
 	/// [`.wrapping_offset()`]: Self::wrapping_offset
 	</span><span class="attr">#[inline]
-	#[must_use = <span class="string">&quot;returns a new bit-pointer rather than modifying its argument&quot;</span>]
+	#[must_use = <span class="string">"returns a new bit-pointer rather than modifying its argument"</span>]
 	</span><span class="kw">pub unsafe fn </span>offset(<span class="self">self</span>, count: isize) -&gt; <span class="self">Self </span>{
 		<span class="kw">let </span>(elts, head) = <span class="self">self</span>.bit.offset(count);
 		<span class="self">Self</span>::new_unchecked(<span class="self">self</span>.ptr.offset(elts), head)
@@ -2040,14 +2042,14 @@
 	/// let mut ptr = BitPtr::&lt;_, _, Lsb0&gt;::from_ref(&amp;data);
 	/// let end = ptr.wrapping_offset(32);
 	/// while ptr &lt; end {
-	///   # #[cfg(feature = &quot;std&quot;)] {
-	///   println!(&quot;{}&quot;, unsafe { ptr.read() });
+	///   # #[cfg(feature = "std")] {
+	///   println!("{}", unsafe { ptr.read() });
 	///   # }
 	///   ptr = ptr.wrapping_offset(3);
 	/// }
 	/// ```
 	</span><span class="attr">#[inline]
-	#[must_use = <span class="string">&quot;returns a new bit-pointer rather than modifying its argument&quot;</span>]
+	#[must_use = <span class="string">"returns a new bit-pointer rather than modifying its argument"</span>]
 	</span><span class="kw">pub fn </span>wrapping_offset(<span class="self">self</span>, count: isize) -&gt; <span class="self">Self </span>{
 		<span class="kw">let </span>(elts, head) = <span class="self">self</span>.bit.offset(count);
 		<span class="kw">unsafe </span>{ <span class="self">Self</span>::new_unchecked(<span class="self">self</span>.ptr.wrapping_offset(elts), head) }
@@ -2148,7 +2150,7 @@
 	///
 	/// See [`.offset()`](Self::offset).
 	</span><span class="attr">#[inline]
-	#[must_use = <span class="string">&quot;returns a new bit-pointer rather than modifying its argument&quot;</span>]
+	#[must_use = <span class="string">"returns a new bit-pointer rather than modifying its argument"</span>]
 	</span><span class="kw">pub unsafe fn </span>add(<span class="self">self</span>, count: usize) -&gt; <span class="self">Self </span>{
 		<span class="self">self</span>.offset(count <span class="kw">as </span>isize)
 	}
@@ -2166,7 +2168,7 @@
 	///
 	/// See [`.offset()`](Self::offset).
 	</span><span class="attr">#[inline]
-	#[must_use = <span class="string">&quot;returns a new bit-pointer rather than modifying its argument&quot;</span>]
+	#[must_use = <span class="string">"returns a new bit-pointer rather than modifying its argument"</span>]
 	</span><span class="kw">pub unsafe fn </span>sub(<span class="self">self</span>, count: usize) -&gt; <span class="self">Self </span>{
 		<span class="self">self</span>.offset((count <span class="kw">as </span>isize).wrapping_neg())
 	}
@@ -2184,7 +2186,7 @@
 	///
 	/// See [`.wrapping_offset()`](Self::wrapping_offset).
 	</span><span class="attr">#[inline]
-	#[must_use = <span class="string">&quot;returns a new bit-pointer rather than modifying its argument&quot;</span>]
+	#[must_use = <span class="string">"returns a new bit-pointer rather than modifying its argument"</span>]
 	</span><span class="kw">pub fn </span>wrapping_add(<span class="self">self</span>, count: usize) -&gt; <span class="self">Self </span>{
 		<span class="self">self</span>.wrapping_offset(count <span class="kw">as </span>isize)
 	}
@@ -2203,7 +2205,7 @@
 	///
 	/// See [`.wrapping_offset()`](Self::wrapping_offset).
 	</span><span class="attr">#[inline]
-	#[must_use = <span class="string">&quot;returns a new bit-pointer rather than modifying its argument&quot;</span>]
+	#[must_use = <span class="string">"returns a new bit-pointer rather than modifying its argument"</span>]
 	</span><span class="kw">pub fn </span>wrapping_sub(<span class="self">self</span>, count: usize) -&gt; <span class="self">Self </span>{
 		<span class="self">self</span>.wrapping_offset((count <span class="kw">as </span>isize).wrapping_neg())
 	}
@@ -2257,7 +2259,7 @@
 	///
 	/// See [`ptr::read_unaligned`](crate::ptr::read_unaligned)
 	</span><span class="attr">#[inline]
-	#[deprecated = <span class="string">&quot;`BitPtr` does not have unaligned addresses&quot;</span>]
+	#[deprecated = <span class="string">"`BitPtr` does not have unaligned addresses"</span>]
 	</span><span class="kw">pub unsafe fn </span>read_unaligned(<span class="self">self</span>) -&gt; bool {
 		<span class="self">self</span>.ptr.to_const().read_unaligned().get_bit::&lt;O&gt;(<span class="self">self</span>.bit)
 	}
@@ -2434,7 +2436,7 @@
 	///
 	/// [`.commit()`]: crate::ptr::BitRef::commit
 	</span><span class="attr">#[inline]
-	</span><span class="kw">pub unsafe fn </span>as_mut&lt;<span class="lifetime">&#39;a</span>&gt;(<span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;BitRef&lt;<span class="lifetime">&#39;a</span>, Mut, T, O&gt;&gt; {
+	</span><span class="kw">pub unsafe fn </span>as_mut&lt;<span class="lifetime">'a</span>&gt;(<span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;BitRef&lt;<span class="lifetime">'a</span>, Mut, T, O&gt;&gt; {
 		<span class="prelude-val">Some</span>(BitRef::from_bitptr(<span class="self">self</span>))
 	}
 
@@ -2515,7 +2517,7 @@
 	///
 	/// [`ptr::drop_in_place`]: crate::ptr::drop_in_place
 	</span><span class="attr">#[inline]
-	#[deprecated = <span class="string">&quot;this has no effect, and should not be called&quot;</span>]
+	#[deprecated = <span class="string">"this has no effect, and should not be called"</span>]
 	</span><span class="kw">pub fn </span>drop_in_place(<span class="self">self</span>) {}
 
 	<span class="doccomment">/// Writes a new bit into the given location.
@@ -2588,7 +2590,7 @@
 	/// [`ptr::write_unaligned`]: crate::ptr::write_unaligned
 	</span><span class="attr">#[inline]
 	#[allow(clippy::needless_borrow)] </span><span class="comment">// Clippy is wrong.
-	</span><span class="attr">#[deprecated = <span class="string">&quot;`BitPtr` does not have unaligned addresses&quot;</span>]
+	</span><span class="attr">#[deprecated = <span class="string">"`BitPtr` does not have unaligned addresses"</span>]
 	</span><span class="kw">pub unsafe fn </span>write_unaligned(<span class="self">self</span>, value: bool) {
 		<span class="kw">let </span>ptr = <span class="self">self</span>.ptr.to_mut();
 		<span class="kw">let </span><span class="kw-2">mut </span>tmp = ptr.read_unaligned();
@@ -2684,7 +2686,7 @@
 	<span class="attr">#[inline]
 	</span><span class="kw">fn </span>cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; cmp::Ordering {
 		<span class="self">self</span>.partial_cmp(other).expect(
-			<span class="string">&quot;BitPtr has a total ordering when type parameters are identical&quot;</span>,
+			<span class="string">"BitPtr has a total ordering when type parameters are identical"</span>,
 		)
 	}
 }
@@ -2796,7 +2798,7 @@
 	</span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
 		<span class="macro">write!</span>(
 			fmt,
-			<span class="string">&quot;{} Bit&lt;{}, {}&gt;&quot;</span>,
+			<span class="string">"{} Bit&lt;{}, {}&gt;"</span>,
 			M::RENDER,
 			any::type_name::&lt;T&gt;(),
 			any::type_name::&lt;O&gt;(),
@@ -2813,7 +2815,7 @@
 {
 	<span class="attr">#[inline]
 	</span><span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>Formatter) -&gt; fmt::Result {
-		fmt.debug_tuple(<span class="string">&quot;&quot;</span>)
+		fmt.debug_tuple(<span class="string">""</span>)
 			.field(<span class="kw-2">&amp;</span><span class="self">self</span>.get_addr().fmt_pointer())
 			.field(<span class="kw-2">&amp;</span><span class="self">self</span>.bit.fmt_binary())
 			.finish()
@@ -2888,6 +2890,6 @@
 	}
 }
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
 </span><span class="kw">impl</span>&lt;T&gt; std::error::Error <span class="kw">for </span>BitPtrError&lt;T&gt; <span class="kw">where </span>T: BitStore {}
 </code></pre></div></section></main></body></html>

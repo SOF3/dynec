@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["builder","populate_native_component"],"struct":["Builder","Typed"],"trait":["AnyBuilder","AnyTyped"]};

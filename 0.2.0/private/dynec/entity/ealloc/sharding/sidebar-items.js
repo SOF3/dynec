@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["StaticShardAssigner","ThreadRngShardAssigner"],"trait":["AnyShard","Shard","ShardAssigner"]};

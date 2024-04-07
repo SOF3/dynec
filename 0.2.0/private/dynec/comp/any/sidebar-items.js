@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"macro":["impl_simple_init_fn","impl_simple_init_fn_accumulate"],"struct":["DepGetter","Initer","Map"],"trait":["DepGetterInner","InitFn"],"type":["DepList","IsotopeMap"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["builder"],"struct":["Simple","SimpleStorage"],"trait":["AnySimpleStorage"]};

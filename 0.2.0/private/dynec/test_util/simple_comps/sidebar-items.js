@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["init_comp2"],"struct":["Simple1OptionalNoDepNoInit","Simple2OptionalDepends1","Simple3OptionalDepends12","Simple4Depends12","Simple5RequiredNoInit","Simple6RequiredWithInitNoDeps","Simple7WithFinalizerNoinit","SimpleN","StrongRefSimple"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"opaque":[""],"struct":["Isotope"],"trait":["Get","GetMut","GetRef","PartialStorageMap","StorageMap","StorageMapMut"]};

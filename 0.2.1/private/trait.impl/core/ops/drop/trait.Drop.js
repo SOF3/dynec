@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"dynec":[["impl&lt;'t&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/ops/drop/trait.Drop.html\" title=\"trait core::ops::drop::Drop\">Drop</a> for <a class=\"struct\" href=\"dynec/scheduler/executor/struct.PanicGuard.html\" title=\"struct dynec::scheduler::executor::PanicGuard\">PanicGuard</a>&lt;'t&gt;"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["sealed","search_single","std_impl"],"struct":["AsObject","NamedBoxIter","NamedIter","SingleVtable","UnnamedIter","VisitTypeArg"],"trait":["Object","Referrer","VisitMutArg"]};

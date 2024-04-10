@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["Single"],"trait":["Get","GetChunked","GetMut","GetMutChunked","MustGet","MustGetChunked","MustGetMut","MustSet","Set"]};

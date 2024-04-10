@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"macro":["impl_raw"],"opaque":[""],"trait":["Atomic","Raw"],"type":["Primitive"]};

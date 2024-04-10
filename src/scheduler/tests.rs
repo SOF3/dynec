@@ -736,6 +736,18 @@ fn test_zero_concurrency_single_unsend() {
     );
 }
 
+#[test]
+#[should_panic = "system panic"]
+fn test_send_panic() {
+    bootstrap(3, || (), |_builder, [_], []| {}, || |_| panic!("system panic"), |_| {})
+}
+
+#[test]
+#[should_panic = "system panic"]
+fn test_unsend_panic() {
+    bootstrap(3, || (), |_builder, [], [_]| {}, || |_| panic!("system panic"), |_| {})
+}
+
 /// Bootstraps a test function for the scheduler.
 ///
 /// This function performs the following:

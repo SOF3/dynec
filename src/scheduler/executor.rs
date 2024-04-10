@@ -1,3 +1,6 @@
+use std::sync::atomic::{self, AtomicBool};
+use std::time::Duration;
+
 use parking_lot::{Condvar, Mutex, MutexGuard};
 
 use super::planner::StealResult;
@@ -48,6 +51,7 @@ impl Executor {
         ealloc_map: &mut ealloc::Map,
     ) {
         let condvar = Condvar::new();
+        let had_panic = AtomicBool::new(false);
 
         planner.get_mut().clone_from(topology.initial_planner());
 
@@ -66,7 +70,7 @@ impl Executor {
             tracer.partition(node, partition);
         }
 
-        let context = Context { topology, planner, condvar: &condvar };
+        let context = Context { topology, planner, condvar: &condvar, had_panic: &had_panic };
 
         let prepare_ealloc_shards_context = tracer.start_prepare_ealloc_shards();
         let mut ealloc_shards = ealloc_map.shards(self.concurrency + 1);
@@ -202,14 +206,23 @@ fn main_worker(
                 match planner_guard.steal_send(tracer, tracer::Thread::Main, context.topology) {
                     StealResult::CycleComplete => return,
                     StealResult::Pending => {
-                        deadlock_counter.start_wait();
-                        context.condvar.wait(&mut planner_guard);
+                        match wait_for_task(
+                            deadlock_counter,
+                            &mut planner_guard,
+                            context.condvar,
+                            context.had_panic,
+                        ) {
+                            TaskWait::HasTask => continue,
+                            TaskWait::HadPanic => return,
+                        }
                     }
                     StealResult::Ready(index) => {
                         MutexGuard::unlocked(&mut planner_guard, || {
                             let (debug_name, system) = send.state.get_send_system(index);
 
                             {
+                                let mut panic_guard = context.panic_guard();
+
                                 let mut system = system
                                     .try_lock()
                                     .expect("system should only be scheduled to one worker");
@@ -232,6 +245,8 @@ fn main_worker(
                                     debug_name,
                                     &mut **system,
                                 );
+
+                                panic_guard.done = true;
                             }
                         });
 
@@ -246,12 +261,21 @@ fn main_worker(
                 }
             }
             StealResult::Pending => {
-                deadlock_counter.start_wait();
-                context.condvar.wait(&mut planner_guard);
+                match wait_for_task(
+                    deadlock_counter,
+                    &mut planner_guard,
+                    context.condvar,
+                    context.had_panic,
+                ) {
+                    TaskWait::HasTask => continue,
+                    TaskWait::HadPanic => return,
+                }
             }
             StealResult::Ready(index) => {
                 MutexGuard::unlocked(&mut planner_guard, || {
                     let (debug_name, system) = unsend.state.get_unsend_system_mut(index);
+
+                    let mut panic_guard = context.panic_guard();
 
                     let run_context = tracer.start_run_unsendable(
                         tracer::Thread::Main,
@@ -273,6 +297,8 @@ fn main_worker(
                         debug_name,
                         &mut *system,
                     );
+
+                    panic_guard.done = true;
                 });
 
                 planner_guard.complete(
@@ -304,14 +330,23 @@ fn threaded_worker(
         match planner_guard.steal_send(tracer, thread, context.topology) {
             StealResult::CycleComplete => return,
             StealResult::Pending => {
-                deadlock_counter.start_wait();
-                context.condvar.wait(&mut planner_guard);
+                match wait_for_task(
+                    deadlock_counter,
+                    &mut planner_guard,
+                    context.condvar,
+                    context.had_panic,
+                ) {
+                    TaskWait::HasTask => continue,
+                    TaskWait::HadPanic => return,
+                }
             }
             StealResult::Ready(index) => {
                 MutexGuard::unlocked(&mut planner_guard, || {
                     let (debug_name, system) = send.state.get_send_system(index);
 
                     {
+                        let mut panic_guard = context.panic_guard();
+
                         let mut system = system
                             .try_lock()
                             .expect("system should only be scheduled to one worker");
@@ -329,6 +364,8 @@ fn threaded_worker(
                             debug_name,
                             &mut **system,
                         );
+
+                        panic_guard.done = true;
                     }
                 });
 
@@ -340,6 +377,32 @@ fn threaded_worker(
                     deadlock_counter,
                 );
             }
+        }
+    }
+}
+
+enum TaskWait {
+    HasTask,
+    HadPanic,
+}
+
+fn wait_for_task(
+    deadlock_counter: &DeadlockCounter,
+    planner_guard: &mut MutexGuard<'_, Planner>,
+    condvar: &Condvar,
+    had_panic: &AtomicBool,
+) -> TaskWait {
+    deadlock_counter.start_wait();
+
+    loop {
+        // wait for condvar to be notified, or poll for panic interrupts every second
+        let result = condvar.wait_for(planner_guard, Duration::from_secs(1));
+        if had_panic.load(atomic::Ordering::Acquire) {
+            return TaskWait::HadPanic;
+        }
+
+        if !result.timed_out() {
+            return TaskWait::HasTask;
         }
     }
 }
@@ -381,9 +444,29 @@ pub(crate) use deadlock_counter::DeadlockCounter;
 
 #[derive(Clone, Copy)]
 struct Context<'t> {
-    topology: &'t Topology,
-    planner:  &'t Mutex<Planner>,
-    condvar:  &'t Condvar,
+    topology:  &'t Topology,
+    planner:   &'t Mutex<Planner>,
+    condvar:   &'t Condvar,
+    had_panic: &'t AtomicBool,
+}
+
+impl<'t> Context<'t> {
+    fn panic_guard(&self) -> PanicGuard<'_> {
+        PanicGuard { done: false, had_panic: self.had_panic }
+    }
+}
+
+struct PanicGuard<'t> {
+    done:      bool,
+    had_panic: &'t AtomicBool,
+}
+
+impl<'t> Drop for PanicGuard<'t> {
+    fn drop(&mut self) {
+        if !self.done {
+            self.had_panic.store(true, atomic::Ordering::Release);
+        }
+    }
 }
 
 #[derive(Clone, Copy)]
